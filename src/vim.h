@@ -3,7 +3,6 @@
 
 /*
  * Define the version number, name, etc.
- * The patchlevel is in included_patches[], in main.c.
  */
 #define VIM_VERSION_MAJOR                7
 #define VIM_VERSION_MAJOR_STR           "7"
@@ -22,9 +21,6 @@
 
 /* Define when terminfo support found */
 #define TERMINFO 1
-
-/* Define when __attribute__((unused)) can be used */
-#define HAVE_ATTRIBUTE_UNUSED 1
 
 /* Defined to the size of an int */
 #define VIM_SIZEOF_INT 4
@@ -176,11 +172,7 @@
 
 /* Mark unused function arguments with UNUSED, so that gcc -Wunused-parameter
  * can be used to check for mistakes. */
-#if defined(HAVE_ATTRIBUTE_UNUSED)
 #define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif
 
 extern void (*sigset(int, void (*func)(int)))(int);
 
@@ -211,16 +203,6 @@ typedef unsigned int    int_u;
  * On Win64, longs are 32 bits and pointers are 64 bits.
  * For printf() and scanf(), we need to take care of long_u specifically. */
 typedef unsigned long   long_u;
-
-/*
- * Only systems which use configure will have SIZEOF_OFF_T and VIM_SIZEOF_LONG
- * defined, which is ok since those are the same systems which can have
- * varying sizes for off_t.  The other systems will continue to use "%ld" to
- * print off_t since off_t is simply a typedef to long for them.
- */
-#if defined(SIZEOF_OFF_T) && (SIZEOF_OFF_T > VIM_SIZEOF_LONG)
-#define LONG_LONG_OFF_T
-#endif
 
 /*
  * The characters and attributes cached for the screen.
@@ -1244,16 +1226,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define W_STATUS_HEIGHT(wp) (wp->w_status_height)
 #define W_WINROW(wp)   (wp->w_winrow)
 
-/* Values for the find_pattern_in_path() function args 'type' and 'action': */
-#define FIND_ANY        1
-#define FIND_DEFINE     2
-#define CHECK_PATH      3
-
-#define ACTION_SHOW     1
-#define ACTION_GOTO     2
-#define ACTION_SPLIT    3
-#define ACTION_SHOW_ALL 4
-
 #define SST_MIN_ENTRIES 150    /* minimal size for state stack array */
 #define SST_MAX_ENTRIES 1000  /* maximal size for state stack array */
 #define SST_FIX_STATES  7      /* size of sst_stack[]. */
@@ -1298,15 +1270,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define FIND_IDENT      1       /* find identifier (word) */
 #define FIND_STRING     2       /* find any string (WORD) */
 #define FIND_EVAL       4       /* include "->", "[]" and "." */
-
-/* Values for file_name_in_line() */
-#define FNAME_MESS      1       /* give error message */
-#define FNAME_EXP       2       /* expand to path */
-#define FNAME_HYP       4       /* check for hypertext link */
-#define FNAME_INCL      8       /* apply 'includeexpr' */
-#define FNAME_REL       16      /* ".." and "./" are relative to the (current)
-                                   file instead of the current directory */
-#define FNAME_UNESC     32      /* remove backslashes used for escaping */
 
 /* Values for buflist_getfile() */
 #define GETF_SETMARK    0x01    /* set pcmark before jumping */
@@ -1480,16 +1443,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define CT_PRINT_CHAR   0x10    /* flag: set for printable chars */
 #define CT_ID_CHAR      0x20    /* flag: set for ID chars */
 #define CT_FNAME_CHAR   0x40    /* flag: set for file name chars */
-
-/*
- * Types of dialogs passed to do_vim_dialog().
- */
-#define VIM_GENERIC     0
-#define VIM_ERROR       1
-#define VIM_WARNING     2
-#define VIM_INFO        3
-#define VIM_QUESTION    4
-#define VIM_LAST_TYPE   4       /* sentinel value */
 
 /*
  * Return values for functions like gui_yesnocancel()
@@ -1703,8 +1656,8 @@ typedef enum
     , HLF_TP        /* tabpage line */
     , HLF_TPS       /* tabpage line selected */
     , HLF_TPF       /* tabpage line filler */
-    , HLF_CUC       /* 'cursurcolumn' */
-    , HLF_CUL       /* 'cursurline' */
+    , HLF_CUC       /* 'cursorcolumn' */
+    , HLF_CUL       /* 'cursorline' */
     , HLF_MC        /* 'colorcolumn' */
     , HLF_COUNT     /* MUST be the last one */
 } hlf_T;
@@ -1819,16 +1772,6 @@ typedef enum
 #define WRITEBIN   "w"
 #define READBIN    "r"
 #define APPENDBIN  "a"
-#endif
-
-/*
- * EMX doesn't have a global way of making open() use binary I/O.
- * Use O_BINARY for all open() calls.
- */
-#define O_EXTRA    0
-
-#if !defined(O_NOFOLLOW)
-#define O_NOFOLLOW 0
 #endif
 
 #if !defined(W_OK)
@@ -1946,7 +1889,7 @@ typedef short_u disptick_T;             /* display tick type */
 #define vim_iswhite(x)  ((x) == ' ' || (x) == '\t')
 
 /*
- * EXTERN is only defined in main.c.  That's where global variables are
+ * EXTERN is only defined in vim.c.  That's where global variables are
  * actually defined and initialized.
  */
 #if !defined(EXTERN)
@@ -2294,8 +2237,6 @@ EXTERN int      p_hls;          /* 'hlsearch' */
 EXTERN long     p_hi;           /* 'history' */
 EXTERN int      p_hkmap;        /* 'hkmap' */
 EXTERN int      p_hkmapp;       /* 'hkmapp' */
-EXTERN int      p_icon;         /* 'icon' */
-EXTERN char_u   *p_iconstring;  /* 'iconstring' */
 EXTERN int      p_ic;           /* 'ignorecase' */
 EXTERN int      p_is;           /* 'incsearch' */
 EXTERN int      p_im;           /* 'insertmode' */
@@ -2313,8 +2254,6 @@ EXTERN char_u   *p_lcs;         /* 'listchars' */
 EXTERN int      p_lz;           /* 'lazyredraw' */
 EXTERN int      p_lpl;          /* 'loadplugins' */
 EXTERN int      p_magic;        /* 'magic' */
-EXTERN char_u   *p_cc;          /* 'colorcolumn' */
-EXTERN int      p_cc_cols[256]; /* array for 'colorcolumn' columns */
 EXTERN long     p_mat;          /* 'matchtime' */
 EXTERN long     p_mco;          /* 'maxcombine' */
 EXTERN long     p_mfd;          /* 'maxfuncdepth' */
@@ -2388,10 +2327,6 @@ EXTERN int      p_ta;           /* 'textauto' */
 EXTERN int      p_to;           /* 'tildeop' */
 EXTERN int      p_timeout;      /* 'timeout' */
 EXTERN long     p_tm;           /* 'timeoutlen' */
-EXTERN int      p_title;        /* 'title' */
-EXTERN long     p_titlelen;     /* 'titlelen' */
-EXTERN char_u   *p_titleold;    /* 'titleold' */
-EXTERN char_u   *p_titlestring; /* 'titlestring' */
 EXTERN int      p_ttimeout;     /* 'ttimeout' */
 EXTERN long     p_ttm;          /* 'ttimeoutlen' */
 EXTERN int      p_tbi;          /* 'ttybuiltin' */
@@ -3373,7 +3308,7 @@ struct syn_state
 };
 
 /*
- * Structure shared between syntax.c, screen.c and gui_x11.c.
+ * Structure shared between syntax.c and screen.c.
  */
 typedef struct attr_entry
 {
@@ -4507,23 +4442,17 @@ int mch_chdir(char *path);
 void mch_write(char_u *s, int len);
 int mch_inchar(char_u *buf, int maxlen, long wtime, int tb_change_cnt);
 int mch_char_avail(void);
-long_u mch_total_mem(int special);
+long_u mch_total_mem(void);
 void mch_delay(long msec, int ignoreinput);
-int mch_stackcheck(char *p);
 void mch_suspend(void);
 void mch_init(void);
 void reset_signals(void);
 int vim_handle_signal(int sig);
-int mch_check_win(int argc, char **argv);
+int mch_check_win(void);
 int mch_input_isatty(void);
-int mch_can_restore_title(void);
-int mch_can_restore_icon(void);
-void mch_settitle(char_u *title, char_u *icon);
-void mch_restore_title(int which);
 int vim_is_xterm(char_u *name);
 int use_xterm_like_mouse(char_u *name);
 int use_xterm_mouse(void);
-int vim_is_iris(char_u *name);
 int vim_is_vt300(char_u *name);
 int vim_is_fastterm(char_u *name);
 int mch_get_user_name(char_u *s, int len);
@@ -4533,15 +4462,12 @@ long mch_get_pid(void);
 int mch_dirname(char_u *buf, int len);
 int mch_FullName(char_u *fname, char_u *buf, int len, int force);
 int mch_isFullName(char_u *fname);
-void fname_case(char_u *name, int len);
 long mch_getperm(char_u *name);
 int mch_setperm(char_u *name, long perm);
-void mch_hide(char_u *name);
 int mch_isdir(char_u *name);
 int mch_can_exe(char_u *name, char_u **path, int use_path);
 int mch_nodetype(char_u *name);
 void mch_early_init(void);
-void mch_free_mem(void);
 void mch_exit(int r);
 void mch_settmode(int tmode);
 void get_stty(void);
@@ -4575,7 +4501,7 @@ int buflist_getfile(int n, linenr_T lnum, int options, int forceit);
 void buflist_getfpos(void);
 buf_T *buflist_findname_exp(char_u *fname);
 buf_T *buflist_findname(char_u *ffname);
-int buflist_findpat(char_u *pattern, char_u *pattern_end, int unlisted, int diffmode, int curtab_only);
+int buflist_findpat(char_u *pattern, char_u *pattern_end, int unlisted, int curtab_only);
 int ExpandBufnames(char_u *pat, int *num_file, char_u ***file, int options);
 buf_T *buflist_findnr(int nr);
 char_u *buflist_nr2name(int n, int fullname);
@@ -4595,13 +4521,10 @@ int otherfile(char_u *ffname);
 void buf_setino(buf_T *buf);
 void fileinfo(int fullname, int dont_truncate);
 void col_print(char_u *buf, size_t buflen, int col, int vcol);
-void maketitle(void);
-void resettitle(void);
-void free_titles(void);
 int build_stl_str_hl(win_T *wp, char_u *out, size_t outlen, char_u *fmt, int use_sandbox, int fillchar, int maxwidth, struct stl_hlrec *hltab, struct stl_hlrec *tabtab);
 void get_rel_pos(win_T *wp, char_u *buf, int buflen);
 char_u *fix_fname(char_u *fname);
-void fname_expand(buf_T *buf, char_u **ffname, char_u **sfname);
+void fname_expand(char_u **ffname, char_u **sfname);
 char_u *alist_name(aentry_T *aep);
 void do_arg_all(int count, int forceit, int keep_tabs);
 void ex_buffer_all(exarg_T *eap);
@@ -4687,7 +4610,6 @@ void auto_format(int trailblank, int prev_line);
 int comp_textwidth(int ff);
 int stop_arrow(void);
 void set_last_insert(int c);
-void free_last_insert(void);
 char_u *add_char2buf(int c, char_u *s);
 void beginline(int flags);
 int oneright(void);
@@ -4706,7 +4628,6 @@ int hkmap(int c);
 int ins_copychar(linenr_T lnum);
 
 void eval_init(void);
-void eval_clear(void);
 char_u *func_name(void *cookie);
 linenr_T *func_breakpoint(void *cookie);
 int *func_dbg_tick(void *cookie);
@@ -4804,7 +4725,6 @@ void ex_echo(exarg_T *eap);
 void ex_echohl(exarg_T *eap);
 void ex_execute(exarg_T *eap);
 void ex_function(exarg_T *eap);
-void free_all_functions(void);
 int translated_function_exists(char_u *name);
 char_u *get_expanded_name(char_u *name, int check);
 char_u *get_user_func_name(expand_T *xp, int idx);
@@ -4829,7 +4749,6 @@ void ex_sort(exarg_T *eap);
 void ex_retab(exarg_T *eap);
 int do_move(linenr_T line1, linenr_T line2, linenr_T dest);
 void ex_copy(linenr_T line1, linenr_T line2, linenr_T n);
-void free_prev_shellcmd(void);
 void do_bang(int addr_count, exarg_T *eap, int forceit, int do_in, int do_out);
 void do_shell(char_u *cmd, int flags);
 char_u *make_filter_cmd(char_u *cmd, char_u *itmp, char_u *otmp);
@@ -4857,7 +4776,6 @@ void do_sub(exarg_T *eap);
 int do_sub_msg(int count_only);
 void ex_global(exarg_T *eap);
 void global_exe(char_u *cmd);
-void free_old_sub(void);
 
 void do_debug(char_u *cmd);
 void ex_debug(exarg_T *eap);
@@ -4909,13 +4827,11 @@ int source_level(void *cookie);
 int do_source(char_u *fname, int check_other);
 void ex_scriptnames(exarg_T *eap);
 char_u *get_scriptname(scid_T id);
-void free_scriptnames(void);
 char_u *getsourceline(int c, void *cookie, int indent);
 void ex_finish(exarg_T *eap);
 void do_finish(exarg_T *eap, int reanimate);
 int source_finished(char_u *(*fgetline)(int, void *, int), void *cookie);
 void ex_checktime(exarg_T *eap);
-void free_locales(void);
 
 void do_exmode(int improved);
 int do_cmdline_cmd(char_u *cmd);
@@ -4947,7 +4863,6 @@ void not_exiting(void);
 void tabpage_close(int forceit);
 void tabpage_close_other(tabpage_T *tp, int forceit);
 void ex_all(exarg_T *eap);
-void handle_drop(int filec, char_u **filev, int split);
 void alist_clear(alist_T *al);
 void alist_init(alist_T *al);
 void alist_unlink(alist_T *al);
@@ -4957,7 +4872,6 @@ void alist_add(alist_T *al, char_u *fname, int set_fnum);
 void ex_splitview(exarg_T *eap);
 void tabpage_new(void);
 void do_exedit(exarg_T *eap, win_T *old_curwin);
-void free_cd_dir(void);
 void do_sleep(long msec);
 void ex_may_print(exarg_T *eap);
 FILE *open_exfile(char_u *fname, int forceit, char *mode);
@@ -5064,16 +4978,15 @@ char_u *modname(char_u *fname, char_u *ext, int prepend_dot);
 char_u *buf_modname(int shortname, char_u *fname, char_u *ext, int prepend_dot);
 int vim_rename(char_u *from, char_u *to);
 int check_timestamps(int focus);
-int buf_check_timestamp(buf_T *buf, int focus);
+int buf_check_timestamp(buf_T *buf);
 void buf_reload(buf_T *buf, int orig_mode);
-void buf_store_time(buf_T *buf, struct stat *st, char_u *fname);
+void buf_store_time(buf_T *buf, struct stat *st);
 void write_lnum_adjust(linenr_T offset);
 void vim_deltempdir(void);
 char_u *vim_tempname(int extra_char, int keep);
 void aubuflocal_remove(buf_T *buf);
 int au_has_group(char_u *name);
 void do_augroup(char_u *arg, int del_group);
-void free_all_autocmds(void);
 int check_ei(void);
 char_u *au_event_disable(char *what);
 void au_event_restore(char_u *old_ei);
@@ -5104,7 +5017,7 @@ char_u *set_context_in_autocmd(expand_T *xp, char_u *arg, int doautocmd);
 char_u *get_event_name(expand_T *xp, int idx);
 int autocmd_supported(char_u *name);
 int au_exists(char_u *arg);
-char_u *file_pat_to_reg_pat(char_u *pat, char_u *pat_end, char *allow_dirs, int no_bslash);
+char_u *file_pat_to_reg_pat(char_u *pat, char_u *pat_end, char *allow_dirs);
 long read_eintr(int fd, void *buf, size_t bufsize);
 long write_eintr(int fd, void *buf, size_t bufsize);
 
@@ -5144,7 +5057,6 @@ int save_typebuf(void);
 void save_typeahead(tasave_T *tp);
 void restore_typeahead(tasave_T *tp);
 void openscript(char_u *name, int directly);
-void close_all_scripts(void);
 void before_blocking(void);
 void updatescript(int c);
 int vgetc(void);
@@ -5192,8 +5104,6 @@ void main_loop(int cmdwin, int noexmode);
 void getout(int exitval);
 int process_env(char_u *env);
 void mainerr_arg_missing(char_u *str);
-void server_to_input_buf(char_u *str);
-int fkmap(int c);
 
 int setmark(int c);
 int setmark_pos(int c, pos_T *pos, int fnum);
@@ -5218,7 +5128,6 @@ void mark_col_adjust(linenr_T lnum, colnr_T mincol, long lnum_amount, long col_a
 void copy_jumplist(win_T *from, win_T *to);
 void free_jumplist(win_T *wp);
 void set_last_cursor(win_T *win);
-void free_all_marks(void);
 
 memfile_T *mf_open(char_u *fname, int flags);
 int mf_open_file(memfile_T *mfp, char_u *fname);
@@ -5263,7 +5172,7 @@ void ml_setmarked(linenr_T lnum);
 linenr_T ml_firstmarked(void);
 void ml_clearmarked(void);
 int resolve_symlink(char_u *fname, char_u *buf);
-char_u *makeswapname(char_u *fname, char_u *ffname, buf_T *buf, char_u *dir_name);
+char_u *makeswapname(char_u *fname, buf_T *buf, char_u *dir_name);
 char_u *get_file_in_dir(char_u *fname, char_u *dname);
 void ml_setflags(buf_T *buf);
 long ml_find_line_or_offset(buf_T *buf, linenr_T lnum, long *offp);
@@ -5333,11 +5242,11 @@ void verbose_stop(void);
 int verbose_open(void);
 void give_warning(char_u *message, int hl);
 void msg_advance(int col);
-int do_dialog(int type, char_u *title, char_u *message, char_u *buttons, int dfltbutton, char_u *textfield, int ex_cmd);
+int do_dialog(char_u *message, char_u *buttons, int dfltbutton, int ex_cmd);
 void display_confirm_msg(void);
-int vim_dialog_yesno(int type, char_u *title, char_u *message, int dflt);
-int vim_dialog_yesnocancel(int type, char_u *title, char_u *message, int dflt);
-int vim_dialog_yesnoallcancel(int type, char_u *title, char_u *message, int dflt);
+int vim_dialog_yesno(char_u *message, int dflt);
+int vim_dialog_yesnocancel(char_u *message, int dflt);
+int vim_dialog_yesnoallcancel(char_u *message, int dflt);
 int vim_snprintf_add(char *str, size_t str_m, char *fmt, ...);
 int vim_snprintf(char *str, size_t str_m, char *fmt, ...);
 int vim_vsnprintf(char *str, size_t str_m, char *fmt, va_list ap, typval_T *tvs);
@@ -5391,8 +5300,6 @@ void msgmore(long n);
 void beep_flush(void);
 void vim_beep(void);
 void init_homedir(void);
-void free_homedir(void);
-void free_users(void);
 char_u *expand_env_save(char_u *src);
 char_u *expand_env_save_opt(char_u *src, int one);
 void expand_env(char_u *src, char_u *dst, int dstlen);
@@ -5470,7 +5377,6 @@ char_u *alloc_check(unsigned size);
 char_u *lalloc_clear(long_u size, int message);
 char_u *lalloc(long_u size, int message);
 void do_outofmem_msg(long_u size);
-void free_all_mem(void);
 char_u *vim_strsave(char_u *string);
 char_u *vim_strnsave(char_u *string, int len);
 char_u *vim_strsave_escaped(char_u *string, char_u *esc_chars);
@@ -5488,8 +5394,6 @@ void vim_strncpy(char_u *to, char_u *from, size_t len);
 void vim_strcat(char_u *to, char_u *from, size_t tosize);
 int copy_option_part(char_u **option, char_u *buf, int maxlen, char *sep_chars);
 void vim_free(void *x);
-int vim_stricmp(char *s1, char *s2);
-int vim_strnicmp(char *s1, char *s2, size_t len);
 char_u *vim_strchr(char_u *string, int c);
 char_u *vim_strbyte(char_u *string, int c);
 char_u *vim_strrchr(char_u *string, int c);
@@ -5523,7 +5427,6 @@ int call_shell(char_u *cmd, int opt);
 int get_real_state(void);
 int after_pathsep(char_u *b, char_u *p);
 int same_directory(char_u *f1, char_u *f2);
-int vim_chdir(char_u *new_dir);
 int get_user_name(char_u *buf, int len);
 void sort_strings(char_u **files, int count);
 int pathcmp(const char *p, const char *q, int maxlen);
@@ -5562,8 +5465,8 @@ int curwin_col_off(void);
 int win_col_off2(win_T *wp);
 int curwin_col_off2(void);
 void curs_columns(int may_scroll);
-void scrolldown(long line_count, int byfold);
-void scrollup(long line_count, int byfold);
+void scrolldown(long line_count);
+void scrollup(long line_count);
 void scroll_cursor_top(int min_scroll, int always);
 void set_empty_rows(win_T *wp, int used);
 void scroll_cursor_bot(int min_scroll, int set_topbot);
@@ -5676,7 +5579,6 @@ int swapchar(int op_type, pos_T *pos);
 void op_insert(oparg_T *oap, long count1);
 int op_change(oparg_T *oap);
 void init_yank(void);
-void clear_registers(void);
 int op_yank(oparg_T *oap, int deleting, int mess);
 void do_put(int regname, int dir, long count, int flags);
 void adjust_cursor_eol(void);
@@ -5706,10 +5608,8 @@ void cursor_pos_info(void);
 void set_init_1(void);
 void set_string_default(char *name, char_u *val);
 void set_number_default(char *name, long val);
-void free_all_options(void);
 void set_init_2(void);
 void set_init_3(void);
-void set_title_defaults(void);
 int do_set(char_u *arg, int opt_flags);
 void set_options_bin(int oldval, int newval, int opt_flags);
 void check_options(void);
@@ -5722,7 +5622,6 @@ void set_string_option_direct(char_u *name, int opt_idx, char_u *val, int opt_fl
 char_u *check_colorcolumn(win_T *wp);
 char_u *check_stl_option(char_u *s);
 int get_option_value(char_u *name, long *numval, char_u **stringval, int opt_flags);
-int get_option_value_strict(char_u *name, long *numval, char_u **stringval, int opt_type, void *from);
 char_u *set_option_value(char_u *name, long number, char_u *string, int opt_flags);
 char_u *get_term_code(char_u *tname);
 char_u *get_highlight_default(void);
@@ -5761,7 +5660,6 @@ int re_multiline(regprog_T *prog);
 int re_lookbehind(regprog_T *prog);
 char_u *skip_regexp(char_u *startp, int dirc, int magic, char_u **newp);
 int vim_regcomp_had_eol(void);
-void free_regexp_stuff(void);
 reg_extmatch_T *ref_extmatch(reg_extmatch_T *em);
 void unref_extmatch(reg_extmatch_T *em);
 char_u *regtilde(char_u *source, int magic);
@@ -5783,17 +5681,16 @@ void redraw_all_later(int type);
 void redraw_curbuf_later(int type);
 void redraw_buf_later(buf_T *buf, int type);
 int redraw_asap(int type);
-void redrawWinline(linenr_T lnum, int invalid);
+void redrawWinline(linenr_T lnum);
 void update_curbuf(int type);
 void update_screen(int type);
 int conceal_cursor_line(win_T *wp);
-void conceal_check_cursur_line(void);
+void conceal_check_cursor_line(void);
 void update_single_line(win_T *wp, linenr_T lnum);
 void rl_mirror(char_u *str);
 void status_redraw_all(void);
 void status_redraw_curbuf(void);
 void redraw_statuslines(void);
-void win_redr_status_matches(expand_T *xp, int num_matches, char_u **matches, int match, int showtail);
 void win_redr_status(win_T *wp);
 int stl_connected(win_T *wp);
 int get_keymap_str(win_T *wp, char_u *buf, int len);
@@ -5831,8 +5728,6 @@ int screen_screenrow(void);
 void sha256_start(context_sha256_T *ctx);
 void sha256_update(context_sha256_T *ctx, char_u *input, uint32_t length);
 void sha256_finish(context_sha256_T *ctx, char_u digest[32]);
-char_u *sha256_key(char_u *buf, char_u *salt, int salt_len);
-void sha2_seed(char_u *header, int header_len, char_u *salt, int salt_len);
 
 int search_regcomp(char_u *pat, int pat_save, int pat_use, int options, regmmatch_T *regmatch);
 char_u *get_search_pat(void);
@@ -5840,7 +5735,6 @@ char_u *reverse_text(char_u *s);
 void save_re_pat(int idx, char_u *pat, int magic);
 void save_search_patterns(void);
 void restore_search_patterns(void);
-void free_search_patterns(void);
 int ignorecase(char_u *pat);
 int pat_has_uppercase(char_u *pat);
 char_u *last_search_pat(void);
@@ -5869,7 +5763,6 @@ int current_par(oparg_T *oap, long count, int include, int type);
 int current_quote(oparg_T *oap, long count, int include, int quotechar);
 int current_search(long count, int forward);
 int linewhite(linenr_T lnum);
-void find_pattern_in_path(char_u *ptr, int dir, int len, int whole, int skip_comments, int type, long count, int action, linenr_T start_lnum, linenr_T end_lnum);
 
 void syntax_start(win_T *wp, linenr_T lnum);
 void syn_stack_free_all(synblock_T *block);
@@ -5893,7 +5786,6 @@ int syn_get_stack_item(int i);
 void init_highlight(int both, int reset);
 int load_colors(char_u *name);
 void do_highlight(char_u *line, int forceit, int init);
-void free_highlight(void);
 void restore_cterm_colors(void);
 void clear_hl_tables(void);
 int hl_combine_attr(int char_attr, int prim_attr);
@@ -5919,7 +5811,6 @@ void del_mouse_termcode(int n);
 void getlinecol(long *cp, long *rp);
 int add_termcap_entry(char_u *name, int force);
 int term_is_8bit(char_u *name);
-char_u *tltoa(long_u i);
 void termcapinit(char_u *name);
 void out_flush(void);
 void out_flush_check(void);
@@ -5976,7 +5867,6 @@ int ui_inchar(char_u *buf, int maxlen, long wtime, int tb_change_cnt);
 int ui_char_avail(void);
 void ui_delay(long msec, int ignoreinput);
 void ui_suspend(void);
-void suspend_shell(void);
 int ui_get_shellsize(void);
 void ui_set_shellsize(int mustset);
 void ui_new_shellsize(void);
@@ -6006,8 +5896,6 @@ int vim_is_input_buf_full(void);
 int vim_is_input_buf_empty(void);
 char_u *get_input_buf(void);
 void set_input_buf(char_u *p);
-void add_to_input_buf(char_u *s, int len);
-void add_to_input_buf_csi(char_u *str, int len);
 void trash_input_buf(void);
 int read_from_input_buf(char_u *buf, long maxlen);
 void fill_input_buf(int exit_on_error);
@@ -6048,7 +5936,6 @@ int bufIsChanged(buf_T *buf);
 int curbufIsChanged(void);
 void u_eval_tree(u_header_T *first_uhp, list_T *list);
 
-int has_patch(int n);
 void maybe_intro_message(void);
 void intro_message(void);
 
@@ -6065,7 +5952,6 @@ void close_windows(buf_T *buf, int keep_curwin);
 int one_window(void);
 int win_close(win_T *win, int free_buf);
 void win_close_othertab(win_T *win, int free_buf, tabpage_T *tp);
-void win_free_all(void);
 win_T *winframe_remove(win_T *win, int *dirp, tabpage_T *tp);
 void close_others(int message, int forceit);
 void curwin_init(void);
@@ -6110,7 +5996,6 @@ void win_comp_scroll(win_T *wp);
 void command_height(void);
 void last_status(int morewin);
 int tabline_height(void);
-char_u *file_name_in_line(char_u *line, int col, int options, long count, char_u *rel_fname, linenr_T *file_lnum);
 int path_with_url(char_u *fname);
 int vim_isAbsName(char_u *name);
 int vim_FullName(char_u *fname, char_u *buf, int len, int force);
@@ -6265,7 +6150,6 @@ EXTERN int      no_wait_return INIT(= 0);   /* don't wait for return for now */
 EXTERN int      need_wait_return INIT(= 0); /* need to wait for return later */
 EXTERN int      did_wait_return INIT(= FALSE);  /* wait_return() was used and
                                                    nothing written since then */
-EXTERN int      need_maketitle INIT(= TRUE); /* call maketitle() soon */
 
 EXTERN int      quit_more INIT(= FALSE);    /* 'q' hit at "--more--" msg */
 EXTERN int      newline_on_exit INIT(= FALSE);  /* did msg in altern. screen */
@@ -6815,7 +6699,7 @@ EXTERN int  redir_vname INIT(= 0);      /* message redirection variable */
 
 EXTERN char     breakat_flags[256];     /* which characters are in 'breakat' */
 
-/* these are in main.c */
+/* these are in vim.c */
 extern char *shortVersion;
 extern char *longVersion;
 
@@ -6860,11 +6744,6 @@ EXTERN linenr_T sub_nlines;     /* total number of lines changed */
 
 /* table to store parsed 'wildmode' */
 EXTERN char_u   wim_flags[4];
-
-/* whether titlestring and iconstring contains statusline syntax */
-#define STL_IN_ICON    1
-#define STL_IN_TITLE   2
-EXTERN int      stl_syntax INIT(= 0);
 
 /* don't use 'hlsearch' temporarily */
 EXTERN int      no_hlsearch INIT(= FALSE);
@@ -7034,15 +6913,6 @@ EXTERN char *ignoredp;
 #define KEYLEN_PART_KEY -1      /* keylen value for incomplete key-code */
 #define KEYLEN_PART_MAP -2      /* keylen value for incomplete mapping */
 #define KEYLEN_REMOVED  9999    /* keylen value for removed sequence */
-
-/* Return value from get_option_value_strict */
-#define SOPT_BOOL       0x01    /* Boolean option */
-#define SOPT_NUM        0x02    /* Number option */
-#define SOPT_STRING     0x04    /* String option */
-#define SOPT_GLOBAL     0x08    /* Option has global value */
-#define SOPT_WIN        0x10    /* Option has window-local value */
-#define SOPT_BUF        0x20    /* Option has buffer-local value */
-#define SOPT_UNSET      0x40    /* Option does not have local value set */
 
 /* Option types for various functions in option.c */
 #define SREQ_GLOBAL     0       /* Request global option */
