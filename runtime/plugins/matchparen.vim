@@ -1,12 +1,9 @@
-" Vim plugin for showing matching parens
-" Maintainer:  Bram Moolenaar <Bram@vim.org>
-" Last Change: 2014 Jul 19
+" Vim plugin for showing matching parens.
 
 " Exit quickly when:
 " - this plugin was already loaded (or disabled)
-" - when 'compatible' is set
 " - the "CursorMoved" autocmd event is not available.
-if exists("g:loaded_matchparen") || &cp || !exists("##CursorMoved")
+if exists("g:loaded_matchparen") || !exists("##CursorMoved")
   finish
 endif
 let g:loaded_matchparen = 1
@@ -19,7 +16,7 @@ if !exists("g:matchparen_insert_timeout")
 endif
 
 augroup matchparen
-  " Replace all matchparen autocommands
+  " Replace all matchparen autocommands.
   autocmd! CursorMoved,CursorMovedI,WinEnter * call s:Highlight_Matching_Pair()
   if exists('##TextChanged')
     autocmd! TextChanged,TextChangedI * call s:Highlight_Matching_Pair()
@@ -43,9 +40,8 @@ function! s:Highlight_Matching_Pair()
     let w:paren_hl_on = 0
   endif
 
-  " Avoid that we remove the popup menu.
   " Return when there are no colors (looks like the cursor jumps).
-  if pumvisible() || (&t_Co < 8 && !has("gui_running"))
+  if &t_Co < 8
     return
   endif
 
@@ -85,30 +81,23 @@ function! s:Highlight_Matching_Pair()
     let c2 = '\]'
   endif
 
-  " Find the match.  When it was just before the cursor move it there for a
-  " moment.
+  " Find the match.
+  " When it was just before the cursor move it there for a moment.
   if before > 0
-    let has_getcurpos = exists("*getcurpos")
-    if has_getcurpos
-      " getcurpos() is more efficient but doesn't exist before 7.4.313.
-      let save_cursor = getcurpos()
-    else
-      let save_cursor = winsaveview()
-    endif
+    let save_cursor = getcurpos()
     call cursor(c_lnum, c_col - before)
   endif
 
-  " Build an expression that detects whether the current cursor position is in
-  " certain syntax types (string, comment, etc.), for use as searchpairpos()'s
-  " skip argument.
+  " Build an expression that detects whether the current cursor position is in certain
+  " syntax types (string, comment, etc.), for use as searchpairpos()'s skip argument.
   " We match "escape" for special items, such as lispEscapeSpecial.
   let s_skip = '!empty(filter(map(synstack(line("."), col(".")), ''synIDattr(v:val, "name")''), ' .
 	\ '''v:val =~? "string\\|character\\|singlequote\\|escape\\|comment"''))'
   " If executing the expression determines that the cursor is currently in
   " one of the syntax types, then we want searchpairpos() to find the pair
   " within those syntax types (i.e., not skip).  Otherwise, the cursor is
-  " outside of the syntax types and s_skip should keep its value so we skip any
-  " matching pair inside the syntax types.
+  " outside of the syntax types and s_skip should keep its value so we skip
+  " any matching pair inside the syntax types.
   execute 'if' s_skip '| let s_skip = 0 | endif'
 
   " Limit the search to lines visible in the window.
@@ -130,18 +119,18 @@ function! s:Highlight_Matching_Pair()
   try
     let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline, timeout)
   catch /E118/
-    " Can't use the timeout, restrict the stopline a bit more to avoid taking
-    " a long time on closed folds and long lines.
+    " Can't use the timeout, restrict the stopline a bit more to avoid
+    " taking a long time on closed folds and long lines.
     " The "viewable" variables give a range in which we can scroll while
     " keeping the cursor at the same position.
     " adjustedScrolloff accounts for very large numbers of scrolloff.
     let adjustedScrolloff = min([&scrolloff, (line('w$') - line('w0')) / 2])
     let bottom_viewable = min([line('$'), c_lnum + &lines - adjustedScrolloff - 2])
-    let top_viewable = max([1, c_lnum-&lines+adjustedScrolloff + 2])
-    " one of these stoplines will be adjusted below, but the current values are
-    " minimal boundaries within the current window
+    let top_viewable = max([1, c_lnum - &lines + adjustedScrolloff + 2])
+    " one of these stoplines will be adjusted below, but the current values
+    " are minimal boundaries within the current window
     if i % 2 == 0
-      if has("byte_offset") && has("syntax_items") && &smc > 0
+      if &smc > 0
 	let stopbyte = min([line2byte("$"), line2byte(".") + col(".") + &smc * 2])
 	let stopline = min([bottom_viewable, byte2line(stopbyte)])
       else
@@ -149,7 +138,7 @@ function! s:Highlight_Matching_Pair()
       endif
       let stoplinebottom = stopline
     else
-      if has("byte_offset") && has("syntax_items") && &smc > 0
+      if &smc > 0
 	let stopbyte = max([1, line2byte(".") + col(".") - &smc * 2])
 	let stopline = max([top_viewable, byte2line(stopbyte)])
       else
@@ -161,21 +150,12 @@ function! s:Highlight_Matching_Pair()
   endtry
 
   if before > 0
-    if has_getcurpos
-      call setpos('.', save_cursor)
-    else
-      call winrestview(save_cursor)
-    endif
+    call setpos('.', save_cursor)
   endif
 
   " If a match is found setup match highlighting.
   if m_lnum > 0 && m_lnum >= stoplinetop && m_lnum <= stoplinebottom 
-    if exists('*matchaddpos')
-      call matchaddpos('MatchParen', [[c_lnum, c_col - before], [m_lnum, m_col]], 10, 3)
-    else
-      exe '3match MatchParen /\(\%' . c_lnum . 'l\%' . (c_col - before) .
-	    \ 'c\)\|\(\%' . m_lnum . 'l\%' . m_col . 'c\)/'
-    endif
+    call matchaddpos('MatchParen', [[c_lnum, c_col - before], [m_lnum, m_col]], 10, 3)
     let w:paren_hl_on = 1
   endif
 endfunction
@@ -183,7 +163,7 @@ endfunction
 " Define commands that will disable and enable the plugin.
 command! NoMatchParen windo silent! call matchdelete(3) | unlet! g:loaded_matchparen |
 	  \ au! matchparen
-command! DoMatchParen runtime plugin/matchparen.vim | windo doau CursorMoved
+command! DoMatchParen runtime plugins/matchparen.vim | windo doau CursorMoved
 
 let &cpo = s:cpo_save
 unlet s:cpo_save
