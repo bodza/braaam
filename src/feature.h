@@ -67,11 +67,6 @@
 #endif
 
 /*
- * +folding             Fold lines.
- */
-#define FEAT_FOLDING
-
-/*
  * +digraphs            Digraphs.
  *                      In insert mode and on the command line you will be
  *                      able to use digraphs. The CTRL-K command will work.
@@ -176,34 +171,9 @@
 #undef FEAT_RIGHTLEFT
 
 /*
- * +emacs_tags          When FEAT_EMACS_TAGS defined: Include support for
- *                      emacs style TAGS file.
- */
-#undef FEAT_EMACS_TAGS
-
-/*
  * +tag_binary          Can use a binary search for the tags file.
  */
 #define FEAT_TAG_BINS
-
-/*
- * +tag_old_static      Old style static tags: "file:tag  file  ..".  Slows
- *                      down tag searching a bit.
- */
-#define FEAT_TAG_OLDSTATIC
-
-/*
- * +tag_any_white       Allow any white space to separate the fields in a tags
- *                      file.  When not defined, only a TAB is allowed.
- */
-/* #define FEAT_TAG_ANYWHITE */
-
-/*
- * +cscope              Unix only: Cscope support.
- */
-#if defined(FEAT_UNSURE) && !defined(FEAT_CSCOPE)
-#define FEAT_CSCOPE
-#endif
 
 /*
  * +eval                Built-in script language and expression evaluation,
@@ -258,14 +228,6 @@
 #define FEAT_AUTOCMD
 
 /*
- * +diff                Displaying diffs in a nice way.
- *                      Requires +windows and +autocmd.
- */
-#if defined(FEAT_WINDOWS) && defined(FEAT_AUTOCMD)
-#define FEAT_DIFF
-#endif
-
-/*
  * +title               'title' and 'icon' options
  * +statusline          'statusline', 'rulerformat' and special format of
  *                      'titlestring' and 'iconstring' options.
@@ -301,7 +263,6 @@
  * VIMINFO_FILE         Location of user .viminfo file (should start with $).
  * VIMINFO_FILE2        Location of alternate user .viminfo file.
  */
-#define FEAT_VIMINFO
 /* #define VIMINFO_FILE "$HOME/foo/.viminfo" */
 /* #define VIMINFO_FILE2 "~/bar/.viminfo" */
 
@@ -318,11 +279,6 @@
 #if defined(FEAT_UNSURE) && defined(FEAT_SYN_HL)
 #define FEAT_CONCEAL
 #endif
-
-/*
- * +spell               spell checking
- */
-#define FEAT_SPELL
 
 /*
  * +builtin_terms       Choose one out of the following four:
@@ -370,21 +326,6 @@
  */
 #define FEAT_COMMENTS
 
-/*
- * +cryptv              Encryption (by Mohsin Ahmed <mosh@sasi.com>).
- */
-#if !defined(FEAT_CRYPT)
-#define FEAT_CRYPT
-#endif
-
-/*
- * +mksession           ":mksession" command.
- *                      Requires +windows and +vertsplit.
- */
-#if defined(FEAT_WINDOWS) && defined(FEAT_VERTSPLIT)
-#define FEAT_SESSION
-#endif
-
 /* Define this if you want to use 16 bit Unicode only, reduces memory used for
  * the screen structures. */
 /* #define UNICODE16 */
@@ -401,7 +342,7 @@
 #if defined(HAVE_DLOPEN) && defined(HAVE_DLSYM)
 #define USE_DLOPEN
 #endif
-#if ((defined(USE_DLOPEN) || defined(HAVE_SHL_LOAD)))
+#if defined(USE_DLOPEN)
 #define FEAT_LIBCALL
 #endif
 
@@ -424,11 +365,6 @@
  */
 #define FEAT_MENU
 
-/* There are two ways to use XPM. */
-#if defined(HAVE_X11_XPM_H)
-#define HAVE_XPM 1
-#endif
-
 /*
  * +toolbar             Include code for a toolbar (for the Win32 GUI, GTK
  *                      always has it).  But only if menus are enabled.
@@ -436,12 +372,6 @@
 #if defined(FEAT_TOOLBAR) && !defined(FEAT_MENU)
 #define FEAT_MENU
 #endif
-
-/*
- * +browse              ":browse" command.
- *                      or just the ":browse" command modifier
- */
-#define FEAT_BROWSE_CMD
 
 /*
  * On some systems, when we compile with the GUI, we always use it.  On Mac
@@ -486,19 +416,6 @@
 /* #define DEBUG */
 
 /*
- * STARTUPTIME          Time the startup process.  Writes a file with
- *                      timestamps.
- */
-#if (defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H))
-#define STARTUPTIME 1
-#endif
-
-/*
- * MEM_PROFILE          Debugging of memory allocation and freeing.
- */
-/* #define MEM_PROFILE */
-
-/*
  * VIMRC_FILE           Name of the .vimrc file in current dir.
  */
 /* #define VIMRC_FILE   ".vimrc" */
@@ -538,14 +455,6 @@
  */
 /* #define USR_EXRC_FILE        "~/foo/.exrc" */
 /* #define USR_EXRC_FILE2       "~/bar/.exrc" */
-
-/*
- * USR_GVIMRC_FILE      Name of the user .gvimrc file.
- * USR_GVIMRC_FILE2     Name of the alternate user .gvimrc file.
- */
-/* #define USR_GVIMRC_FILE      "~/foo/.gvimrc" */
-/* #define USR_GVIMRC_FILE2     "~/bar/.gvimrc" */
-/* #define USR_GVIMRC_FILE3     "$VIM/.gvimrc" */
 
 /*
  * SYS_VIMRC_FILE       Name of the system-wide .vimrc file.
@@ -611,45 +520,22 @@
 /* #define RUNTIME_GLOBAL "/etc/vim" */
 
 /*
- * MODIFIED_BY          Name of who modified Vim.  Required when distributing
- *                      a modified version of Vim.
- *                      Also from the "--with-modified-by" configure argument.
- */
-/* #define MODIFIED_BY "John Doe" */
-
-/*
  * Machine dependent:
  * ==================
  */
 
 /*
  * +mouse_xterm         Unix only: Include code for xterm mouse handling.
- * +mouse_dec           idem, for Dec mouse handling.
- * +mouse_jsbterm       idem, for Jsbterm mouse handling.
- * +mouse_netterm       idem, for Netterm mouse handling.
- * (none)               MS-DOS mouse support.
- * +mouse_gpm           Unix only: Include code for Linux console mouse
- *                      handling.
- * +mouse_pterm         PTerm mouse support for QNX
- * +mouse_sgr           Unix only: Include code for for SGR-styled mouse.
- * +mouse_sysmouse      Unix only: Include code for FreeBSD and DragonFly
- *                      console mouse handling.
- * +mouse_urxvt         Unix only: Include code for for urxvt mosue handling.
+ * +mouse_gpm           Unix only: Include code for Linux console mouse handling.
+ * +mouse_sysmouse      Unix only: Include code for FreeBSD and DragonFly console mouse handling.
  * +mouse               Any mouse support (any of the above enabled).
  */
-/* OS/2 and Amiga console have no mouse support */
 #define FEAT_MOUSE_XTERM
-#undef FEAT_MOUSE_NET
-#undef FEAT_MOUSE_DEC
-#undef FEAT_MOUSE_URXVT
-#undef FEAT_MOUSE_SGR
 
 /*
  * Note: Only one of the following may be defined:
  * FEAT_MOUSE_GPM
  * FEAT_SYSMOUSE
- * FEAT_MOUSE_JSB
- * FEAT_MOUSE_PTERM
  */
 #if defined(HAVE_GPM)
 #define FEAT_MOUSE_GPM
@@ -660,17 +546,11 @@
 #endif
 
 /* urxvt is a small variation of mouse_xterm, and shares its code */
-#if defined(FEAT_MOUSE_URXVT) && !defined(FEAT_MOUSE_XTERM)
-#define FEAT_MOUSE_XTERM
-#endif
 
 /* sgr is a small variation of mouse_xterm, and shares its code */
-#if defined(FEAT_MOUSE_SGR) && !defined(FEAT_MOUSE_XTERM)
-#define FEAT_MOUSE_XTERM
-#endif
 
 /* Define FEAT_MOUSE when any of the above is defined or FEAT_GUI. */
-#if !defined(FEAT_MOUSE_TTY) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_NET) || defined(FEAT_MOUSE_DEC) || defined(DOS_MOUSE) || defined(FEAT_MOUSE_GPM) || defined(FEAT_MOUSE_JSB) || defined(FEAT_MOUSE_PTERM) || defined(FEAT_SYSMOUSE) || defined(FEAT_MOUSE_URXVT) || defined(FEAT_MOUSE_SGR))
+#if !defined(FEAT_MOUSE_TTY) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE))
 #define FEAT_MOUSE_TTY         /* include non-GUI mouse support */
 #endif
 #if !defined(FEAT_MOUSE) && defined(FEAT_MOUSE_TTY)
@@ -683,25 +563,10 @@
  *                      in an xterm like in the GUI.
  */
 
-#if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
-#define FEAT_CLIPBOARD
-#endif
-
-/*
- * +dnd         Drag'n'drop support.  Always used for the GTK+ GUI.
- */
-
-#if defined(MSWIN_FIND_REPLACE)
-#define FIND_REPLACE_DIALOG 1
-#endif
-
 /*
  * +clientserver        Remote control via the remote_send() function
  *                      and the --remote argument
  */
-#if defined(FEAT_XCLIPBOARD)
-#define FEAT_CLIENTSERVER
-#endif
 
 /*
  * +termresponse        send t_RV to obtain terminal response.  Used for xterm
@@ -716,40 +581,10 @@
  * cursor shape         Adjust the shape of the cursor to the mode.
  * mouse shape          Adjust the shape of the mouse pointer to the mode.
  */
-/* MS-DOS console and Win32 console can change cursor shape */
 
 /* GUI and some consoles can change the shape of the cursor.  The code is also
  * needed for the 'mouseshape' and 'concealcursor' options. */
 #define CURSOR_SHAPE
-
-/*
- * +ARP                 Amiga only. Use arp.library, DOS 2.0 is not required.
- */
-#if !defined(NO_ARP)
-#define FEAT_ARP
-#endif
-
-/*
- * +GUI_Athena          To compile Vim with or without the GUI (gvim) you have
- * +GUI_Motif           to edit the Makefile.
- */
-
-/*
- * +ole                 Win32 OLE automation: Use Makefile.ovc.
- */
-
-/*
- * These features can only be included by using a configure argument.  See the
- * Makefile for a line to uncomment.
- * +lua                 Lua interface: "--enable-luainterp"
- * +mzscheme            MzScheme interface: "--enable-mzscheme"
- * +perl                Perl interface: "--enable-perlinterp"
- * +python              Python interface: "--enable-pythoninterp"
- * +tcl                 TCL interface: "--enable-tclinterp"
- * +sniff               Sniff interface: "--enable-sniff"
- * +sun_workshop        Sun Workshop integration
- * +netbeans_intg       Netbeans integration
- */
 
 /*
  * These features are automatically detected:
@@ -758,22 +593,8 @@
  */
 
 /*
- * The Sun Workshop features currently only work with Motif.
- */
-
-/*
- * The Netbeans feature requires +listcmds and +eval.
- */
-
-/*
  * +signs               Allow signs to be displayed to the left of text lines.
  *                      Adds the ":sign" command.
- */
-
-/*
- * +balloon_eval        Allow balloon expression evaluation. Used with a
- *                      debugger and for tooltips.
- *                      Only for GUIs where it was implemented.
  */
 
 /*

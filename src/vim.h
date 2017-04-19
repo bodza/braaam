@@ -27,52 +27,17 @@
 
 /* Check support for rendering options */
 
-/* Visual Studio 2005 has 'deprecated' many of the standard CRT functions */
-#if _MSC_VER >= 1400
-#define _CRT_SECURE_NO_DEPRECATE
-#define _CRT_NONSTDC_NO_DEPRECATE
-#endif
-
 #include "feature.h"    /* #defines for optionals and features */
-
-#if defined(NO_X11_INCLUDES)
-    /* In os_mac_conv.c and os_macosx.m NO_X11_INCLUDES is defined to avoid
-     * X11 headers.  Disable all X11 related things to avoid conflicts. */
-#if defined(FEAT_XCLIPBOARD)
-#undef FEAT_XCLIPBOARD
-#endif
-#if defined(FEAT_CLIENTSERVER)
-#undef FEAT_CLIENTSERVER
-#endif
-#endif
 
 /* Can't use "PACKAGE" here, conflicts with a Perl include file. */
 #if !defined(VIMPACKAGE)
 #define VIMPACKAGE     "vim"
 #endif
 
-/*
- * Find out if function definitions should include argument types
- */
-
-#if defined(_DCC)
-#include <clib/exec_protos.h>
-#define __ARGS(x)  x
-#endif
-
 #include "os_unix.h"       /* bring lots of system header files */
 
 #if !defined(__ARGS)
-#if defined(__STDC__) || defined(__GNUC__)
 #define __ARGS(x) x
-#else
-#define __ARGS(x) ()
-#endif
-#endif
-
-/* __ARGS and __PARMS are the same thing. */
-#if !defined(__PARMS)
-#define __PARMS(x) __ARGS(x)
 #endif
 
 /* Mark unused function arguments with UNUSED, so that gcc -Wunused-parameter
@@ -94,9 +59,7 @@
 #include "osdef.h"     /* bring missing declarations in */
 #endif
 
-#if defined(X_LOCALE)
-#include <X11/Xlocale.h>
-#else
+#if (1)
 #if defined(HAVE_LOCALE_H)
 #include <locale.h>
 #endif
@@ -113,9 +76,7 @@
 #define MAXPATHL  256
 #endif
 #endif
-#if defined(BACKSLASH_IN_FILENAME)
-#define PATH_ESC_CHARS ((char_u *)" \t\n*?[{`%#'\"|!<")
-#else
+#if (1)
 #define PATH_ESC_CHARS ((char_u *)" \t\n*?[{`$\\%#'\"|!<")
 #define SHELL_ESC_CHARS ((char_u *)" \t\n*?[{`$\\%#'\"|!<>();&")
 #endif
@@ -138,9 +99,7 @@ typedef unsigned int    int_u;
    * __w64 should appear only on the 32-bit definition of the typedef.
    * Define __w64 as an empty token for everything but MSVC 7.x or later.
    */
-#if !defined(_MSC_VER) || (_MSC_VER < 1300)
 #define __w64
-#endif
 typedef unsigned long __w64     long_u;
 typedef          long __w64     long_i;
 #define SCANF_HEX_LONG_U       "%lx"
@@ -188,15 +147,7 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #include "term.h"
 #include "macros.h"
 
-#if defined(LATTICE)
-#include <sys/types.h>
-#include <sys/stat.h>
-#endif
-#if defined(_DCC)
-#include <sys/stat.h>
-#endif
-
-#if defined(HAVE_ERRNO_H) || defined(DJGPP)
+#if defined(HAVE_ERRNO_H)
 #include <errno.h>
 #endif
 
@@ -238,43 +189,10 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
  */
 
 /*
- * For dynamically loaded gettext library.  Currently, only for Win32.
- */
-#if defined(DYNAMIC_GETTEXT)
-#if !defined(FEAT_GETTEXT)
-#define FEAT_GETTEXT
-#endif
-/* These are in os_win32.c */
-extern char *(*dyn_libintl_gettext)(const char *msgid);
-extern char *(*dyn_libintl_bindtextdomain)(const char *domainname, const char *dirname);
-extern char *(*dyn_libintl_bind_textdomain_codeset)(const char *domainname, const char *codeset);
-extern char *(*dyn_libintl_textdomain)(const char *domainname);
-#endif
-
-/*
  * The _() stuff is for using gettext().  It is a no-op when libintl.h is not
  * found or the +multilang feature is disabled.
  */
-#if defined(FEAT_GETTEXT)
-#if defined(DYNAMIC_GETTEXT)
-#define _(x) (*dyn_libintl_gettext)((char *)(x))
-#define N_(x) x
-#define bindtextdomain(domain, dir) (*dyn_libintl_bindtextdomain)((domain), (dir))
-#define bind_textdomain_codeset(domain, codeset) (*dyn_libintl_bind_textdomain_codeset)((domain), (codeset))
-#if !defined(HAVE_BIND_TEXTDOMAIN_CODESET)
-#define HAVE_BIND_TEXTDOMAIN_CODESET 1
-#endif
-#define textdomain(domain) (*dyn_libintl_textdomain)(domain)
-#else
-#include <libintl.h>
-#define _(x) gettext((char *)(x))
-#if defined(gettext_noop)
-#define N_(x) gettext_noop(x)
-#else
-#define N_(x) x
-#endif
-#endif
-#else
+#if (1)
 #define _(x) ((char *)(x))
 #define N_(x) x
 #if defined(bindtextdomain)
@@ -812,9 +730,6 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 #define TAG_NAMES       2       /* only return name of tag */
 #define TAG_REGEXP      4       /* use tag pattern as regexp */
 #define TAG_NOIC        8       /* don't always ignore case */
-#if defined(FEAT_CSCOPE)
-#define TAG_CSCOPE     16      /* cscope tag */
-#endif
 #define TAG_VERBOSE     32      /* message verbosity */
 #define TAG_INS_COMP    64      /* Currently doing insert completion */
 #define TAG_KEEP_LANG   128     /* keep current language */
@@ -1367,7 +1282,7 @@ int vim_memcmp __ARGS((void *, void *, size_t));
  * plus six following composing characters of three bytes each. */
 #define MB_MAXBYTES    21
 
-#if (defined(FEAT_PROFILE) || defined(FEAT_RELTIME))
+#if defined(FEAT_RELTIME)
 typedef struct timeval proftime_T;
 #else
 typedef int proftime_T;     /* dummy for function prototypes */
@@ -1376,8 +1291,6 @@ typedef int proftime_T;     /* dummy for function prototypes */
 /* Include option.h before structs.h, because the number of window-local and
  * buffer-local options is used there. */
 #include "option.h"         /* options and default values */
-
-/* Note that gui.h is included by structs.h */
 
 #include "structs.h"        /* file that defines many structures */
 
@@ -1562,14 +1475,6 @@ typedef struct VimClipboard
     short_u     state;          /* Current selection state */
     short_u     mode;           /* Select by char, word, or line. */
 
-#if defined(FEAT_XCLIPBOARD)
-    Atom        sel_atom;       /* PRIMARY/CLIPBOARD selection ID */
-#endif
-
-#if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
-    int_u       format;         /* Vim's own special clipboard format */
-    int_u       format_raw;     /* Vim's raw text clipboard format */
-#endif
 } VimClipboard;
 #else
 typedef int VimClipboard;       /* This is required for the prototypes. */
@@ -1613,47 +1518,9 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
  * NOTE: Motif only uses the very first pattern.  Therefore
  * BROWSE_FILTER_DEFAULT should start with a "*" pattern.
  */
-#if defined(FEAT_BROWSE)
-#if defined(BACKSLASH_IN_FILENAME)
-#define BROWSE_FILTER_MACROS \
-        (char_u *)"Vim macro files (*.vim)\t*.vim\nAll Files (*.*)\t*.*\n"
-#define BROWSE_FILTER_ALL_FILES (char_u *)"All Files (*.*)\t*.*\n"
-#define BROWSE_FILTER_DEFAULT \
-        (char_u *)"All Files (*.*)\t*.*\nC source (*.c, *.h)\t*.c;*.h\nC++ source (*.cpp, *.hpp)\t*.cpp;*.hpp\nVB code (*.bas, *.frm)\t*.bas;*.frm\nVim files (*.vim, _vimrc, _gvimrc)\t*.vim;_vimrc;_gvimrc\n"
-#else
-#define BROWSE_FILTER_MACROS \
-        (char_u *)"Vim macro files (*.vim)\t*.vim\nAll Files (*)\t*\n"
-#define BROWSE_FILTER_ALL_FILES (char_u *)"All Files (*)\t*\n"
-#define BROWSE_FILTER_DEFAULT \
-        (char_u *)"All Files (*)\t*\nC source (*.c, *.h)\t*.c;*.h\nC++ source (*.cpp, *.hpp)\t*.cpp;*.hpp\nVim files (*.vim, _vimrc, _gvimrc)\t*.vim;_vimrc;_gvimrc\n"
-#endif
-#define BROWSE_SAVE 1      /* flag for do_browse() */
-#define BROWSE_DIR 2       /* flag for do_browse() */
-#endif
-
-#if defined(_MSC_VER)
-/* Avoid useless warning "conversion from X to Y of greater size". */
-#pragma warning(disable : 4312)
-/* Avoid warning for old style function declarators */
-#pragma warning(disable : 4131)
-/* Avoid warning for conversion to type with smaller range */
-#pragma warning(disable : 4244)
-/* Avoid warning for conversion to larger size */
-#pragma warning(disable : 4306)
-/* Avoid warning for unreferenced formal parameter */
-#pragma warning(disable : 4100)
-/* Avoid warning for differs in indirection to slightly different base type */
-#pragma warning(disable : 4057)
-/* Avoid warning for constant conditional expression */
-#pragma warning(disable : 4127)
-/* Avoid warning for assignment within conditional */
-#pragma warning(disable : 4706)
-#endif
 
 /* Note: a NULL argument for vim_realloc() is not portable, don't use it. */
-#if defined(MEM_PROFILE)
-#define vim_realloc(ptr, size)  mem_realloc((ptr), (size))
-#else
+#if (1)
 #define vim_realloc(ptr, size)  realloc((ptr), (size))
 #endif
 
@@ -1723,16 +1590,7 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 
 #define X_DISPLAY     xterm_dpy
 
-#if defined(FEAT_BROWSE) && defined(GTK_CHECK_VERSION)
-#if GTK_CHECK_VERSION(2,4,0)
-#define USE_FILE_CHOOSER
-#endif
-#endif
-
-#undef NBDEBUG
-#if defined(NBDEBUG) /* Netbeans debugging. */
-#include "nbdebug.h"
-#else
+#if (1)
 #define nbdebug(a)
 #endif
 

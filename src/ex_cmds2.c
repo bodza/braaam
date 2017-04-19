@@ -16,41 +16,10 @@ typedef struct scriptitem_S
     int         sn_dev_valid;
     dev_t       sn_dev;
     ino_t       sn_ino;
-#if defined(FEAT_PROFILE)
-    int         sn_prof_on;     /* TRUE when script is/was profiled */
-    int         sn_pr_force;    /* forceit: profile functions in this script */
-    proftime_T  sn_pr_child;    /* time set when going into first child */
-    int         sn_pr_nest;     /* nesting for sn_pr_child */
-    /* profiling the script as a whole */
-    int         sn_pr_count;    /* nr of times sourced */
-    proftime_T  sn_pr_total;    /* time spent in script + children */
-    proftime_T  sn_pr_self;     /* time spent in script itself */
-    proftime_T  sn_pr_start;    /* time at script start */
-    proftime_T  sn_pr_children; /* time in children after script start */
-    /* profiling the script per line */
-    garray_T    sn_prl_ga;      /* things stored for every line */
-    proftime_T  sn_prl_start;   /* start time for current line */
-    proftime_T  sn_prl_children; /* time spent in children for this line */
-    proftime_T  sn_prl_wait;    /* wait start time for current line */
-    int         sn_prl_idx;     /* index of line being timed; -1 if none */
-    int         sn_prl_execed;  /* line being timed was executed */
-#endif
 } scriptitem_T;
 
 static garray_T script_items = {0, 0, sizeof(scriptitem_T), 4, NULL};
 #define SCRIPT_ITEM(id) (((scriptitem_T *)script_items.ga_data)[(id) - 1])
-
-#if defined(FEAT_PROFILE)
-/* Struct used in sn_prl_ga for every line of a script. */
-typedef struct sn_prl_S
-{
-    int         snp_count;      /* nr of times line was executed */
-    proftime_T  sn_prl_total;   /* time spent in a line + children */
-    proftime_T  sn_prl_self;    /* time spent in a line itself */
-} sn_prl_T;
-
-#define PRL_ITEM(si, idx)     (((sn_prl_T *)(si)->sn_prl_ga.ga_data)[(idx)])
-#endif
 
 static int debug_greedy = FALSE;        /* batch mode debugging: don't save
                                            and restore typeahead. */
@@ -391,10 +360,6 @@ static garray_T dbg_breakp = {0, 0, sizeof(struct debuggy), 4, NULL};
 #define DEBUGGY(gap, idx)       (((struct debuggy *)gap->ga_data)[idx])
 static int last_breakp = 0;     /* nr of last defined breakpoint */
 
-#if defined(FEAT_PROFILE)
-/* Profiling uses file and func names similar to breakpoints. */
-static garray_T prof_ga = {0, 0, sizeof(struct debuggy), 4, NULL};
-#endif
 #define DBG_FUNC        1
 #define DBG_FILE        2
 
@@ -427,9 +392,6 @@ dbg_parsearg(arg, gap)
     else if (STRNCMP(p, "file", 4) == 0)
         bp->dbg_type = DBG_FILE;
     else if (
-#if defined(FEAT_PROFILE)
-            gap != &prof_ga &&
-#endif
             STRNCMP(p, "here", 4) == 0)
     {
         if (curbuf->b_ffname == NULL)
@@ -451,9 +413,6 @@ dbg_parsearg(arg, gap)
     if (here)
         bp->dbg_lnum = curwin->w_cursor.lnum;
     else if (
-#if defined(FEAT_PROFILE)
-            gap != &prof_ga &&
-#endif
             VIM_ISDIGIT(*p))
     {
         bp->dbg_lnum = getdigits(&p);
@@ -513,10 +472,6 @@ ex_breakadd(eap)
     garray_T    *gap;
 
     gap = &dbg_breakp;
-#if defined(FEAT_PROFILE)
-    if (eap->cmdidx == CMD_profile)
-        gap = &prof_ga;
-#endif
 
     if (dbg_parsearg(eap->arg, gap) == OK)
     {
@@ -535,9 +490,6 @@ ex_breakadd(eap)
         {
             if (bp->dbg_lnum == 0)      /* default line number is 1 */
                 bp->dbg_lnum = 1;
-#if defined(FEAT_PROFILE)
-            if (eap->cmdidx != CMD_profile)
-#endif
             {
                 DEBUGGY(gap, gap->ga_len).dbg_nr = ++last_breakp;
                 ++debug_tick;
@@ -578,9 +530,7 @@ ex_breakdel(eap)
     gap = &dbg_breakp;
     if (eap->cmdidx == CMD_profdel)
     {
-#if defined(FEAT_PROFILE)
-        gap = &prof_ga;
-#else
+#if (1)
         ex_ni(eap);
         return;
 #endif
@@ -637,9 +587,6 @@ ex_breakdel(eap)
             if (todel < gap->ga_len)
                 mch_memmove(&DEBUGGY(gap, todel), &DEBUGGY(gap, todel + 1),
                               (gap->ga_len - todel) * sizeof(struct debuggy));
-#if defined(FEAT_PROFILE)
-            if (eap->cmdidx == CMD_breakdel)
-#endif
                 ++debug_tick;
             if (!del_all)
                 break;
@@ -690,21 +637,6 @@ dbg_find_breakpoint(file, fname, after)
     return debuggy_find(file, fname, after, &dbg_breakp, NULL);
 }
 
-#if defined(FEAT_PROFILE)
-/*
- * Return TRUE if profiling is on for a function or sourced file.
- */
-    int
-has_profiling(file, fname, fp)
-    int         file;       /* TRUE for a file, FALSE for a function */
-    char_u      *fname;     /* file or function name */
-    int         *fp;        /* return: forceit */
-{
-    return (debuggy_find(file, fname, (linenr_T)0, &prof_ga, fp)
-                                                              != (linenr_T)0);
-}
-#endif
-
 /*
  * Common code for dbg_find_breakpoint() and has_profiling().
  */
@@ -745,9 +677,6 @@ debuggy_find(file, fname, after, gap, fp)
          * an already found breakpoint. */
         bp = &DEBUGGY(gap, i);
         if (((bp->dbg_type == DBG_FILE) == file && (
-#if defined(FEAT_PROFILE)
-                gap == &prof_ga ||
-#endif
                 (bp->dbg_lnum > after && (lnum == 0 || bp->dbg_lnum < lnum)))))
         {
             /*
@@ -785,7 +714,7 @@ dbg_breakpoint(name, lnum)
     debug_breakpoint_lnum = lnum;
 }
 
-#if defined(FEAT_PROFILE) || defined(FEAT_RELTIME)
+#if defined(FEAT_RELTIME)
 /*
  * Store the current time in "tm".
  */
@@ -920,384 +849,6 @@ profile_divide(tm, count, tm2)
 }
 #endif
 
-#if defined(FEAT_PROFILE)
-/*
- * Functions for profiling.
- */
-static void script_do_profile __ARGS((scriptitem_T *si));
-static void script_dump_profile __ARGS((FILE *fd));
-static proftime_T prof_wait_time;
-
-/*
- * Add the time "tm2" to "tm".
- */
-    void
-profile_add(tm, tm2)
-    proftime_T *tm, *tm2;
-{
-    tm->tv_usec += tm2->tv_usec;
-    tm->tv_sec += tm2->tv_sec;
-    if (tm->tv_usec >= 1000000)
-    {
-        tm->tv_usec -= 1000000;
-        ++tm->tv_sec;
-    }
-}
-
-/*
- * Add the "self" time from the total time and the children's time.
- */
-    void
-profile_self(self, total, children)
-    proftime_T *self, *total, *children;
-{
-    /* Check that the result won't be negative.  Can happen with recursive
-     * calls. */
-    if (total->tv_sec < children->tv_sec
-            || (total->tv_sec == children->tv_sec
-                && total->tv_usec <= children->tv_usec))
-        return;
-    profile_add(self, total);
-    profile_sub(self, children);
-}
-
-/*
- * Get the current waittime.
- */
-    void
-profile_get_wait(tm)
-    proftime_T *tm;
-{
-    *tm = prof_wait_time;
-}
-
-/*
- * Subtract the passed waittime since "tm" from "tma".
- */
-    void
-profile_sub_wait(tm, tma)
-    proftime_T *tm, *tma;
-{
-    proftime_T tm3 = prof_wait_time;
-
-    profile_sub(&tm3, tm);
-    profile_sub(tma, &tm3);
-}
-
-/*
- * Return TRUE if "tm1" and "tm2" are equal.
- */
-    int
-profile_equal(tm1, tm2)
-    proftime_T *tm1, *tm2;
-{
-    return (tm1->tv_usec == tm2->tv_usec && tm1->tv_sec == tm2->tv_sec);
-}
-
-/*
- * Return <0, 0 or >0 if "tm1" < "tm2", "tm1" == "tm2" or "tm1" > "tm2"
- */
-    int
-profile_cmp(tm1, tm2)
-    const proftime_T *tm1, *tm2;
-{
-    if (tm1->tv_sec == tm2->tv_sec)
-        return tm2->tv_usec - tm1->tv_usec;
-    return tm2->tv_sec - tm1->tv_sec;
-}
-
-static char_u   *profile_fname = NULL;
-static proftime_T pause_time;
-
-/*
- * ":profile cmd args"
- */
-    void
-ex_profile(eap)
-    exarg_T     *eap;
-{
-    char_u      *e;
-    int         len;
-
-    e = skiptowhite(eap->arg);
-    len = (int)(e - eap->arg);
-    e = skipwhite(e);
-
-    if (len == 5 && STRNCMP(eap->arg, "start", 5) == 0 && *e != NUL)
-    {
-        vim_free(profile_fname);
-        profile_fname = vim_strsave(e);
-        do_profiling = PROF_YES;
-        profile_zero(&prof_wait_time);
-        set_vim_var_nr(VV_PROFILING, 1L);
-    }
-    else if (do_profiling == PROF_NONE)
-        EMSG(_("E750: First use \":profile start {fname}\""));
-    else if (STRCMP(eap->arg, "pause") == 0)
-    {
-        if (do_profiling == PROF_YES)
-            profile_start(&pause_time);
-        do_profiling = PROF_PAUSED;
-    }
-    else if (STRCMP(eap->arg, "continue") == 0)
-    {
-        if (do_profiling == PROF_PAUSED)
-        {
-            profile_end(&pause_time);
-            profile_add(&prof_wait_time, &pause_time);
-        }
-        do_profiling = PROF_YES;
-    }
-    else
-    {
-        /* The rest is similar to ":breakadd". */
-        ex_breakadd(eap);
-    }
-}
-
-/* Command line expansion for :profile. */
-static enum
-{
-    PEXP_SUBCMD,        /* expand :profile sub-commands */
-    PEXP_FUNC           /* expand :profile func {funcname} */
-} pexpand_what;
-
-static char *pexpand_cmds[] = {
-                        "start",
-#define PROFCMD_START   0
-                        "pause",
-#define PROFCMD_PAUSE   1
-                        "continue",
-#define PROFCMD_CONTINUE 2
-                        "func",
-#define PROFCMD_FUNC    3
-                        "file",
-#define PROFCMD_FILE    4
-                        NULL
-#define PROFCMD_LAST    5
-};
-
-/*
- * Function given to ExpandGeneric() to obtain the profile command
- * specific expansion.
- */
-    char_u *
-get_profile_name(xp, idx)
-    expand_T    *xp UNUSED;
-    int         idx;
-{
-    switch (pexpand_what)
-    {
-    case PEXP_SUBCMD:
-        return (char_u *)pexpand_cmds[idx];
-    /* case PEXP_FUNC: TODO */
-    default:
-        return NULL;
-    }
-}
-
-/*
- * Handle command line completion for :profile command.
- */
-    void
-set_context_in_profile_cmd(xp, arg)
-    expand_T    *xp;
-    char_u      *arg;
-{
-    char_u      *end_subcmd;
-
-    /* Default: expand subcommands. */
-    xp->xp_context = EXPAND_PROFILE;
-    pexpand_what = PEXP_SUBCMD;
-    xp->xp_pattern = arg;
-
-    end_subcmd = skiptowhite(arg);
-    if (*end_subcmd == NUL)
-        return;
-
-    if (end_subcmd - arg == 5 && STRNCMP(arg, "start", 5) == 0)
-    {
-        xp->xp_context = EXPAND_FILES;
-        xp->xp_pattern = skipwhite(end_subcmd);
-        return;
-    }
-
-    /* TODO: expand function names after "func" */
-    xp->xp_context = EXPAND_NOTHING;
-}
-
-/*
- * Dump the profiling info.
- */
-    void
-profile_dump()
-{
-    FILE        *fd;
-
-    if (profile_fname != NULL)
-    {
-        fd = mch_fopen((char *)profile_fname, "w");
-        if (fd == NULL)
-            EMSG2(_(e_notopen), profile_fname);
-        else
-        {
-            script_dump_profile(fd);
-            func_dump_profile(fd);
-            fclose(fd);
-        }
-    }
-}
-
-/*
- * Start profiling script "fp".
- */
-    static void
-script_do_profile(si)
-    scriptitem_T    *si;
-{
-    si->sn_pr_count = 0;
-    profile_zero(&si->sn_pr_total);
-    profile_zero(&si->sn_pr_self);
-
-    ga_init2(&si->sn_prl_ga, sizeof(sn_prl_T), 100);
-    si->sn_prl_idx = -1;
-    si->sn_prof_on = TRUE;
-    si->sn_pr_nest = 0;
-}
-
-/*
- * save time when starting to invoke another script or function.
- */
-    void
-script_prof_save(tm)
-    proftime_T  *tm;        /* place to store wait time */
-{
-    scriptitem_T    *si;
-
-    if (current_SID > 0 && current_SID <= script_items.ga_len)
-    {
-        si = &SCRIPT_ITEM(current_SID);
-        if (si->sn_prof_on && si->sn_pr_nest++ == 0)
-            profile_start(&si->sn_pr_child);
-    }
-    profile_get_wait(tm);
-}
-
-/*
- * Count time spent in children after invoking another script or function.
- */
-    void
-script_prof_restore(tm)
-    proftime_T  *tm;
-{
-    scriptitem_T    *si;
-
-    if (current_SID > 0 && current_SID <= script_items.ga_len)
-    {
-        si = &SCRIPT_ITEM(current_SID);
-        if (si->sn_prof_on && --si->sn_pr_nest == 0)
-        {
-            profile_end(&si->sn_pr_child);
-            profile_sub_wait(tm, &si->sn_pr_child); /* don't count wait time */
-            profile_add(&si->sn_pr_children, &si->sn_pr_child);
-            profile_add(&si->sn_prl_children, &si->sn_pr_child);
-        }
-    }
-}
-
-static proftime_T inchar_time;
-
-/*
- * Called when starting to wait for the user to type a character.
- */
-    void
-prof_inchar_enter()
-{
-    profile_start(&inchar_time);
-}
-
-/*
- * Called when finished waiting for the user to type a character.
- */
-    void
-prof_inchar_exit()
-{
-    profile_end(&inchar_time);
-    profile_add(&prof_wait_time, &inchar_time);
-}
-
-/*
- * Dump the profiling results for all scripts in file "fd".
- */
-    static void
-script_dump_profile(fd)
-    FILE    *fd;
-{
-    int             id;
-    scriptitem_T    *si;
-    int             i;
-    FILE            *sfd;
-    sn_prl_T        *pp;
-
-    for (id = 1; id <= script_items.ga_len; ++id)
-    {
-        si = &SCRIPT_ITEM(id);
-        if (si->sn_prof_on)
-        {
-            fprintf(fd, "SCRIPT  %s\n", si->sn_name);
-            if (si->sn_pr_count == 1)
-                fprintf(fd, "Sourced 1 time\n");
-            else
-                fprintf(fd, "Sourced %d times\n", si->sn_pr_count);
-            fprintf(fd, "Total time: %s\n", profile_msg(&si->sn_pr_total));
-            fprintf(fd, " Self time: %s\n", profile_msg(&si->sn_pr_self));
-            fprintf(fd, "\n");
-            fprintf(fd, "count  total (s)   self (s)\n");
-
-            sfd = mch_fopen((char *)si->sn_name, "r");
-            if (sfd == NULL)
-                fprintf(fd, "Cannot open file!\n");
-            else
-            {
-                for (i = 0; i < si->sn_prl_ga.ga_len; ++i)
-                {
-                    if (vim_fgets(IObuff, IOSIZE, sfd))
-                        break;
-                    pp = &PRL_ITEM(si, i);
-                    if (pp->snp_count > 0)
-                    {
-                        fprintf(fd, "%5d ", pp->snp_count);
-                        if (profile_equal(&pp->sn_prl_total, &pp->sn_prl_self))
-                            fprintf(fd, "           ");
-                        else
-                            fprintf(fd, "%s ", profile_msg(&pp->sn_prl_total));
-                        fprintf(fd, "%s ", profile_msg(&pp->sn_prl_self));
-                    }
-                    else
-                        fprintf(fd, "                            ");
-                    fprintf(fd, "%s", IObuff);
-                }
-                fclose(sfd);
-            }
-            fprintf(fd, "\n");
-        }
-    }
-}
-
-/*
- * Return TRUE when a function defined in the current script should be
- * profiled.
- */
-    int
-prof_def_func()
-{
-    if (current_SID > 0)
-        return SCRIPT_ITEM(current_SID).sn_pr_force;
-    return FALSE;
-}
-
-#endif
-
 /*
  * If 'autowrite' option set, try to write the file.
  * Careful: autocommands may make "buf" invalid!
@@ -1375,9 +926,6 @@ check_changed(buf, flags)
                 for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
                     if (bufIsChanged(buf2)
                                      && (buf2->b_ffname != NULL
-#if defined(FEAT_BROWSE)
-                                         || cmdmod.browse
-#endif
                                         ))
                         ++count;
 #if defined(FEAT_AUTOCMD)
@@ -1404,30 +952,6 @@ check_changed(buf, flags)
 }
 
 #if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
-
-#if defined(FEAT_BROWSE)
-/*
- * When wanting to write a file without a file name, ask the user for a name.
- */
-    void
-browse_save_fname(buf)
-    buf_T       *buf;
-{
-    if (buf->b_fname == NULL)
-    {
-        char_u *fname;
-
-        fname = do_browse(BROWSE_SAVE, (char_u *)_("Save As"),
-                                                 NULL, NULL, NULL, NULL, buf);
-        if (fname != NULL)
-        {
-            if (setfname(buf, fname, NULL, TRUE) == OK)
-                buf->b_flags |= BF_NOTEDITED;
-            vim_free(fname);
-        }
-    }
-}
-#endif
 
 /*
  * Ask the user what to do when abandoning a changed buffer.
@@ -1457,10 +981,6 @@ dialog_changed(buf, checkall)
 
     if (ret == VIM_YES)
     {
-#if defined(FEAT_BROWSE)
-        /* May get file name, when there is none */
-        browse_save_fname(buf);
-#endif
         if (buf->b_fname != NULL && check_overwrite(&ea, buf,
                                     buf->b_fname, buf->b_ffname, FALSE) == OK)
             /* didn't hit Cancel */
@@ -1481,16 +1001,9 @@ dialog_changed(buf, checkall)
         {
             if (bufIsChanged(buf2)
                     && (buf2->b_ffname != NULL
-#if defined(FEAT_BROWSE)
-                        || cmdmod.browse
-#endif
                         )
                     && !buf2->b_p_ro)
             {
-#if defined(FEAT_BROWSE)
-                /* May get file name, when there is none */
-                browse_save_fname(buf2);
-#endif
                 if (buf2->b_fname != NULL && check_overwrite(&ea, buf2,
                                   buf2->b_fname, buf2->b_ffname, FALSE) == OK)
                     /* didn't hit Cancel */
@@ -2818,21 +2331,6 @@ ex_options(eap)
 ex_source(eap)
     exarg_T     *eap;
 {
-#if defined(FEAT_BROWSE)
-    if (cmdmod.browse)
-    {
-        char_u *fname = NULL;
-
-        fname = do_browse(0, (char_u *)_("Source Vim script"), eap->arg,
-                                      NULL, NULL, BROWSE_FILTER_MACROS, NULL);
-        if (fname != NULL)
-        {
-            cmd_source(fname, eap);
-            vim_free(fname);
-        }
-    }
-    else
-#endif
         cmd_source(eap->arg, eap);
 }
 
@@ -2975,13 +2473,6 @@ do_source(fname, check_other, is_vimrc)
     scriptitem_T            *si = NULL;
     struct stat             st;
     int                     stat_ok;
-#if defined(STARTUPTIME)
-    struct timeval          tv_rel;
-    struct timeval          tv_start;
-#endif
-#if defined(FEAT_PROFILE)
-    proftime_T              wait_start;
-#endif
 
     p = expand_env_save(fname);
     if (p == NULL)
@@ -3131,16 +2622,6 @@ do_source(fname, check_other, is_vimrc)
         }
     }
 
-#if defined(STARTUPTIME)
-    if (time_fd != NULL)
-        time_push(&tv_rel, &tv_start);
-#endif
-
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        prof_child_enter(&wait_start);          /* entering a child now */
-#endif
-
     /* Don't use local function variables, if called from a function.
      * Also starts profiling timer for nested script. */
     save_funccalp = save_funccal();
@@ -3175,9 +2656,6 @@ do_source(fname, check_other, is_vimrc)
         {
             ++script_items.ga_len;
             SCRIPT_ITEM(script_items.ga_len).sn_name = NULL;
-#if defined(FEAT_PROFILE)
-            SCRIPT_ITEM(script_items.ga_len).sn_prof_on = FALSE;
-#endif
         }
         si = &SCRIPT_ITEM(current_SID);
         si->sn_name = fname_exp;
@@ -3195,48 +2673,12 @@ do_source(fname, check_other, is_vimrc)
         new_script_vars(current_SID);
     }
 
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-    {
-        int     forceit;
-
-        /* Check if we do profiling for this script. */
-        if (!si->sn_prof_on && has_profiling(TRUE, si->sn_name, &forceit))
-        {
-            script_do_profile(si);
-            si->sn_pr_force = forceit;
-        }
-        if (si->sn_prof_on)
-        {
-            ++si->sn_pr_count;
-            profile_start(&si->sn_pr_start);
-            profile_zero(&si->sn_pr_children);
-        }
-    }
-#endif
-
     /*
      * Call do_cmdline, which will call getsourceline() to get the lines.
      */
     do_cmdline(firstline, getsourceline, (void *)&cookie,
                                      DOCMD_VERBOSE|DOCMD_NOWAIT|DOCMD_REPEAT);
     retval = OK;
-
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-    {
-        /* Get "si" again, "script_items" may have been reallocated. */
-        si = &SCRIPT_ITEM(current_SID);
-        if (si->sn_prof_on)
-        {
-            profile_end(&si->sn_pr_start);
-            profile_sub_wait(&wait_start, &si->sn_pr_start);
-            profile_add(&si->sn_pr_total, &si->sn_pr_start);
-            profile_self(&si->sn_pr_self, &si->sn_pr_start,
-                                                         &si->sn_pr_children);
-        }
-    }
-#endif
 
     if (got_int)
         EMSG(_(e_interr));
@@ -3250,14 +2692,6 @@ do_source(fname, check_other, is_vimrc)
             smsg((char_u *)_("continuing in %s"), sourcing_name);
         verbose_leave();
     }
-#if defined(STARTUPTIME)
-    if (time_fd != NULL)
-    {
-        vim_snprintf((char *)IObuff, IOSIZE, "sourcing %s", fname);
-        time_msg((char *)IObuff, &tv_start);
-        time_pop(&tv_rel);
-    }
-#endif
 
     /*
      * After a "finish" in debug mode, need to break at first command of next
@@ -3270,10 +2704,6 @@ do_source(fname, check_other, is_vimrc)
 almosttheend:
     current_SID = save_current_SID;
     restore_funccal(save_funccalp);
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        prof_child_exit(&wait_start);           /* leaving a child now */
-#endif
     fclose(cookie.fp);
     vim_free(cookie.nextline);
     vim_free(firstline);
@@ -3301,21 +2731,6 @@ ex_scriptnames(eap)
             smsg((char_u *)"%3d: %s", i, NameBuff);
         }
 }
-
-#if defined(BACKSLASH_IN_FILENAME)
-/*
- * Fix slashes in the list of script names for 'shellslash'.
- */
-    void
-scriptnames_slash_adjust()
-{
-    int i;
-
-    for (i = 1; i <= script_items.ga_len; ++i)
-        if (SCRIPT_ITEM(i).sn_name != NULL)
-            slash_adjust(SCRIPT_ITEM(i).sn_name);
-}
-#endif
 
 /*
  * Get a pointer to a script name.  Used for ":verbose set".
@@ -3351,22 +2766,7 @@ free_scriptnames()
 
 #if defined(USE_CR)
 
-#if defined(__MSL__) && (__MSL__ >= 22)
-/*
- * Newer version of the Metrowerks library handle DOS and UNIX files
- * without help.
- * Test with earlier versions, MSL 2.2 is the library supplied with
- * Codewarrior Pro 2.
- */
-    char *
-fgets_cr(s, n, stream)
-    char        *s;
-    int         n;
-    FILE        *stream;
-{
-    return fgets(s, n, stream);
-}
-#else
+#if (1)
 /*
  * Version of fgets() which also works for lines ending in a <CR> only
  * (Macintosh format).
@@ -3431,10 +2831,6 @@ getsourceline(c, cookie, indent)
         sp->breakpoint = dbg_find_breakpoint(TRUE, sp->fname, sourcing_lnum);
         sp->dbg_tick = debug_tick;
     }
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        script_line_end();
-#endif
     /*
      * Get current line.  If there is a read-ahead line, use it, otherwise get
      * one now.
@@ -3449,10 +2845,6 @@ getsourceline(c, cookie, indent)
         sp->nextline = NULL;
         ++sourcing_lnum;
     }
-#if defined(FEAT_PROFILE)
-    if (line != NULL && do_profiling == PROF_YES)
-        script_line_start();
-#endif
 
     /* Only concatenate lines starting with a \ when 'cpoptions' doesn't
      * contain the 'C' flag. */
@@ -3673,90 +3065,6 @@ get_one_sourceline(sp)
     return NULL;
 }
 
-#if defined(FEAT_PROFILE)
-/*
- * Called when starting to read a script line.
- * "sourcing_lnum" must be correct!
- * When skipping lines it may not actually be executed, but we won't find out
- * until later and we need to store the time now.
- */
-    void
-script_line_start()
-{
-    scriptitem_T    *si;
-    sn_prl_T        *pp;
-
-    if (current_SID <= 0 || current_SID > script_items.ga_len)
-        return;
-    si = &SCRIPT_ITEM(current_SID);
-    if (si->sn_prof_on && sourcing_lnum >= 1)
-    {
-        /* Grow the array before starting the timer, so that the time spent
-         * here isn't counted. */
-        ga_grow(&si->sn_prl_ga, (int)(sourcing_lnum - si->sn_prl_ga.ga_len));
-        si->sn_prl_idx = sourcing_lnum - 1;
-        while (si->sn_prl_ga.ga_len <= si->sn_prl_idx
-                && si->sn_prl_ga.ga_len < si->sn_prl_ga.ga_maxlen)
-        {
-            /* Zero counters for a line that was not used before. */
-            pp = &PRL_ITEM(si, si->sn_prl_ga.ga_len);
-            pp->snp_count = 0;
-            profile_zero(&pp->sn_prl_total);
-            profile_zero(&pp->sn_prl_self);
-            ++si->sn_prl_ga.ga_len;
-        }
-        si->sn_prl_execed = FALSE;
-        profile_start(&si->sn_prl_start);
-        profile_zero(&si->sn_prl_children);
-        profile_get_wait(&si->sn_prl_wait);
-    }
-}
-
-/*
- * Called when actually executing a function line.
- */
-    void
-script_line_exec()
-{
-    scriptitem_T    *si;
-
-    if (current_SID <= 0 || current_SID > script_items.ga_len)
-        return;
-    si = &SCRIPT_ITEM(current_SID);
-    if (si->sn_prof_on && si->sn_prl_idx >= 0)
-        si->sn_prl_execed = TRUE;
-}
-
-/*
- * Called when done with a function line.
- */
-    void
-script_line_end()
-{
-    scriptitem_T    *si;
-    sn_prl_T        *pp;
-
-    if (current_SID <= 0 || current_SID > script_items.ga_len)
-        return;
-    si = &SCRIPT_ITEM(current_SID);
-    if (si->sn_prof_on && si->sn_prl_idx >= 0
-                                     && si->sn_prl_idx < si->sn_prl_ga.ga_len)
-    {
-        if (si->sn_prl_execed)
-        {
-            pp = &PRL_ITEM(si, si->sn_prl_idx);
-            ++pp->snp_count;
-            profile_end(&si->sn_prl_start);
-            profile_sub_wait(&si->sn_prl_wait, &si->sn_prl_start);
-            profile_add(&pp->sn_prl_total, &si->sn_prl_start);
-            profile_self(&pp->sn_prl_self, &si->sn_prl_start,
-                                                        &si->sn_prl_children);
-        }
-        si->sn_prl_idx = -1;
-    }
-}
-#endif
-
 /*
  * ":scriptencoding": Set encoding conversion for a sourced script.
  * Without the multi-byte feature it's simply ignored.
@@ -3876,7 +3184,7 @@ ex_checktime(eap)
 }
 #endif
 
-#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
+#if defined(HAVE_LOCALE_H)
 #define HAVE_GET_LOCALE_VAL
 static char *get_locale_val __ARGS((int what));
 
@@ -3886,8 +3194,8 @@ get_locale_val(what)
 {
     char        *loc;
 
-    /* Obtain the locale value from the libraries.  For DJGPP this is
-     * redefined and it doesn't use the arguments. */
+    /* Obtain the locale value from the libraries.
+     */
     loc = setlocale(what, NULL);
 
     return loc;
@@ -3895,7 +3203,7 @@ get_locale_val(what)
 #endif
 
 /* Complicated #if; matches with where get_mess_env() is used below. */
-#if (!((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && defined(LC_MESSAGES))) || ((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && !defined(LC_MESSAGES))
+#if (!(defined(HAVE_LOCALE_H) && defined(LC_MESSAGES))) || (defined(HAVE_LOCALE_H) && !defined(LC_MESSAGES))
 static char_u *get_mess_env __ARGS((void));
 
 /*
@@ -3957,7 +3265,7 @@ set_lang_var()
     set_vim_var_string(VV_LC_TIME, loc, -1);
 }
 
-#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
+#if defined(HAVE_LOCALE_H)
 /*
  * ":language":  Set the language (locale).
  */
@@ -4034,13 +3342,6 @@ ex_language(eap)
             EMSG2(_("E197: Cannot set language to \"%s\""), name);
         else
         {
-#if defined(HAVE_NL_MSG_CAT_CNTR)
-            /* Need to do this for GNU gettext, otherwise cached translations
-             * will be used again. */
-            extern int _nl_msg_cat_cntr;
-
-            ++_nl_msg_cat_cntr;
-#endif
             /* Reset $LC_ALL, otherwise it would overrule everything. */
             vim_setenv((char_u *)"LC_ALL", (char_u *)"");
 

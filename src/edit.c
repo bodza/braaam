@@ -186,11 +186,6 @@ static void internal_format __ARGS((int textwidth, int second_indent, int flags,
 static void check_auto_format __ARGS((int));
 static void redo_literal __ARGS((int c));
 static void start_arrow __ARGS((pos_T *end_insert_pos));
-#if defined(FEAT_SPELL)
-static void check_spell_redraw __ARGS((void));
-static void spell_back_to_badword __ARGS((void));
-static int  spell_bad_len = 0;  /* length of located bad word */
-#endif
 static void stop_insert __ARGS((pos_T *end_insert_pos, int esc, int nomove));
 static int  echeck_abbr __ARGS((int));
 static int  replace_pop __ARGS((void));
@@ -315,9 +310,6 @@ edit(cmdchar, startln, count)
     int         line_is_white = FALSE;      /* line is empty before insert */
 #endif
     linenr_T    old_topline = 0;            /* topline before insertion */
-#if defined(FEAT_DIFF)
-    int         old_topfill = -1;
-#endif
     int         inserted_space = FALSE;     /* just inserted a space */
     int         replaceState = REPLACE;
     int         nomove = FALSE;             /* don't move cursor on return */
@@ -553,12 +545,6 @@ edit(cmdchar, startln, count)
 #if defined(FEAT_CINDENT)
     can_cindent = TRUE;
 #endif
-#if defined(FEAT_FOLDING)
-    /* The cursor line is not in a closed fold, unless 'insertmode' is set or
-     * restarting. */
-    if (!p_im && did_restart_edit == 0)
-        foldOpenCursor();
-#endif
 
     /*
      * If 'showmode' is set, show the current (insert/replace/..) mode.
@@ -636,15 +622,6 @@ edit(cmdchar, startln, count)
          */
         msg_scroll = FALSE;
 
-#if defined(FEAT_FOLDING)
-        /* Open fold at the cursor line, according to 'foldopen'. */
-        if (fdo_flags & FDO_INSERT)
-            foldOpenCursor();
-        /* Close folds where the cursor isn't, according to 'foldclose' */
-        if (!char_avail())
-            foldCheckClose();
-#endif
-
         /*
          * If we inserted a character at the last position of the last line in
          * the window, scroll the window one line up. This avoids an extra
@@ -658,9 +635,6 @@ edit(cmdchar, startln, count)
                 && curwin->w_p_wrap
                 && !did_backspace
                 && curwin->w_topline == old_topline
-#if defined(FEAT_DIFF)
-                && curwin->w_topfill == old_topfill
-#endif
                 )
         {
             mincol = curwin->w_wcol;
@@ -670,21 +644,8 @@ edit(cmdchar, startln, count)
                     && curwin->w_wrow == W_WINROW(curwin)
                                                  + curwin->w_height - 1 - p_so
                     && (curwin->w_cursor.lnum != curwin->w_topline
-#if defined(FEAT_DIFF)
-                        || curwin->w_topfill > 0
-#endif
                     ))
             {
-#if defined(FEAT_DIFF)
-                if (curwin->w_topfill > 0)
-                    --curwin->w_topfill;
-                else
-#endif
-#if defined(FEAT_FOLDING)
-                if (hasFolding(curwin->w_topline, NULL, &old_topline))
-                    set_topline(curwin, old_topline + 1);
-                else
-#endif
                     set_topline(curwin, curwin->w_topline + 1);
             }
         }
@@ -713,9 +674,6 @@ edit(cmdchar, startln, count)
 #endif
         update_curswant();
         old_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-        old_topfill = curwin->w_topfill;
-#endif
 
 #if defined(USE_ON_FLY_SCROLL)
         dont_scroll = FALSE;            /* allow scrolling here */
@@ -1424,11 +1382,6 @@ normalchar:
 
             auto_format(FALSE, TRUE);
 
-#if defined(FEAT_FOLDING)
-            /* When inserting a character the cursor line must never be in a
-             * closed fold. */
-            foldOpenCursor();
-#endif
             break;
         }   /* end of switch (c) */
 
@@ -2095,9 +2048,6 @@ has_compl_option(dict_opt)
     int     dict_opt;
 {
     if (dict_opt ? (*curbuf->b_p_dict == NUL && *p_dict == NUL
-#if defined(FEAT_SPELL)
-                                                        && !curwin->w_p_spell
-#endif
                                                         )
                  : (*curbuf->b_p_tsr == NUL && *p_tsr == NUL))
     {
@@ -2925,13 +2875,6 @@ ins_compl_dictionaries(dict_start, pat, flags, thesaurus)
 
     if (*dict == NUL)
     {
-#if defined(FEAT_SPELL)
-        /* When 'dictionary' is empty and spell checking is enabled use
-         * "spell". */
-        if (!thesaurus && curwin->w_p_spell)
-            dict = (char_u *)"spell";
-        else
-#endif
             return;
     }
 
@@ -2990,30 +2933,12 @@ ins_compl_dictionaries(dict_start, pat, flags, thesaurus)
              * backticks (for security, the 'dict' option may have been set in
              * a modeline). */
             copy_option_part(&dict, buf, LSIZE, ",");
-#if defined(FEAT_SPELL)
-            if (!thesaurus && STRCMP(buf, "spell") == 0)
-                count = -1;
-            else
-#endif
                 if (vim_strchr(buf, '`') != NULL
                     || expand_wildcards(1, &buf, &count, &files,
                                                      EW_FILE|EW_SILENT) != OK)
                 count = 0;
         }
 
-#if defined(FEAT_SPELL)
-        if (count == -1)
-        {
-            /* Complete from active spelling.  Skip "\<" in the pattern, we
-             * don't use it as a RE. */
-            if (pat[0] == '\\' && pat[1] == '<')
-                ptr = pat + 2;
-            else
-                ptr = pat;
-            spell_dump_compl(ptr, regmatch.rm_ic, &dir, 0);
-        }
-        else
-#endif
             if (count > 0)      /* avoid warning for using "files" uninit */
         {
             ins_compl_files(count, files, thesaurus, flags,
@@ -3329,9 +3254,6 @@ ins_compl_new_leader()
         ins_compl_set_original_text(compl_leader);
     else
     {
-#if defined(FEAT_SPELL)
-        spell_bad_len = 0;      /* need to redetect bad word */
-#endif
         /*
          * Matches were cleared, need to search for them now.  First display
          * the changed text before the cursor.  Set "compl_restarting" to
@@ -3565,11 +3487,6 @@ ins_compl_prep(c)
             case 's':
             case Ctrl_S:
                 ctrl_x_mode = CTRL_X_SPELL;
-#if defined(FEAT_SPELL)
-                ++emsg_off;     /* Avoid getting the E756 error twice. */
-                spell_back_to_badword();
-                --emsg_off;
-#endif
                 break;
             case Ctrl_RSB:
                 ctrl_x_mode = CTRL_X_TAGS;
@@ -4242,12 +4159,6 @@ ins_compl_get_exp(ini)
 #endif
 
         case CTRL_X_SPELL:
-#if defined(FEAT_SPELL)
-            num_matches = expand_spelling(first_match_pos.lnum,
-                                                     compl_pattern, &matches);
-            if (num_matches > 0)
-                ins_compl_add_matches(num_matches, matches, p_ic);
-#endif
             break;
 
         default:        /* normal ^P/^N and ^X^L */
@@ -5166,26 +5077,6 @@ ins_complete(c)
         }
         else if (ctrl_x_mode == CTRL_X_SPELL)
         {
-#if defined(FEAT_SPELL)
-            if (spell_bad_len > 0)
-                compl_col = curs_col - spell_bad_len;
-            else
-                compl_col = spell_word_start(startcol);
-            if (compl_col >= (colnr_T)startcol)
-            {
-                compl_length = 0;
-                compl_col = curs_col;
-            }
-            else
-            {
-                spell_expand_check_cap(compl_col);
-                compl_length = (int)curs_col - compl_col;
-            }
-            /* Need to obtain "line" again, it may have become invalid. */
-            line = ml_get(curwin->w_cursor.lnum);
-            compl_pattern = vim_strnsave(line + compl_col, compl_length);
-            if (compl_pattern == NULL)
-#endif
                 return FAIL;
         }
         else
@@ -6465,9 +6356,6 @@ comp_textwidth(ff)
         if (cmdwin_type != 0)
             textwidth -= 1;
 #endif
-#if defined(FEAT_FOLDING)
-        textwidth -= curwin->w_p_fdc;
-#endif
 #if defined(FEAT_SIGNS)
         if (curwin->w_buffer->b_signlist != NULL
                     )
@@ -6521,42 +6409,7 @@ start_arrow(end_insert_pos)
         stop_insert(end_insert_pos, FALSE, FALSE);
         arrow_used = TRUE;      /* this means we stopped the current insert */
     }
-#if defined(FEAT_SPELL)
-    check_spell_redraw();
-#endif
 }
-
-#if defined(FEAT_SPELL)
-/*
- * If we skipped highlighting word at cursor, do it now.
- * It may be skipped again, thus reset spell_redraw_lnum first.
- */
-    static void
-check_spell_redraw()
-{
-    if (spell_redraw_lnum != 0)
-    {
-        linenr_T        lnum = spell_redraw_lnum;
-
-        spell_redraw_lnum = 0;
-        redrawWinline(lnum, FALSE);
-    }
-}
-
-/*
- * Called when starting CTRL_X_SPELL mode: Move backwards to a previous badly
- * spelled word, if there is one.
- */
-    static void
-spell_back_to_badword()
-{
-    pos_T       tpos = curwin->w_cursor;
-
-    spell_bad_len = spell_move_to(curwin, BACKWARD, TRUE, TRUE, NULL);
-    if (curwin->w_cursor.col != tpos.col)
-        start_arrow(&tpos);
-}
-#endif
 
 /*
  * stop_arrow() is called before a change is made in insert mode.
@@ -6598,11 +6451,6 @@ stop_arrow()
         if (u_save_cursor() == OK)
             ins_need_undo = FALSE;
     }
-
-#if defined(FEAT_FOLDING)
-    /* Always open fold at the cursor line when inserting something. */
-    foldOpenCursor();
-#endif
 
     return (arrow_used || ins_need_undo ? FAIL : OK);
 }
@@ -6983,32 +6831,6 @@ cursor_up(n, upd_topline)
         if (n >= lnum)
             lnum = 1;
         else
-#if defined(FEAT_FOLDING)
-            if (hasAnyFolding(curwin))
-        {
-            /*
-             * Count each sequence of folded lines as one logical line.
-             */
-            /* go to the start of the current fold */
-            (void)hasFolding(lnum, &lnum, NULL);
-
-            while (n--)
-            {
-                /* move up one line */
-                --lnum;
-                if (lnum <= 1)
-                    break;
-                /* If we entered a fold, move to the beginning, unless in
-                 * Insert mode or when 'foldopen' contains "all": it will open
-                 * in a moment. */
-                if (n > 0 || !((State & INSERT) || (fdo_flags & FDO_ALL)))
-                    (void)hasFolding(lnum, &lnum, NULL);
-            }
-            if (lnum < 1)
-                lnum = 1;
-        }
-        else
-#endif
             lnum -= n;
         curwin->w_cursor.lnum = lnum;
     }
@@ -7035,10 +6857,6 @@ cursor_down(n, upd_topline)
     if (n > 0)
     {
         lnum = curwin->w_cursor.lnum;
-#if defined(FEAT_FOLDING)
-        /* Move to last line of fold, will fail if it's the end-of-file. */
-        (void)hasFolding(lnum, NULL, &lnum);
-#endif
         /* This fails if the cursor is already in the last line or would move
          * beyond the last line and '-' is in 'cpoptions' */
         if (lnum >= curbuf->b_ml.ml_line_count
@@ -7048,26 +6866,6 @@ cursor_down(n, upd_topline)
         if (lnum + n >= curbuf->b_ml.ml_line_count)
             lnum = curbuf->b_ml.ml_line_count;
         else
-#if defined(FEAT_FOLDING)
-        if (hasAnyFolding(curwin))
-        {
-            linenr_T    last;
-
-            /* count each sequence of folded lines as one logical line */
-            while (n--)
-            {
-                if (hasFolding(lnum, NULL, &last))
-                    lnum = last + 1;
-                else
-                    ++lnum;
-                if (lnum >= curbuf->b_ml.ml_line_count)
-                    break;
-            }
-            if (lnum > curbuf->b_ml.ml_line_count)
-                lnum = curbuf->b_ml.ml_line_count;
-        }
-        else
-#endif
             lnum += n;
         curwin->w_cursor.lnum = lnum;
     }
@@ -8081,10 +7879,6 @@ ins_esc(count, cmdchar, nomove)
     int         temp;
     static int  disabled_redraw = FALSE;
 
-#if defined(FEAT_SPELL)
-    check_spell_redraw();
-#endif
-
     temp = curwin->w_cursor.col;
     if (disabled_redraw)
     {
@@ -8813,14 +8607,6 @@ ins_bs(c, mode, inserted_space_p)
     if (vim_strchr(p_cpo, CPO_BACKSPACE) != NULL && dollar_vcol == -1)
         dollar_vcol = curwin->w_virtcol;
 
-#if defined(FEAT_FOLDING)
-    /* When deleting a char the cursor line must never be in a closed fold.
-     * E.g., when 'foldmethod' is indent and deleting the first non-white
-     * char before a Tab. */
-    if (did_backspace)
-        foldOpenCursor();
-#endif
-
     return did_backspace;
 }
 
@@ -8980,10 +8766,6 @@ ins_left()
 {
     pos_T       tpos;
 
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped)
-        foldOpenCursor();
-#endif
     undisplay_dollar();
     tpos = curwin->w_cursor;
     if (oneleft() == OK)
@@ -9018,10 +8800,6 @@ ins_home(c)
 {
     pos_T       tpos;
 
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped)
-        foldOpenCursor();
-#endif
     undisplay_dollar();
     tpos = curwin->w_cursor;
     if (c == K_C_HOME)
@@ -9040,10 +8818,6 @@ ins_end(c)
 {
     pos_T       tpos;
 
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped)
-        foldOpenCursor();
-#endif
     undisplay_dollar();
     tpos = curwin->w_cursor;
     if (c == K_C_END)
@@ -9057,10 +8831,6 @@ ins_end(c)
     static void
 ins_s_left()
 {
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped)
-        foldOpenCursor();
-#endif
     undisplay_dollar();
     if (curwin->w_cursor.lnum > 1 || curwin->w_cursor.col > 0)
     {
@@ -9075,10 +8845,6 @@ ins_s_left()
     static void
 ins_right()
 {
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped)
-        foldOpenCursor();
-#endif
     undisplay_dollar();
     if (gchar_cursor() != NUL
 #if defined(FEAT_VIRTUALEDIT)
@@ -9123,10 +8889,6 @@ ins_right()
     static void
 ins_s_right()
 {
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped)
-        foldOpenCursor();
-#endif
     undisplay_dollar();
     if (curwin->w_cursor.lnum < curbuf->b_ml.ml_line_count
             || gchar_cursor() != NUL)
@@ -9145,9 +8907,6 @@ ins_up(startcol)
 {
     pos_T       tpos;
     linenr_T    old_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-    int         old_topfill = curwin->w_topfill;
-#endif
 
     undisplay_dollar();
     tpos = curwin->w_cursor;
@@ -9156,9 +8915,6 @@ ins_up(startcol)
         if (startcol)
             coladvance(getvcol_nolist(&Insstart));
         if (old_topline != curwin->w_topline
-#if defined(FEAT_DIFF)
-                || old_topfill != curwin->w_topfill
-#endif
                 )
             redraw_later(VALID);
         start_arrow(&tpos);
@@ -9208,9 +8964,6 @@ ins_down(startcol)
 {
     pos_T       tpos;
     linenr_T    old_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-    int         old_topfill = curwin->w_topfill;
-#endif
 
     undisplay_dollar();
     tpos = curwin->w_cursor;
@@ -9219,9 +8972,6 @@ ins_down(startcol)
         if (startcol)
             coladvance(getvcol_nolist(&Insstart));
         if (old_topline != curwin->w_topline
-#if defined(FEAT_DIFF)
-                || old_topfill != curwin->w_topfill
-#endif
                 )
             redraw_later(VALID);
         start_arrow(&tpos);
@@ -9550,10 +9300,6 @@ ins_eol(c)
     old_indent = 0;
 #if defined(FEAT_CINDENT)
     can_cindent = TRUE;
-#endif
-#if defined(FEAT_FOLDING)
-    /* When inserting a line the cursor line must never be in a closed fold. */
-    foldOpenCursor();
 #endif
 
     return (!i);

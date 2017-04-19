@@ -117,9 +117,6 @@ typedef struct syn_pattern
     short        sp_syn_match_id;       /* highlight group ID of pattern */
     char_u      *sp_pattern;            /* regexp to match, pattern */
     regprog_T   *sp_prog;               /* regexp to match, program */
-#if defined(FEAT_PROFILE)
-    syn_time_T   sp_time;
-#endif
     int          sp_ic;                 /* ignore-case flag for sp_prog */
     short        sp_off_flags;          /* see below */
     int          sp_offsets[SPO_COUNT]; /* offsets */
@@ -361,14 +358,7 @@ static short *copy_id_list __ARGS((short *list));
 static int in_id_list __ARGS((stateitem_T *item, short *cont_list, struct sp_syn *ssp, int contained));
 static int push_current_state __ARGS((int idx));
 static void pop_current_state __ARGS((void));
-#if defined(FEAT_PROFILE)
-static void syn_clear_time __ARGS((syn_time_T *tt));
-static void syntime_clear __ARGS((void));
-static int syn_compare_syntime __ARGS((const void *v1, const void *v2));
-static void syntime_report __ARGS((void));
-static int syn_time_on = FALSE;
-#define IF_SYN_TIME(p) (p)
-#else
+#if (1)
 #define IF_SYN_TIME(p) NULL
 typedef int syn_time_T;
 #endif
@@ -1115,14 +1105,6 @@ syn_stack_free_all(block)
 
     syn_stack_free_block(block);
 
-#if defined(FEAT_FOLDING)
-    /* When using "syntax" fold method, must update all folds. */
-    FOR_ALL_WINDOWS(wp)
-    {
-        if (wp->w_s == block && foldmethodIsSyntax(wp))
-            foldUpdateAll(wp);
-    }
-#endif
 }
 
 /*
@@ -3212,28 +3194,9 @@ syn_regexec(rmp, lnum, col, st)
     syn_time_T  *st UNUSED;
 {
     int r;
-#if defined(FEAT_PROFILE)
-    proftime_T  pt;
-
-    if (syn_time_on)
-        profile_start(&pt);
-#endif
 
     rmp->rmm_maxcol = syn_buf->b_p_smc;
     r = vim_regexec_multi(rmp, syn_win, syn_buf, lnum, col, NULL);
-
-#if defined(FEAT_PROFILE)
-    if (syn_time_on)
-    {
-        profile_end(&pt);
-        profile_add(&st->total, &pt);
-        if (profile_cmp(&pt, &st->slowest) < 0)
-            st->slowest = pt;
-        ++st->count;
-        if (r > 0)
-            ++st->match;
-    }
-#endif
 
     if (r > 0)
     {
@@ -3448,9 +3411,6 @@ syntax_clear(block)
     block->b_syn_linecont_prog = NULL;
     vim_free(block->b_syn_linecont_pat);
     block->b_syn_linecont_pat = NULL;
-#if defined(FEAT_FOLDING)
-    block->b_syn_folditems = 0;
-#endif
 
     /* free the stored states */
     syn_stack_free_all(block);
@@ -3512,10 +3472,6 @@ syn_remove_pattern(block, idx)
     synpat_T    *spp;
 
     spp = &(SYN_ITEMS(block)[idx]);
-#if defined(FEAT_FOLDING)
-    if (spp->sp_flags & HL_FOLD)
-        --block->b_syn_folditems;
-#endif
     syn_clear_pattern(block, idx);
     mch_memmove(spp, spp + 1,
                    sizeof(synpat_T) * (block->b_syn_patterns.ga_len - idx - 1));
@@ -4603,12 +4559,6 @@ get_syn_options(arg, opt, conceal_char)
                 vim_free(gname);
                 arg = skipwhite(arg);
             }
-#if defined(FEAT_FOLDING)
-            else if (flagtab[fidx].flags == HL_FOLD
-                                                && foldmethodIsSyntax(curwin))
-                /* Need to update folds later. */
-                foldUpdateAll(curwin);
-#endif
         }
     }
 
@@ -4922,10 +4872,6 @@ syn_cmd_match(eap, syncing)
             /* remember that we found a match for syncing on */
             if (syn_opt_arg.flags & (HL_SYNC_HERE|HL_SYNC_THERE))
                 curwin->w_s->b_syn_sync_flags |= SF_MATCH;
-#if defined(FEAT_FOLDING)
-            if (syn_opt_arg.flags & HL_FOLD)
-                ++curwin->w_s->b_syn_folditems;
-#endif
 
             redraw_curbuf_later(SOME_VALID);
             syn_stack_free_all(curwin->w_s);    /* Need to recompute all syntax. */
@@ -5172,10 +5118,6 @@ syn_cmd_region(eap, syncing)
                     }
                     ++curwin->w_s->b_syn_patterns.ga_len;
                     ++idx;
-#if defined(FEAT_FOLDING)
-                    if (syn_opt_arg.flags & HL_FOLD)
-                        ++curwin->w_s->b_syn_folditems;
-#endif
                 }
             }
 
@@ -5600,9 +5542,6 @@ get_syn_pattern(arg, ci)
     if (ci->sp_prog == NULL)
         return NULL;
     ci->sp_ic = curwin->w_s->b_syn_ic;
-#if defined(FEAT_PROFILE)
-    syn_clear_time(&ci->sp_time);
-#endif
 
     /*
      * Check for a match, highlight or region offset.
@@ -5779,9 +5718,6 @@ syn_cmd_sync(eap, syncing)
                 curwin->w_s->b_syn_linecont_prog =
                        vim_regcomp(curwin->w_s->b_syn_linecont_pat, RE_MAGIC);
                 p_cpo = cpo_save;
-#if defined(FEAT_PROFILE)
-                syn_clear_time(&curwin->w_s->b_syn_linecont_time);
-#endif
 
                 if (curwin->w_s->b_syn_linecont_prog == NULL)
                 {
@@ -6233,13 +6169,6 @@ ex_ownsyntax(eap)
     {
         curwin->w_s = (synblock_T *)alloc(sizeof(synblock_T));
         memset(curwin->w_s, 0, sizeof(synblock_T));
-#if defined(FEAT_SPELL)
-        /* TODO: keep the spell checking as it was. */
-        curwin->w_p_spell = FALSE;      /* No spell checking */
-        clear_string_option(&curwin->w_s->b_p_spc);
-        clear_string_option(&curwin->w_s->b_p_spf);
-        clear_string_option(&curwin->w_s->b_p_spl);
-#endif
     }
 
     /* save value of b:current_syntax */
@@ -6434,232 +6363,6 @@ syn_get_stack_item(i)
     return CUR_STATE(i).si_id;
 }
 
-#if defined(FEAT_FOLDING)
-/*
- * Function called to get folding level for line "lnum" in window "wp".
- */
-    int
-syn_get_foldlevel(wp, lnum)
-    win_T       *wp;
-    long        lnum;
-{
-    int         level = 0;
-    int         i;
-
-    /* Return quickly when there are no fold items at all. */
-    if (wp->w_s->b_syn_folditems != 0)
-    {
-        syntax_start(wp, lnum);
-
-        for (i = 0; i < current_state.ga_len; ++i)
-            if (CUR_STATE(i).si_flags & HL_FOLD)
-                ++level;
-    }
-    if (level > wp->w_p_fdn)
-    {
-        level = wp->w_p_fdn;
-        if (level < 0)
-            level = 0;
-    }
-    return level;
-}
-#endif
-
-#if defined(FEAT_PROFILE)
-/*
- * ":syntime".
- */
-    void
-ex_syntime(eap)
-    exarg_T     *eap;
-{
-    if (STRCMP(eap->arg, "on") == 0)
-        syn_time_on = TRUE;
-    else if (STRCMP(eap->arg, "off") == 0)
-        syn_time_on = FALSE;
-    else if (STRCMP(eap->arg, "clear") == 0)
-        syntime_clear();
-    else if (STRCMP(eap->arg, "report") == 0)
-        syntime_report();
-    else
-        EMSG2(_(e_invarg2), eap->arg);
-}
-
-    static void
-syn_clear_time(st)
-    syn_time_T *st;
-{
-    profile_zero(&st->total);
-    profile_zero(&st->slowest);
-    st->count = 0;
-    st->match = 0;
-}
-
-/*
- * Clear the syntax timing for the current buffer.
- */
-    static void
-syntime_clear()
-{
-    int         idx;
-    synpat_T    *spp;
-
-    if (!syntax_present(curwin))
-    {
-        MSG(_(msg_no_items));
-        return;
-    }
-    for (idx = 0; idx < curwin->w_s->b_syn_patterns.ga_len; ++idx)
-    {
-        spp = &(SYN_ITEMS(curwin->w_s)[idx]);
-        syn_clear_time(&spp->sp_time);
-    }
-}
-
-#if defined(FEAT_CMDL_COMPL)
-/*
- * Function given to ExpandGeneric() to obtain the possible arguments of the
- * ":syntime {on,off,clear,report}" command.
- */
-    char_u *
-get_syntime_arg(xp, idx)
-    expand_T    *xp UNUSED;
-    int         idx;
-{
-    switch (idx)
-    {
-        case 0: return (char_u *)"on";
-        case 1: return (char_u *)"off";
-        case 2: return (char_u *)"clear";
-        case 3: return (char_u *)"report";
-    }
-    return NULL;
-}
-#endif
-
-typedef struct
-{
-    proftime_T  total;
-    int         count;
-    int         match;
-    proftime_T  slowest;
-    proftime_T  average;
-    int         id;
-    char_u      *pattern;
-} time_entry_T;
-
-    static int
-syn_compare_syntime(v1, v2)
-    const void  *v1;
-    const void  *v2;
-{
-    const time_entry_T  *s1 = v1;
-    const time_entry_T  *s2 = v2;
-
-    return profile_cmp(&s1->total, &s2->total);
-}
-
-/*
- * Clear the syntax timing for the current buffer.
- */
-    static void
-syntime_report()
-{
-    int         idx;
-    synpat_T    *spp;
-#if defined(FEAT_FLOAT)
-    proftime_T  tm;
-#endif
-    int         len;
-    proftime_T  total_total;
-    int         total_count = 0;
-    garray_T    ga;
-    time_entry_T *p;
-
-    if (!syntax_present(curwin))
-    {
-        MSG(_(msg_no_items));
-        return;
-    }
-
-    ga_init2(&ga, sizeof(time_entry_T), 50);
-    profile_zero(&total_total);
-    for (idx = 0; idx < curwin->w_s->b_syn_patterns.ga_len; ++idx)
-    {
-        spp = &(SYN_ITEMS(curwin->w_s)[idx]);
-        if (spp->sp_time.count > 0)
-        {
-            ga_grow(&ga, 1);
-            p = ((time_entry_T *)ga.ga_data) + ga.ga_len;
-            p->total = spp->sp_time.total;
-            profile_add(&total_total, &spp->sp_time.total);
-            p->count = spp->sp_time.count;
-            p->match = spp->sp_time.match;
-            total_count += spp->sp_time.count;
-            p->slowest = spp->sp_time.slowest;
-#if defined(FEAT_FLOAT)
-            profile_divide(&spp->sp_time.total, spp->sp_time.count, &tm);
-            p->average = tm;
-#endif
-            p->id = spp->sp_syn.id;
-            p->pattern = spp->sp_pattern;
-            ++ga.ga_len;
-        }
-    }
-
-    /* sort on total time */
-    qsort(ga.ga_data, (size_t)ga.ga_len, sizeof(time_entry_T),
-                                                         syn_compare_syntime);
-
-    MSG_PUTS_TITLE(_("  TOTAL      COUNT  MATCH   SLOWEST     AVERAGE   NAME               PATTERN"));
-    MSG_PUTS("\n");
-    for (idx = 0; idx < ga.ga_len && !got_int; ++idx)
-    {
-        spp = &(SYN_ITEMS(curwin->w_s)[idx]);
-        p = ((time_entry_T *)ga.ga_data) + idx;
-
-        MSG_PUTS(profile_msg(&p->total));
-        MSG_PUTS(" "); /* make sure there is always a separating space */
-        msg_advance(13);
-        msg_outnum(p->count);
-        MSG_PUTS(" ");
-        msg_advance(20);
-        msg_outnum(p->match);
-        MSG_PUTS(" ");
-        msg_advance(26);
-        MSG_PUTS(profile_msg(&p->slowest));
-        MSG_PUTS(" ");
-        msg_advance(38);
-#if defined(FEAT_FLOAT)
-        MSG_PUTS(profile_msg(&p->average));
-        MSG_PUTS(" ");
-#endif
-        msg_advance(50);
-        msg_outtrans(HL_TABLE()[p->id - 1].sg_name);
-        MSG_PUTS(" ");
-
-        msg_advance(69);
-        if (Columns < 80)
-            len = 20; /* will wrap anyway */
-        else
-            len = Columns - 70;
-        if (len > (int)STRLEN(p->pattern))
-            len = (int)STRLEN(p->pattern);
-        msg_outtrans_len(p->pattern, len);
-        MSG_PUTS("\n");
-    }
-    ga_clear(&ga);
-    if (!got_int)
-    {
-        MSG_PUTS("\n");
-        MSG_PUTS(profile_msg(&total_total));
-        msg_advance(13);
-        msg_outnum(total_count);
-        MSG_PUTS("\n");
-    }
-}
-#endif
-
 #endif
 
 /**************************************
@@ -6696,10 +6399,6 @@ static char *(highlight_init_both[]) =
         CENT("VisualNOS term=underline,bold cterm=underline,bold",
              "VisualNOS term=underline,bold cterm=underline,bold gui=underline,bold"),
 #endif
-#if defined(FEAT_DIFF)
-        CENT("DiffText term=reverse cterm=bold ctermbg=Red",
-             "DiffText term=reverse cterm=bold ctermbg=Red gui=bold guibg=Red"),
-#endif
 #if defined(FEAT_INS_EXPAND)
         CENT("PmenuSbar ctermbg=Grey",
              "PmenuSbar ctermbg=Grey guibg=Grey"),
@@ -6727,16 +6426,6 @@ static char *(highlight_init_light[]) =
              "Question term=standout ctermfg=DarkGreen gui=bold guifg=SeaGreen"),
         CENT("Search term=reverse ctermbg=Yellow ctermfg=NONE",
              "Search term=reverse ctermbg=Yellow ctermfg=NONE guibg=Yellow guifg=NONE"),
-#if defined(FEAT_SPELL)
-        CENT("SpellBad term=reverse ctermbg=LightRed",
-             "SpellBad term=reverse ctermbg=LightRed guisp=Red gui=undercurl"),
-        CENT("SpellCap term=reverse ctermbg=LightBlue",
-             "SpellCap term=reverse ctermbg=LightBlue guisp=Blue gui=undercurl"),
-        CENT("SpellRare term=reverse ctermbg=LightMagenta",
-             "SpellRare term=reverse ctermbg=LightMagenta guisp=Magenta gui=undercurl"),
-        CENT("SpellLocal term=underline ctermbg=Cyan",
-             "SpellLocal term=underline ctermbg=Cyan guisp=DarkCyan gui=undercurl"),
-#endif
 #if defined(FEAT_INS_EXPAND)
         CENT("PmenuThumb ctermbg=Black",
              "PmenuThumb ctermbg=Black guibg=Black"),
@@ -6755,26 +6444,12 @@ static char *(highlight_init_light[]) =
         CENT("WildMenu term=standout ctermbg=Yellow ctermfg=Black",
              "WildMenu term=standout ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black"),
 #endif
-#if defined(FEAT_FOLDING)
-        CENT("Folded term=standout ctermbg=Grey ctermfg=DarkBlue",
-             "Folded term=standout ctermbg=Grey ctermfg=DarkBlue guibg=LightGrey guifg=DarkBlue"),
-        CENT("FoldColumn term=standout ctermbg=Grey ctermfg=DarkBlue",
-             "FoldColumn term=standout ctermbg=Grey ctermfg=DarkBlue guibg=Grey guifg=DarkBlue"),
-#endif
 #if defined(FEAT_SIGNS)
         CENT("SignColumn term=standout ctermbg=Grey ctermfg=DarkBlue",
              "SignColumn term=standout ctermbg=Grey ctermfg=DarkBlue guibg=Grey guifg=DarkBlue"),
 #endif
         CENT("Visual term=reverse",
              "Visual term=reverse guibg=LightGrey"),
-#if defined(FEAT_DIFF)
-        CENT("DiffAdd term=bold ctermbg=LightBlue",
-             "DiffAdd term=bold ctermbg=LightBlue guibg=LightBlue"),
-        CENT("DiffChange term=bold ctermbg=LightMagenta",
-             "DiffChange term=bold ctermbg=LightMagenta guibg=LightMagenta"),
-        CENT("DiffDelete term=bold ctermfg=Blue ctermbg=LightCyan",
-             "DiffDelete term=bold ctermfg=Blue ctermbg=LightCyan gui=bold guifg=Blue guibg=LightCyan"),
-#endif
 #if defined(FEAT_WINDOWS)
         CENT("TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey",
              "TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey gui=underline guibg=LightGrey"),
@@ -6814,16 +6489,6 @@ static char *(highlight_init_dark[]) =
              "Search term=reverse ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black"),
         CENT("SpecialKey term=bold ctermfg=LightBlue",
              "SpecialKey term=bold ctermfg=LightBlue guifg=Cyan"),
-#if defined(FEAT_SPELL)
-        CENT("SpellBad term=reverse ctermbg=Red",
-             "SpellBad term=reverse ctermbg=Red guisp=Red gui=undercurl"),
-        CENT("SpellCap term=reverse ctermbg=Blue",
-             "SpellCap term=reverse ctermbg=Blue guisp=Blue gui=undercurl"),
-        CENT("SpellRare term=reverse ctermbg=Magenta",
-             "SpellRare term=reverse ctermbg=Magenta guisp=Magenta gui=undercurl"),
-        CENT("SpellLocal term=underline ctermbg=Cyan",
-             "SpellLocal term=underline ctermbg=Cyan guisp=Cyan gui=undercurl"),
-#endif
 #if defined(FEAT_INS_EXPAND)
         CENT("PmenuThumb ctermbg=White",
              "PmenuThumb ctermbg=White guibg=White"),
@@ -6840,26 +6505,12 @@ static char *(highlight_init_dark[]) =
         CENT("WildMenu term=standout ctermbg=Yellow ctermfg=Black",
              "WildMenu term=standout ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black"),
 #endif
-#if defined(FEAT_FOLDING)
-        CENT("Folded term=standout ctermbg=DarkGrey ctermfg=Cyan",
-             "Folded term=standout ctermbg=DarkGrey ctermfg=Cyan guibg=DarkGrey guifg=Cyan"),
-        CENT("FoldColumn term=standout ctermbg=DarkGrey ctermfg=Cyan",
-             "FoldColumn term=standout ctermbg=DarkGrey ctermfg=Cyan guibg=Grey guifg=Cyan"),
-#endif
 #if defined(FEAT_SIGNS)
         CENT("SignColumn term=standout ctermbg=DarkGrey ctermfg=Cyan",
              "SignColumn term=standout ctermbg=DarkGrey ctermfg=Cyan guibg=Grey guifg=Cyan"),
 #endif
         CENT("Visual term=reverse",
              "Visual term=reverse guibg=DarkGrey"),
-#if defined(FEAT_DIFF)
-        CENT("DiffAdd term=bold ctermbg=DarkBlue",
-             "DiffAdd term=bold ctermbg=DarkBlue guibg=DarkBlue"),
-        CENT("DiffChange term=bold ctermbg=DarkMagenta",
-             "DiffChange term=bold ctermbg=DarkMagenta guibg=DarkMagenta"),
-        CENT("DiffDelete term=bold ctermfg=Blue ctermbg=DarkCyan",
-             "DiffDelete term=bold ctermfg=Blue ctermbg=DarkCyan gui=bold guifg=Blue guibg=DarkCyan"),
-#endif
 #if defined(FEAT_WINDOWS)
         CENT("TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey",
              "TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey gui=underline guibg=DarkGrey"),
@@ -7429,12 +7080,6 @@ do_highlight(line, forceit, init)
                                                  4+8, 4+8, 2+8, 2+8,
                                                  6+8, 6+8, 1+8, 1+8, 5+8,
                                                  5+8, 3+8, 3+8, 7+8, -1};
-#if defined(__QNXNTO__)
-                static int *color_numbers_8_qansi = color_numbers_8;
-                /* On qnx, the 8 & 16 color arrays are the same */
-                if (STRNCMP(T_NAME, "qansi", 5) == 0)
-                    color_numbers_8_qansi = color_numbers_16;
-#endif
 
                 /* reduce calls to STRICMP a bit, it can be slow */
                 off = TOUPPER_ASC(*arg);
@@ -7456,11 +7101,7 @@ do_highlight(line, forceit, init)
                     if (t_colors == 8)
                     {
                         /* t_Co is 8: use the 8 colors table */
-#if defined(__QNXNTO__)
-                        color = color_numbers_8_qansi[i];
-#else
                         color = color_numbers_8[i];
-#endif
                         if (key[5] == 'F')
                         {
                             /* set/reset bold attribute to get light foreground
@@ -7924,7 +7565,7 @@ clear_hl_tables()
     ga_clear(&cterm_attr_table);
 }
 
-#if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
+#if defined(FEAT_SYN_HL)
 /*
  * Combine special attributes (e.g., for spelling) with other attributes
  * (e.g., for syntax highlighting).
@@ -8850,7 +8491,3 @@ get_highlight_name(xp, idx)
     return HL_TABLE()[idx].sg_name;
 }
 #endif
-
-/**************************************
- *  End of Highlighting stuff         *
- **************************************/

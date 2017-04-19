@@ -348,16 +348,6 @@ qf_init_ext(qi, efile, buf, tv, errorformat, newlist, lnumfirst, lnumlast,
                     fmt_ptr->addr[idx] = (char_u)++round;
                     *ptr++ = '\\';
                     *ptr++ = '(';
-#if defined(BACKSLASH_IN_FILENAME)
-                    if (*efmp == 'f')
-                    {
-                        /* Also match "c:" in the file name, even when
-                         * checking for a colon next: "%f:".
-                         * "\%(\a:\)\=" */
-                        STRCPY(ptr, "\\%(\\a:\\)\\=");
-                        ptr += 10;
-                    }
-#endif
                     if (*efmp == 'f' && efmp[1] != NUL)
                     {
                         if (efmp[1] != '\\' && efmp[1] != '%')
@@ -1208,11 +1198,6 @@ qf_get_fnum(directory, fname)
         char_u      *ptr;
         int         fnum;
 
-#if defined(BACKSLASH_IN_FILENAME)
-        if (directory != NULL)
-            slash_adjust(directory);
-        slash_adjust(fname);
-#endif
         if (directory != NULL && !vim_isAbsName(fname)
                 && (ptr = concat_fnames(directory, fname, TRUE)) != NULL)
         {
@@ -1460,9 +1445,6 @@ qf_jump(qi, dir, errornr, forceit)
     win_T               *oldwin = curwin;
     int                 print_message = TRUE;
     int                 len;
-#if defined(FEAT_FOLDING)
-    int                 old_KeyTyped = KeyTyped; /* getting file may reset it */
-#endif
     int                 ok = OK;
     int                 usable_win;
 
@@ -1866,10 +1848,6 @@ win_found:
                 curwin->w_cursor = save_cursor;
         }
 
-#if defined(FEAT_FOLDING)
-        if ((fdo_flags & FDO_QUICKFIX) && old_KeyTyped)
-            foldOpenCursor();
-#endif
         if (print_message)
         {
             /* Update the screen before showing the message, unless the screen
@@ -2412,13 +2390,6 @@ ex_copen(eap)
                                                                    OPT_LOCAL);
             set_option_value((char_u *)"bh", 0L, (char_u *)"wipe", OPT_LOCAL);
             RESET_BINDING(curwin);
-#if defined(FEAT_DIFF)
-            curwin->w_p_diff = FALSE;
-#endif
-#if defined(FEAT_FOLDING)
-            set_option_value((char_u *)"fdm", 0L, (char_u *)"manual",
-                                                                   OPT_LOCAL);
-#endif
         }
 
         /* Only set the height when still in the same tab page and there is no
@@ -3061,18 +3032,6 @@ ex_cfile(eap)
     if (au_name != NULL)
         apply_autocmds(EVENT_QUICKFIXCMDPRE, au_name, NULL, FALSE, curbuf);
 #endif
-#if defined(FEAT_BROWSE)
-    if (cmdmod.browse)
-    {
-        char_u *browse_file = do_browse(0, (char_u *)_("Error file"), eap->arg,
-                                   NULL, NULL, BROWSE_FILTER_ALL_FILES, NULL);
-        if (browse_file == NULL)
-            return;
-        set_string_option_direct((char_u *)"ef", -1, browse_file, OPT_FREE, 0);
-        vim_free(browse_file);
-    }
-    else
-#endif
     if (*eap->arg != NUL)
         set_string_option_direct((char_u *)"ef", -1, eap->arg, OPT_FREE, 0);
 
@@ -3496,11 +3455,7 @@ ex_vimgrep(eap)
      * may have messed up things, need to redraw and recompute folds. */
     if (redraw_for_dummy)
     {
-#if defined(FEAT_FOLDING)
-        foldUpdateAll(curwin);
-#else
         redraw_later(NOT_VALID);
-#endif
     }
 
 theend:

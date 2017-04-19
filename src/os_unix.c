@@ -18,19 +18,6 @@
 
 #include "os_unixx.h"       /* unix includes for os_unix.c only */
 
-#if defined(HAVE_SELINUX)
-#include <selinux/selinux.h>
-static int selinux_enabled = -1;
-#endif
-
-#if defined(HAVE_SMACK)
-#include <attr/xattr.h>
-#include <linux/xattr.h>
-#if !defined(SMACK_LABEL_LEN)
-#define SMACK_LABEL_LEN 1024
-#endif
-#endif
-
 /*
  * Use this prototype for select, some include files have a wrong prototype
  */
@@ -111,11 +98,6 @@ static pid_t wait4pid __ARGS((pid_t, waitstatus *));
 
 static int  WaitForChar __ARGS((long));
 static int  RealWaitForChar __ARGS((int, long, int *));
-
-#if defined(FEAT_XCLIPBOARD)
-static int do_xterm_trace __ARGS((void));
-#define XT_TRACE_DELAY 50      /* delay for xterm tracing */
-#endif
 
 static void handle_resize __ARGS((void));
 
@@ -662,10 +644,6 @@ mch_stackcheck(p)
  * completely full.
  */
 
-#if defined(HAVE_AVAILABILITYMACROS_H)
-#include <AvailabilityMacros.h>
-#endif
-
 #if !defined(SIGSTKSZ)
 #define SIGSTKSZ 8000    /* just a guess of how much stack is needed... */
 #endif
@@ -761,7 +739,7 @@ sig_alarm SIGDEFARG(sigarg)
 }
 #endif
 
-#if (defined(HAVE_SETJMP_H) && (((0) && defined(FEAT_XCLIPBOARD)) || defined(FEAT_LIBCALL)))
+#if defined(HAVE_SETJMP_H) && defined(FEAT_LIBCALL)
 /*
  * A simplistic version of setjmp() that only allows one level of using.
  * Don't call twice before calling mch_endjmp()!.
@@ -961,12 +939,6 @@ deathtrap SIGDEFARG(sigarg)
      * calling free(). */
     preserve_exit();
 
-#if defined(NBDEBUG)
-    reset_signals();
-    may_core_dump();
-    abort();
-#endif
-
     SIGRETURN;
 }
 
@@ -1056,12 +1028,6 @@ mch_init()
     out_flush();
     set_signals();
 
-#if defined(MACOS_CONVERT)
-    mac_conv_init();
-#endif
-#if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
-    win_clip_init();
-#endif
 }
 
     static void
@@ -1786,13 +1752,7 @@ mch_getperm(name)
     /* Keep the #ifdef outside of stat(), it may be a macro. */
     if (stat((char *)name, &statb))
         return -1;
-#if defined(__INTERIX)
-    /* The top bit makes the value negative, which means the file doesn't
-     * exist.  Remove the bit, we don't use it. */
-    return statb.st_mode & ~S_ADDACE;
-#else
     return statb.st_mode;
-#endif
 }
 
 /*
@@ -1807,277 +1767,6 @@ mch_setperm(name, perm)
 {
     return (chmod((char *)name, (mode_t)perm) == 0 ? OK : FAIL);
 }
-
-#if defined(HAVE_ACL)
-#if defined(HAVE_SYS_ACL_H)
-#include <sys/acl.h>
-#endif
-#if defined(HAVE_SYS_ACCESS_H)
-#include <sys/access.h>
-#endif
-
-#if defined(HAVE_SOLARIS_ACL)
-typedef struct vim_acl_solaris_T {
-    int acl_cnt;
-    aclent_t *acl_entry;
-} vim_acl_solaris_T;
-#endif
-
-#if defined(HAVE_SELINUX)
-/*
- * Copy security info from "from_file" to "to_file".
- */
-    void
-mch_copy_sec(from_file, to_file)
-    char_u      *from_file;
-    char_u      *to_file;
-{
-    if (from_file == NULL)
-        return;
-
-    if (selinux_enabled == -1)
-        selinux_enabled = is_selinux_enabled();
-
-    if (selinux_enabled > 0)
-    {
-        security_context_t from_context = NULL;
-        security_context_t to_context = NULL;
-
-        if (getfilecon((char *)from_file, &from_context) < 0)
-        {
-            /* If the filesystem doesn't support extended attributes,
-               the original had no special security context and the
-               target cannot have one either.  */
-            if (errno == EOPNOTSUPP)
-                return;
-
-            MSG_PUTS(_("\nCould not get security context for "));
-            msg_outtrans(from_file);
-            msg_putchar('\n');
-            return;
-        }
-        if (getfilecon((char *)to_file, &to_context) < 0)
-        {
-            MSG_PUTS(_("\nCould not get security context for "));
-            msg_outtrans(to_file);
-            msg_putchar('\n');
-            freecon (from_context);
-            return ;
-        }
-        if (strcmp(from_context, to_context) != 0)
-        {
-            if (setfilecon((char *)to_file, from_context) < 0)
-            {
-                MSG_PUTS(_("\nCould not set security context for "));
-                msg_outtrans(to_file);
-                msg_putchar('\n');
-            }
-        }
-        freecon(to_context);
-        freecon(from_context);
-    }
-}
-#endif
-
-#if defined(HAVE_SMACK)
-/*
- * Copy security info from "from_file" to "to_file".
- */
-    void
-mch_copy_sec(from_file, to_file)
-    char_u      *from_file;
-    char_u      *to_file;
-{
-    static const char * const smack_copied_attributes[] =
-        {
-            XATTR_NAME_SMACK,
-            XATTR_NAME_SMACKEXEC,
-            XATTR_NAME_SMACKMMAP
-        };
-
-    char        buffer[SMACK_LABEL_LEN];
-    const char  *name;
-    int         index;
-    int         ret;
-    ssize_t     size;
-
-    if (from_file == NULL)
-        return;
-
-    for (index = 0 ; index < (int)(sizeof(smack_copied_attributes)
-                              / sizeof(smack_copied_attributes)[0]) ; index++)
-    {
-        /* get the name of the attribute to copy */
-        name = smack_copied_attributes[index];
-
-        /* get the value of the attribute in buffer */
-        size = getxattr((char*)from_file, name, buffer, sizeof(buffer));
-        if (size >= 0)
-        {
-            /* copy the attribute value of buffer */
-            ret = setxattr((char*)to_file, name, buffer, (size_t)size, 0);
-            if (ret < 0)
-            {
-                MSG_PUTS(_("Could not set security context "));
-                MSG_PUTS(name);
-                MSG_PUTS(_(" for "));
-                msg_outtrans(to_file);
-                msg_putchar('\n');
-            }
-        }
-        else
-        {
-            /* what reason of not having the attribute value? */
-            switch (errno)
-            {
-                case ENOTSUP:
-                    /* extended attributes aren't supported or enabled */
-                    /* should a message be echoed? not sure... */
-                    return; /* leave because it isn't usefull to continue */
-
-                case ERANGE:
-                default:
-                    /* no enough size OR unexpected error */
-                    MSG_PUTS(_("Could not get security context "));
-                    MSG_PUTS(name);
-                    MSG_PUTS(_(" for "));
-                    msg_outtrans(from_file);
-                    MSG_PUTS(_(". Removing it!\n"));
-                    /* FALLTHROUGH to remove the attribute */
-
-                case ENODATA:
-                    /* no attribute of this name */
-                    ret = removexattr((char*)to_file, name);
-                    /* Silently ignore errors, apparently this happens when
-                     * smack is not actually being used. */
-                    break;
-            }
-        }
-    }
-}
-#endif
-
-/*
- * Return a pointer to the ACL of file "fname" in allocated memory.
- * Return NULL if the ACL is not available for whatever reason.
- */
-    vim_acl_T
-mch_get_acl(fname)
-    char_u      *fname UNUSED;
-{
-    vim_acl_T   ret = NULL;
-#if defined(HAVE_POSIX_ACL)
-    ret = (vim_acl_T)acl_get_file((char *)fname, ACL_TYPE_ACCESS);
-#else
-#if defined(HAVE_SOLARIS_ZFS_ACL)
-    acl_t *aclent;
-
-    if (acl_get((char *)fname, 0, &aclent) < 0)
-        return NULL;
-    ret = (vim_acl_T)aclent;
-#else
-#if defined(HAVE_SOLARIS_ACL)
-    vim_acl_solaris_T   *aclent;
-
-    aclent = malloc(sizeof(vim_acl_solaris_T));
-    if ((aclent->acl_cnt = acl((char *)fname, GETACLCNT, 0, NULL)) < 0)
-    {
-        free(aclent);
-        return NULL;
-    }
-    aclent->acl_entry = malloc(aclent->acl_cnt * sizeof(aclent_t));
-    if (acl((char *)fname, GETACL, aclent->acl_cnt, aclent->acl_entry) < 0)
-    {
-        free(aclent->acl_entry);
-        free(aclent);
-        return NULL;
-    }
-    ret = (vim_acl_T)aclent;
-#else
-#if defined(HAVE_AIX_ACL)
-    int         aclsize;
-    struct acl *aclent;
-
-    aclsize = sizeof(struct acl);
-    aclent = malloc(aclsize);
-    if (statacl((char *)fname, STX_NORMAL, aclent, aclsize) < 0)
-    {
-        if (errno == ENOSPC)
-        {
-            aclsize = aclent->acl_len;
-            aclent = realloc(aclent, aclsize);
-            if (statacl((char *)fname, STX_NORMAL, aclent, aclsize) < 0)
-            {
-                free(aclent);
-                return NULL;
-            }
-        }
-        else
-        {
-            free(aclent);
-            return NULL;
-        }
-    }
-    ret = (vim_acl_T)aclent;
-#endif
-#endif
-#endif
-#endif
-    return ret;
-}
-
-/*
- * Set the ACL of file "fname" to "acl" (unless it's NULL).
- */
-    void
-mch_set_acl(fname, aclent)
-    char_u      *fname UNUSED;
-    vim_acl_T   aclent;
-{
-    if (aclent == NULL)
-        return;
-#if defined(HAVE_POSIX_ACL)
-    acl_set_file((char *)fname, ACL_TYPE_ACCESS, (acl_t)aclent);
-#else
-#if defined(HAVE_SOLARIS_ZFS_ACL)
-    acl_set((char *)fname, (acl_t *)aclent);
-#else
-#if defined(HAVE_SOLARIS_ACL)
-    acl((char *)fname, SETACL, ((vim_acl_solaris_T *)aclent)->acl_cnt,
-            ((vim_acl_solaris_T *)aclent)->acl_entry);
-#else
-#if defined(HAVE_AIX_ACL)
-    chacl((char *)fname, aclent, ((struct acl *)aclent)->acl_len);
-#endif
-#endif
-#endif
-#endif
-}
-
-    void
-mch_free_acl(aclent)
-    vim_acl_T   aclent;
-{
-    if (aclent == NULL)
-        return;
-#if defined(HAVE_POSIX_ACL)
-    acl_free((acl_t)aclent);
-#else
-#if defined(HAVE_SOLARIS_ZFS_ACL)
-    acl_free((acl_t *)aclent);
-#else
-#if defined(HAVE_SOLARIS_ACL)
-    free(((vim_acl_solaris_T *)aclent)->acl_entry);
-    free(aclent);
-#else
-#if defined(HAVE_AIX_ACL)
-    free(aclent);
-#endif
-#endif
-#endif
-#endif
-}
-#endif
 
 /*
  * Set hidden flag for "name".
@@ -2343,10 +2032,6 @@ mch_exit(r)
     ml_close_all(TRUE);         /* remove all memfiles */
     may_core_dump();
 
-#if defined(MACOS_CONVERT)
-    mac_conv_cleanup();
-#endif
-
 #if defined(EXITFREE)
     free_all_mem();
 #endif
@@ -2370,8 +2055,7 @@ mch_settmode(tmode)
 {
     static int first = TRUE;
 
-    /* Why is NeXT excluded here (and not in os_unixx.h)? */
-#if defined(ECHOE) && defined(ICANON) && (defined(HAVE_TERMIO_H) || defined(HAVE_TERMIOS_H)) && !defined(__NeXT__)
+#if defined(ECHOE) && defined(ICANON) && (defined(HAVE_TERMIO_H) || defined(HAVE_TERMIOS_H))
     /*
      * for "new" tty systems
      */
@@ -2474,8 +2158,7 @@ get_stty()
     char_u  buf[2];
     char_u  *p;
 
-    /* Why is NeXT excluded here (and not in os_unixx.h)? */
-#if defined(ECHOE) && defined(ICANON) && (defined(HAVE_TERMIO_H) || defined(HAVE_TERMIOS_H)) && !defined(__NeXT__)
+#if defined(ECHOE) && defined(ICANON) && (defined(HAVE_TERMIO_H) || defined(HAVE_TERMIOS_H))
     /* for "new" tty systems */
 #if defined(HAVE_TERMIOS_H)
     struct termios keys;
@@ -2528,22 +2211,6 @@ mch_setmouse(on)
 
     xterm_mouse_vers = use_xterm_mouse();
 
-#if defined(FEAT_MOUSE_URXVT)
-    if (ttym_flags == TTYM_URXVT)
-    {
-        out_str_nf((char_u *) (on ? "\033[?1015h" : "\033[?1015l"));
-        ison = on;
-    }
-#endif
-
-#if defined(FEAT_MOUSE_SGR)
-    if (ttym_flags == TTYM_SGR)
-    {
-        out_str_nf((char_u *) (on ? "\033[?1006h" : "\033[?1006l"));
-        ison = on;
-    }
-#endif
-
     if (xterm_mouse_vers > 0)
     {
         if (on) /* enable mouse events, use mouse tracking if available */
@@ -2552,17 +2219,6 @@ mch_setmouse(on)
             out_str_nf((char_u *) (xterm_mouse_vers > 1 ? "\033[?1002l" : "\033[?1000l"));
         ison = on;
     }
-
-#if defined(FEAT_MOUSE_DEC)
-    else if (ttym_flags == TTYM_DEC)
-    {
-        if (on) /* enable mouse events */
-            out_str_nf((char_u *)"\033[1;2'z\033[1;3'{");
-        else    /* disable mouse events */
-            out_str_nf((char_u *)"\033['z");
-        ison = on;
-    }
-#endif
 
 #if defined(FEAT_MOUSE_GPM)
     else
@@ -2596,52 +2252,6 @@ mch_setmouse(on)
     }
 #endif
 
-#if defined(FEAT_MOUSE_JSB)
-    else
-    {
-        if (on)
-        {
-            /* D - Enable Mouse up/down messages
-             * L - Enable Left Button Reporting
-             * M - Enable Middle Button Reporting
-             * R - Enable Right Button Reporting
-             * K - Enable SHIFT and CTRL key Reporting
-             * + - Enable Advanced messaging of mouse moves and up/down messages
-             * Q - Quiet No Ack
-             * # - Numeric value of mouse pointer required
-             *    0 = Multiview 2000 cursor, used as standard
-             *    1 = Windows Arrow
-             *    2 = Windows I Beam
-             *    3 = Windows Hour Glass
-             *    4 = Windows Cross Hair
-             *    5 = Windows UP Arrow
-             */
-#if defined(JSBTERM_MOUSE_NONADVANCED)
-            /* Disables full feedback of pointer movements */
-            out_str_nf((char_u *)"\033[0~ZwLMRK1Q\033\\");
-#else
-            out_str_nf((char_u *)"\033[0~ZwLMRK+1Q\033\\");
-#endif
-            ison = TRUE;
-        }
-        else
-        {
-            out_str_nf((char_u *)"\033[0~ZwQ\033\\");
-            ison = FALSE;
-        }
-    }
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-    else
-    {
-        /* 1 = button press, 6 = release, 7 = drag, 1h...9l = right button */
-        if (on)
-            out_str_nf("\033[>1h\033[>6h\033[>7h\033[>1h\033[>9l");
-        else
-            out_str_nf("\033[>1l\033[>6l\033[>7l\033[>1l\033[>9h");
-        ison = on;
-    }
-#endif
 }
 
 /*
@@ -2652,9 +2262,6 @@ check_mouse_termcode()
 {
 #if defined(FEAT_MOUSE_XTERM)
     if (use_xterm_mouse()
-#if defined(FEAT_MOUSE_URXVT)
-            && use_xterm_mouse() != 3
-#endif
             )
     {
         set_mouse_termcode(KS_MOUSE, (char_u *)(term_is_8bit(T_NAME) ? "\233M" : "\033[M"));
@@ -2682,73 +2289,6 @@ check_mouse_termcode()
         set_mouse_termcode(KS_MOUSE, (char_u *)"\033MS");
 #endif
 
-#if defined(FEAT_MOUSE_JSB)
-    /* Conflicts with xterm mouse: "\033[" and "\033[M" ??? */
-    if (!use_xterm_mouse()
-            )
-        set_mouse_termcode(KS_JSBTERM_MOUSE, (char_u *)"\033[0~zw");
-    else
-        del_mouse_termcode(KS_JSBTERM_MOUSE);
-#endif
-
-#if defined(FEAT_MOUSE_NET)
-    /* There is no conflict, but one may type "ESC }" from Insert mode.  Don't
-     * define it in the GUI or when using an xterm. */
-    if (!use_xterm_mouse()
-            )
-        set_mouse_termcode(KS_NETTERM_MOUSE, (char_u *)"\033}");
-    else
-        del_mouse_termcode(KS_NETTERM_MOUSE);
-#endif
-
-#if defined(FEAT_MOUSE_DEC)
-    /* Conflicts with xterm mouse: "\033[" and "\033[M" */
-    if (!use_xterm_mouse()
-            )
-        set_mouse_termcode(KS_DEC_MOUSE, (char_u *)(term_is_8bit(T_NAME) ? "\233" : "\033["));
-    else
-        del_mouse_termcode(KS_DEC_MOUSE);
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-    /* same conflict as the dec mouse */
-    if (!use_xterm_mouse()
-            )
-        set_mouse_termcode(KS_PTERM_MOUSE, (char_u *)"\033[");
-    else
-        del_mouse_termcode(KS_PTERM_MOUSE);
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-    /* same conflict as the dec mouse */
-    if (use_xterm_mouse() == 3
-            )
-    {
-        set_mouse_termcode(KS_URXVT_MOUSE, (char_u *)(term_is_8bit(T_NAME) ? "\233" : "\033["));
-
-        if (*p_mouse != NUL)
-        {
-            mch_setmouse(FALSE);
-            setmouse();
-        }
-    }
-    else
-        del_mouse_termcode(KS_URXVT_MOUSE);
-#endif
-#if defined(FEAT_MOUSE_SGR)
-    /* There is no conflict with xterm mouse */
-    if (use_xterm_mouse() == 4
-            )
-    {
-        set_mouse_termcode(KS_SGR_MOUSE, (char_u *)(term_is_8bit(T_NAME) ? "\233<" : "\033[<"));
-
-        if (*p_mouse != NUL)
-        {
-            mch_setmouse(FALSE);
-            setmouse();
-        }
-    }
-    else
-        del_mouse_termcode(KS_SGR_MOUSE);
-#endif
 }
 #endif
 
@@ -2898,11 +2438,7 @@ wait4pid(child, status)
          * wait() sometimes hangs for no obvious reason.  Use waitpid()
          * instead and loop (like the GUI). Also needed for other interfaces,
          * they might call system(). */
-#if defined(__NeXT__)
-        wait_pid = wait4(child, status, WNOHANG, (struct rusage *)0);
-#else
         wait_pid = waitpid(child, status, WNOHANG);
-#endif
         if (wait_pid == 0)
         {
             /* Wait for 10 msec before trying again. */
@@ -3603,11 +3139,7 @@ mch_call_shell(cmd, options)
                      * Check if the child still exists, before checking for
                      * typed characters (otherwise we would lose typeahead).
                      */
-#if defined(__NeXT__)
-                    wait_pid = wait4(pid, &status, WNOHANG, (struct rusage *)0);
-#else
                     wait_pid = waitpid(pid, &status, WNOHANG);
-#endif
                     if ((wait_pid == (pid_t)-1 && errno == ECHILD)
                             || (wait_pid == pid && WIFEXITED(status)))
                     {
@@ -3738,45 +3270,18 @@ WaitForChar(msec)
 #if defined(FEAT_MOUSE_GPM)
     int         gpm_process_wanted;
 #endif
-#if defined(FEAT_XCLIPBOARD)
-    int         rest;
-#endif
     int         avail;
 
     if (input_available())          /* something in inbuf[] */
         return 1;
 
-#if defined(FEAT_MOUSE_DEC)
-    /* May need to query the mouse position. */
-    if (WantQueryMouse)
-    {
-        WantQueryMouse = FALSE;
-        mch_write((char_u *)"\033[1'|", 5);
-    }
-#endif
-
     /*
      * For FEAT_MOUSE_GPM and FEAT_XCLIPBOARD we loop here to process mouse
      * events.  This is a bit complicated, because they might both be defined.
      */
-#if defined(FEAT_MOUSE_GPM) || defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_XCLIPBOARD)
-    rest = 0;
-    if (do_xterm_trace())
-        rest = msec;
-#endif
+#if defined(FEAT_MOUSE_GPM)
     do
     {
-#if defined(FEAT_XCLIPBOARD)
-        if (rest != 0)
-        {
-            msec = XT_TRACE_DELAY;
-            if (rest >= 0 && rest < XT_TRACE_DELAY)
-                msec = rest;
-            if (rest >= 0)
-                rest -= msec;
-        }
-#endif
 #if defined(FEAT_MOUSE_GPM)
         gpm_process_wanted = 0;
         avail = RealWaitForChar(read_cmd_fd, msec, &gpm_process_wanted);
@@ -3787,18 +3292,12 @@ WaitForChar(msec)
         {
             if (input_available())
                 return 1;
-#if defined(FEAT_XCLIPBOARD)
-            if (rest == 0 || !do_xterm_trace())
-#endif
                 break;
         }
     }
     while (FALSE
 #if defined(FEAT_MOUSE_GPM)
            || (gpm_process_wanted && mch_gpm_process() == 0)
-#endif
-#if defined(FEAT_XCLIPBOARD)
-           || (!avail && rest != 0)
 #endif
           );
 
@@ -3824,31 +3323,6 @@ RealWaitForChar(fd, msec, check_for_gpm)
     int         *check_for_gpm UNUSED;
 {
     int         ret;
-#if defined(FEAT_XCLIPBOARD) || (0)
-    static int  busy = FALSE;
-
-    /* May retry getting characters after an event was handled. */
-#define MAY_LOOP
-
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
-    /* Remember at what time we started, so that we know how much longer we
-     * should wait after being interrupted. */
-#define USE_START_TV
-    struct timeval  start_tv;
-
-    if (msec > 0 && (
-#if defined(FEAT_XCLIPBOARD)
-            xterm_Shell != (Widget)0
-#endif
-            ))
-        gettimeofday(&start_tv, NULL);
-#endif
-
-    /* Handle being called recursively.  This may happen for the session
-     * manager stuff, it may save the file, which does a breakcheck. */
-    if (busy)
-        return 0;
-#endif
 
 #if defined(MAY_LOOP)
     for (;;)
@@ -3860,9 +3334,6 @@ RealWaitForChar(fd, msec, check_for_gpm)
 #if !defined(HAVE_SELECT)
         struct pollfd   fds[6];
         int             nfd;
-#if defined(FEAT_XCLIPBOARD)
-        int             xterm_idx = -1;
-#endif
 #if defined(FEAT_MOUSE_GPM)
         int             gpm_idx = -1;
 #endif
@@ -3872,16 +3343,6 @@ RealWaitForChar(fd, msec, check_for_gpm)
         fds[0].events = POLLIN;
         nfd = 1;
 
-#if defined(FEAT_XCLIPBOARD)
-        may_restore_clipboard();
-        if (xterm_Shell != (Widget)0)
-        {
-            xterm_idx = nfd;
-            fds[nfd].fd = ConnectionNumber(xterm_dpy);
-            fds[nfd].events = POLLIN;
-            nfd++;
-        }
-#endif
 #if defined(FEAT_MOUSE_GPM)
         if (check_for_gpm != NULL && gpm_flag && gpm_fd >= 0)
         {
@@ -3894,15 +3355,6 @@ RealWaitForChar(fd, msec, check_for_gpm)
 
         ret = poll(fds, nfd, towait);
 
-#if defined(FEAT_XCLIPBOARD)
-        if (xterm_Shell != (Widget)0 && (fds[xterm_idx].revents & POLLIN))
-        {
-            xterm_update();      /* Maybe we should hand out clipboard */
-            if (--ret == 0 && !input_available())
-                /* Try again */
-                finished = FALSE;
-        }
-#endif
 #if defined(FEAT_MOUSE_GPM)
         if (gpm_idx >= 0 && (fds[gpm_idx].revents & POLLIN))
         {
@@ -3938,19 +3390,6 @@ select_eintr:
         FD_SET(fd, &efds);
         maxfd = fd;
 
-#if defined(FEAT_XCLIPBOARD)
-        may_restore_clipboard();
-        if (xterm_Shell != (Widget)0)
-        {
-            FD_SET(ConnectionNumber(xterm_dpy), &rfds);
-            if (maxfd < ConnectionNumber(xterm_dpy))
-                maxfd = ConnectionNumber(xterm_dpy);
-
-            /* An event may have already been read but not handled.  In
-             * particulary, XFlush may cause this. */
-            xterm_update();
-        }
-#endif
 #if defined(FEAT_MOUSE_GPM)
         if (check_for_gpm != NULL && gpm_flag && gpm_fd >= 0)
         {
@@ -3978,20 +3417,6 @@ select_eintr:
         }
 #endif
 
-#if defined(FEAT_XCLIPBOARD)
-        if (ret > 0 && xterm_Shell != (Widget)0
-                && FD_ISSET(ConnectionNumber(xterm_dpy), &rfds))
-        {
-            xterm_update();           /* Maybe we should hand out clipboard */
-            /* continue looping when we only got the X event and the input
-             * buffer is empty */
-            if (--ret == 0 && !input_available())
-            {
-                /* Try again */
-                finished = FALSE;
-            }
-        }
-#endif
 #if defined(FEAT_MOUSE_GPM)
         if (ret > 0 && gpm_flag && check_for_gpm != NULL && gpm_fd >= 0)
         {
@@ -5044,307 +4469,5 @@ mch_libcall(libname, funcname, argstring, argint, string_result, number_result)
     }
 
     return OK;
-}
-#endif
-
-#if ((0) && defined(FEAT_XCLIPBOARD))
-static int      xterm_trace = -1;       /* default: disabled */
-static int      xterm_button;
-
-/*
- * Setup a dummy window for X selections in a terminal.
- */
-    void
-setup_term_clip()
-{
-    int         z = 0;
-    char        *strp = "";
-    Widget      AppShell;
-
-    if (!x_connect_to_server())
-        return;
-
-    open_app_context();
-    if (app_context != NULL && xterm_Shell == (Widget)0)
-    {
-        int (*oldhandler)();
-#if defined(HAVE_SETJMP_H)
-        int (*oldIOhandler)();
-#endif
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
-        struct timeval  start_tv;
-
-        if (p_verbose > 0)
-            gettimeofday(&start_tv, NULL);
-#endif
-
-        /* Ignore X errors while opening the display */
-        oldhandler = XSetErrorHandler(x_error_check);
-
-#if defined(HAVE_SETJMP_H)
-        /* Ignore X IO errors while opening the display */
-        oldIOhandler = XSetIOErrorHandler(x_IOerror_check);
-        mch_startjmp();
-        if (SETJMP(lc_jump_env) != 0)
-        {
-            mch_didjmp();
-            xterm_dpy = NULL;
-        }
-        else
-#endif
-        {
-            xterm_dpy = XtOpenDisplay(app_context, xterm_display,
-                    "vim_xterm", "Vim_xterm", NULL, 0, &z, &strp);
-#if defined(HAVE_SETJMP_H)
-            mch_endjmp();
-#endif
-        }
-
-#if defined(HAVE_SETJMP_H)
-        /* Now handle X IO errors normally. */
-        (void)XSetIOErrorHandler(oldIOhandler);
-#endif
-        /* Now handle X errors normally. */
-        (void)XSetErrorHandler(oldhandler);
-
-        if (xterm_dpy == NULL)
-        {
-            if (p_verbose > 0)
-                verb_msg((char_u *)_("Opening the X display failed"));
-            return;
-        }
-
-        /* Catch terminating error of the X server connection. */
-        (void)XSetIOErrorHandler(x_IOerror_handler);
-
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
-        if (p_verbose > 0)
-        {
-            verbose_enter();
-            xopen_message(&start_tv);
-            verbose_leave();
-        }
-#endif
-
-        /* Create a Shell to make converters work. */
-        AppShell = XtVaAppCreateShell("vim_xterm", "Vim_xterm",
-                applicationShellWidgetClass, xterm_dpy,
-                NULL);
-        if (AppShell == (Widget)0)
-            return;
-        xterm_Shell = XtVaCreatePopupShell("VIM",
-                topLevelShellWidgetClass, AppShell,
-                XtNmappedWhenManaged, 0,
-                XtNwidth, 1,
-                XtNheight, 1,
-                NULL);
-        if (xterm_Shell == (Widget)0)
-            return;
-
-        x11_setup_atoms(xterm_dpy);
-        x11_setup_selection(xterm_Shell);
-        if (x11_display == NULL)
-            x11_display = xterm_dpy;
-
-        XtRealizeWidget(xterm_Shell);
-        XSync(xterm_dpy, False);
-        xterm_update();
-    }
-    if (xterm_Shell != (Widget)0)
-    {
-        clip_init(TRUE);
-        if (x11_window == 0 && (strp = getenv("WINDOWID")) != NULL)
-            x11_window = (Window)atol(strp);
-        /* Check if $WINDOWID is valid. */
-        if (test_x11_window(xterm_dpy) == FAIL)
-            x11_window = 0;
-        if (x11_window != 0)
-            xterm_trace = 0;
-    }
-}
-
-    void
-start_xterm_trace(button)
-    int button;
-{
-    if (x11_window == 0 || xterm_trace < 0 || xterm_Shell == (Widget)0)
-        return;
-    xterm_trace = 1;
-    xterm_button = button;
-    do_xterm_trace();
-}
-
-    void
-stop_xterm_trace()
-{
-    if (xterm_trace < 0)
-        return;
-    xterm_trace = 0;
-}
-
-/*
- * Query the xterm pointer and generate mouse termcodes if necessary
- * return TRUE if dragging is active, else FALSE
- */
-    static int
-do_xterm_trace()
-{
-    Window              root, child;
-    int                 root_x, root_y;
-    int                 win_x, win_y;
-    int                 row, col;
-    int_u               mask_return;
-    char_u              buf[50];
-    char_u              *strp;
-    long                got_hints;
-    static char_u       *mouse_code;
-    static char_u       mouse_name[2] = {KS_MOUSE, KE_FILLER};
-    static int          prev_row = 0, prev_col = 0;
-    static XSizeHints   xterm_hints;
-
-    if (xterm_trace <= 0)
-        return FALSE;
-
-    if (xterm_trace == 1)
-    {
-        /* Get the hints just before tracking starts.  The font size might
-         * have changed recently. */
-        if (!XGetWMNormalHints(xterm_dpy, x11_window, &xterm_hints, &got_hints)
-                || !(got_hints & PResizeInc)
-                || xterm_hints.width_inc <= 1
-                || xterm_hints.height_inc <= 1)
-        {
-            xterm_trace = -1;  /* Not enough data -- disable tracing */
-            return FALSE;
-        }
-
-        /* Rely on the same mouse code for the duration of this */
-        mouse_code = find_termcode(mouse_name);
-        prev_row = mouse_row;
-        prev_row = mouse_col;
-        xterm_trace = 2;
-
-        /* Find the offset of the chars, there might be a scrollbar on the
-         * left of the window and/or a menu on the top (eterm etc.) */
-        XQueryPointer(xterm_dpy, x11_window, &root, &child, &root_x, &root_y,
-                      &win_x, &win_y, &mask_return);
-        xterm_hints.y = win_y - (xterm_hints.height_inc * mouse_row)
-                              - (xterm_hints.height_inc / 2);
-        if (xterm_hints.y <= xterm_hints.height_inc / 2)
-            xterm_hints.y = 2;
-        xterm_hints.x = win_x - (xterm_hints.width_inc * mouse_col)
-                              - (xterm_hints.width_inc / 2);
-        if (xterm_hints.x <= xterm_hints.width_inc / 2)
-            xterm_hints.x = 2;
-        return TRUE;
-    }
-    if (mouse_code == NULL || STRLEN(mouse_code) > 45)
-    {
-        xterm_trace = 0;
-        return FALSE;
-    }
-
-    XQueryPointer(xterm_dpy, x11_window, &root, &child, &root_x, &root_y,
-                  &win_x, &win_y, &mask_return);
-
-    row = check_row((win_y - xterm_hints.y) / xterm_hints.height_inc);
-    col = check_col((win_x - xterm_hints.x) / xterm_hints.width_inc);
-    if (row == prev_row && col == prev_col)
-        return TRUE;
-
-    STRCPY(buf, mouse_code);
-    strp = buf + STRLEN(buf);
-    *strp++ = (xterm_button | MOUSE_DRAG) & ~0x20;
-    *strp++ = (char_u)(col + ' ' + 1);
-    *strp++ = (char_u)(row + ' ' + 1);
-    *strp = 0;
-    add_to_input_buf(buf, STRLEN(buf));
-
-    prev_row = row;
-    prev_col = col;
-    return TRUE;
-}
-
-/*
- * Catch up with GUI or X events.
- */
-    static void
-clip_update()
-{
-    if (xterm_Shell != (Widget)0)
-        xterm_update();
-}
-
-/*
- * Catch up with any queued X events.  This may put keyboard input into the
- * input buffer, call resize call-backs, trigger timers etc.  If there is
- * nothing in the X event queue (& no timers pending), then we return
- * immediately.
- */
-    static void
-xterm_update()
-{
-    XEvent event;
-
-    for (;;)
-    {
-        XtInputMask mask = XtAppPending(app_context);
-
-        if (mask == 0 || vim_is_input_buf_full())
-            break;
-
-        if (mask & XtIMXEvent)
-        {
-            /* There is an event to process. */
-            XtAppNextEvent(app_context, &event);
-#if defined(FEAT_CLIENTSERVER)
-            {
-                XPropertyEvent *e = (XPropertyEvent *)&event;
-
-                if (e->type == PropertyNotify && e->window == commWindow
-                   && e->atom == commProperty && e->state == PropertyNewValue)
-                serverEventProc(xterm_dpy, &event);
-            }
-#endif
-            XtDispatchEvent(&event);
-        }
-        else
-        {
-            /* There is something else than an event to process. */
-            XtAppProcessEvent(app_context, mask);
-        }
-    }
-}
-
-    int
-clip_xterm_own_selection(cbd)
-    VimClipboard *cbd;
-{
-    if (xterm_Shell != (Widget)0)
-        return clip_x11_own_selection(xterm_Shell, cbd);
-    return FAIL;
-}
-
-    void
-clip_xterm_lose_selection(cbd)
-    VimClipboard *cbd;
-{
-    if (xterm_Shell != (Widget)0)
-        clip_x11_lose_selection(xterm_Shell, cbd);
-}
-
-    void
-clip_xterm_request_selection(cbd)
-    VimClipboard *cbd;
-{
-    if (xterm_Shell != (Widget)0)
-        clip_x11_request_selection(xterm_Shell, xterm_dpy, cbd);
-}
-
-    void
-clip_xterm_set_selection(cbd)
-    VimClipboard *cbd;
-{
-    clip_x11_set_selection(cbd);
 }
 #endif

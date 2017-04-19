@@ -206,20 +206,11 @@ open_buffer(read_stdin, eap, flags)
     if (aborting())
         curbuf->b_flags |= BF_READERR;
 
-#if defined(FEAT_FOLDING)
-    /* Need to update automatic folding.  Do this before the autocommands,
-     * they may use the fold info. */
-    foldUpdateAll(curwin);
-#endif
-
 #if defined(FEAT_AUTOCMD)
     /* need to set w_topline, unless some autocommand already did that. */
     if (!(curwin->w_valid & VALID_TOPLINE))
     {
         curwin->w_topline = 1;
-#if defined(FEAT_DIFF)
-        curwin->w_topfill = 0;
-#endif
     }
     apply_autocmds_retval(EVENT_BUFENTER, NULL, NULL, FALSE, curbuf, &retval);
 #endif
@@ -540,30 +531,10 @@ buf_freeall(buf, flags)
     if (buf == curbuf && !is_curbuf)
         return;
 #endif
-#if defined(FEAT_DIFF)
-    diff_buf_delete(buf);           /* Can't use 'diff' for unloaded buffer. */
-#endif
 #if defined(FEAT_SYN_HL)
     /* Remove any ownsyntax, unless exiting. */
     if (firstwin != NULL && curwin->w_buffer == buf)
         reset_synblock(curwin);
-#endif
-
-#if defined(FEAT_FOLDING)
-    /* No folds in an empty buffer. */
-#if defined(FEAT_WINDOWS)
-    {
-        win_T           *win;
-        tabpage_T       *tp;
-
-        FOR_ALL_TAB_WINDOWS(tp, win)
-            if (win->w_buffer == buf)
-                clearFolding(win);
-    }
-#else
-    if (curwin->w_buffer == buf)
-        clearFolding(curwin);
-#endif
 #endif
 
     ml_close(buf, TRUE);            /* close and delete the memline/memfile */
@@ -615,9 +586,6 @@ free_buffer_stuff(buf, free_options)
     {
         clear_wininfo(buf);             /* including window-local options */
         free_buf_options(buf, TRUE);
-#if defined(FEAT_SPELL)
-        ga_clear(&buf->b_s.b_langp);
-#endif
     }
     vars_clear(&buf->b_vars->dv_hashtab); /* free all internal variables */
     hash_init(&buf->b_vars->dv_hashtab);
@@ -651,9 +619,6 @@ clear_wininfo(buf)
         if (wip->wi_optset)
         {
             clear_winopt(&wip->wi_opt);
-#if defined(FEAT_FOLDING)
-            deleteFoldRecurse(&wip->wi_folds);
-#endif
         }
         vim_free(wip);
     }
@@ -1415,22 +1380,11 @@ enter_buffer(buf)
     buf_copy_options(buf, BCO_ENTER | BCO_NOHELP);
     if (!buf->b_help)
         get_winopts(buf);
-#if defined(FEAT_FOLDING)
-    else
-        /* Remove all folds in the window. */
-        clearFolding(curwin);
-    foldUpdateAll(curwin);      /* update folds (later). */
-#endif
 
     /* Get the buffer in the current window. */
     curwin->w_buffer = buf;
     curbuf = buf;
     ++curbuf->b_nwindows;
-
-#if defined(FEAT_DIFF)
-    if (curwin->w_p_diff)
-        diff_buf_add(curbuf);
-#endif
 
 #if defined(FEAT_SYN_HL)
     curwin->w_s = &(buf->b_s);
@@ -1470,9 +1424,6 @@ enter_buffer(buf)
         (void)buf_check_timestamp(curbuf, FALSE); /* check if file changed */
 #if defined(FEAT_AUTOCMD)
         curwin->w_topline = 1;
-#if defined(FEAT_DIFF)
-        curwin->w_topfill = 0;
-#endif
         apply_autocmds(EVENT_BUFENTER, NULL, NULL, FALSE, curbuf);
         apply_autocmds(EVENT_BUFWINENTER, NULL, NULL, FALSE, curbuf);
 #endif
@@ -1499,12 +1450,6 @@ enter_buffer(buf)
 #if defined(FEAT_KEYMAP)
     if (curbuf->b_kmap_state & KEYMAP_INIT)
         (void)keymap_init();
-#endif
-#if defined(FEAT_SPELL)
-    /* May need to set the spell language.  Can only do this after the buffer
-     * has been properly setup. */
-    if (!curbuf->b_help && curwin->w_p_spell && *curwin->w_s->b_p_spl != NUL)
-        (void)did_set_spelllang(curwin);
 #endif
 
     redraw_later(NOT_VALID);
@@ -1791,13 +1736,7 @@ free_buf_options(buf, free_p_ff)
     clear_string_option(&buf->b_p_inde);
     clear_string_option(&buf->b_p_indk);
 #endif
-#if defined(FEAT_CRYPT)
-    clear_string_option(&buf->b_p_cm);
-#endif
     clear_string_option(&buf->b_p_fex);
-#if defined(FEAT_CRYPT)
-    clear_string_option(&buf->b_p_key);
-#endif
     clear_string_option(&buf->b_p_kp);
     clear_string_option(&buf->b_p_mps);
     clear_string_option(&buf->b_p_fo);
@@ -1810,19 +1749,9 @@ free_buf_options(buf, free_p_ff)
 #if defined(FEAT_COMMENTS)
     clear_string_option(&buf->b_p_com);
 #endif
-#if defined(FEAT_FOLDING)
-    clear_string_option(&buf->b_p_cms);
-#endif
     clear_string_option(&buf->b_p_nf);
 #if defined(FEAT_SYN_HL)
     clear_string_option(&buf->b_p_syn);
-#endif
-#if defined(FEAT_SPELL)
-    clear_string_option(&buf->b_s.b_p_spc);
-    clear_string_option(&buf->b_s.b_p_spf);
-    vim_regfree(buf->b_s.b_cap_prog);
-    buf->b_s.b_cap_prog = NULL;
-    clear_string_option(&buf->b_s.b_p_spl);
 #endif
 #if defined(FEAT_SEARCHPATH)
     clear_string_option(&buf->b_p_sua);
@@ -2085,10 +2014,6 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode, curtab_only)
             match = curbuf->b_fnum;
         else
             match = curwin->w_alt_fnum;
-#if defined(FEAT_DIFF)
-        if (diffmode && !diff_mode_buf(buflist_findnr(match)))
-            match = -1;
-#endif
     }
 
     /*
@@ -2132,9 +2057,6 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode, curtab_only)
 
                 for (buf = firstbuf; buf != NULL; buf = buf->b_next)
                     if (buf->b_p_bl == find_listed
-#if defined(FEAT_DIFF)
-                            && (!diffmode || diff_mode_buf(buf))
-#endif
                             && buflist_match(&regmatch, buf, FALSE) != NULL)
                     {
                         if (curtab_only)
@@ -2423,9 +2345,6 @@ buflist_setfpos(buf, win, lnum, col, copy_options)
         if (copy_options && wip->wi_optset)
         {
             clear_winopt(&wip->wi_opt);
-#if defined(FEAT_FOLDING)
-            deleteFoldRecurse(&wip->wi_folds);
-#endif
         }
     }
     if (lnum != 0)
@@ -2437,10 +2356,6 @@ buflist_setfpos(buf, win, lnum, col, copy_options)
     {
         /* Save the window-specific option values. */
         copy_winopt(&win->w_onebuf_opt, &wip->wi_opt);
-#if defined(FEAT_FOLDING)
-        wip->wi_fold_manual = win->w_fold_manual;
-        cloneFoldGrowArray(&win->w_folds, &wip->wi_folds);
-#endif
         wip->wi_optset = TRUE;
     }
 
@@ -2453,32 +2368,6 @@ buflist_setfpos(buf, win, lnum, col, copy_options)
 
     return;
 }
-
-#if defined(FEAT_DIFF)
-static int wininfo_other_tab_diff __ARGS((wininfo_T *wip));
-
-/*
- * Return TRUE when "wip" has 'diff' set and the diff is only for another tab
- * page.  That's because a diff is local to a tab page.
- */
-    static int
-wininfo_other_tab_diff(wip)
-    wininfo_T   *wip;
-{
-    win_T       *wp;
-
-    if (wip->wi_opt.wo_diff)
-    {
-        for (wp = firstwin; wp != NULL; wp = wp->w_next)
-            /* return FALSE when it's a window in the current tab page, thus
-             * the buffer was in diff mode here */
-            if (wip->wi_win == wp)
-                return FALSE;
-        return TRUE;
-    }
-    return FALSE;
-}
-#endif
 
 /*
  * Find info for the current window in buffer "buf".
@@ -2496,9 +2385,6 @@ find_wininfo(buf, skip_diff_buffer)
 
     for (wip = buf->b_wininfo; wip != NULL; wip = wip->wi_next)
         if (wip->wi_win == curwin
-#if defined(FEAT_DIFF)
-                && (!skip_diff_buffer || !wininfo_other_tab_diff(wip))
-#endif
            )
             break;
 
@@ -2506,15 +2392,6 @@ find_wininfo(buf, skip_diff_buffer)
      * 'diff' set and is in another tab page). */
     if (wip == NULL)
     {
-#if defined(FEAT_DIFF)
-        if (skip_diff_buffer)
-        {
-            for (wip = buf->b_wininfo; wip != NULL; wip = wip->wi_next)
-                if (!wininfo_other_tab_diff(wip))
-                    break;
-        }
-        else
-#endif
             wip = buf->b_wininfo;
     }
     return wip;
@@ -2533,28 +2410,15 @@ get_winopts(buf)
     wininfo_T   *wip;
 
     clear_winopt(&curwin->w_onebuf_opt);
-#if defined(FEAT_FOLDING)
-    clearFolding(curwin);
-#endif
 
     wip = find_wininfo(buf, TRUE);
     if (wip != NULL && wip->wi_optset)
     {
         copy_winopt(&wip->wi_opt, &curwin->w_onebuf_opt);
-#if defined(FEAT_FOLDING)
-        curwin->w_fold_manual = wip->wi_fold_manual;
-        curwin->w_foldinvalid = TRUE;
-        cloneFoldGrowArray(&wip->wi_folds, &curwin->w_folds);
-#endif
     }
     else
         copy_winopt(&curwin->w_allbuf_opt, &curwin->w_onebuf_opt);
 
-#if defined(FEAT_FOLDING)
-    /* Set 'foldlevel' to 'foldlevelstart' if it's not negative. */
-    if (p_fdls >= 0)
-        curwin->w_p_fdl = p_fdls;
-#endif
 #if defined(FEAT_SYN_HL)
     check_colorcolumn(curwin);
 #endif
@@ -2861,25 +2725,6 @@ buflist_add(fname, flags)
         return buf->b_fnum;
     return 0;
 }
-
-#if defined(BACKSLASH_IN_FILENAME)
-/*
- * Adjust slashes in file names.  Called after 'shellslash' was set.
- */
-    void
-buflist_slash_adjust()
-{
-    buf_T       *bp;
-
-    for (bp = firstbuf; bp != NULL; bp = bp->b_next)
-    {
-        if (bp->b_ffname != NULL)
-            slash_adjust(bp->b_ffname);
-        if (bp->b_sfname != NULL)
-            slash_adjust(bp->b_sfname);
-    }
-}
-#endif
 
 /*
  * Set alternate cursor position for the current buffer and window "win".
@@ -3216,11 +3061,6 @@ maketitle()
                 buf[off++] = '(';
                 home_replace(curbuf, curbuf->b_ffname,
                                         buf + off, SPACE_FOR_DIR - off, TRUE);
-#if defined(BACKSLASH_IN_FILENAME)
-                /* avoid "c:/name" to be reduced to "c" */
-                if (isalpha(buf[off]) && buf[off + 1] == ':')
-                    off += 2;
-#endif
                 /* remove the file name */
                 p = gettail_sep(buf + off);
                 if (p == buf + off)
@@ -4209,9 +4049,6 @@ get_rel_pos(wp, buf, buflen)
     if (buflen < 3) /* need at least 3 chars for writing */
         return;
     above = wp->w_topline - 1;
-#if defined(FEAT_DIFF)
-    above += diff_check_fill(wp, wp->w_topline) - wp->w_topfill;
-#endif
     below = wp->w_buffer->b_ml.ml_line_count - wp->w_botline + 1;
     if (below <= 0)
         vim_strncpy(buf, (char_u *)(above == 0 ? _("All") : _("Bot")),
@@ -5010,116 +4847,6 @@ chk_modeline(lnum, flags)
     }
     return retval;
 }
-
-#if defined(FEAT_VIMINFO)
-    int
-read_viminfo_bufferlist(virp, writing)
-    vir_T       *virp;
-    int         writing;
-{
-    char_u      *tab;
-    linenr_T    lnum;
-    colnr_T     col;
-    buf_T       *buf;
-    char_u      *sfname;
-    char_u      *xline;
-
-    /* Handle long line and escaped characters. */
-    xline = viminfo_readstring(virp, 1, FALSE);
-
-    /* don't read in if there are files on the command-line or if writing: */
-    if (xline != NULL && !writing && ARGCOUNT == 0
-                                       && find_viminfo_parameter('%') != NULL)
-    {
-        /* Format is: <fname> Tab <lnum> Tab <col>.
-         * Watch out for a Tab in the file name, work from the end. */
-        lnum = 0;
-        col = 0;
-        tab = vim_strrchr(xline, '\t');
-        if (tab != NULL)
-        {
-            *tab++ = '\0';
-            col = (colnr_T)atoi((char *)tab);
-            tab = vim_strrchr(xline, '\t');
-            if (tab != NULL)
-            {
-                *tab++ = '\0';
-                lnum = atol((char *)tab);
-            }
-        }
-
-        /* Expand "~/" in the file name at "line + 1" to a full path.
-         * Then try shortening it by comparing with the current directory */
-        expand_env(xline, NameBuff, MAXPATHL);
-        sfname = shorten_fname1(NameBuff);
-
-        buf = buflist_new(NameBuff, sfname, (linenr_T)0, BLN_LISTED);
-        if (buf != NULL)        /* just in case... */
-        {
-            buf->b_last_cursor.lnum = lnum;
-            buf->b_last_cursor.col = col;
-            buflist_setfpos(buf, curwin, lnum, col, FALSE);
-        }
-    }
-    vim_free(xline);
-
-    return viminfo_readline(virp);
-}
-
-    void
-write_viminfo_bufferlist(fp)
-    FILE    *fp;
-{
-    buf_T       *buf;
-#if defined(FEAT_WINDOWS)
-    win_T       *win;
-    tabpage_T   *tp;
-#endif
-    char_u      *line;
-    int         max_buffers;
-
-    if (find_viminfo_parameter('%') == NULL)
-        return;
-
-    /* Without a number -1 is returned: do all buffers. */
-    max_buffers = get_viminfo_parameter('%');
-
-    /* Allocate room for the file name, lnum and col. */
-#define LINE_BUF_LEN (MAXPATHL + 40)
-    line = alloc(LINE_BUF_LEN);
-    if (line == NULL)
-        return;
-
-#if defined(FEAT_WINDOWS)
-    FOR_ALL_TAB_WINDOWS(tp, win)
-        set_last_cursor(win);
-#else
-    set_last_cursor(curwin);
-#endif
-
-    fputs(_("\n# Buffer list:\n"), fp);
-    for (buf = firstbuf; buf != NULL ; buf = buf->b_next)
-    {
-        if (buf->b_fname == NULL
-                || !buf->b_p_bl
-#if defined(FEAT_QUICKFIX)
-                || bt_quickfix(buf)
-#endif
-                || removable(buf->b_ffname))
-            continue;
-
-        if (max_buffers-- == 0)
-            break;
-        putc('%', fp);
-        home_replace(NULL, buf->b_ffname, line, MAXPATHL, TRUE);
-        vim_snprintf_add((char *)line, LINE_BUF_LEN, "\t%ld\t%d",
-                        (long)buf->b_last_cursor.lnum,
-                        buf->b_last_cursor.col);
-        viminfo_writestring(fp, line);
-    }
-    vim_free(line);
-}
-#endif
 
 /*
  * Return special buffer name.

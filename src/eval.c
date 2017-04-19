@@ -149,23 +149,6 @@ struct ufunc
     int         uf_calls;       /* nr of active calls */
     garray_T    uf_args;        /* arguments */
     garray_T    uf_lines;       /* function lines */
-#if defined(FEAT_PROFILE)
-    int         uf_profiling;   /* TRUE when func is being profiled */
-    /* profiling the function as a whole */
-    int         uf_tm_count;    /* nr of calls */
-    proftime_T  uf_tm_total;    /* time spent in function + children */
-    proftime_T  uf_tm_self;     /* time spent in function itself */
-    proftime_T  uf_tm_children; /* time spent in children this call */
-    /* profiling the function per line */
-    int         *uf_tml_count;  /* nr of times line was executed */
-    proftime_T  *uf_tml_total;  /* time spent in a line + children */
-    proftime_T  *uf_tml_self;   /* time spent in a line itself */
-    proftime_T  uf_tml_start;   /* start time for current line */
-    proftime_T  uf_tml_children; /* time spent in children for this line */
-    proftime_T  uf_tml_wait;    /* start wait time for current line */
-    int         uf_tml_idx;     /* index of line being timed; -1 if none */
-    int         uf_tml_execed;  /* line being timed was executed */
-#endif
     scid_T      uf_script_ID;   /* ID of script where function was defined,
                                    used for s: variables */
     int         uf_refcount;    /* for numbered function: reference count */
@@ -227,9 +210,6 @@ struct funccall_S
     linenr_T    breakpoint;     /* next line with breakpoint or zero */
     int         dbg_tick;       /* debug_tick when breakpoint was set */
     int         level;          /* top nesting level of executed function */
-#if defined(FEAT_PROFILE)
-    proftime_T  prof_child;     /* time spent in a child */
-#endif
     funccall_T  *caller;        /* calling function or NULL */
 };
 
@@ -656,9 +636,6 @@ static void f_setreg __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_settabvar __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_settabwinvar __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_setwinvar __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_CRYPT)
-static void f_sha256 __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_shellescape __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_shiftwidth __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_simplify __ARGS((typval_T *argvars, typval_T *rettv));
@@ -779,15 +756,6 @@ static void list_func_head __ARGS((ufunc_T *fp, int indent));
 static ufunc_T *find_func __ARGS((char_u *name));
 static int function_exists __ARGS((char_u *name));
 static int builtin_function __ARGS((char_u *name, int len));
-#if defined(FEAT_PROFILE)
-static void func_do_profile __ARGS((ufunc_T *fp));
-static void prof_sort_list __ARGS((FILE *fd, ufunc_T **sorttab, int st_len, char *title, int prefer_self));
-static void prof_func_line __ARGS((FILE *fd, int count, proftime_T *total, proftime_T *self, int prefer_self));
-static int
-        prof_total_cmp __ARGS((const void *s1, const void *s2));
-static int
-        prof_self_cmp __ARGS((const void *s1, const void *s2));
-#endif
 static int script_autoload __ARGS((char_u *name, int reload));
 static char_u *autoload_name __ARGS((char_u *name));
 static void cat_func_name __ARGS((char_u *buf, ufunc_T *fp));
@@ -1174,42 +1142,6 @@ eval_printexpr(fname, args)
 }
 #endif
 
-#if defined(FEAT_DIFF)
-    void
-eval_diff(origfile, newfile, outfile)
-    char_u      *origfile;
-    char_u      *newfile;
-    char_u      *outfile;
-{
-    int         err = FALSE;
-
-    set_vim_var_string(VV_FNAME_IN, origfile, -1);
-    set_vim_var_string(VV_FNAME_NEW, newfile, -1);
-    set_vim_var_string(VV_FNAME_OUT, outfile, -1);
-    (void)eval_to_bool(p_dex, &err, NULL, FALSE);
-    set_vim_var_string(VV_FNAME_IN, NULL, -1);
-    set_vim_var_string(VV_FNAME_NEW, NULL, -1);
-    set_vim_var_string(VV_FNAME_OUT, NULL, -1);
-}
-
-    void
-eval_patch(origfile, difffile, outfile)
-    char_u      *origfile;
-    char_u      *difffile;
-    char_u      *outfile;
-{
-    int         err;
-
-    set_vim_var_string(VV_FNAME_IN, origfile, -1);
-    set_vim_var_string(VV_FNAME_DIFF, difffile, -1);
-    set_vim_var_string(VV_FNAME_OUT, outfile, -1);
-    (void)eval_to_bool(p_pex, &err, NULL, FALSE);
-    set_vim_var_string(VV_FNAME_IN, NULL, -1);
-    set_vim_var_string(VV_FNAME_DIFF, NULL, -1);
-    set_vim_var_string(VV_FNAME_OUT, NULL, -1);
-}
-#endif
-
 /*
  * Top level evaluation function, returning a boolean.
  * Sets "error" to TRUE if there was an error.
@@ -1426,69 +1358,6 @@ restore_vimvar(idx, save_tv)
     }
 }
 
-#if defined(FEAT_SPELL)
-/*
- * Evaluate an expression to a list with suggestions.
- * For the "expr:" part of 'spellsuggest'.
- * Returns NULL when there is an error.
- */
-    list_T *
-eval_spell_expr(badword, expr)
-    char_u      *badword;
-    char_u      *expr;
-{
-    typval_T    save_val;
-    typval_T    rettv;
-    list_T      *list = NULL;
-    char_u      *p = skipwhite(expr);
-
-    /* Set "v:val" to the bad word. */
-    prepare_vimvar(VV_VAL, &save_val);
-    vimvars[VV_VAL].vv_type = VAR_STRING;
-    vimvars[VV_VAL].vv_str = badword;
-    if (p_verbose == 0)
-        ++emsg_off;
-
-    if (eval1(&p, &rettv, TRUE) == OK)
-    {
-        if (rettv.v_type != VAR_LIST)
-            clear_tv(&rettv);
-        else
-            list = rettv.vval.v_list;
-    }
-
-    if (p_verbose == 0)
-        --emsg_off;
-    restore_vimvar(VV_VAL, &save_val);
-
-    return list;
-}
-
-/*
- * "list" is supposed to contain two items: a word and a number.  Return the
- * word in "pp" and the number as the return value.
- * Return -1 if anything isn't right.
- * Used to get the good word and score from the eval_spell_expr() result.
- */
-    int
-get_spellword(list, pp)
-    list_T      *list;
-    char_u      **pp;
-{
-    listitem_T  *li;
-
-    li = list->lv_first;
-    if (li == NULL)
-        return -1;
-    *pp = get_tv_string(&li->li_tv);
-
-    li = li->li_next;
-    if (li == NULL)
-        return -1;
-    return get_tv_number(&li->li_tv);
-}
-#endif
-
 /*
  * Top level evaluation function.
  * Returns an allocated typval_T with the result.
@@ -1689,94 +1558,6 @@ restore_funccal(vfc)
 
     current_funccal = fc;
 }
-
-#if defined(FEAT_PROFILE)
-/*
- * Prepare profiling for entering a child or something else that is not
- * counted for the script/function itself.
- * Should always be called in pair with prof_child_exit().
- */
-    void
-prof_child_enter(tm)
-    proftime_T *tm;     /* place to store waittime */
-{
-    funccall_T *fc = current_funccal;
-
-    if (fc != NULL && fc->func->uf_profiling)
-        profile_start(&fc->prof_child);
-    script_prof_save(tm);
-}
-
-/*
- * Take care of time spent in a child.
- * Should always be called after prof_child_enter().
- */
-    void
-prof_child_exit(tm)
-    proftime_T *tm;     /* where waittime was stored */
-{
-    funccall_T *fc = current_funccal;
-
-    if (fc != NULL && fc->func->uf_profiling)
-    {
-        profile_end(&fc->prof_child);
-        profile_sub_wait(tm, &fc->prof_child); /* don't count waiting time */
-        profile_add(&fc->func->uf_tm_children, &fc->prof_child);
-        profile_add(&fc->func->uf_tml_children, &fc->prof_child);
-    }
-    script_prof_restore(tm);
-}
-#endif
-
-#if defined(FEAT_FOLDING)
-/*
- * Evaluate 'foldexpr'.  Returns the foldlevel, and any character preceding
- * it in "*cp".  Doesn't give error messages.
- */
-    int
-eval_foldexpr(arg, cp)
-    char_u      *arg;
-    int         *cp;
-{
-    typval_T    tv;
-    int         retval;
-    char_u      *s;
-    int         use_sandbox = was_set_insecurely((char_u *)"foldexpr",
-                                                                   OPT_LOCAL);
-
-    ++emsg_off;
-    if (use_sandbox)
-        ++sandbox;
-    ++textlock;
-    *cp = NUL;
-    if (eval0(arg, &tv, NULL, TRUE) == FAIL)
-        retval = 0;
-    else
-    {
-        /* If the result is a number, just return the number. */
-        if (tv.v_type == VAR_NUMBER)
-            retval = tv.vval.v_number;
-        else if (tv.v_type != VAR_STRING || tv.vval.v_string == NULL)
-            retval = 0;
-        else
-        {
-            /* If the result is a string, check if there is a non-digit before
-             * the number. */
-            s = tv.vval.v_string;
-            if (!VIM_ISDIGIT(*s) && *s != '-')
-                *cp = *s++;
-            retval = atol((char *)s);
-        }
-        clear_tv(&tv);
-    }
-    --emsg_off;
-    if (use_sandbox)
-        --sandbox;
-    --textlock;
-
-    return retval;
-}
-#endif
 
 /*
  * ":let"                       list all variable values
@@ -8122,9 +7903,6 @@ static struct fst
     {"settabvar",       3, 3, f_settabvar},
     {"settabwinvar",    4, 4, f_settabwinvar},
     {"setwinvar",       3, 3, f_setwinvar},
-#if defined(FEAT_CRYPT)
-    {"sha256",          1, 1, f_sha256},
-#endif
     {"shellescape",     1, 2, f_shellescape},
     {"shiftwidth",      0, 0, f_shiftwidth},
     {"simplify",        1, 1, f_simplify},
@@ -8973,29 +8751,7 @@ f_browse(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_BROWSE)
-    int         save;
-    char_u      *title;
-    char_u      *initdir;
-    char_u      *defname;
-    char_u      buf[NUMBUFLEN];
-    char_u      buf2[NUMBUFLEN];
-    int         error = FALSE;
-
-    save = get_tv_number_chk(&argvars[0], &error);
-    title = get_tv_string_chk(&argvars[1]);
-    initdir = get_tv_string_buf_chk(&argvars[2], buf);
-    defname = get_tv_string_buf_chk(&argvars[3], buf2);
-
-    if (error || title == NULL || initdir == NULL || defname == NULL)
-        rettv->vval.v_string = NULL;
-    else
-        rettv->vval.v_string =
-                 do_browse(save ? BROWSE_SAVE : 0,
-                                 title, defname, NULL, initdir, NULL, curbuf);
-#else
     rettv->vval.v_string = NULL;
-#endif
     rettv->v_type = VAR_STRING;
 }
 
@@ -9007,22 +8763,7 @@ f_browsedir(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_BROWSE)
-    char_u      *title;
-    char_u      *initdir;
-    char_u      buf[NUMBUFLEN];
-
-    title = get_tv_string_chk(&argvars[0]);
-    initdir = get_tv_string_buf_chk(&argvars[1], buf);
-
-    if (title == NULL || initdir == NULL)
-        rettv->vval.v_string = NULL;
-    else
-        rettv->vval.v_string = do_browse(BROWSE_DIR,
-                                    title, NULL, NULL, initdir, NULL, curbuf);
-#else
     rettv->vval.v_string = NULL;
-#endif
     rettv->v_type = VAR_STRING;
 }
 
@@ -9774,23 +9515,6 @@ f_cscope_connection(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_CSCOPE)
-    int         num = 0;
-    char_u      *dbpath = NULL;
-    char_u      *prepend = NULL;
-    char_u      buf[NUMBUFLEN];
-
-    if (argvars[0].v_type != VAR_UNKNOWN
-            && argvars[1].v_type != VAR_UNKNOWN)
-    {
-        num = (int)get_tv_number(&argvars[0]);
-        dbpath = get_tv_string(&argvars[1]);
-        if (argvars[2].v_type != VAR_UNKNOWN)
-            prepend = get_tv_string_buf(&argvars[2], buf);
-    }
-
-    rettv->vval.v_number = cs_connection(num, dbpath, prepend);
-#endif
 }
 
 /*
@@ -9914,9 +9638,6 @@ f_diff_filler(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_DIFF)
-    rettv->vval.v_number = diff_check_fill(curwin, get_tv_lnum(argvars));
-#endif
 }
 
 /*
@@ -9927,56 +9648,6 @@ f_diff_hlID(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_DIFF)
-    linenr_T            lnum = get_tv_lnum(argvars);
-    static linenr_T     prev_lnum = 0;
-    static int          changedtick = 0;
-    static int          fnum = 0;
-    static int          change_start = 0;
-    static int          change_end = 0;
-    static hlf_T        hlID = (hlf_T)0;
-    int                 filler_lines;
-    int                 col;
-
-    if (lnum < 0)       /* ignore type error in {lnum} arg */
-        lnum = 0;
-    if (lnum != prev_lnum
-            || changedtick != curbuf->b_changedtick
-            || fnum != curbuf->b_fnum)
-    {
-        /* New line, buffer, change: need to get the values. */
-        filler_lines = diff_check(curwin, lnum);
-        if (filler_lines < 0)
-        {
-            if (filler_lines == -1)
-            {
-                change_start = MAXCOL;
-                change_end = -1;
-                if (diff_find_change(curwin, lnum, &change_start, &change_end))
-                    hlID = HLF_ADD;     /* added line */
-                else
-                    hlID = HLF_CHD;     /* changed line */
-            }
-            else
-                hlID = HLF_ADD; /* added line */
-        }
-        else
-            hlID = (hlf_T)0;
-        prev_lnum = lnum;
-        changedtick = curbuf->b_changedtick;
-        fnum = curbuf->b_fnum;
-    }
-
-    if (hlID == HLF_CHD || hlID == HLF_TXD)
-    {
-        col = get_tv_number(&argvars[1]) - 1; /* ignore type error in {col} */
-        if (col >= change_start && col <= change_end)
-            hlID = HLF_TXD;                     /* changed text */
-        else
-            hlID = HLF_CHD;                     /* changed line */
-    }
-    rettv->vval.v_number = hlID == (hlf_T)0 ? 0 : (int)hlID;
-#endif
 }
 
 /*
@@ -10896,23 +10567,6 @@ foldclosed_both(argvars, rettv, end)
     typval_T    *rettv;
     int         end UNUSED;
 {
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum;
-    linenr_T    first, last;
-
-    lnum = get_tv_lnum(argvars);
-    if (lnum >= 1 && lnum <= curbuf->b_ml.ml_line_count)
-    {
-        if (hasFoldingWin(curwin, lnum, &first, &last, FALSE, NULL))
-        {
-            if (end)
-                rettv->vval.v_number = (varnumber_T)last;
-            else
-                rettv->vval.v_number = (varnumber_T)first;
-            return;
-        }
-    }
-#endif
     rettv->vval.v_number = -1;
 }
 
@@ -10946,13 +10600,6 @@ f_foldlevel(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum;
-
-    lnum = get_tv_lnum(argvars);
-    if (lnum >= 1 && lnum <= curbuf->b_ml.ml_line_count)
-        rettv->vval.v_number = foldLevel(lnum);
-#endif
 }
 
 /*
@@ -10963,63 +10610,9 @@ f_foldtext(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum;
-    char_u      *s;
-    char_u      *r;
-    int         len;
-    char        *txt;
-#endif
 
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
-#if defined(FEAT_FOLDING)
-    if ((linenr_T)vimvars[VV_FOLDSTART].vv_nr > 0
-            && (linenr_T)vimvars[VV_FOLDEND].vv_nr
-                                                 <= curbuf->b_ml.ml_line_count
-            && vimvars[VV_FOLDDASHES].vv_str != NULL)
-    {
-        /* Find first non-empty line in the fold. */
-        lnum = (linenr_T)vimvars[VV_FOLDSTART].vv_nr;
-        while (lnum < (linenr_T)vimvars[VV_FOLDEND].vv_nr)
-        {
-            if (!linewhite(lnum))
-                break;
-            ++lnum;
-        }
-
-        /* Find interesting text in this line. */
-        s = skipwhite(ml_get(lnum));
-        /* skip C comment-start */
-        if (s[0] == '/' && (s[1] == '*' || s[1] == '/'))
-        {
-            s = skipwhite(s + 2);
-            if (*skipwhite(s) == NUL
-                            && lnum + 1 < (linenr_T)vimvars[VV_FOLDEND].vv_nr)
-            {
-                s = skipwhite(ml_get(lnum + 1));
-                if (*s == '*')
-                    s = skipwhite(s + 1);
-            }
-        }
-        txt = _("+-%s%3ld lines: ");
-        r = alloc((unsigned)(STRLEN(txt)
-                    + STRLEN(vimvars[VV_FOLDDASHES].vv_str)    /* for %s */
-                    + 20                                    /* for %3ld */
-                    + STRLEN(s)));                          /* concatenated */
-        if (r != NULL)
-        {
-            sprintf((char *)r, txt, vimvars[VV_FOLDDASHES].vv_str,
-                    (long)((linenr_T)vimvars[VV_FOLDEND].vv_nr
-                                - (linenr_T)vimvars[VV_FOLDSTART].vv_nr + 1));
-            len = (int)STRLEN(r);
-            STRCAT(r, s);
-            /* remove 'foldmarker' and 'commentstring' */
-            foldtext_cleanup(r + len);
-            rettv->vval.v_string = r;
-        }
-    }
-#endif
 }
 
 /*
@@ -11030,31 +10623,9 @@ f_foldtextresult(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum;
-    char_u      *text;
-    char_u      buf[51];
-    foldinfo_T  foldinfo;
-    int         fold_count;
-#endif
 
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
-#if defined(FEAT_FOLDING)
-    lnum = get_tv_lnum(argvars);
-    /* treat illegal types and illegal string values for {lnum} the same */
-    if (lnum < 0)
-        lnum = 0;
-    fold_count = foldedCount(curwin, lnum, &foldinfo);
-    if (fold_count > 0)
-    {
-        text = get_foldtext(curwin, lnum, lnum + fold_count - 1,
-                                                              &foldinfo, buf);
-        if (text == buf)
-            text = vim_strsave(text);
-        rettv->vval.v_string = text;
-    }
-#endif
 }
 
 /*
@@ -11499,10 +11070,6 @@ f_getcwd(argvars, rettv)
         if (mch_dirname(cwd, MAXPATHL) != FAIL)
         {
             rettv->vval.v_string = vim_strsave(cwd);
-#if defined(BACKSLASH_IN_FILENAME)
-            if (rettv->vval.v_string != NULL)
-                slash_adjust(rettv->vval.v_string);
-#endif
         }
         vim_free(cwd);
     }
@@ -12291,9 +11858,6 @@ f_has(argvars, rettv)
 #if !defined(CASE_INSENSITIVE_FILENAME)
         "fname_case",
 #endif
-#if defined(HAVE_ACL)
-        "acl",
-#endif
 #if defined(FEAT_AUTOCMD)
         "autocmd",
 #endif
@@ -12302,9 +11866,6 @@ f_has(argvars, rettv)
 #if defined(ALL_BUILTIN_TCAPS)
         "all_builtin_terms",
 #endif
-#endif
-#if defined(FEAT_BROWSE) && defined(USE_FILE_CHOOSER)
-        "browsefilter",
 #endif
 #if defined(FEAT_BYTEOFF)
         "byte_offset",
@@ -12330,12 +11891,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_CONCEAL)
         "conceal",
 #endif
-#if defined(FEAT_CRYPT)
-        "cryptv",
-#endif
-#if defined(FEAT_CSCOPE)
-        "cscope",
-#endif
 #if defined(FEAT_CURSORBIND)
         "cursorbind",
 #endif
@@ -12351,20 +11906,11 @@ f_has(argvars, rettv)
 #if defined(FEAT_GUI_DIALOG)
         "dialog_gui",
 #endif
-#if defined(FEAT_DIFF)
-        "diff",
-#endif
 #if defined(FEAT_DIGRAPHS)
         "digraphs",
 #endif
-#if defined(FEAT_DIRECTX)
-        "directx",
-#endif
 #if defined(FEAT_DND)
         "dnd",
-#endif
-#if defined(FEAT_EMACS_TAGS)
-        "emacs_tags",
 #endif
         "eval",     /* always present, of course! */
 #if defined(FEAT_EX_EXTRA)
@@ -12385,16 +11931,10 @@ f_has(argvars, rettv)
 #if defined(FEAT_FLOAT)
         "float",
 #endif
-#if defined(FEAT_FOLDING)
-        "folding",
-#endif
 #if defined(FEAT_FOOTER)
         "footer",
 #endif
         "fork",
-#if defined(FEAT_GETTEXT)
-        "gettext",
-#endif
 #if defined(HAVE_ICONV_H) && defined(USE_ICONV)
         "iconv",
 #endif
@@ -12428,9 +11968,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_MENU)
         "menu",
 #endif
-#if defined(FEAT_SESSION)
-        "mksession",
-#endif
 #if defined(FEAT_MODIFY_FNAME)
         "modify_fname",
 #endif
@@ -12440,29 +11977,11 @@ f_has(argvars, rettv)
 #if defined(FEAT_MOUSESHAPE)
         "mouseshape",
 #endif
-#if defined(FEAT_MOUSE_DEC)
-        "mouse_dec",
-#endif
 #if defined(FEAT_MOUSE_GPM)
         "mouse_gpm",
 #endif
-#if defined(FEAT_MOUSE_JSB)
-        "mouse_jsbterm",
-#endif
-#if defined(FEAT_MOUSE_NET)
-        "mouse_netterm",
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-        "mouse_pterm",
-#endif
-#if defined(FEAT_MOUSE_SGR)
-        "mouse_sgr",
-#endif
 #if defined(FEAT_SYSMOUSE)
         "mouse_sysmouse",
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-        "mouse_urxvt",
 #endif
 #if defined(FEAT_MOUSE_XTERM)
         "mouse_xterm",
@@ -12479,9 +11998,6 @@ f_has(argvars, rettv)
 #endif
 #if defined(FEAT_PRINTER)
         "printer",
-#endif
-#if defined(FEAT_PROFILE)
-        "profile",
 #endif
 #if defined(FEAT_RELTIME)
         "reltime",
@@ -12505,26 +12021,14 @@ f_has(argvars, rettv)
 #if defined(FEAT_SMARTINDENT)
         "smartindent",
 #endif
-#if defined(STARTUPTIME)
-        "startuptime",
-#endif
 #if defined(FEAT_STL_OPT)
         "statusline",
-#endif
-#if defined(FEAT_SPELL)
-        "spell",
 #endif
 #if defined(FEAT_SYN_HL)
         "syntax",
 #endif
 #if defined(FEAT_TAG_BINS)
         "tag_binary",
-#endif
-#if defined(FEAT_TAG_OLDSTATIC)
-        "tag_old_static",
-#endif
-#if defined(FEAT_TAG_ANYWHITE)
-        "tag_any_white",
 #endif
 #if defined(TERMINFO)
         "terminfo",
@@ -12547,9 +12051,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_USR_CMDS)
         "user-commands",    /* was accidentally included in 5.4 */
         "user_commands",
-#endif
-#if defined(FEAT_VIMINFO)
-        "viminfo",
 #endif
 #if defined(FEAT_VERTSPLIT)
         "vertsplit",
@@ -12579,13 +12080,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_XPM_W32)
         "xpm",
         "xpm_w32",      /* for backward compatibility */
-#else
-#if defined(HAVE_XPM)
-        "xpm",
-#endif
-#endif
-#if defined(FEAT_XCLIPBOARD)
-        "xterm_clipboard",
 #endif
 #if defined(FEAT_XTERM_SAVE)
         "xterm_save",
@@ -16762,24 +16256,6 @@ setwinvar(argvars, rettv, off)
     }
 }
 
-#if defined(FEAT_CRYPT)
-/*
- * "sha256({string})" function
- */
-    static void
-f_sha256(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    char_u      *p;
-
-    p = get_tv_string(&argvars[0]);
-    rettv->vval.v_string = vim_strsave(
-                                    sha256_bytes(p, (int)STRLEN(p), NULL, 0));
-    rettv->v_type = VAR_STRING;
-}
-#endif
-
 /*
  * "shellescape({string})" function
  */
@@ -17188,11 +16664,7 @@ f_soundfold(argvars, rettv)
 
     rettv->v_type = VAR_STRING;
     s = get_tv_string(&argvars[0]);
-#if defined(FEAT_SPELL)
-    rettv->vval.v_string = eval_soundfold(s);
-#else
     rettv->vval.v_string = vim_strsave(s);
-#endif
 }
 
 /*
@@ -17209,36 +16681,6 @@ f_spellbadword(argvars, rettv)
 
     if (rettv_list_alloc(rettv) == FAIL)
         return;
-
-#if defined(FEAT_SPELL)
-    if (argvars[0].v_type == VAR_UNKNOWN)
-    {
-        /* Find the start and length of the badly spelled word. */
-        len = spell_move_to(curwin, FORWARD, TRUE, TRUE, &attr);
-        if (len != 0)
-            word = ml_get_cursor();
-    }
-    else if (curwin->w_p_spell && *curbuf->b_s.b_p_spl != NUL)
-    {
-        char_u  *str = get_tv_string_chk(&argvars[0]);
-        int     capcol = -1;
-
-        if (str != NULL)
-        {
-            /* Check the argument for spelling. */
-            while (*str != NUL)
-            {
-                len = spell_check(curwin, str, &attr, &capcol, FALSE);
-                if (attr != HLF_COUNT)
-                {
-                    word = str;
-                    break;
-                }
-                str += len;
-            }
-        }
-    }
-#endif
 
     list_append_string(rettv->vval.v_list, word, len);
     list_append_string(rettv->vval.v_list, (char_u *)(
@@ -17257,58 +16699,10 @@ f_spellsuggest(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_SPELL)
-    char_u      *str;
-    int         typeerr = FALSE;
-    int         maxcount;
-    garray_T    ga;
-    int         i;
-    listitem_T  *li;
-    int         need_capital = FALSE;
-#endif
 
     if (rettv_list_alloc(rettv) == FAIL)
         return;
 
-#if defined(FEAT_SPELL)
-    if (curwin->w_p_spell && *curwin->w_s->b_p_spl != NUL)
-    {
-        str = get_tv_string(&argvars[0]);
-        if (argvars[1].v_type != VAR_UNKNOWN)
-        {
-            maxcount = get_tv_number_chk(&argvars[1], &typeerr);
-            if (maxcount <= 0)
-                return;
-            if (argvars[2].v_type != VAR_UNKNOWN)
-            {
-                need_capital = get_tv_number_chk(&argvars[2], &typeerr);
-                if (typeerr)
-                    return;
-            }
-        }
-        else
-            maxcount = 25;
-
-        spell_suggest_list(&ga, str, maxcount, need_capital, FALSE);
-
-        for (i = 0; i < ga.ga_len; ++i)
-        {
-            str = ((char_u **)ga.ga_data)[i];
-
-            li = listitem_alloc();
-            if (li == NULL)
-                vim_free(str);
-            else
-            {
-                li->li_tv.v_type = VAR_STRING;
-                li->li_tv.v_lock = 0;
-                li->li_tv.vval.v_string = str;
-                list_append(rettv->vval.v_list, li);
-            }
-        }
-        ga_clear(&ga);
-    }
-#endif
 }
 
     static void
@@ -18974,10 +18368,6 @@ f_winrestview(argvars, rettv)
 
         if (dict_find(dict, (char_u *)"topline", -1) != NULL)
             set_topline(curwin, get_dict_number(dict, (char_u *)"topline"));
-#if defined(FEAT_DIFF)
-        if (dict_find(dict, (char_u *)"topfill", -1) != NULL)
-            curwin->w_topfill = get_dict_number(dict, (char_u *)"topfill");
-#endif
         if (dict_find(dict, (char_u *)"leftcol", -1) != NULL)
             curwin->w_leftcol = get_dict_number(dict, (char_u *)"leftcol");
         if (dict_find(dict, (char_u *)"skipcol", -1) != NULL)
@@ -18994,9 +18384,6 @@ f_winrestview(argvars, rettv)
             curwin->w_topline = 1;
         if (curwin->w_topline > curbuf->b_ml.ml_line_count)
             curwin->w_topline = curbuf->b_ml.ml_line_count;
-#if defined(FEAT_DIFF)
-        check_topfill(curwin, TRUE);
-#endif
     }
 }
 
@@ -19023,9 +18410,6 @@ f_winsaveview(argvars, rettv)
     dict_add_nr_str(dict, "curswant", (long)curwin->w_curswant, NULL);
 
     dict_add_nr_str(dict, "topline", (long)curwin->w_topline, NULL);
-#if defined(FEAT_DIFF)
-    dict_add_nr_str(dict, "topfill", (long)curwin->w_topfill, NULL);
-#endif
     dict_add_nr_str(dict, "leftcol", (long)curwin->w_leftcol, NULL);
     dict_add_nr_str(dict, "skipcol", (long)curwin->w_skipcol, NULL);
 }
@@ -21894,14 +21278,6 @@ ex_function(eap)
     }
     fp->uf_args = newargs;
     fp->uf_lines = newlines;
-#if defined(FEAT_PROFILE)
-    fp->uf_tml_count = NULL;
-    fp->uf_tml_total = NULL;
-    fp->uf_tml_self = NULL;
-    fp->uf_profiling = FALSE;
-    if (prof_def_func())
-        func_do_profile(fp);
-#endif
     fp->uf_varargs = varargs;
     fp->uf_flags = flags;
     fp->uf_calls = 0;
@@ -22311,192 +21687,6 @@ builtin_function(name, len)
     return p == NULL || (len > 0 && p > name + len);
 }
 
-#if defined(FEAT_PROFILE)
-/*
- * Start profiling function "fp".
- */
-    static void
-func_do_profile(fp)
-    ufunc_T     *fp;
-{
-    int         len = fp->uf_lines.ga_len;
-
-    if (len == 0)
-        len = 1;  /* avoid getting error for allocating zero bytes */
-    fp->uf_tm_count = 0;
-    profile_zero(&fp->uf_tm_self);
-    profile_zero(&fp->uf_tm_total);
-    if (fp->uf_tml_count == NULL)
-        fp->uf_tml_count = (int *)alloc_clear((unsigned) (sizeof(int) * len));
-    if (fp->uf_tml_total == NULL)
-        fp->uf_tml_total = (proftime_T *)alloc_clear((unsigned)
-                                                  (sizeof(proftime_T) * len));
-    if (fp->uf_tml_self == NULL)
-        fp->uf_tml_self = (proftime_T *)alloc_clear((unsigned)
-                                                  (sizeof(proftime_T) * len));
-    fp->uf_tml_idx = -1;
-    if (fp->uf_tml_count == NULL || fp->uf_tml_total == NULL
-                                                   || fp->uf_tml_self == NULL)
-        return;     /* out of memory */
-
-    fp->uf_profiling = TRUE;
-}
-
-/*
- * Dump the profiling results for all functions in file "fd".
- */
-    void
-func_dump_profile(fd)
-    FILE    *fd;
-{
-    hashitem_T  *hi;
-    int         todo;
-    ufunc_T     *fp;
-    int         i;
-    ufunc_T     **sorttab;
-    int         st_len = 0;
-
-    todo = (int)func_hashtab.ht_used;
-    if (todo == 0)
-        return;     /* nothing to dump */
-
-    sorttab = (ufunc_T **)alloc((unsigned)(sizeof(ufunc_T) * todo));
-
-    for (hi = func_hashtab.ht_array; todo > 0; ++hi)
-    {
-        if (!HASHITEM_EMPTY(hi))
-        {
-            --todo;
-            fp = HI2UF(hi);
-            if (fp->uf_profiling)
-            {
-                if (sorttab != NULL)
-                    sorttab[st_len++] = fp;
-
-                if (fp->uf_name[0] == K_SPECIAL)
-                    fprintf(fd, "FUNCTION  <SNR>%s()\n", fp->uf_name + 3);
-                else
-                    fprintf(fd, "FUNCTION  %s()\n", fp->uf_name);
-                if (fp->uf_tm_count == 1)
-                    fprintf(fd, "Called 1 time\n");
-                else
-                    fprintf(fd, "Called %d times\n", fp->uf_tm_count);
-                fprintf(fd, "Total time: %s\n", profile_msg(&fp->uf_tm_total));
-                fprintf(fd, " Self time: %s\n", profile_msg(&fp->uf_tm_self));
-                fprintf(fd, "\n");
-                fprintf(fd, "count  total (s)   self (s)\n");
-
-                for (i = 0; i < fp->uf_lines.ga_len; ++i)
-                {
-                    if (FUNCLINE(fp, i) == NULL)
-                        continue;
-                    prof_func_line(fd, fp->uf_tml_count[i],
-                             &fp->uf_tml_total[i], &fp->uf_tml_self[i], TRUE);
-                    fprintf(fd, "%s\n", FUNCLINE(fp, i));
-                }
-                fprintf(fd, "\n");
-            }
-        }
-    }
-
-    if (sorttab != NULL && st_len > 0)
-    {
-        qsort((void *)sorttab, (size_t)st_len, sizeof(ufunc_T *),
-                                                              prof_total_cmp);
-        prof_sort_list(fd, sorttab, st_len, "TOTAL", FALSE);
-        qsort((void *)sorttab, (size_t)st_len, sizeof(ufunc_T *),
-                                                              prof_self_cmp);
-        prof_sort_list(fd, sorttab, st_len, "SELF", TRUE);
-    }
-
-    vim_free(sorttab);
-}
-
-    static void
-prof_sort_list(fd, sorttab, st_len, title, prefer_self)
-    FILE        *fd;
-    ufunc_T     **sorttab;
-    int         st_len;
-    char        *title;
-    int         prefer_self;    /* when equal print only self time */
-{
-    int         i;
-    ufunc_T     *fp;
-
-    fprintf(fd, "FUNCTIONS SORTED ON %s TIME\n", title);
-    fprintf(fd, "count  total (s)   self (s)  function\n");
-    for (i = 0; i < 20 && i < st_len; ++i)
-    {
-        fp = sorttab[i];
-        prof_func_line(fd, fp->uf_tm_count, &fp->uf_tm_total, &fp->uf_tm_self,
-                                                                 prefer_self);
-        if (fp->uf_name[0] == K_SPECIAL)
-            fprintf(fd, " <SNR>%s()\n", fp->uf_name + 3);
-        else
-            fprintf(fd, " %s()\n", fp->uf_name);
-    }
-    fprintf(fd, "\n");
-}
-
-/*
- * Print the count and times for one function or function line.
- */
-    static void
-prof_func_line(fd, count, total, self, prefer_self)
-    FILE        *fd;
-    int         count;
-    proftime_T  *total;
-    proftime_T  *self;
-    int         prefer_self;    /* when equal print only self time */
-{
-    if (count > 0)
-    {
-        fprintf(fd, "%5d ", count);
-        if (prefer_self && profile_equal(total, self))
-            fprintf(fd, "           ");
-        else
-            fprintf(fd, "%s ", profile_msg(total));
-        if (!prefer_self && profile_equal(total, self))
-            fprintf(fd, "           ");
-        else
-            fprintf(fd, "%s ", profile_msg(self));
-    }
-    else
-        fprintf(fd, "                            ");
-}
-
-/*
- * Compare function for total time sorting.
- */
-    static int
-prof_total_cmp(s1, s2)
-    const void  *s1;
-    const void  *s2;
-{
-    ufunc_T     *p1, *p2;
-
-    p1 = *(ufunc_T **)s1;
-    p2 = *(ufunc_T **)s2;
-    return profile_cmp(&p1->uf_tm_total, &p2->uf_tm_total);
-}
-
-/*
- * Compare function for self time sorting.
- */
-    static int
-prof_self_cmp(s1, s2)
-    const void  *s1;
-    const void  *s2;
-{
-    ufunc_T     *p1, *p2;
-
-    p1 = *(ufunc_T **)s1;
-    p2 = *(ufunc_T **)s2;
-    return profile_cmp(&p1->uf_tm_self, &p2->uf_tm_self);
-}
-
-#endif
-
 /*
  * If "name" has a package name try autoloading the script for it.
  * Return TRUE if a package was loaded.
@@ -22705,11 +21895,6 @@ func_free(fp)
     /* clear this function */
     ga_clear_strings(&(fp->uf_args));
     ga_clear_strings(&(fp->uf_lines));
-#if defined(FEAT_PROFILE)
-    vim_free(fp->uf_tml_count);
-    vim_free(fp->uf_tml_total);
-    vim_free(fp->uf_tml_self);
-#endif
 
     /* remove the function from the function hashtable */
     hi = hash_find(&func_hashtab, UF2HIKEY(fp));
@@ -22790,10 +21975,6 @@ call_user_func(fp, argcount, argvars, rettv, firstline, lastline, selfdict)
     int         ai;
     char_u      numbuf[NUMBUFLEN];
     char_u      *name;
-#if defined(FEAT_PROFILE)
-    proftime_T  wait_start;
-    proftime_T  call_start;
-#endif
 
     /* If depth of calling is getting too high, don't execute the function */
     if (depth >= p_mfd)
@@ -22978,21 +22159,6 @@ call_user_func(fp, argcount, argvars, rettv, firstline, lastline, selfdict)
             --no_wait_return;
         }
     }
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-    {
-        if (!fp->uf_profiling && has_profiling(FALSE, fp->uf_name, NULL))
-            func_do_profile(fp);
-        if (fp->uf_profiling
-                    || (fc->caller != NULL && fc->caller->func->uf_profiling))
-        {
-            ++fp->uf_tm_count;
-            profile_start(&call_start);
-            profile_zero(&fp->uf_tm_children);
-        }
-        script_prof_save(&wait_start);
-    }
-#endif
 
     save_current_SID = current_SID;
     current_SID = fp->uf_script_ID;
@@ -23012,22 +22178,6 @@ call_user_func(fp, argcount, argvars, rettv, firstline, lastline, selfdict)
         rettv->v_type = VAR_NUMBER;
         rettv->vval.v_number = -1;
     }
-
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES && (fp->uf_profiling
-                    || (fc->caller != NULL && fc->caller->func->uf_profiling)))
-    {
-        profile_end(&call_start);
-        profile_sub_wait(&wait_start, &call_start);
-        profile_add(&fp->uf_tm_total, &call_start);
-        profile_self(&fp->uf_tm_self, &call_start, &fp->uf_tm_children);
-        if (fc->caller != NULL && fc->caller->func->uf_profiling)
-        {
-            profile_add(&fc->caller->func->uf_tm_children, &call_start);
-            profile_add(&fc->caller->func->uf_tml_children, &call_start);
-        }
-    }
-#endif
 
     /* when being verbose, mention the return value */
     if (p_verbose >= 12)
@@ -23074,10 +22224,6 @@ call_user_func(fp, argcount, argvars, rettv, firstline, lastline, selfdict)
     sourcing_name = save_sourcing_name;
     sourcing_lnum = save_sourcing_lnum;
     current_SID = save_current_SID;
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        script_prof_restore(&wait_start);
-#endif
 
     if (p_verbose >= 12 && sourcing_name != NULL)
     {
@@ -23386,10 +22532,6 @@ get_func_line(c, cookie, indent)
                                                                sourcing_lnum);
         fcp->dbg_tick = debug_tick;
     }
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        func_line_end(cookie);
-#endif
 
     gap = &fp->uf_lines;
     if (((fp->uf_flags & FC_ABORT) && did_emsg && !aborted_in_try())
@@ -23407,10 +22549,6 @@ get_func_line(c, cookie, indent)
         {
             retval = vim_strsave(((char_u **)(gap->ga_data))[fcp->linenr++]);
             sourcing_lnum = fcp->linenr;
-#if defined(FEAT_PROFILE)
-            if (do_profiling == PROF_YES)
-                func_line_start(cookie);
-#endif
         }
     }
 
@@ -23426,74 +22564,6 @@ get_func_line(c, cookie, indent)
 
     return retval;
 }
-
-#if defined(FEAT_PROFILE)
-/*
- * Called when starting to read a function line.
- * "sourcing_lnum" must be correct!
- * When skipping lines it may not actually be executed, but we won't find out
- * until later and we need to store the time now.
- */
-    void
-func_line_start(cookie)
-    void    *cookie;
-{
-    funccall_T  *fcp = (funccall_T *)cookie;
-    ufunc_T     *fp = fcp->func;
-
-    if (fp->uf_profiling && sourcing_lnum >= 1
-                                      && sourcing_lnum <= fp->uf_lines.ga_len)
-    {
-        fp->uf_tml_idx = sourcing_lnum - 1;
-        /* Skip continuation lines. */
-        while (fp->uf_tml_idx > 0 && FUNCLINE(fp, fp->uf_tml_idx) == NULL)
-            --fp->uf_tml_idx;
-        fp->uf_tml_execed = FALSE;
-        profile_start(&fp->uf_tml_start);
-        profile_zero(&fp->uf_tml_children);
-        profile_get_wait(&fp->uf_tml_wait);
-    }
-}
-
-/*
- * Called when actually executing a function line.
- */
-    void
-func_line_exec(cookie)
-    void    *cookie;
-{
-    funccall_T  *fcp = (funccall_T *)cookie;
-    ufunc_T     *fp = fcp->func;
-
-    if (fp->uf_profiling && fp->uf_tml_idx >= 0)
-        fp->uf_tml_execed = TRUE;
-}
-
-/*
- * Called when done with a function line.
- */
-    void
-func_line_end(cookie)
-    void    *cookie;
-{
-    funccall_T  *fcp = (funccall_T *)cookie;
-    ufunc_T     *fp = fcp->func;
-
-    if (fp->uf_profiling && fp->uf_tml_idx >= 0)
-    {
-        if (fp->uf_tml_execed)
-        {
-            ++fp->uf_tml_count[fp->uf_tml_idx];
-            profile_end(&fp->uf_tml_start);
-            profile_sub_wait(&fp->uf_tml_wait, &fp->uf_tml_start);
-            profile_add(&fp->uf_tml_total[fp->uf_tml_idx], &fp->uf_tml_start);
-            profile_self(&fp->uf_tml_self[fp->uf_tml_idx], &fp->uf_tml_start,
-                                                        &fp->uf_tml_children);
-        }
-        fp->uf_tml_idx = -1;
-    }
-}
-#endif
 
 /*
  * Return TRUE if the currently active function should be ended, because a
@@ -23520,226 +22590,6 @@ func_has_abort(cookie)
 {
     return ((funccall_T *)cookie)->func->uf_flags & FC_ABORT;
 }
-
-#if defined(FEAT_VIMINFO) || defined(FEAT_SESSION)
-typedef enum
-{
-    VAR_FLAVOUR_DEFAULT,        /* doesn't start with uppercase */
-    VAR_FLAVOUR_SESSION,        /* starts with uppercase, some lower */
-    VAR_FLAVOUR_VIMINFO         /* all uppercase */
-} var_flavour_T;
-
-static var_flavour_T var_flavour __ARGS((char_u *varname));
-
-    static var_flavour_T
-var_flavour(varname)
-    char_u *varname;
-{
-    char_u *p = varname;
-
-    if (ASCII_ISUPPER(*p))
-    {
-        while (*(++p))
-            if (ASCII_ISLOWER(*p))
-                return VAR_FLAVOUR_SESSION;
-        return VAR_FLAVOUR_VIMINFO;
-    }
-    else
-        return VAR_FLAVOUR_DEFAULT;
-}
-#endif
-
-#if defined(FEAT_VIMINFO)
-/*
- * Restore global vars that start with a capital from the viminfo file
- */
-    int
-read_viminfo_varlist(virp, writing)
-    vir_T       *virp;
-    int         writing;
-{
-    char_u      *tab;
-    int         type = VAR_NUMBER;
-    typval_T    tv;
-
-    if (!writing && (find_viminfo_parameter('!') != NULL))
-    {
-        tab = vim_strchr(virp->vir_line + 1, '\t');
-        if (tab != NULL)
-        {
-            *tab++ = '\0';      /* isolate the variable name */
-            switch (*tab)
-            {
-                case 'S': type = VAR_STRING; break;
-#if defined(FEAT_FLOAT)
-                case 'F': type = VAR_FLOAT; break;
-#endif
-                case 'D': type = VAR_DICT; break;
-                case 'L': type = VAR_LIST; break;
-            }
-
-            tab = vim_strchr(tab, '\t');
-            if (tab != NULL)
-            {
-                tv.v_type = type;
-                if (type == VAR_STRING || type == VAR_DICT || type == VAR_LIST)
-                    tv.vval.v_string = viminfo_readstring(virp,
-                                       (int)(tab - virp->vir_line + 1), TRUE);
-#if defined(FEAT_FLOAT)
-                else if (type == VAR_FLOAT)
-                    (void)string2float(tab + 1, &tv.vval.v_float);
-#endif
-                else
-                    tv.vval.v_number = atol((char *)tab + 1);
-                if (type == VAR_DICT || type == VAR_LIST)
-                {
-                    typval_T *etv = eval_expr(tv.vval.v_string, NULL);
-
-                    if (etv == NULL)
-                        /* Failed to parse back the dict or list, use it as a
-                         * string. */
-                        tv.v_type = VAR_STRING;
-                    else
-                    {
-                        vim_free(tv.vval.v_string);
-                        tv = *etv;
-                        vim_free(etv);
-                    }
-                }
-
-                set_var(virp->vir_line + 1, &tv, FALSE);
-
-                if (tv.v_type == VAR_STRING)
-                    vim_free(tv.vval.v_string);
-                else if (tv.v_type == VAR_DICT || tv.v_type == VAR_LIST)
-                    clear_tv(&tv);
-            }
-        }
-    }
-
-    return viminfo_readline(virp);
-}
-
-/*
- * Write global vars that start with a capital to the viminfo file
- */
-    void
-write_viminfo_varlist(fp)
-    FILE    *fp;
-{
-    hashitem_T  *hi;
-    dictitem_T  *this_var;
-    int         todo;
-    char        *s;
-    char_u      *p;
-    char_u      *tofree;
-    char_u      numbuf[NUMBUFLEN];
-
-    if (find_viminfo_parameter('!') == NULL)
-        return;
-
-    fputs(_("\n# global variables:\n"), fp);
-
-    todo = (int)globvarht.ht_used;
-    for (hi = globvarht.ht_array; todo > 0; ++hi)
-    {
-        if (!HASHITEM_EMPTY(hi))
-        {
-            --todo;
-            this_var = HI2DI(hi);
-            if (var_flavour(this_var->di_key) == VAR_FLAVOUR_VIMINFO)
-            {
-                switch (this_var->di_tv.v_type)
-                {
-                    case VAR_STRING: s = "STR"; break;
-                    case VAR_NUMBER: s = "NUM"; break;
-#if defined(FEAT_FLOAT)
-                    case VAR_FLOAT:  s = "FLO"; break;
-#endif
-                    case VAR_DICT:   s = "DIC"; break;
-                    case VAR_LIST:   s = "LIS"; break;
-                    default: continue;
-                }
-                fprintf(fp, "!%s\t%s\t", this_var->di_key, s);
-                p = echo_string(&this_var->di_tv, &tofree, numbuf, 0);
-                if (p != NULL)
-                    viminfo_writestring(fp, p);
-                vim_free(tofree);
-            }
-        }
-    }
-}
-#endif
-
-#if defined(FEAT_SESSION)
-    int
-store_session_globals(fd)
-    FILE        *fd;
-{
-    hashitem_T  *hi;
-    dictitem_T  *this_var;
-    int         todo;
-    char_u      *p, *t;
-
-    todo = (int)globvarht.ht_used;
-    for (hi = globvarht.ht_array; todo > 0; ++hi)
-    {
-        if (!HASHITEM_EMPTY(hi))
-        {
-            --todo;
-            this_var = HI2DI(hi);
-            if ((this_var->di_tv.v_type == VAR_NUMBER
-                        || this_var->di_tv.v_type == VAR_STRING)
-                    && var_flavour(this_var->di_key) == VAR_FLAVOUR_SESSION)
-            {
-                /* Escape special characters with a backslash.  Turn a LF and
-                 * CR into \n and \r. */
-                p = vim_strsave_escaped(get_tv_string(&this_var->di_tv),
-                                                        (char_u *)"\\\"\n\r");
-                if (p == NULL)      /* out of memory */
-                    break;
-                for (t = p; *t != NUL; ++t)
-                    if (*t == '\n')
-                        *t = 'n';
-                    else if (*t == '\r')
-                        *t = 'r';
-                if ((fprintf(fd, "let %s = %c%s%c",
-                                this_var->di_key,
-                                (this_var->di_tv.v_type == VAR_STRING) ? '"'
-                                                                        : ' ',
-                                p,
-                                (this_var->di_tv.v_type == VAR_STRING) ? '"'
-                                                                   : ' ') < 0)
-                        || put_eol(fd) == FAIL)
-                {
-                    vim_free(p);
-                    return FAIL;
-                }
-                vim_free(p);
-            }
-#if defined(FEAT_FLOAT)
-            else if (this_var->di_tv.v_type == VAR_FLOAT
-                    && var_flavour(this_var->di_key) == VAR_FLAVOUR_SESSION)
-            {
-                float_T f = this_var->di_tv.vval.v_float;
-                int sign = ' ';
-
-                if (f < 0)
-                {
-                    f = -f;
-                    sign = '-';
-                }
-                if ((fprintf(fd, "let %s = %c%f",
-                                               this_var->di_key, sign, f) < 0)
-                        || put_eol(fd) == FAIL)
-                    return FAIL;
-            }
-#endif
-        }
-    }
-    return OK;
-}
-#endif
 
 /*
  * Display script name where an item was last set.
@@ -23794,29 +22644,6 @@ ex_oldfiles(eap)
         /* Assume "got_int" was set to truncate the listing. */
         got_int = FALSE;
 
-#if defined(FEAT_BROWSE_CMD)
-        if (cmdmod.browse)
-        {
-            quit_more = FALSE;
-            nr = prompt_for_number(FALSE);
-            msg_starthere();
-            if (nr > 0)
-            {
-                char_u *p = list_find_str(get_vim_var_list(VV_OLDFILES),
-                                                                    (long)nr);
-
-                if (p != NULL)
-                {
-                    p = expand_env_save(p);
-                    eap->arg = p;
-                    eap->cmdidx = CMD_edit;
-                    cmdmod.browse = FALSE;
-                    do_exedit(eap, NULL);
-                    vim_free(p);
-                }
-            }
-        }
-#endif
     }
 }
 

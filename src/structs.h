@@ -65,9 +65,6 @@ typedef struct file_buffer      buf_T;  /* forward declaration */
  * This is here because gui.h needs the pos_T and win_T, and win_T needs gui.h
  * for scrollbar_T.
  */
-#if defined(FEAT_XCLIPBOARD)
-#include <X11/Intrinsic.h>
-#endif
 #define guicolor_T int         /* avoid error in prototypes */
 
 /*
@@ -116,40 +113,6 @@ typedef struct
     char_u      *wo_briopt;
 #define w_p_briopt w_onebuf_opt.wo_briopt /* 'breakindentopt' */
 #endif
-#if defined(FEAT_DIFF)
-    int         wo_diff;
-#define w_p_diff w_onebuf_opt.wo_diff  /* 'diff' */
-#endif
-#if defined(FEAT_FOLDING)
-    long        wo_fdc;
-#define w_p_fdc w_onebuf_opt.wo_fdc    /* 'foldcolumn' */
-    int         wo_fdc_save;
-#define w_p_fdc_save w_onebuf_opt.wo_fdc_save  /* 'foldenable' saved for diff mode */
-    int         wo_fen;
-#define w_p_fen w_onebuf_opt.wo_fen    /* 'foldenable' */
-    int         wo_fen_save;
-#define w_p_fen_save w_onebuf_opt.wo_fen_save  /* 'foldenable' saved for diff mode */
-    char_u      *wo_fdi;
-#define w_p_fdi w_onebuf_opt.wo_fdi    /* 'foldignore' */
-    long        wo_fdl;
-#define w_p_fdl w_onebuf_opt.wo_fdl    /* 'foldlevel' */
-    int         wo_fdl_save;
-#define w_p_fdl_save w_onebuf_opt.wo_fdl_save  /* 'foldlevel' state saved for diff mode */
-    char_u      *wo_fdm;
-#define w_p_fdm w_onebuf_opt.wo_fdm    /* 'foldmethod' */
-    char_u      *wo_fdm_save;
-#define w_p_fdm_save w_onebuf_opt.wo_fdm_save  /* 'fdm' saved for diff mode */
-    long        wo_fml;
-#define w_p_fml w_onebuf_opt.wo_fml    /* 'foldminlines' */
-    long        wo_fdn;
-#define w_p_fdn w_onebuf_opt.wo_fdn    /* 'foldnestmax' */
-    char_u      *wo_fde;
-#define w_p_fde w_onebuf_opt.wo_fde    /* 'foldexpr' */
-    char_u      *wo_fdt;
-#define w_p_fdt w_onebuf_opt.wo_fdt   /* 'foldtext' */
-    char_u      *wo_fmr;
-#define w_p_fmr w_onebuf_opt.wo_fmr    /* 'foldmarker' */
-#endif
 #if defined(FEAT_LINEBREAK)
     int         wo_lbr;
 #define w_p_lbr w_onebuf_opt.wo_lbr    /* 'linebreak' */
@@ -182,10 +145,6 @@ typedef struct
 #endif
     long        wo_scr;
 #define w_p_scr w_onebuf_opt.wo_scr     /* 'scroll' */
-#if defined(FEAT_SPELL)
-    int         wo_spell;
-#define w_p_spell w_onebuf_opt.wo_spell /* 'spell' */
-#endif
 #if defined(FEAT_SYN_HL)
     int         wo_cuc;
 #define w_p_cuc w_onebuf_opt.wo_cuc    /* 'cursorcolumn' */
@@ -208,10 +167,6 @@ typedef struct
 #endif
     int         wo_wrap;
 #define w_p_wrap w_onebuf_opt.wo_wrap   /* 'wrap' */
-#if defined(FEAT_DIFF)
-    int         wo_wrap_save;   /* 'wrap' state saved for diff mode*/
-#define w_p_wrap_save w_onebuf_opt.wo_wrap_save
-#endif
 #if defined(FEAT_CONCEAL)
     char_u      *wo_cocu;               /* 'concealcursor' */
 #define w_p_cocu w_onebuf_opt.wo_cocu
@@ -247,10 +202,6 @@ struct wininfo_S
     pos_T       wi_fpos;        /* last cursor position in the file */
     int         wi_optset;      /* TRUE when wi_opt has useful values */
     winopt_T    wi_opt;         /* local window options */
-#if defined(FEAT_FOLDING)
-    int         wi_fold_manual; /* copy of w_fold_manual */
-    garray_T    wi_folds;       /* clone of w_folds */
-#endif
 };
 
 /*
@@ -479,7 +430,7 @@ typedef struct expand
     int         xp_scriptID;            /* SID for completion function */
 #endif
     int         xp_backslash;           /* one of the XP_BS_ values */
-#if !defined(BACKSLASH_IN_FILENAME)
+#if (1)
     int         xp_shell;               /* TRUE for a shell command, more
                                            characters need to be escaped */
 #endif
@@ -503,9 +454,6 @@ typedef struct expand
 typedef struct
 {
     int         hide;                   /* TRUE when ":hide" was used */
-#if defined(FEAT_BROWSE_CMD)
-    int         browse;                 /* TRUE to invoke file dialog */
-#endif
 #if defined(FEAT_WINDOWS)
     int         split;                  /* flags for win_split() */
     int         tab;                    /* > 0 when ":tab" was used */
@@ -544,16 +492,6 @@ struct memfile
     blocknr_T   mf_infile_count;        /* number of pages in the file */
     unsigned    mf_page_size;           /* number of bytes in a page */
     int         mf_dirty;               /* TRUE if there are dirty blocks */
-#if defined(FEAT_CRYPT)
-    buf_T       *mf_buffer;             /* buffer this memfile is for */
-    char_u      mf_seed[MF_SEED_LEN];   /* seed for encryption */
-
-    /* Values for key, method and seed used for reading data blocks when
-     * updating for a newly set key or method. Only when mf_old_key != NULL. */
-    char_u      *mf_old_key;
-    int         mf_old_cm;
-    char_u      mf_old_seed[MF_SEED_LEN];
-#endif
 };
 
 /*
@@ -1157,43 +1095,12 @@ typedef struct list_stack_S
 #define SYNSPL_NOTOP    2       /* don't spell check toplevel text */
 
 /* avoid #ifdefs for when b_spell is not available */
-#if defined(FEAT_SPELL)
-#define B_SPELL(buf)  ((buf)->b_spell)
-#else
+#if (1)
 #define B_SPELL(buf)  (0)
 #endif
 
 #if defined(FEAT_QUICKFIX)
 typedef struct qf_info_S qf_info_T;
-#endif
-
-#if defined(FEAT_PROFILE)
-/*
- * Used for :syntime: timing of executing a syntax pattern.
- */
-typedef struct {
-    proftime_T  total;          /* total time used */
-    proftime_T  slowest;        /* time of slowest call */
-    long        count;          /* nr of times used */
-    long        match;          /* nr of times matched */
-} syn_time_T;
-#endif
-
-#if defined(FEAT_CRYPT)
-/*
- * Structure to hold the type of encryption and the state of encryption or
- * decryption.
- */
-typedef struct {
-    int     method_nr;
-    void    *method_state;  /* method-specific state information */
-} cryptstate_T;
-
-/* values for method_nr */
-#define CRYPT_M_ZIP    0
-#define CRYPT_M_BF     1
-#define CRYPT_M_BF2    2
-#define CRYPT_M_COUNT  3 /* number of crypt methods */
 #endif
 
 /*
@@ -1220,17 +1127,10 @@ typedef struct {
     long        b_syn_sync_linebreaks;  /* offset for multi-line pattern */
     char_u      *b_syn_linecont_pat;    /* line continuation pattern */
     regprog_T   *b_syn_linecont_prog;   /* line continuation program */
-#if defined(FEAT_PROFILE)
-    syn_time_T  b_syn_linecont_time;
-#endif
     int         b_syn_linecont_ic;      /* ignore-case flag for above */
     int         b_syn_topgrp;           /* for ":syntax include" */
 #if defined(FEAT_CONCEAL)
     int         b_syn_conceal;          /* auto-conceal for :syn cmds */
-#endif
-#if defined(FEAT_FOLDING)
-    int         b_syn_folditems;        /* number of patterns with the HL_FOLD
-                                           flag set */
 #endif
     /*
      * b_sst_array[] contains the state stack for a number of lines, for the
@@ -1255,18 +1155,7 @@ typedef struct {
     short_u     b_sst_lasttick; /* last display tick */
 #endif
 
-#if defined(FEAT_SPELL)
-    /* for spell checking */
-    garray_T    b_langp;        /* list of pointers to slang_T, see spell.c */
-    char_u      b_spell_ismw[256];/* flags: is midword char */
-    char_u      *b_spell_ismw_mb; /* multi-byte midword chars */
-    char_u      *b_p_spc;       /* 'spellcapcheck' */
-    regprog_T   *b_cap_prog;    /* program for 'spellcapcheck' */
-    char_u      *b_p_spf;       /* 'spellfile' */
-    char_u      *b_p_spl;       /* 'spelllang' */
-    int         b_cjk;          /* all CJK letters as OK */
-#endif
-#if !defined(FEAT_SYN_HL) && !defined(FEAT_SPELL)
+#if !defined(FEAT_SYN_HL)
     int         dummy;
 #endif
 } synblock_T;
@@ -1384,10 +1273,6 @@ struct file_buffer
     pos_T       b_op_start_orig;  /* used for Insstart_orig */
     pos_T       b_op_end;
 
-#if defined(FEAT_VIMINFO)
-    int         b_marks_read;   /* Have we read viminfo marks yet? */
-#endif
-
     /*
      * The following only used in undo.c.
      */
@@ -1466,9 +1351,6 @@ struct file_buffer
 #if defined(FEAT_COMMENTS)
     char_u      *b_p_com;       /* 'comments' */
 #endif
-#if defined(FEAT_FOLDING)
-    char_u      *b_p_cms;       /* 'commentstring' */
-#endif
 #if defined(FEAT_INS_EXPAND)
     char_u      *b_p_cpt;       /* 'complete' */
 #endif
@@ -1501,9 +1383,6 @@ struct file_buffer
 #endif
     char_u      *b_p_fex;       /* 'formatexpr' */
     long_u      b_p_fex_flags;  /* flags for 'formatexpr' */
-#if defined(FEAT_CRYPT)
-    char_u      *b_p_key;       /* 'key' */
-#endif
     char_u      *b_p_kp;        /* 'keywordprg' */
 #if defined(FEAT_LISP)
     int         b_p_lisp;       /* 'lisp' */
@@ -1622,10 +1501,6 @@ struct file_buffer
     dictitem_T  b_bufvar;       /* variable for "b:" Dictionary */
     dict_T      *b_vars;        /* internal variables, local to buffer */
 
-#if defined(FEAT_CRYPT)
-    char_u      *b_p_cm;        /* 'cryptmethod' */
-#endif
-
     /* When a buffer is created, it starts without a swap file.  b_may_swap is
      * then set to indicate that a swap file may be opened later.  It is reset
      * if a swap file could not be opened.
@@ -1641,17 +1516,12 @@ struct file_buffer
      */
     int         b_help;         /* TRUE for help file buffer (when set b_p_bt
                                    is "help") */
-#if defined(FEAT_SPELL)
-    int         b_spell;        /* TRUE for a spell file buffer, most fields
-                                   are not used!  Use the B_SPELL macro to
-                                   access b_spell without #ifdef. */
-#endif
 
 #if !defined(SHORT_FNAME)
     int         b_shortname;    /* this file has an 8.3 file name */
 #endif
 
-#if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
+#if defined(FEAT_SYN_HL)
     synblock_T  b_s;            /* Info related to syntax highlighting.  w_s
                                  * normally points to this, but some windows
                                  * may use a different synblock_T. */
@@ -1661,42 +1531,9 @@ struct file_buffer
     signlist_T  *b_signlist;    /* list of signs to draw */
 #endif
 
-#if defined(FEAT_CRYPT)
-    cryptstate_T *b_cryptstate; /* Encryption state while reading or writing
-                                 * the file. NULL when not using encryption. */
-#endif
     int         b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
 
 }; /* file_buffer */
-
-#if defined(FEAT_DIFF)
-/*
- * Stuff for diff mode.
- */
-#define DB_COUNT 4     /* up to four buffers can be diff'ed */
-
-/*
- * Each diffblock defines where a block of lines starts in each of the buffers
- * and how many lines it occupies in that buffer.  When the lines are missing
- * in the buffer the df_count[] is zero.  This is all counted in
- * buffer lines.
- * There is always at least one unchanged line in between the diffs.
- * Otherwise it would have been included in the diff above or below it.
- * df_lnum[] + df_count[] is the lnum below the change.  When in one buffer
- * lines have been inserted, in the other buffer df_lnum[] is the line below
- * the insertion and df_count[] is zero.  When appending lines at the end of
- * the buffer, df_lnum[] is one beyond the end!
- * This is using a linked list, because the number of differences is expected
- * to be reasonable small.  The list is sorted on lnum.
- */
-typedef struct diffblock_S diff_T;
-struct diffblock_S
-{
-    diff_T      *df_next;
-    linenr_T    df_lnum[DB_COUNT];      /* line number in buffer */
-    linenr_T    df_count[DB_COUNT];     /* nr of inserted/changed lines */
-};
-#endif
 
 #define SNAP_HELP_IDX   0
 #if defined(FEAT_AUTOCMD)
@@ -1725,11 +1562,6 @@ struct tabpage_S
     long            tp_old_Columns; /* Columns when Tab page was left */
     long            tp_ch_used;     /* value of 'cmdheight' when frame size
                                        was set */
-#if defined(FEAT_DIFF)
-    diff_T          *tp_first_diff;
-    buf_T           *(tp_diffbuf[DB_COUNT]);
-    int             tp_diff_invalid;    /* list of diffs is outdated */
-#endif
     frame_T         *(tp_snapshot[SNAP_COUNT]);  /* window layout snapshots */
     dictitem_T      tp_winvar;      /* variable for "t:" Dictionary */
     dict_T          *tp_vars;       /* internal variables, local to tab page */
@@ -1753,10 +1585,6 @@ typedef struct w_line
     linenr_T    wl_lnum;        /* buffer line number for logical line */
     short_u     wl_size;        /* height in screen lines */
     char        wl_valid;       /* TRUE values are valid for text in buffer */
-#if defined(FEAT_FOLDING)
-    char        wl_folded;      /* TRUE when this is a range of folded lines */
-    linenr_T    wl_lastlnum;    /* last buffer line number for logical line */
-#endif
 } wline_T;
 
 /*
@@ -1861,7 +1689,7 @@ struct window_S
     buf_T       *w_buffer;          /* buffer we are a window into (used
                                        often, keep it the first item!) */
 
-#if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
+#if defined(FEAT_SYN_HL)
     synblock_T  *w_s;               /* for :ownsyntax */
 #endif
 
@@ -1906,13 +1734,6 @@ struct window_S
 #if defined(FEAT_AUTOCMD)
     char        w_topline_was_set;  /* flag set to TRUE when topline is set,
                                        e.g. by winrestview() */
-#endif
-#if defined(FEAT_DIFF)
-    int         w_topfill;          /* number of filler lines above w_topline */
-    int         w_old_topfill;      /* w_topfill at last redraw */
-    int         w_botfill;          /* TRUE when filler lines are actually
-                                       below w_topline (at end of file) */
-    int         w_old_botfill;      /* w_botfill at last redraw */
 #endif
     colnr_T     w_leftcol;          /* window column number of the left most
                                        character in the window; used when
@@ -1960,9 +1781,6 @@ struct window_S
      * that the cursor is on.  We use this to avoid extra calls to plines().
      */
     int         w_cline_height;     /* current size of cursor line */
-#if defined(FEAT_FOLDING)
-    int         w_cline_folded;     /* cursor line is folded */
-#endif
 
     int         w_cline_row;        /* starting row of the cursor line */
 
@@ -1983,10 +1801,6 @@ struct window_S
     linenr_T    w_botline;          /* number of the line below the bottom of
                                        the screen */
     int         w_empty_rows;       /* number of ~ rows in window */
-#if defined(FEAT_DIFF)
-    int         w_filler_rows;      /* number of filler rows at the end of the
-                                       window */
-#endif
 
     /*
      * Info about the lines currently in the window is remembered to avoid
@@ -2001,13 +1815,6 @@ struct window_S
     int         w_lines_valid;      /* number of valid entries */
     wline_T     *w_lines;
 
-#if defined(FEAT_FOLDING)
-    garray_T    w_folds;            /* array of nested folds */
-    char        w_fold_manual;      /* when TRUE: some folds are opened/closed
-                                       manually */
-    char        w_foldinvalid;      /* when TRUE: folding needs to be
-                                       recomputed */
-#endif
 #if defined(FEAT_LINEBREAK)
     int         w_nrwidth;          /* width of 'number' and 'relativenumber'
                                        column being used */
@@ -2032,9 +1839,6 @@ struct window_S
     colnr_T     w_ru_virtcol;       /* virtcol shown in ruler */
     linenr_T    w_ru_topline;       /* topline shown in ruler */
     linenr_T    w_ru_line_count;    /* line count used for ruler */
-#if defined(FEAT_DIFF)
-    int         w_ru_topfill;       /* topfill shown in ruler */
-#endif
     char        w_ru_empty;         /* TRUE if ruler shows 0-1 (empty line) */
 #endif
 

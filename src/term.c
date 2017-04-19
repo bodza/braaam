@@ -175,17 +175,6 @@ static struct builtin_term builtin_termcaps[] =
     {(int)KS_UE,        "\033[0m"},
     {(int)KS_CZH,       "\033[3m"},
     {(int)KS_CZR,       "\033[0m"},
-#if defined(__MORPHOS__) || defined(__AROS__)
-    {(int)KS_CCO,       "8"},           /* allow 8 colors */
-#if defined(TERMINFO)
-    {(int)KS_CAB,       "\033[4%p1%dm"},/* set background color */
-    {(int)KS_CAF,       "\033[3%p1%dm"},/* set foreground color */
-#else
-    {(int)KS_CAB,       "\033[4%dm"},   /* set background color */
-    {(int)KS_CAF,       "\033[3%dm"},   /* set foreground color */
-#endif
-    {(int)KS_OP,        "\033[m"},      /* reset colors */
-#endif
     {(int)KS_MS,        "y"},
     {(int)KS_UT,        "y"},           /* guessed */
     {(int)KS_LE,        "\b"},
@@ -193,9 +182,6 @@ static struct builtin_term builtin_termcaps[] =
     {(int)KS_CM,        "\033[%i%p1%d;%p2%dH"},
 #else
     {(int)KS_CM,        "\033[%i%d;%dH"},
-#endif
-#if defined(__MORPHOS__)
-    {(int)KS_SR,        "\033M"},
 #endif
 #if defined(TERMINFO)
     {(int)KS_CRI,       "\033[%p1%dC"},
@@ -1574,9 +1560,7 @@ set_termname(term)
         p = (char_u *)"";
 #if defined(FEAT_MOUSE_XTERM)
 #if defined(FEAT_CLIPBOARD)
-#if !defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
             clip_init(FALSE);
-#endif
 #endif
         if (use_xterm_like_mouse(term))
         {
@@ -1717,36 +1701,6 @@ set_mouse_termcode(n, s)
     name[1] = KE_FILLER;
     add_termcode(name, s, FALSE);
 #if defined(FEAT_MOUSE_TTY)
-#if defined(FEAT_MOUSE_JSB)
-    if (n == KS_JSBTERM_MOUSE)
-        has_mouse_termcode |= HMT_JSBTERM;
-    else
-#endif
-#if defined(FEAT_MOUSE_NET)
-    if (n == KS_NETTERM_MOUSE)
-        has_mouse_termcode |= HMT_NETTERM;
-    else
-#endif
-#if defined(FEAT_MOUSE_DEC)
-    if (n == KS_DEC_MOUSE)
-        has_mouse_termcode |= HMT_DEC;
-    else
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-    if (n == KS_PTERM_MOUSE)
-        has_mouse_termcode |= HMT_PTERM;
-    else
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-    if (n == KS_URXVT_MOUSE)
-        has_mouse_termcode |= HMT_URXVT;
-    else
-#endif
-#if defined(FEAT_MOUSE_SGR)
-    if (n == KS_SGR_MOUSE)
-        has_mouse_termcode |= HMT_SGR;
-    else
-#endif
         has_mouse_termcode |= HMT_NORMAL;
 #endif
 }
@@ -1763,36 +1717,6 @@ del_mouse_termcode(n)
     name[1] = KE_FILLER;
     del_termcode(name);
 #if defined(FEAT_MOUSE_TTY)
-#if defined(FEAT_MOUSE_JSB)
-    if (n == KS_JSBTERM_MOUSE)
-        has_mouse_termcode &= ~HMT_JSBTERM;
-    else
-#endif
-#if defined(FEAT_MOUSE_NET)
-    if (n == KS_NETTERM_MOUSE)
-        has_mouse_termcode &= ~HMT_NETTERM;
-    else
-#endif
-#if defined(FEAT_MOUSE_DEC)
-    if (n == KS_DEC_MOUSE)
-        has_mouse_termcode &= ~HMT_DEC;
-    else
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-    if (n == KS_PTERM_MOUSE)
-        has_mouse_termcode &= ~HMT_PTERM;
-    else
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-    if (n == KS_URXVT_MOUSE)
-        has_mouse_termcode &= ~HMT_URXVT;
-    else
-#endif
-#if defined(FEAT_MOUSE_SGR)
-    if (n == KS_SGR_MOUSE)
-        has_mouse_termcode &= ~HMT_SGR;
-    else
-#endif
         has_mouse_termcode &= ~HMT_NORMAL;
 #endif
 }
@@ -3435,9 +3359,6 @@ switch_to_8bit()
 
 #if defined(CHECK_DOUBLE_CLICK)
 static linenr_T orig_topline = 0;
-#if defined(FEAT_DIFF)
-static int orig_topfill = 0;
-#endif
 #endif
 #if (defined(FEAT_WINDOWS) && defined(CHECK_DOUBLE_CLICK))
 /*
@@ -3454,9 +3375,6 @@ set_mouse_topline(wp)
     win_T       *wp;
 {
     orig_topline = wp->w_topline;
-#if defined(FEAT_DIFF)
-    orig_topfill = wp->w_topfill;
-#endif
 }
 #endif
 
@@ -3690,15 +3608,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
             /* Mouse codes of DEC, pterm, and URXVT start with <ESC>[.  When
              * detecting the start of these mouse codes they might as well be
              * another key code or terminal response. */
-#if defined(FEAT_MOUSE_DEC)
-            || key_name[0] == KS_DEC_MOUSE
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-            || key_name[0] == KS_PTERM_MOUSE
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-            || key_name[0] == KS_URXVT_MOUSE
-#endif
            )
         {
             /* Check for some responses from the terminal starting with
@@ -3886,24 +3795,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
          * If it is a mouse click, get the coordinates.
          */
         if (key_name[0] == KS_MOUSE
-#if defined(FEAT_MOUSE_JSB)
-                || key_name[0] == KS_JSBTERM_MOUSE
-#endif
-#if defined(FEAT_MOUSE_NET)
-                || key_name[0] == KS_NETTERM_MOUSE
-#endif
-#if defined(FEAT_MOUSE_DEC)
-                || key_name[0] == KS_DEC_MOUSE
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-                || key_name[0] == KS_PTERM_MOUSE
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-                || key_name[0] == KS_URXVT_MOUSE
-#endif
-#if defined(FEAT_MOUSE_SGR)
-                || key_name[0] == KS_SGR_MOUSE
-#endif
                 )
         {
             is_click = is_drag = FALSE;
@@ -3958,97 +3849,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 }
             }
 
-#if defined(FEAT_MOUSE_URXVT) || defined(FEAT_MOUSE_SGR)
-            if (key_name[0] == KS_URXVT_MOUSE
-                || key_name[0] == KS_SGR_MOUSE)
-            {
-                for (;;)
-                {
-                    /* URXVT 1015 mouse reporting mode:
-                     * Almost identical to xterm mouse mode, except the values
-                     * are decimal instead of bytes.
-                     *
-                     * \033[%d;%d;%dM
-                     *            ^-- row
-                     *         ^----- column
-                     *      ^-------- code
-                     *
-                     * SGR 1006 mouse reporting mode:
-                     * Almost identical to xterm mouse mode, except the values
-                     * are decimal instead of bytes.
-                     *
-                     * \033[<%d;%d;%dM
-                     *             ^-- row
-                     *          ^----- column
-                     *       ^-------- code
-                     *
-                     * \033[<%d;%d;%dm        : mouse release event
-                     *             ^-- row
-                     *          ^----- column
-                     *       ^-------- code
-                     */
-                    p = tp + slen;
-
-                    mouse_code = getdigits(&p);
-                    if (*p++ != ';')
-                        return -1;
-
-                    /* when mouse reporting is SGR, add 32 to mouse code */
-                    if (key_name[0] == KS_SGR_MOUSE)
-                        mouse_code += 32;
-
-                    mouse_col = getdigits(&p) - 1;
-                    if (*p++ != ';')
-                        return -1;
-
-                    mouse_row = getdigits(&p) - 1;
-                    if (key_name[0] == KS_SGR_MOUSE && *p == 'm')
-                        mouse_code |= MOUSE_RELEASE;
-                    else if (*p != 'M')
-                        return -1;
-                    p++;
-
-                    slen += (int)(p - (tp + slen));
-
-                    /* skip this one if next one has same code (like xterm
-                     * case) */
-                    j = termcodes[idx].len;
-                    if (STRNCMP(tp, tp + slen, (size_t)j) == 0)
-                    {
-                        int slen2;
-                        int cmd_complete = 0;
-
-                        /* check if the command is complete by looking for the
-                         * 'M' */
-                        for (slen2 = slen; slen2 < len; slen2++)
-                        {
-                            if (tp[slen2] == 'M'
-                                    || (key_name[0] == KS_SGR_MOUSE
-                                                         && tp[slen2] == 'm'))
-                            {
-                                cmd_complete = 1;
-                                break;
-                            }
-                        }
-                        p += j;
-                        if (cmd_complete && getdigits(&p) == mouse_code)
-                        {
-                            slen += j; /* skip the \033[ */
-                            continue;
-                        }
-                    }
-                    break;
-                }
-            }
-#endif
-
         if (key_name[0] == (int)KS_MOUSE
-#if defined(FEAT_MOUSE_URXVT)
-            || key_name[0] == (int)KS_URXVT_MOUSE
-#endif
-#if defined(FEAT_MOUSE_SGR)
-            || key_name[0] == KS_SGR_MOUSE
-#endif
             )
         {
                 /*
@@ -4083,354 +3884,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                         mouse_code |= MOUSE_DRAG;
                 }
 #endif
-#if defined(FEAT_XCLIPBOARD)
-                else if (!(mouse_code & MOUSE_DRAG & ~MOUSE_CLICK_MASK))
-                {
-                    if ((mouse_code & MOUSE_RELEASE) == MOUSE_RELEASE)
-                        stop_xterm_trace();
-                    else
-                        start_xterm_trace(mouse_code);
-                }
-#endif
-            }
-#endif
-#if defined(FEAT_MOUSE_NET)
-            if (key_name[0] == (int)KS_NETTERM_MOUSE)
-            {
-                int mc, mr;
-
-                /* expect a rather limited sequence like: balancing {
-                 * \033}6,45\r
-                 * '6' is the row, 45 is the column
-                 */
-                p = tp + slen;
-                mr = getdigits(&p);
-                if (*p++ != ',')
-                    return -1;
-                mc = getdigits(&p);
-                if (*p++ != '\r')
-                    return -1;
-
-                mouse_col = mc - 1;
-                mouse_row = mr - 1;
-                mouse_code = MOUSE_LEFT;
-                slen += (int)(p - (tp + slen));
-            }
-#endif
-#if defined(FEAT_MOUSE_JSB)
-            if (key_name[0] == (int)KS_JSBTERM_MOUSE)
-            {
-                int mult, val, iter, button, status;
-
-                /* JSBTERM Input Model
-                 * \033[0~zw uniq escape sequence
-                 * (L-x)  Left button pressed - not pressed x not reporting
-                 * (M-x)  Middle button pressed - not pressed x not reporting
-                 * (R-x)  Right button pressed - not pressed x not reporting
-                 * (SDmdu)  Single , Double click, m mouse move d button down
-                 *                                                 u button up
-                 *  ###   X cursor position padded to 3 digits
-                 *  ###   Y cursor position padded to 3 digits
-                 * (s-x)  SHIFT key pressed - not pressed x not reporting
-                 * (c-x)  CTRL key pressed - not pressed x not reporting
-                 * \033\\ terminating sequence
-                 */
-
-                p = tp + slen;
-                button = mouse_code = 0;
-                switch (*p++)
-                {
-                    case 'L': button = 1; break;
-                    case '-': break;
-                    case 'x': break; /* ignore sequence */
-                    default:  return -1; /* Unknown Result */
-                }
-                switch (*p++)
-                {
-                    case 'M': button |= 2; break;
-                    case '-': break;
-                    case 'x': break; /* ignore sequence */
-                    default:  return -1; /* Unknown Result */
-                }
-                switch (*p++)
-                {
-                    case 'R': button |= 4; break;
-                    case '-': break;
-                    case 'x': break; /* ignore sequence */
-                    default:  return -1; /* Unknown Result */
-                }
-                status = *p++;
-                for (val = 0, mult = 100, iter = 0; iter < 3; iter++,
-                                                              mult /= 10, p++)
-                    if (*p >= '0' && *p <= '9')
-                        val += (*p - '0') * mult;
-                    else
-                        return -1;
-                mouse_col = val;
-                for (val = 0, mult = 100, iter = 0; iter < 3; iter++,
-                                                              mult /= 10, p++)
-                    if (*p >= '0' && *p <= '9')
-                        val += (*p - '0') * mult;
-                    else
-                        return -1;
-                mouse_row = val;
-                switch (*p++)
-                {
-                    case 's': button |= 8; break;  /* SHIFT key Pressed */
-                    case '-': break;  /* Not Pressed */
-                    case 'x': break;  /* Not Reporting */
-                    default:  return -1; /* Unknown Result */
-                }
-                switch (*p++)
-                {
-                    case 'c': button |= 16; break;  /* CTRL key Pressed */
-                    case '-': break;  /* Not Pressed */
-                    case 'x': break;  /* Not Reporting */
-                    default:  return -1; /* Unknown Result */
-                }
-                if (*p++ != '\033')
-                    return -1;
-                if (*p++ != '\\')
-                    return -1;
-                switch (status)
-                {
-                    case 'D': /* Double Click */
-                    case 'S': /* Single Click */
-                        if (button & 1) mouse_code |= MOUSE_LEFT;
-                        if (button & 2) mouse_code |= MOUSE_MIDDLE;
-                        if (button & 4) mouse_code |= MOUSE_RIGHT;
-                        if (button & 8) mouse_code |= MOUSE_SHIFT;
-                        if (button & 16) mouse_code |= MOUSE_CTRL;
-                        break;
-                    case 'm': /* Mouse move */
-                        if (button & 1) mouse_code |= MOUSE_LEFT;
-                        if (button & 2) mouse_code |= MOUSE_MIDDLE;
-                        if (button & 4) mouse_code |= MOUSE_RIGHT;
-                        if (button & 8) mouse_code |= MOUSE_SHIFT;
-                        if (button & 16) mouse_code |= MOUSE_CTRL;
-                        if ((button & 7) != 0)
-                        {
-                            held_button = mouse_code;
-                            mouse_code |= MOUSE_DRAG;
-                        }
-                        is_drag = TRUE;
-                        showmode();
-                        break;
-                    case 'd': /* Button Down */
-                        if (button & 1) mouse_code |= MOUSE_LEFT;
-                        if (button & 2) mouse_code |= MOUSE_MIDDLE;
-                        if (button & 4) mouse_code |= MOUSE_RIGHT;
-                        if (button & 8) mouse_code |= MOUSE_SHIFT;
-                        if (button & 16) mouse_code |= MOUSE_CTRL;
-                        break;
-                    case 'u': /* Button Up */
-                        if (button & 1)
-                            mouse_code |= MOUSE_LEFT | MOUSE_RELEASE;
-                        if (button & 2)
-                            mouse_code |= MOUSE_MIDDLE | MOUSE_RELEASE;
-                        if (button & 4)
-                            mouse_code |= MOUSE_RIGHT | MOUSE_RELEASE;
-                        if (button & 8)
-                            mouse_code |= MOUSE_SHIFT;
-                        if (button & 16)
-                            mouse_code |= MOUSE_CTRL;
-                        break;
-                    default: return -1; /* Unknown Result */
-                }
-
-                slen += (p - (tp + slen));
-            }
-#endif
-#if defined(FEAT_MOUSE_DEC)
-            if (key_name[0] == (int)KS_DEC_MOUSE)
-            {
-               /* The DEC Locator Input Model
-                * Netterm delivers the code sequence:
-                *  \033[2;4;24;80&w  (left button down)
-                *  \033[3;0;24;80&w  (left button up)
-                *  \033[6;1;24;80&w  (right button down)
-                *  \033[7;0;24;80&w  (right button up)
-                * CSI Pe ; Pb ; Pr ; Pc ; Pp & w
-                * Pe is the event code
-                * Pb is the button code
-                * Pr is the row coordinate
-                * Pc is the column coordinate
-                * Pp is the third coordinate (page number)
-                * Pe, the event code indicates what event caused this report
-                *    The following event codes are defined:
-                *    0 - request, the terminal received an explicit request
-                *        for a locator report, but the locator is unavailable
-                *    1 - request, the terminal received an explicit request
-                *        for a locator report
-                *    2 - left button down
-                *    3 - left button up
-                *    4 - middle button down
-                *    5 - middle button up
-                *    6 - right button down
-                *    7 - right button up
-                *    8 - fourth button down
-                *    9 - fourth button up
-                *    10 - locator outside filter rectangle
-                * Pb, the button code, ASCII decimal 0-15 indicating which
-                *   buttons are down if any. The state of the four buttons
-                *   on the locator correspond to the low four bits of the
-                *   decimal value,
-                *   "1" means button depressed
-                *   0 - no buttons down,
-                *   1 - right,
-                *   2 - middle,
-                *   4 - left,
-                *   8 - fourth
-                * Pr is the row coordinate of the locator position in the page,
-                *   encoded as an ASCII decimal value.
-                *   If Pr is omitted, the locator position is undefined
-                *   (outside the terminal window for example).
-                * Pc is the column coordinate of the locator position in the
-                *   page, encoded as an ASCII decimal value.
-                *   If Pc is omitted, the locator position is undefined
-                *   (outside the terminal window for example).
-                * Pp is the page coordinate of the locator position
-                *   encoded as an ASCII decimal value.
-                *   The page coordinate may be omitted if the locator is on
-                *   page one (the default).  We ignore it anyway.
-                */
-                int Pe, Pb, Pr, Pc;
-
-                p = tp + slen;
-
-                /* get event status */
-                Pe = getdigits(&p);
-                if (*p++ != ';')
-                    return -1;
-
-                /* get button status */
-                Pb = getdigits(&p);
-                if (*p++ != ';')
-                    return -1;
-
-                /* get row status */
-                Pr = getdigits(&p);
-                if (*p++ != ';')
-                    return -1;
-
-                /* get column status */
-                Pc = getdigits(&p);
-
-                /* the page parameter is optional */
-                if (*p == ';')
-                {
-                    p++;
-                    (void)getdigits(&p);
-                }
-                if (*p++ != '&')
-                    return -1;
-                if (*p++ != 'w')
-                    return -1;
-
-                mouse_code = 0;
-                switch (Pe)
-                {
-                case  0: return -1; /* position request while unavailable */
-                case  1: /* a response to a locator position request includes
-                            the status of all buttons */
-                         Pb &= 7;   /* mask off and ignore fourth button */
-                         if (Pb & 4)
-                             mouse_code  = MOUSE_LEFT;
-                         if (Pb & 2)
-                             mouse_code  = MOUSE_MIDDLE;
-                         if (Pb & 1)
-                             mouse_code  = MOUSE_RIGHT;
-                         if (Pb)
-                         {
-                             held_button = mouse_code;
-                             mouse_code |= MOUSE_DRAG;
-                             WantQueryMouse = TRUE;
-                         }
-                         is_drag = TRUE;
-                         showmode();
-                         break;
-                case  2: mouse_code = MOUSE_LEFT;
-                         WantQueryMouse = TRUE;
-                         break;
-                case  3: mouse_code = MOUSE_RELEASE | MOUSE_LEFT;
-                         break;
-                case  4: mouse_code = MOUSE_MIDDLE;
-                         WantQueryMouse = TRUE;
-                         break;
-                case  5: mouse_code = MOUSE_RELEASE | MOUSE_MIDDLE;
-                         break;
-                case  6: mouse_code = MOUSE_RIGHT;
-                         WantQueryMouse = TRUE;
-                         break;
-                case  7: mouse_code = MOUSE_RELEASE | MOUSE_RIGHT;
-                         break;
-                case  8: return -1; /* fourth button down */
-                case  9: return -1; /* fourth button up */
-                case 10: return -1; /* mouse outside of filter rectangle */
-                default: return -1; /* should never occur */
-                }
-
-                mouse_col = Pc - 1;
-                mouse_row = Pr - 1;
-
-                slen += (int)(p - (tp + slen));
-            }
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-            if (key_name[0] == (int)KS_PTERM_MOUSE)
-            {
-                int button, num_clicks, action;
-
-                p = tp + slen;
-
-                action = getdigits(&p);
-                if (*p++ != ';')
-                    return -1;
-
-                mouse_row = getdigits(&p);
-                if (*p++ != ';')
-                    return -1;
-                mouse_col = getdigits(&p);
-                if (*p++ != ';')
-                    return -1;
-
-                button = getdigits(&p);
-                mouse_code = 0;
-
-                switch( button )
-                {
-                    case 4: mouse_code = MOUSE_LEFT; break;
-                    case 1: mouse_code = MOUSE_RIGHT; break;
-                    case 2: mouse_code = MOUSE_MIDDLE; break;
-                    default: return -1;
-                }
-
-                switch( action )
-                {
-                    case 31: /* Initial press */
-                        if (*p++ != ';')
-                            return -1;
-
-                        num_clicks = getdigits(&p); /* Not used */
-                        break;
-
-                    case 32: /* Release */
-                        mouse_code |= MOUSE_RELEASE;
-                        break;
-
-                    case 33: /* Drag */
-                        held_button = mouse_code;
-                        mouse_code |= MOUSE_DRAG;
-                        break;
-
-                    default:
-                        return -1;
-                }
-
-                if (*p++ != 't')
-                    return -1;
-
-                slen += (p - (tp + slen));
             }
 #endif
 
@@ -4478,9 +3931,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                             && orig_mouse_col == mouse_col
                             && orig_mouse_row == mouse_row
                             && ((orig_topline == curwin->w_topline
-#if defined(FEAT_DIFF)
-                                    && orig_topfill == curwin->w_topfill
-#endif
                                 )
 #if defined(FEAT_WINDOWS)
                                 /* Double click in tab pages line also works
@@ -4495,9 +3945,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     orig_mouse_col = mouse_col;
                     orig_mouse_row = mouse_row;
                     orig_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-                    orig_topfill = curwin->w_topfill;
-#endif
                 }
 #if defined(FEAT_MOUSE_GPM)
                 else

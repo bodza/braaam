@@ -1,14 +1,6 @@
 /*
  * NextStep has a problem with configure, undefine a few things:
  */
-#if defined(NeXT)
-#if defined(HAVE_UTIME)
-#undef HAVE_UTIME
-#endif
-#if defined(HAVE_SYS_UTSNAME_H)
-#undef HAVE_SYS_UTSNAME_H
-#endif
-#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -43,13 +35,7 @@
 #endif
 
 #if !defined(__ARGS)
-    /* The AIX VisualAge cc compiler defines __EXTENDED__ instead of __STDC__
-     * because it includes pre-ansi features. */
-#if defined(__STDC__) || defined(__GNUC__) || defined(__EXTENDED__)
 #define __ARGS(x) x
-#else
-#define __ARGS(x) ()
-#endif
 #endif
 
 /* always use unlink() to remove files */
@@ -61,11 +47,6 @@
 /* It used to be a long list of almost all systems. Any system that doesn't
  * have an argument??? */
 #define SIGHASARG
-
-/* List 3 arg systems here. I guess __sgi, please test and correct me. jw. */
-#if defined(__sgi) && defined(HAVE_SIGCONTEXT)
-#define SIGHAS3ARGS
-#endif
 
 #if defined(SIGHASARG)
 #if defined(SIGHAS3ARGS)
@@ -138,10 +119,6 @@
 #include <pwd.h>
 #endif
 
-#if defined(__COHERENT__)
-#undef __ARGS
-#endif
-
 #if (defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)) || (defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)) || defined(HAVE_SYSCTL) || defined(HAVE_SYSCONF)
 #define HAVE_TOTAL_MEM
 #endif
@@ -192,22 +169,8 @@
 #define USR_VIMRC_FILE2     "~/.vim/vimrc"
 #endif
 
-#if !defined(USR_GVIMRC_FILE)
-#define USR_GVIMRC_FILE "$HOME/.gvimrc"
-#endif
-
-#if !defined(USR_GVIMRC_FILE2)
-#define USR_GVIMRC_FILE2     "~/.vim/gvimrc"
-#endif
-
 #if !defined(EVIM_FILE)
 #define EVIM_FILE      "$VIMRUNTIME/evim.vim"
-#endif
-
-#if defined(FEAT_VIMINFO)
-#if !defined(VIMINFO_FILE)
-#define VIMINFO_FILE "$HOME/.viminfo"
-#endif
 #endif
 
 #if !defined(EXRC_FILE)
@@ -343,6 +306,3 @@ int mch_rename __ARGS((const char *src, const char *dest));
 #define HAVE_DUP               /* have dup() */
 #endif
 #define HAVE_ST_MODE            /* have stat.st_mode */
-
-/* We have three kinds of ACL support. */
-#define HAVE_ACL (HAVE_POSIX_ACL || HAVE_SOLARIS_ACL || HAVE_AIX_ACL)

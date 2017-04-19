@@ -20,9 +20,6 @@ static void findsent_forward __ARGS((long count, int at_start_sent));
 static void show_pat_in_path __ARGS((char_u *, int,
                                          int, int, FILE *, linenr_T *, long));
 #endif
-#if defined(FEAT_VIMINFO)
-static void wvsp_one __ARGS((FILE *fp, int idx, char *s, int sc));
-#endif
 
 /*
  * This file contains various searching-related routines. These fall into
@@ -1078,21 +1075,6 @@ do_search(oap, dirc, pat, count, options, tm)
         else
             dirc = '/';
     }
-
-#if defined(FEAT_FOLDING)
-    /* If the cursor is in a closed fold, don't find another match in the same
-     * fold. */
-    if (dirc == '/')
-    {
-        if (hasFolding(pos.lnum, NULL, &pos.lnum))
-            pos.col = MAXCOL - 2;       /* avoid overflow when adding 1 */
-    }
-    else
-    {
-        if (hasFolding(pos.lnum, &pos.lnum, NULL))
-            pos.col = 0;
-    }
-#endif
 
 #if defined(FEAT_SEARCH_EXTRA)
     /*
@@ -2588,12 +2570,6 @@ findpar(pincl, dir, count, what, both)
     int         did_skip;   /* TRUE after separating lines have been skipped */
     int         first;      /* TRUE on first line */
     int         posix = (vim_strchr(p_cpo, CPO_PARA) != NULL);
-#if defined(FEAT_FOLDING)
-    linenr_T    fold_first; /* first line of a closed fold */
-    linenr_T    fold_last;  /* last line of a closed fold */
-    int         fold_skipped; /* TRUE if a closed fold was skipped this
-                                 iteration */
-#endif
 
     curr = curwin->w_cursor.lnum;
 
@@ -2605,16 +2581,6 @@ findpar(pincl, dir, count, what, both)
             if (*ml_get(curr) != NUL)
                 did_skip = TRUE;
 
-#if defined(FEAT_FOLDING)
-            /* skip folded lines */
-            fold_skipped = FALSE;
-            if (first && hasFolding(curr, &fold_first, &fold_last))
-            {
-                curr = ((dir > 0) ? fold_last : fold_first) + dir;
-                fold_skipped = TRUE;
-            }
-#endif
-
             /* POSIX has it's own ideas of what a paragraph boundary is and it
              * doesn't match historical Vi: It also stops at a "{" in the
              * first column and at an empty line. */
@@ -2622,10 +2588,6 @@ findpar(pincl, dir, count, what, both)
                            || (posix && what == NUL && *ml_get(curr) == '{')))
                 break;
 
-#if defined(FEAT_FOLDING)
-            if (fold_skipped)
-                curr -= dir;
-#endif
             if ((curr += dir) < 1 || curr > curbuf->b_ml.ml_line_count)
             {
                 if (count)
@@ -2784,12 +2746,6 @@ fwd_word(count, bigword, eol)
     cls_bigword = bigword;
     while (--count >= 0)
     {
-#if defined(FEAT_FOLDING)
-        /* When inside a range of folded lines, move to the last char of the
-         * last line. */
-        if (hasFolding(curwin->w_cursor.lnum, NULL, &curwin->w_cursor.lnum))
-            coladvance((colnr_T)MAXCOL);
-#endif
         sclass = cls();
 
         /*
@@ -2854,12 +2810,6 @@ bck_word(count, bigword, stop)
     cls_bigword = bigword;
     while (--count >= 0)
     {
-#if defined(FEAT_FOLDING)
-        /* When inside a range of folded lines, move to the first char of the
-         * first line. */
-        if (hasFolding(curwin->w_cursor.lnum, &curwin->w_cursor.lnum, NULL))
-            curwin->w_cursor.col = 0;
-#endif
         sclass = cls();
         if (dec_cursor() == -1)         /* started at start of file */
             return FAIL;
@@ -2923,12 +2873,6 @@ end_word(count, bigword, stop, empty)
     cls_bigword = bigword;
     while (--count >= 0)
     {
-#if defined(FEAT_FOLDING)
-        /* When inside a range of folded lines, move to the last char of the
-         * last line. */
-        if (hasFolding(curwin->w_cursor.lnum, NULL, &curwin->w_cursor.lnum))
-            coladvance((colnr_T)MAXCOL);
-#endif
         sclass = cls();
         if (inc_cursor() == -1)
             return FAIL;
@@ -4500,11 +4444,6 @@ current_search(count, forward)
 
     }
 
-#if defined(FEAT_FOLDING)
-    if (fdo_flags & FDO_SEARCH && KeyTyped)
-        foldOpenCursor();
-#endif
-
     may_start_select('c');
 #if defined(FEAT_MOUSE)
     setmouse();
@@ -5360,134 +5299,6 @@ show_pat_in_path(line, type, did_show, action, fp, lnum, count)
             line = ml_get(*lnum);
         }
         msg_putchar('\n');
-    }
-}
-#endif
-
-#if defined(FEAT_VIMINFO)
-    int
-read_viminfo_search_pattern(virp, force)
-    vir_T       *virp;
-    int         force;
-{
-    char_u      *lp;
-    int         idx = -1;
-    int         magic = FALSE;
-    int         no_scs = FALSE;
-    int         off_line = FALSE;
-    int         off_end = 0;
-    long        off = 0;
-    int         setlast = FALSE;
-#if defined(FEAT_SEARCH_EXTRA)
-    static int  hlsearch_on = FALSE;
-#endif
-    char_u      *val;
-
-    /*
-     * Old line types:
-     * "/pat", "&pat": search/subst. pat
-     * "~/pat", "~&pat": last used search/subst. pat
-     * New line types:
-     * "~h", "~H": hlsearch highlighting off/on
-     * "~<magic><smartcase><line><end><off><last><which>pat"
-     * <magic>: 'm' off, 'M' on
-     * <smartcase>: 's' off, 'S' on
-     * <line>: 'L' line offset, 'l' char offset
-     * <end>: 'E' from end, 'e' from start
-     * <off>: decimal, offset
-     * <last>: '~' last used pattern
-     * <which>: '/' search pat, '&' subst. pat
-     */
-    lp = virp->vir_line;
-    if (lp[0] == '~' && (lp[1] == 'm' || lp[1] == 'M')) /* new line type */
-    {
-        if (lp[1] == 'M')               /* magic on */
-            magic = TRUE;
-        if (lp[2] == 's')
-            no_scs = TRUE;
-        if (lp[3] == 'L')
-            off_line = TRUE;
-        if (lp[4] == 'E')
-            off_end = SEARCH_END;
-        lp += 5;
-        off = getdigits(&lp);
-    }
-    if (lp[0] == '~')           /* use this pattern for last-used pattern */
-    {
-        setlast = TRUE;
-        lp++;
-    }
-    if (lp[0] == '/')
-        idx = RE_SEARCH;
-    else if (lp[0] == '&')
-        idx = RE_SUBST;
-#if defined(FEAT_SEARCH_EXTRA)
-    else if (lp[0] == 'h')      /* ~h: 'hlsearch' highlighting off */
-        hlsearch_on = FALSE;
-    else if (lp[0] == 'H')      /* ~H: 'hlsearch' highlighting on */
-        hlsearch_on = TRUE;
-#endif
-    if (idx >= 0)
-    {
-        if (force || spats[idx].pat == NULL)
-        {
-            val = viminfo_readstring(virp, (int)(lp - virp->vir_line + 1),
-                                                                        TRUE);
-            if (val != NULL)
-            {
-                set_last_search_pat(val, idx, magic, setlast);
-                vim_free(val);
-                spats[idx].no_scs = no_scs;
-                spats[idx].off.line = off_line;
-                spats[idx].off.end = off_end;
-                spats[idx].off.off = off;
-#if defined(FEAT_SEARCH_EXTRA)
-                if (setlast)
-                {
-                    SET_NO_HLSEARCH(!hlsearch_on);
-                }
-#endif
-            }
-        }
-    }
-    return viminfo_readline(virp);
-}
-
-    void
-write_viminfo_search_pattern(fp)
-    FILE        *fp;
-{
-    if (get_viminfo_parameter('/') != 0)
-    {
-#if defined(FEAT_SEARCH_EXTRA)
-        fprintf(fp, "\n# hlsearch on (H) or off (h):\n~%c",
-            (no_hlsearch || find_viminfo_parameter('h') != NULL) ? 'h' : 'H');
-#endif
-        wvsp_one(fp, RE_SEARCH, "", '/');
-        wvsp_one(fp, RE_SUBST, _("Substitute "), '&');
-    }
-}
-
-    static void
-wvsp_one(fp, idx, s, sc)
-    FILE        *fp;    /* file to write to */
-    int         idx;    /* spats[] index */
-    char        *s;     /* search pat */
-    int         sc;     /* dir char */
-{
-    if (spats[idx].pat != NULL)
-    {
-        fprintf(fp, _("\n# Last %sSearch Pattern:\n~"), s);
-        /* off.dir is not stored, it's reset to forward */
-        fprintf(fp, "%c%c%c%c%ld%s%c",
-                spats[idx].magic    ? 'M' : 'm',        /* magic */
-                spats[idx].no_scs   ? 's' : 'S',        /* smartcase */
-                spats[idx].off.line ? 'L' : 'l',        /* line offset */
-                spats[idx].off.end  ? 'E' : 'e',        /* offset from end */
-                spats[idx].off.off,                     /* offset */
-                last_idx == idx     ? "~" : "",         /* last used pat */
-                sc);
-        viminfo_writestring(fp, spats[idx].pat);
     }
 }
 #endif

@@ -459,39 +459,6 @@ get_cursor_rel_lnum(wp, lnum)
     linenr_T    cursor = wp->w_cursor.lnum;
     linenr_T    retval = 0;
 
-#if defined(FEAT_FOLDING)
-    if (hasAnyFolding(wp))
-    {
-        if (lnum > cursor)
-        {
-            while (lnum > cursor)
-            {
-                (void)hasFoldingWin(wp, lnum, &lnum, NULL, TRUE, NULL);
-                /* if lnum and cursor are in the same fold,
-                 * now lnum <= cursor */
-                if (lnum > cursor)
-                    retval++;
-                lnum--;
-            }
-        }
-        else if (lnum < cursor)
-        {
-            while (lnum < cursor)
-            {
-                (void)hasFoldingWin(wp, lnum, NULL, &lnum, TRUE, NULL);
-                /* if lnum and cursor are in the same fold,
-                 * now lnum >= cursor */
-                if (lnum < cursor)
-                    retval--;
-                lnum++;
-            }
-        }
-        /* else if (lnum == cursor)
-         *     retval = 0;
-         */
-    }
-    else
-#endif
         retval = lnum - cursor;
 
     return retval;
@@ -505,12 +472,6 @@ check_cursor_lnum()
 {
     if (curwin->w_cursor.lnum > curbuf->b_ml.ml_line_count)
     {
-#if defined(FEAT_FOLDING)
-        /* If there is a closed fold at the end of the file, put the cursor in
-         * its first line.  Otherwise in the last line. */
-        if (!hasFolding(curbuf->b_ml.ml_line_count,
-                                                &curwin->w_cursor.lnum, NULL))
-#endif
             curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
     }
     if (curwin->w_cursor.lnum <= 0)
@@ -669,115 +630,6 @@ leftcol_changed()
  * Various routines dealing with allocation and deallocation of memory.
  */
 
-#if defined(MEM_PROFILE)
-
-#define MEM_SIZES  8200
-static long_u mem_allocs[MEM_SIZES];
-static long_u mem_frees[MEM_SIZES];
-static long_u mem_allocated;
-static long_u mem_freed;
-static long_u mem_peak;
-static long_u num_alloc;
-static long_u num_freed;
-
-static void mem_pre_alloc_s __ARGS((size_t *sizep));
-static void mem_pre_alloc_l __ARGS((long_u *sizep));
-static void mem_post_alloc __ARGS((void **pp, size_t size));
-static void mem_pre_free __ARGS((void **pp));
-
-    static void
-mem_pre_alloc_s(sizep)
-    size_t *sizep;
-{
-    *sizep += sizeof(size_t);
-}
-
-    static void
-mem_pre_alloc_l(sizep)
-    long_u *sizep;
-{
-    *sizep += sizeof(size_t);
-}
-
-    static void
-mem_post_alloc(pp, size)
-    void **pp;
-    size_t size;
-{
-    if (*pp == NULL)
-        return;
-    size -= sizeof(size_t);
-    *(long_u *)*pp = size;
-    if (size <= MEM_SIZES-1)
-        mem_allocs[size-1]++;
-    else
-        mem_allocs[MEM_SIZES-1]++;
-    mem_allocated += size;
-    if (mem_allocated - mem_freed > mem_peak)
-        mem_peak = mem_allocated - mem_freed;
-    num_alloc++;
-    *pp = (void *)((char *)*pp + sizeof(size_t));
-}
-
-    static void
-mem_pre_free(pp)
-    void **pp;
-{
-    long_u size;
-
-    *pp = (void *)((char *)*pp - sizeof(size_t));
-    size = *(size_t *)*pp;
-    if (size <= MEM_SIZES-1)
-        mem_frees[size-1]++;
-    else
-        mem_frees[MEM_SIZES-1]++;
-    mem_freed += size;
-    num_freed++;
-}
-
-/*
- * called on exit via atexit()
- */
-    void
-vim_mem_profile_dump()
-{
-    int i, j;
-
-    printf("\r\n");
-    j = 0;
-    for (i = 0; i < MEM_SIZES - 1; i++)
-    {
-        if (mem_allocs[i] || mem_frees[i])
-        {
-            if (mem_frees[i] > mem_allocs[i])
-                printf("\r\n%s", _("ERROR: "));
-            printf("[%4d / %4lu-%-4lu] ", i + 1, mem_allocs[i], mem_frees[i]);
-            j++;
-            if (j > 3)
-            {
-                j = 0;
-                printf("\r\n");
-            }
-        }
-    }
-
-    i = MEM_SIZES - 1;
-    if (mem_allocs[i])
-    {
-        printf("\r\n");
-        if (mem_frees[i] > mem_allocs[i])
-            puts(_("ERROR: "));
-        printf("[>%d / %4lu-%-4lu]", i, mem_allocs[i], mem_frees[i]);
-    }
-
-    printf(_("\n[bytes] total alloc-freed %lu-%lu, in use %lu, peak use %lu\n"),
-            mem_allocated, mem_freed, mem_allocated - mem_freed, mem_peak);
-    printf(_("[calls] total re/malloc()'s %lu, total free()'s %lu\n\n"),
-            num_alloc, num_freed);
-}
-
-#endif
-
 /*
  * Some memory is reserved for error messages and for being able to
  * call mf_release_all(), which needs some memory for mf_trans_add().
@@ -862,10 +714,6 @@ lalloc(size, message)
         return NULL;
     }
 
-#if defined(MEM_PROFILE)
-    mem_pre_alloc_l(&size);
-#endif
-
     /*
      * Loop when out of memory: Try to release some memfile blocks and
      * if some blocks are released call malloc again.
@@ -924,33 +772,8 @@ lalloc(size, message)
         do_outofmem_msg(size);
 
 theend:
-#if defined(MEM_PROFILE)
-    mem_post_alloc((void **)&p, (size_t)size);
-#endif
     return p;
 }
-
-#if defined(MEM_PROFILE)
-/*
- * realloc() with memory profiling.
- */
-    void *
-mem_realloc(ptr, size)
-    void *ptr;
-    size_t size;
-{
-    void *p;
-
-    mem_pre_free(&ptr);
-    mem_pre_alloc_s(&size);
-
-    p = realloc(ptr, size);
-
-    mem_post_alloc(&p, size);
-
-    return p;
-}
-#endif
 
 /*
 * Avoid repeating the error message many times (they take 1 second each).
@@ -1012,11 +835,6 @@ free_all_mem()
         do_cmdline_cmd((char_u *)"only!");
 #endif
 
-#if defined(FEAT_SPELL)
-    /* Free all spell info. */
-    spell_free_all();
-#endif
-
 #if defined(FEAT_USR_CMDS)
     /* Clear user commands (before deleting buffers). */
     ex_comclear(NULL);
@@ -1034,9 +852,6 @@ free_all_mem()
     do_cmdline_cmd((char_u *)"mapclear!");
     do_cmdline_cmd((char_u *)"abclear");
     do_cmdline_cmd((char_u *)"breakdel *");
-#if defined(FEAT_PROFILE)
-    do_cmdline_cmd((char_u *)"profdel *");
-#endif
 #if defined(FEAT_KEYMAP)
     do_cmdline_cmd((char_u *)"set keymap=");
 #endif
@@ -1071,9 +886,6 @@ free_all_mem()
     free_signs();
 #endif
     set_expr_line(NULL);
-#if defined(FEAT_DIFF)
-    diff_clear(curtab);
-#endif
     clear_sb_text();          /* free any scrollback text */
 
     /* Free some global vars. */
@@ -1655,9 +1467,6 @@ vim_free(x)
 {
     if (x != NULL && !really_exiting)
     {
-#if defined(MEM_PROFILE)
-        mem_pre_free(&x);
-#endif
         free(x);
     }
 }
@@ -2334,24 +2143,6 @@ static struct key_name_entry
     {'<',               (char_u *)"lt"},
 
     {K_MOUSE,           (char_u *)"Mouse"},
-#if defined(FEAT_MOUSE_NET)
-    {K_NETTERM_MOUSE,   (char_u *)"NetMouse"},
-#endif
-#if defined(FEAT_MOUSE_DEC)
-    {K_DEC_MOUSE,       (char_u *)"DecMouse"},
-#endif
-#if defined(FEAT_MOUSE_JSB)
-    {K_JSBTERM_MOUSE,   (char_u *)"JsbMouse"},
-#endif
-#if defined(FEAT_MOUSE_PTERM)
-    {K_PTERM_MOUSE,     (char_u *)"PtermMouse"},
-#endif
-#if defined(FEAT_MOUSE_URXVT)
-    {K_URXVT_MOUSE,     (char_u *)"UrxvtMouse"},
-#endif
-#if defined(FEAT_MOUSE_SGR)
-    {K_SGR_MOUSE,       (char_u *)"SgrMouse"},
-#endif
     {K_LEFTMOUSE,       (char_u *)"LeftMouse"},
     {K_LEFTMOUSE_NM,    (char_u *)"LeftMouseNM"},
     {K_LEFTDRAG,        (char_u *)"LeftDrag"},
@@ -3049,9 +2840,6 @@ call_shell(cmd, opt)
 {
     char_u      *ncmd;
     int         retval;
-#if defined(FEAT_PROFILE)
-    proftime_T  wait_time;
-#endif
 
     if (p_verbose > 3)
     {
@@ -3062,11 +2850,6 @@ call_shell(cmd, opt)
         cursor_on();
         verbose_leave();
     }
-
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        prof_child_enter(&wait_time);
-#endif
 
     if (*p_sh == NUL)
     {
@@ -3116,10 +2899,6 @@ call_shell(cmd, opt)
     }
 
     set_vim_var_nr(VV_SHELL_ERROR, (long)retval);
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        prof_child_exit(&wait_time);
-#endif
 
     return retval;
 }
@@ -3182,24 +2961,6 @@ same_directory(f1, f2)
     return (t1 - ffname == t2 - f2
              && pathcmp((char *)ffname, (char *)f2, (int)(t1 - ffname)) == 0);
 }
-
-#if defined(FEAT_SESSION)
-/*
- * Change to a file's directory.
- * Caller must call shorten_fnames()!
- * Return OK or FAIL.
- */
-    int
-vim_chdirfile(fname)
-    char_u      *fname;
-{
-    char_u      dir[MAXPATHL];
-
-    vim_strncpy(dir, fname, MAXPATHL - 1);
-    *gettail_sep(dir) = NUL;
-    return mch_chdir((char *)dir) == 0 ? OK : FAIL;
-}
-#endif
 
 #if defined(CURSOR_SHAPE)
 
@@ -3987,21 +3748,6 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
     }
     else if (*path == NUL || !vim_isAbsName(path))
     {
-#if defined(BACKSLASH_IN_FILENAME)
-        /* "c:dir" needs "c:" to be expanded, otherwise use current dir */
-        if (*path != NUL && path[1] == ':')
-        {
-            char_u  drive[3];
-
-            drive[0] = path[0];
-            drive[1] = ':';
-            drive[2] = NUL;
-            if (vim_FullName(drive, ff_expand_buffer, MAXPATHL, TRUE) == FAIL)
-                goto error_return;
-            path += 2;
-        }
-        else
-#endif
         if (mch_dirname(ff_expand_buffer, MAXPATHL) == FAIL)
             goto error_return;
 
@@ -4009,14 +3755,6 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
         if (search_ctx->ffsc_start_dir == NULL)
             goto error_return;
 
-#if defined(BACKSLASH_IN_FILENAME)
-        /* A path that starts with "/dir" is relative to the drive, not to the
-         * directory (but not for "//machine/dir").  Only use the drive name. */
-        if ((*path == '/' || *path == '\\')
-                && path[1] != path[0]
-                && search_ctx->ffsc_start_dir[1] == ':')
-            search_ctx->ffsc_start_dir[2] = NUL;
-#endif
     }
 
 #if defined(FEAT_PATH_EXTRA)
@@ -5372,13 +5110,6 @@ find_file_in_path_option(ptr, len, options, first, path_option,
                 for (;;)
                 {
                     if (
-#if defined(DJGPP)
-                            /* "C:" by itself will fail for mch_getperm(),
-                             * assume it's always valid. */
-                            (find_what != FINDFILE_FILE && NameBuff[0] != NUL
-                                  && NameBuff[1] == ':'
-                                  && NameBuff[2] == NUL) ||
-#endif
                             (mch_getperm(NameBuff) >= 0
                              && (find_what == FINDFILE_BOTH
                                  || ((find_what == FINDFILE_DIR)
@@ -5629,11 +5360,6 @@ pathcmp(p, q, maxlen)
         }
 
         if ((p_fic ? MB_TOUPPER(c1) != MB_TOUPPER(c2) : c1 != c2)
-#if defined(BACKSLASH_IN_FILENAME)
-                /* consider '/' and '\\' to be equal */
-                && !((c1 == '/' && c2 == '\\')
-                    || (c1 == '\\' && c2 == '/'))
-#endif
                 )
         {
             if (vim_ispathsep(c1))
@@ -5653,11 +5379,7 @@ pathcmp(p, q, maxlen)
     if (c2 == NUL
             && i > 0
             && !after_pathsep((char_u *)s, (char_u *)s + i)
-#if defined(BACKSLASH_IN_FILENAME)
-            && (c1 == '/' || c1 == '\\')
-#else
             && c1 == '/'
-#endif
        )
         return 0;   /* match with trailing slash */
     if (s == q)
@@ -5889,7 +5611,7 @@ emsgn(s, n)
     return emsg(IObuff);
 }
 
-#if defined(FEAT_SPELL) || defined(FEAT_PERSISTENT_UNDO)
+#if defined(FEAT_PERSISTENT_UNDO)
 /*
  * Read 2 bytes from "fd" and turn them into an int, MSB first.
  */
@@ -6002,14 +5724,6 @@ put_bytes(fd, nr, len)
     return OK;
 }
 
-#if defined(_MSC_VER)
-#if (_MSC_VER <= 1200)
-/* This line is required for VC6 without the service pack.  Also see the
- * matching #pragma below. */
-#pragma optimize("", off)
-#endif
-#endif
-
 /*
  * Write time_t to file "fd" in 8 bytes.
  */
@@ -6061,15 +5775,9 @@ time_to_bytes(the_time, buf)
     }
 }
 
-#if defined(_MSC_VER)
-#if (_MSC_VER <= 1200)
-#pragma optimize("", on)
-#endif
 #endif
 
-#endif
-
-#if defined(FEAT_QUICKFIX) || defined(FEAT_SPELL)
+#if defined(FEAT_QUICKFIX)
 /*
  * Return TRUE if string "s" contains a non-ASCII character (128 or higher).
  * When "s" is NULL FALSE is returned.

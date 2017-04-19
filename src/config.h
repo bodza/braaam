@@ -170,7 +170,6 @@
 #define HAVE_READLINK 1
 #define HAVE_RENAME 1
 #define HAVE_SELECT 1
-/* #undef HAVE_SELINUX */
 #define HAVE_SETENV 1
 #define HAVE_SETPGID 1
 #define HAVE_SETSID 1
@@ -180,7 +179,6 @@
 /* #undef HAVE_SIGSETJMP */
 #define HAVE_SIGSTACK 1
 #define HAVE_SIGVEC 1
-/* #undef HAVE_SMACK */
 #define HAVE_STRCASECMP 1
 #define HAVE_STRERROR 1
 #define HAVE_STRFTIME 1
@@ -201,11 +199,6 @@
 #define HAVE_USLEEP 1
 #define HAVE_UTIME 1
 /* #undef HAVE_BIND_TEXTDOMAIN_CODESET */
-
-/* Define, if needed, for accessing large files. */
-/* #undef _LARGE_FILES */
-/* #undef _FILE_OFFSET_BITS */
-/* #undef _LARGEFILE_SOURCE */
 
 /* Define if you do not have utime(), but do have the utimes() function. */
 #define HAVE_UTIMES 1
@@ -256,20 +249,7 @@
 #define HAVE_WCHAR_H 1
 #define HAVE_WCTYPE_H 1
 #define HAVE_UNISTD_H 1
-/* #undef HAVE_UTIL_DEBUG_H */
-/* #undef HAVE_UTIL_MSGI18N_H */
 #define HAVE_UTIME_H 1
-/* #undef HAVE_X11_SUNKEYSYM_H */
-/* #undef HAVE_XM_XM_H */
-/* #undef HAVE_XM_XPMP_H */
-/* #undef HAVE_XM_TRAITP_H */
-/* #undef HAVE_XM_MANAGER_H */
-/* #undef HAVE_XM_UNHIGHLIGHTT_H */
-/* #undef HAVE_XM_JOINSIDET_H */
-/* #undef HAVE_XM_NOTEBOOK_H */
-/* #undef HAVE_X11_XPM_H */
-/* #undef HAVE_X11_XMU_EDITRES_H */
-/* #undef HAVE_X11_SM_SMLIB_H */
 
 /* Define to the type of the XpmAttributes type. */
 /* #undef XPMATTRIBUTES_TYPE */
@@ -292,38 +272,14 @@
 /* Define if strings.h cannot be included when strings.h already is */
 /* #undef NO_STRINGS_WITH_STRING_H */
 
-/* Define if dynamic python does not require RTLD_GLOBAL */
-/* #undef PY_NO_RTLD_GLOBAL */
-
-/* Define if dynamic python3 does not require RTLD_GLOBAL */
-/* #undef PY3_NO_RTLD_GLOBAL */
-
-/* Define if you want to add support for ACL */
-/* #undef HAVE_POSIX_ACL */
-/* #undef HAVE_SOLARIS_ZFS_ACL */
-/* #undef HAVE_SOLARIS_ACL */
-/* #undef HAVE_AIX_ACL */
-
 /* Define if you want to add support of GPM (Linux console mouse daemon) */
 /* #undef HAVE_GPM */
 
 /* Define if you want to add support of sysmouse (*BSD console mouse) */
 /* #undef HAVE_SYSMOUSE */
 
-/* Define if you want to include the Cscope interface. */
-/* #undef FEAT_CSCOPE */
-
-/* Define if your X has own locale library */
-/* #undef X_LOCALE */
-
 /* Define if we have dlfcn.h. */
 #define HAVE_DLFCN_H 1
-
-/* Define if there is a working gettext(). */
-/* #undef HAVE_GETTEXT */
-
-/* Define if _nl_msg_cat_cntr is present. */
-/* #undef HAVE_NL_MSG_CAT_CNTR */
 
 /* Define if we have dlopen() */
 #define HAVE_DLOPEN 1
@@ -331,26 +287,11 @@
 /* Define if we have dlsym() */
 #define HAVE_DLSYM 1
 
-/* Define if we have dl.h. */
-/* #undef HAVE_DL_H */
-
-/* Define if we have shl_load() */
-/* #undef HAVE_SHL_LOAD */
-
 /* Define default global runtime path */
 /* #undef RUNTIME_GLOBAL */
 
-/* Define name of who modified a released Vim */
-/* #undef MODIFIED_BY */
-
 /* Define if fcntl()'s F_SETFD command knows about FD_CLOEXEC */
 #define HAVE_FD_CLOEXEC 1
-
-/* Define if you want Cygwin to use the WIN32 clipboard, not compatible with X11*/
-/* #undef FEAT_CYGWIN_WIN32_CLIPBOARD */
-
-/* Define if we have AvailabilityMacros.h on Mac OS X */
-/* #undef HAVE_AVAILABILITYMACROS_H */
 
 /* Define if Xutf8SetWMProperties() is in an X library. */
 /* #undef HAVE_XUTF8SETWMPROPERTIES */

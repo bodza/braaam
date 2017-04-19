@@ -296,12 +296,6 @@ EXTERN char_u   *p_bex;         /* 'backupext' */
 #if defined(FEAT_WILDIGN)
 EXTERN char_u   *p_bsk;         /* 'backupskip' */
 #endif
-#if defined(FEAT_CRYPT)
-EXTERN char_u   *p_cm;          /* 'cryptmethod' */
-#endif
-#if defined(FEAT_BROWSE)
-EXTERN char_u   *p_bsdir;       /* 'browsedir' */
-#endif
 #if defined(FEAT_LINEBREAK)
 EXTERN char_u   *p_breakat;     /* 'breakat' */
 #endif
@@ -332,27 +326,10 @@ EXTERN char_u   *p_cot;         /* 'completeopt' */
 EXTERN long     p_ph;           /* 'pumheight' */
 #endif
 EXTERN char_u   *p_cpo;         /* 'cpoptions' */
-#if defined(FEAT_CSCOPE)
-EXTERN char_u   *p_csprg;       /* 'cscopeprg' */
-EXTERN int      p_csre;         /* 'cscoperelative' */
-#if defined(FEAT_QUICKFIX)
-EXTERN char_u   *p_csqf;        /* 'cscopequickfix' */
-#define CSQF_CMDS   "sgdctefi"
-#define CSQF_FLAGS  "+-0"
-#endif
-EXTERN int      p_cst;          /* 'cscopetag' */
-EXTERN long     p_csto;         /* 'cscopetagorder' */
-EXTERN long     p_cspc;         /* 'cscopepathcomp' */
-EXTERN int      p_csverbose;    /* 'cscopeverbose' */
-#endif
 EXTERN char_u   *p_debug;       /* 'debug' */
 #if defined(FEAT_FIND_ID)
 EXTERN char_u   *p_def;         /* 'define' */
 EXTERN char_u   *p_inc;
-#endif
-#if defined(FEAT_DIFF)
-EXTERN char_u   *p_dip;         /* 'diffopt' */
-EXTERN char_u   *p_dex;         /* 'diffexpr' */
 #endif
 #if defined(FEAT_INS_EXPAND)
 EXTERN char_u   *p_dict;        /* 'dictionary' */
@@ -389,28 +366,6 @@ EXTERN int      p_exrc;         /* 'exrc' */
 EXTERN char_u   *p_fencs;       /* 'fileencodings' */
 EXTERN char_u   *p_ffs;         /* 'fileformats' */
 EXTERN long     p_fic;          /* 'fileignorecase' */
-#if defined(FEAT_FOLDING)
-EXTERN char_u   *p_fcl;         /* 'foldclose' */
-EXTERN long     p_fdls;         /* 'foldlevelstart' */
-EXTERN char_u   *p_fdo;         /* 'foldopen' */
-EXTERN unsigned fdo_flags;
-#if defined(IN_OPTION_C)
-static char *(p_fdo_values[]) = {"all", "block", "hor", "mark", "percent",
-                                 "quickfix", "search", "tag", "insert",
-                                 "undo", "jump", NULL};
-#endif
-#define FDO_ALL                0x001
-#define FDO_BLOCK              0x002
-#define FDO_HOR                0x004
-#define FDO_MARK               0x008
-#define FDO_PERCENT            0x010
-#define FDO_QUICKFIX           0x020
-#define FDO_SEARCH             0x040
-#define FDO_TAG                0x080
-#define FDO_INSERT             0x100
-#define FDO_UNDO               0x200
-#define FDO_JUMP               0x400
-#endif
 EXTERN char_u   *p_fp;          /* 'formatprg' */
 #if defined(HAVE_FSYNC)
 EXTERN int      p_fs;           /* 'fsync' */
@@ -509,9 +464,6 @@ EXTERN long     p_mmt;          /* 'maxmemtot' */
 #if defined(FEAT_MENU)
 EXTERN long     p_mis;          /* 'menuitems' */
 #endif
-#if defined(FEAT_SPELL)
-EXTERN char_u   *p_msm;         /* 'mkspellmem' */
-#endif
 EXTERN long     p_mls;          /* 'modelines' */
 EXTERN char_u   *p_mouse;       /* 'mouse' */
 EXTERN char_u   *p_mousem;      /* 'mousemodel' */
@@ -521,9 +473,6 @@ EXTERN char_u   *p_opfunc;      /* 'operatorfunc' */
 EXTERN char_u   *p_para;        /* 'paragraphs' */
 EXTERN int      p_paste;        /* 'paste' */
 EXTERN char_u   *p_pt;          /* 'pastetoggle' */
-#if defined(FEAT_DIFF)
-EXTERN char_u   *p_pex;         /* 'patchexpr' */
-#endif
 EXTERN char_u   *p_pm;          /* 'patchmode' */
 EXTERN char_u   *p_path;        /* 'path' */
 #if defined(FEAT_SEARCHPATH)
@@ -561,32 +510,6 @@ EXTERN char_u   *p_sections;    /* 'sections' */
 EXTERN int      p_secure;       /* 'secure' */
 EXTERN char_u   *p_sel;         /* 'selection' */
 EXTERN char_u   *p_slm;         /* 'selectmode' */
-#if defined(FEAT_SESSION)
-EXTERN char_u   *p_ssop;        /* 'sessionoptions' */
-EXTERN unsigned ssop_flags;
-#if defined(IN_OPTION_C)
-/* Also used for 'viewoptions'! */
-static char *(p_ssop_values[]) = {"buffers", "winpos", "resize", "winsize",
-    "localoptions", "options", "help", "blank", "globals", "slash", "unix",
-    "sesdir", "curdir", "folds", "cursor", "tabpages", NULL};
-#endif
-#define SSOP_BUFFERS           0x001
-#define SSOP_WINPOS            0x002
-#define SSOP_RESIZE            0x004
-#define SSOP_WINSIZE           0x008
-#define SSOP_LOCALOPTIONS      0x010
-#define SSOP_OPTIONS           0x020
-#define SSOP_HELP              0x040
-#define SSOP_BLANK             0x080
-#define SSOP_GLOBALS           0x100
-#define SSOP_SLASH             0x200
-#define SSOP_UNIX              0x400
-#define SSOP_SESDIR            0x800
-#define SSOP_CURDIR            0x1000
-#define SSOP_FOLDS             0x2000
-#define SSOP_CURSOR            0x4000
-#define SSOP_TABPAGES          0x8000
-#endif
 EXTERN char_u   *p_sh;          /* 'shell' */
 EXTERN char_u   *p_shcf;        /* 'shellcmdflag' */
 #if defined(FEAT_QUICKFIX)
@@ -597,9 +520,6 @@ EXTERN char_u   *p_sxq;         /* 'shellxquote' */
 EXTERN char_u   *p_sxe;         /* 'shellxescape' */
 EXTERN char_u   *p_srr;         /* 'shellredir' */
 EXTERN int      p_stmp;         /* 'shelltemp' */
-#if defined(BACKSLASH_IN_FILENAME)
-EXTERN int      p_ssl;          /* 'shellslash' */
-#endif
 #if defined(FEAT_STL_OPT)
 EXTERN char_u   *p_stl;         /* 'statusline' */
 #endif
@@ -624,9 +544,6 @@ EXTERN long     p_tpm;          /* 'tabpagemax' */
 #if defined(FEAT_STL_OPT)
 EXTERN char_u   *p_tal;         /* 'tabline' */
 #endif
-#endif
-#if defined(FEAT_SPELL)
-EXTERN char_u   *p_sps;         /* 'spellsuggest' */
 #endif
 #if defined(FEAT_VERTSPLIT)
 EXTERN int      p_spr;          /* 'splitright' */
@@ -699,16 +616,8 @@ EXTERN long     p_ul;           /* 'undolevels' */
 EXTERN long     p_ur;           /* 'undoreload' */
 EXTERN long     p_uc;           /* 'updatecount' */
 EXTERN long     p_ut;           /* 'updatetime' */
-#if defined(FEAT_WINDOWS) || defined(FEAT_FOLDING)
+#if defined(FEAT_WINDOWS)
 EXTERN char_u   *p_fcs;         /* 'fillchar' */
-#endif
-#if defined(FEAT_VIMINFO)
-EXTERN char_u   *p_viminfo;     /* 'viminfo' */
-#endif
-#if defined(FEAT_SESSION)
-EXTERN char_u   *p_vdir;        /* 'viewdir' */
-EXTERN char_u   *p_vop;         /* 'viewoptions' */
-EXTERN unsigned vop_flags;      /* uses SSOP_ flags */
 #endif
 EXTERN int      p_vb;           /* 'visualbell' */
 #if defined(FEAT_VIRTUALEDIT)
@@ -791,9 +700,6 @@ enum
     , BV_CINW
 #endif
     , BV_CM
-#if defined(FEAT_FOLDING)
-    , BV_CMS
-#endif
 #if defined(FEAT_COMMENTS)
     , BV_COM
 #endif
@@ -832,9 +738,6 @@ enum
 #endif
     , BV_INF
     , BV_ISK
-#if defined(FEAT_CRYPT)
-    , BV_KEY
-#endif
 #if defined(FEAT_KEYMAP)
     , BV_KMAP
 #endif
@@ -866,11 +769,6 @@ enum
 #if defined(FEAT_SYN_HL)
     , BV_SMC
     , BV_SYN
-#endif
-#if defined(FEAT_SPELL)
-    , BV_SPC
-    , BV_SPF
-    , BV_SPL
 #endif
     , BV_STS
 #if defined(FEAT_SEARCHPATH)
@@ -907,21 +805,6 @@ enum
     , WV_BRI
     , WV_BRIOPT
 #endif
-#if defined(FEAT_DIFF)
-    , WV_DIFF
-#endif
-#if defined(FEAT_FOLDING)
-    , WV_FDC
-    , WV_FEN
-    , WV_FDI
-    , WV_FDL
-    , WV_FDM
-    , WV_FML
-    , WV_FDN
-    , WV_FDE
-    , WV_FDT
-    , WV_FMR
-#endif
 #if defined(FEAT_LINEBREAK)
     , WV_LBR
 #endif
@@ -941,9 +824,6 @@ enum
     , WV_SCBIND
 #endif
     , WV_SCROLL
-#if defined(FEAT_SPELL)
-    , WV_SPELL
-#endif
 #if defined(FEAT_SYN_HL)
     , WV_CUC
     , WV_CUL

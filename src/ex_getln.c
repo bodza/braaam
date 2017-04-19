@@ -149,9 +149,6 @@ getcmdline(firstc, count, indent)
     colnr_T     old_curswant;
     colnr_T     old_leftcol;
     linenr_T    old_topline;
-#if defined(FEAT_DIFF)
-    int         old_topfill;
-#endif
     linenr_T    old_botline;
     int         did_incsearch = FALSE;
     int         incsearch_postponed = FALSE;
@@ -192,9 +189,6 @@ getcmdline(firstc, count, indent)
     old_curswant = curwin->w_curswant;
     old_leftcol = curwin->w_leftcol;
     old_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-    old_topfill = curwin->w_topfill;
-#endif
     old_botline = curwin->w_botline;
 #endif
 
@@ -244,9 +238,7 @@ getcmdline(firstc, count, indent)
     }
     xpc.xp_context = EXPAND_NOTHING;
     xpc.xp_backslash = XP_BS_NONE;
-#if !defined(BACKSLASH_IN_FILENAME)
     xpc.xp_shell = FALSE;
-#endif
 
     if (ccline.input_fn)
     {
@@ -573,10 +565,6 @@ getcmdline(firstc, count, indent)
                     if (has_mbyte)
                         j -= (*mb_head_off)(ccline.cmdbuff, ccline.cmdbuff + j);
                     if (vim_ispathsep(ccline.cmdbuff[j])
-#if defined(BACKSLASH_IN_FILENAME)
-                            && vim_strchr(" *?[{`$%#", ccline.cmdbuff[j + 1])
-                               == NULL
-#endif
                        )
                     {
                         if (found)
@@ -1673,9 +1661,6 @@ cmdline_changed:
              * positioned in the same way as the actual search command */
             curwin->w_leftcol = old_leftcol;
             curwin->w_topline = old_topline;
-#if defined(FEAT_DIFF)
-            curwin->w_topfill = old_topfill;
-#endif
             curwin->w_botline = old_botline;
             changed_cline_bef_curs();
             update_topline();
@@ -1752,9 +1737,6 @@ returncmd:
         curwin->w_curswant = old_curswant;
         curwin->w_leftcol = old_leftcol;
         curwin->w_topline = old_topline;
-#if defined(FEAT_DIFF)
-        curwin->w_topfill = old_topfill;
-#endif
         curwin->w_botline = old_botline;
         highlight_match = FALSE;
         validate_cursor();      /* needed for TAB */
@@ -3330,9 +3312,7 @@ ExpandInit(xp)
     xp->xp_pattern = NULL;
     xp->xp_pattern_len = 0;
     xp->xp_backslash = XP_BS_NONE;
-#if !defined(BACKSLASH_IN_FILENAME)
     xp->xp_shell = FALSE;
-#endif
     xp->xp_numfiles = -1;
     xp->xp_files = NULL;
 #if defined(FEAT_USR_CMDS) && defined(FEAT_CMDL_COMPL)
@@ -3394,21 +3374,9 @@ ExpandEscape(xp, str, numfiles, files, options)
                     {
                         vim_free(files[i]);
                         files[i] = p;
-#if defined(BACKSLASH_IN_FILENAME)
-                        p = vim_strsave_escaped(files[i], (char_u *)" ");
-                        if (p != NULL)
-                        {
-                            vim_free(files[i]);
-                            files[i] = p;
-                        }
-#endif
                     }
                 }
-#if defined(BACKSLASH_IN_FILENAME)
-                p = vim_strsave_fnameescape(files[i], FALSE);
-#else
                 p = vim_strsave_fnameescape(files[i], xp->xp_shell);
-#endif
                 if (p != NULL)
                 {
                     vim_free(files[i]);
@@ -3457,17 +3425,7 @@ vim_strsave_fnameescape(fname, shell)
     int    shell;
 {
     char_u      *p;
-#if defined(BACKSLASH_IN_FILENAME)
-    char_u      buf[20];
-    int         j = 0;
-
-    /* Don't escape '[', '{' and '!' if they are in 'isfname'. */
-    for (p = PATH_ESC_CHARS; *p != NUL; ++p)
-        if ((*p != '[' && *p != '{' && *p != '!') || !vim_isfilec(*p))
-            buf[j++] = *p;
-    buf[j] = NUL;
-    p = vim_strsave_escaped(fname, buf);
-#else
+#if (1)
     p = vim_strsave_escaped(fname, shell ? SHELL_ESC_CHARS : PATH_ESC_CHARS);
     if (shell && csh_like_shell() && p != NULL)
     {
@@ -3735,9 +3693,6 @@ sm_gettail(s)
     for (p = s; *p != NUL; )
     {
         if (vim_ispathsep(*p)
-#if defined(BACKSLASH_IN_FILENAME)
-                && !rem_backslash(p)
-#endif
            )
             had_sep = TRUE;
         else if (had_sep)
@@ -3896,7 +3851,7 @@ addstar(fname, len, context)
              */
             tail = gettail(retval);
             ends_in_star = (len > 0 && retval[len - 1] == '*');
-#if !defined(BACKSLASH_IN_FILENAME)
+#if (1)
             for (i = len - 2; i >= 0; --i)
             {
                 if (retval[i] != '\\')
@@ -4250,24 +4205,15 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #if defined(FEAT_SYN_HL)
             {EXPAND_SYNTAX, get_syntax_name, TRUE, TRUE},
 #endif
-#if defined(FEAT_PROFILE)
-            {EXPAND_SYNTIME, get_syntime_arg, TRUE, TRUE},
-#endif
             {EXPAND_HIGHLIGHT, get_highlight_name, TRUE, TRUE},
 #if defined(FEAT_AUTOCMD)
             {EXPAND_EVENTS, get_event_name, TRUE, TRUE},
             {EXPAND_AUGROUP, get_augroup_name, TRUE, TRUE},
 #endif
-#if defined(FEAT_CSCOPE)
-            {EXPAND_CSCOPE, get_cscope_name, TRUE, TRUE},
-#endif
 #if defined(FEAT_SIGNS)
             {EXPAND_SIGN, get_sign_name, TRUE, TRUE},
 #endif
-#if defined(FEAT_PROFILE)
-            {EXPAND_PROFILE, get_profile_name, TRUE, TRUE},
-#endif
-#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
+#if defined(HAVE_LOCALE_H)
             {EXPAND_LANGUAGE, get_lang_arg, TRUE, FALSE},
             {EXPAND_LOCALES, get_locales, TRUE, FALSE},
 #endif
@@ -5372,38 +5318,6 @@ del_history_idx(histype, idx)
     return TRUE;
 }
 
-#if defined(FEAT_CRYPT)
-/*
- * Very specific function to remove the value in ":set key=val" from the
- * history.
- */
-    void
-remove_key_from_history()
-{
-    char_u      *p;
-    int         i;
-
-    i = hisidx[HIST_CMD];
-    if (i < 0)
-        return;
-    p = history[HIST_CMD][i].hisstr;
-    if (p != NULL)
-        for ( ; *p; ++p)
-            if (STRNCMP(p, "key", 3) == 0 && !isalpha(p[3]))
-            {
-                p = vim_strchr(p + 3, '=');
-                if (p == NULL)
-                    break;
-                ++p;
-                for (i = 0; p[i] && !vim_iswhite(p[i]); ++i)
-                    if (p[i] == '\\' && p[i + 1])
-                        ++i;
-                STRMOVE(p, p + i);
-                --p;
-            }
-}
-#endif
-
 #endif
 
 #if defined(FEAT_QUICKFIX) || defined(FEAT_CMDHIST)
@@ -5547,291 +5461,6 @@ ex_history(eap)
 }
 #endif
 
-#if (defined(FEAT_VIMINFO) && defined(FEAT_CMDHIST))
-/*
- * Buffers for history read from a viminfo file.  Only valid while reading.
- */
-static char_u **viminfo_history[HIST_COUNT] = {NULL, NULL, NULL, NULL};
-static int      viminfo_hisidx[HIST_COUNT] = {0, 0, 0, 0};
-static int      viminfo_hislen[HIST_COUNT] = {0, 0, 0, 0};
-static int      viminfo_add_at_front = FALSE;
-
-static int      hist_type2char __ARGS((int type, int use_question));
-
-/*
- * Translate a history type number to the associated character.
- */
-    static int
-hist_type2char(type, use_question)
-    int     type;
-    int     use_question;           /* use '?' instead of '/' */
-{
-    if (type == HIST_CMD)
-        return ':';
-    if (type == HIST_SEARCH)
-    {
-        if (use_question)
-            return '?';
-        else
-            return '/';
-    }
-    if (type == HIST_EXPR)
-        return '=';
-    return '@';
-}
-
-/*
- * Prepare for reading the history from the viminfo file.
- * This allocates history arrays to store the read history lines.
- */
-    void
-prepare_viminfo_history(asklen, writing)
-    int     asklen;
-    int     writing;
-{
-    int     i;
-    int     num;
-    int     type;
-    int     len;
-
-    init_history();
-    viminfo_add_at_front = (asklen != 0 && !writing);
-    if (asklen > hislen)
-        asklen = hislen;
-
-    for (type = 0; type < HIST_COUNT; ++type)
-    {
-        /* Count the number of empty spaces in the history list.  Entries read
-         * from viminfo previously are also considered empty.  If there are
-         * more spaces available than we request, then fill them up. */
-        for (i = 0, num = 0; i < hislen; i++)
-            if (history[type][i].hisstr == NULL || history[type][i].viminfo)
-                num++;
-        len = asklen;
-        if (num > len)
-            len = num;
-        if (len <= 0)
-            viminfo_history[type] = NULL;
-        else
-            viminfo_history[type] =
-                   (char_u **)lalloc((long_u)(len * sizeof(char_u *)), FALSE);
-        if (viminfo_history[type] == NULL)
-            len = 0;
-        viminfo_hislen[type] = len;
-        viminfo_hisidx[type] = 0;
-    }
-}
-
-/*
- * Accept a line from the viminfo, store it in the history array when it's
- * new.
- */
-    int
-read_viminfo_history(virp, writing)
-    vir_T       *virp;
-    int         writing;
-{
-    int         type;
-    long_u      len;
-    char_u      *val;
-    char_u      *p;
-
-    type = hist_char2type(virp->vir_line[0]);
-    if (viminfo_hisidx[type] < viminfo_hislen[type])
-    {
-        val = viminfo_readstring(virp, 1, TRUE);
-        if (val != NULL && *val != NUL)
-        {
-            int sep = (*val == ' ' ? NUL : *val);
-
-            if (!in_history(type, val + (type == HIST_SEARCH),
-                                          viminfo_add_at_front, sep, writing))
-            {
-                /* Need to re-allocate to append the separator byte. */
-                len = STRLEN(val);
-                p = lalloc(len + 2, TRUE);
-                if (p != NULL)
-                {
-                    if (type == HIST_SEARCH)
-                    {
-                        /* Search entry: Move the separator from the first
-                         * column to after the NUL. */
-                        mch_memmove(p, val + 1, (size_t)len);
-                        p[len] = sep;
-                    }
-                    else
-                    {
-                        /* Not a search entry: No separator in the viminfo
-                         * file, add a NUL separator. */
-                        mch_memmove(p, val, (size_t)len + 1);
-                        p[len + 1] = NUL;
-                    }
-                    viminfo_history[type][viminfo_hisidx[type]++] = p;
-                }
-            }
-        }
-        vim_free(val);
-    }
-    return viminfo_readline(virp);
-}
-
-/*
- * Finish reading history lines from viminfo.  Not used when writing viminfo.
- */
-    void
-finish_viminfo_history()
-{
-    int idx;
-    int i;
-    int type;
-
-    for (type = 0; type < HIST_COUNT; ++type)
-    {
-        if (history[type] == NULL)
-            continue;
-        idx = hisidx[type] + viminfo_hisidx[type];
-        if (idx >= hislen)
-            idx -= hislen;
-        else if (idx < 0)
-            idx = hislen - 1;
-        if (viminfo_add_at_front)
-            hisidx[type] = idx;
-        else
-        {
-            if (hisidx[type] == -1)
-                hisidx[type] = hislen - 1;
-            do
-            {
-                if (history[type][idx].hisstr != NULL
-                                                || history[type][idx].viminfo)
-                    break;
-                if (++idx == hislen)
-                    idx = 0;
-            } while (idx != hisidx[type]);
-            if (idx != hisidx[type] && --idx < 0)
-                idx = hislen - 1;
-        }
-        for (i = 0; i < viminfo_hisidx[type]; i++)
-        {
-            vim_free(history[type][idx].hisstr);
-            history[type][idx].hisstr = viminfo_history[type][i];
-            history[type][idx].viminfo = TRUE;
-            if (--idx < 0)
-                idx = hislen - 1;
-        }
-        idx += 1;
-        idx %= hislen;
-        for (i = 0; i < viminfo_hisidx[type]; i++)
-        {
-            history[type][idx++].hisnum = ++hisnum[type];
-            idx %= hislen;
-        }
-        vim_free(viminfo_history[type]);
-        viminfo_history[type] = NULL;
-        viminfo_hisidx[type] = 0;
-    }
-}
-
-/*
- * Write history to viminfo file in "fp".
- * When "merge" is TRUE merge history lines with a previously read viminfo
- * file, data is in viminfo_history[].
- * When "merge" is FALSE just write all history lines.  Used for ":wviminfo!".
- */
-    void
-write_viminfo_history(fp, merge)
-    FILE    *fp;
-    int     merge;
-{
-    int     i;
-    int     type;
-    int     num_saved;
-    char_u  *p;
-    int     c;
-    int     round;
-
-    init_history();
-    if (hislen == 0)
-        return;
-    for (type = 0; type < HIST_COUNT; ++type)
-    {
-        num_saved = get_viminfo_parameter(hist_type2char(type, FALSE));
-        if (num_saved == 0)
-            continue;
-        if (num_saved < 0)  /* Use default */
-            num_saved = hislen;
-        fprintf(fp, _("\n# %s History (newest to oldest):\n"),
-                            type == HIST_CMD ? _("Command Line") :
-                            type == HIST_SEARCH ? _("Search String") :
-                            type == HIST_EXPR ?  _("Expression") :
-                                        _("Input Line"));
-        if (num_saved > hislen)
-            num_saved = hislen;
-
-        /*
-         * Merge typed and viminfo history:
-         * round 1: history of typed commands.
-         * round 2: history from recently read viminfo.
-         */
-        for (round = 1; round <= 2; ++round)
-        {
-            if (round == 1)
-                /* start at newest entry, somewhere in the list */
-                i = hisidx[type];
-            else if (viminfo_hisidx[type] > 0)
-                /* start at newest entry, first in the list */
-                i = 0;
-            else
-                /* empty list */
-                i = -1;
-            if (i >= 0)
-                while (num_saved > 0
-                        && !(round == 2 && i >= viminfo_hisidx[type]))
-                {
-                    p = round == 1 ? history[type][i].hisstr
-                                   : viminfo_history[type] == NULL ? NULL
-                                                   : viminfo_history[type][i];
-                    if (p != NULL && (round == 2
-                                       || !merge
-                                       || !history[type][i].viminfo))
-                    {
-                        --num_saved;
-                        fputc(hist_type2char(type, TRUE), fp);
-                        /* For the search history: put the separator in the
-                         * second column; use a space if there isn't one. */
-                        if (type == HIST_SEARCH)
-                        {
-                            c = p[STRLEN(p) + 1];
-                            putc(c == NUL ? ' ' : c, fp);
-                        }
-                        viminfo_writestring(fp, p);
-                    }
-                    if (round == 1)
-                    {
-                        /* Decrement index, loop around and stop when back at
-                         * the start. */
-                        if (--i < 0)
-                            i = hislen - 1;
-                        if (i == hisidx[type])
-                            break;
-                    }
-                    else
-                    {
-                        /* Increment index. Stop at the end in the while. */
-                        ++i;
-                    }
-                }
-        }
-        for (i = 0; i < viminfo_hisidx[type]; ++i)
-            if (viminfo_history[type] != NULL)
-                vim_free(viminfo_history[type][i]);
-        vim_free(viminfo_history[type]);
-        viminfo_history[type] = NULL;
-        viminfo_hisidx[type] = 0;
-    }
-}
-#endif
-
 #if defined(FEAT_CMDWIN)
 /*
  * Open a window on the current command line and history.  Allow editing in
@@ -5861,9 +5490,6 @@ ex_window()
     int                 save_exmode = exmode_active;
 #if defined(FEAT_RIGHTLEFT)
     int                 save_cmdmsg_rl = cmdmsg_rl;
-#endif
-#if defined(FEAT_FOLDING)
-    int                 save_KeyTyped;
 #endif
 
     /* Can't do this recursively.  Can't do it when typing a password. */
@@ -5902,9 +5528,6 @@ ex_window()
     set_option_value((char_u *)"bt", 0L, (char_u *)"nofile", OPT_LOCAL);
     set_option_value((char_u *)"swf", 0L, NULL, OPT_LOCAL);
     curbuf->b_p_ma = TRUE;
-#if defined(FEAT_FOLDING)
-    curwin->w_p_fen = FALSE;
-#endif
 #if defined(FEAT_RIGHTLEFT)
     curwin->w_p_rl = cmdmsg_rl;
     cmdmsg_rl = FALSE;
@@ -5998,17 +5621,8 @@ ex_window()
 
 #if defined(FEAT_AUTOCMD)
 
-#if defined(FEAT_FOLDING)
-    save_KeyTyped = KeyTyped;
-#endif
-
     /* Trigger CmdwinLeave autocommands. */
     apply_autocmds(EVENT_CMDWINLEAVE, typestr, typestr, FALSE, curbuf);
-
-#if defined(FEAT_FOLDING)
-    /* Restore KeyTyped in case it is modified by autocommands */
-    KeyTyped = save_KeyTyped;
-#endif
 
 #endif
 

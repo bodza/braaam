@@ -1381,15 +1381,6 @@ do_pending_operator(cap, old_col, gui_yank)
                     || (VIsual_active && cap->cmdchar == ':'
                                                  && oap->op_type != OP_COLON))
                 && cap->cmdchar != 'D'
-#if defined(FEAT_FOLDING)
-                && oap->op_type != OP_FOLD
-                && oap->op_type != OP_FOLDOPEN
-                && oap->op_type != OP_FOLDOPENREC
-                && oap->op_type != OP_FOLDCLOSE
-                && oap->op_type != OP_FOLDCLOSEREC
-                && oap->op_type != OP_FOLDDEL
-                && oap->op_type != OP_FOLDDELREC
-#endif
                 )
         {
             prep_redo(oap->regname, cap->count0,
@@ -1511,17 +1502,6 @@ do_pending_operator(cap, old_col, gui_yank)
          */
         if (lt(oap->start, curwin->w_cursor))
         {
-#if defined(FEAT_FOLDING)
-            /* Include folded lines completely. */
-            if (!VIsual_active)
-            {
-                if (hasFolding(oap->start.lnum, &oap->start.lnum, NULL))
-                    oap->start.col = 0;
-                if (hasFolding(curwin->w_cursor.lnum, NULL,
-                                                      &curwin->w_cursor.lnum))
-                    curwin->w_cursor.col = (colnr_T)STRLEN(ml_get_curline());
-            }
-#endif
             oap->end = curwin->w_cursor;
             curwin->w_cursor = oap->start;
 
@@ -1532,17 +1512,6 @@ do_pending_operator(cap, old_col, gui_yank)
         }
         else
         {
-#if defined(FEAT_FOLDING)
-            /* Include folded lines completely. */
-            if (!VIsual_active && oap->motion_type == MLINE)
-            {
-                if (hasFolding(curwin->w_cursor.lnum, &curwin->w_cursor.lnum,
-                                                                        NULL))
-                    curwin->w_cursor.col = 0;
-                if (hasFolding(oap->start.lnum, NULL, &oap->start.lnum))
-                    oap->start.col = (colnr_T)STRLEN(ml_get(oap->start.lnum));
-            }
-#endif
             oap->end = oap->start;
             oap->start = curwin->w_cursor;
         }
@@ -1642,15 +1611,6 @@ do_pending_operator(cap, old_col, gui_yank)
             /* can't redo yank (unless 'y' is in 'cpoptions') and ":" */
             if ((vim_strchr(p_cpo, CPO_YANK) != NULL || oap->op_type != OP_YANK)
                     && oap->op_type != OP_COLON
-#if defined(FEAT_FOLDING)
-                    && oap->op_type != OP_FOLD
-                    && oap->op_type != OP_FOLDOPEN
-                    && oap->op_type != OP_FOLDOPENREC
-                    && oap->op_type != OP_FOLDCLOSE
-                    && oap->op_type != OP_FOLDCLOSEREC
-                    && oap->op_type != OP_FOLDDEL
-                    && oap->op_type != OP_FOLDDELREC
-#endif
                     && oap->motion_force == NUL
                     )
             {
@@ -1790,9 +1750,6 @@ do_pending_operator(cap, old_col, gui_yank)
         /* Force a redraw when operating on an empty Visual region, when
          * 'modifiable is off or creating a fold. */
         if (oap->is_VIsual && (oap->empty || !curbuf->b_p_ma
-#if defined(FEAT_FOLDING)
-                    || oap->op_type == OP_FOLD
-#endif
                     ))
         {
 #if defined(FEAT_LINEBREAK)
@@ -2051,32 +2008,6 @@ do_pending_operator(cap, old_col, gui_yank)
 #endif
             break;
 
-#if defined(FEAT_FOLDING)
-        case OP_FOLD:
-            VIsual_reselect = FALSE;    /* don't reselect now */
-            foldCreate(oap->start.lnum, oap->end.lnum);
-            break;
-
-        case OP_FOLDOPEN:
-        case OP_FOLDOPENREC:
-        case OP_FOLDCLOSE:
-        case OP_FOLDCLOSEREC:
-            VIsual_reselect = FALSE;    /* don't reselect now */
-            opFoldRange(oap->start.lnum, oap->end.lnum,
-                    oap->op_type == OP_FOLDOPEN
-                                            || oap->op_type == OP_FOLDOPENREC,
-                    oap->op_type == OP_FOLDOPENREC
-                                          || oap->op_type == OP_FOLDCLOSEREC,
-                                          oap->is_VIsual);
-            break;
-
-        case OP_FOLDDEL:
-        case OP_FOLDDELREC:
-            VIsual_reselect = FALSE;    /* don't reselect now */
-            deleteFold(oap->start.lnum, oap->end.lnum,
-                               oap->op_type == OP_FOLDDELREC, oap->is_VIsual);
-            break;
-#endif
         default:
             clearopbeep(oap);
         }
@@ -2277,9 +2208,6 @@ do_mouse(oap, c, dir, count, fixindent)
     int         in_sep_line;    /* mouse in vertical separator line */
 #endif
     int         c1, c2;
-#if defined(FEAT_FOLDING)
-    pos_T       save_cursor;
-#endif
     win_T       *old_curwin = curwin;
     static pos_T orig_cursor;
     colnr_T     leftcol, rightcol;
@@ -2288,10 +2216,6 @@ do_mouse(oap, c, dir, count, fixindent)
     int         old_active = VIsual_active;
     int         old_mode = VIsual_mode;
     int         regname;
-
-#if defined(FEAT_FOLDING)
-    save_cursor = curwin->w_cursor;
-#endif
 
     /*
      * When GUI is active, always recognize mouse events, otherwise:
@@ -2680,23 +2604,6 @@ do_mouse(oap, c, dir, count, fixindent)
      * friendlier than beeping and not jumping to that window. */
     if (curwin != old_curwin && oap != NULL && oap->op_type != OP_NOP)
         clearop(oap);
-
-#if defined(FEAT_FOLDING)
-    if (mod_mask == 0
-            && !is_drag
-            && (jump_flags & (MOUSE_FOLD_CLOSE | MOUSE_FOLD_OPEN))
-            && which_button == MOUSE_LEFT)
-    {
-        /* open or close a fold at this line */
-        if (jump_flags & MOUSE_FOLD_OPEN)
-            openFold(curwin->w_cursor.lnum, 1L);
-        else
-            closeFold(curwin->w_cursor.lnum, 1L);
-        /* don't move the cursor if still in the same window */
-        if (curwin == old_curwin)
-            curwin->w_cursor = save_cursor;
-    }
-#endif
 
 #if defined(FEAT_CLIPBOARD) && defined(FEAT_CMDWIN)
     if ((jump_flags & IN_OTHER_WIN) && !VIsual_active && clip_star.available)
@@ -3518,11 +3425,6 @@ clear_showcmd()
             top = curwin->w_cursor.lnum;
             bot = VIsual.lnum;
         }
-#if defined(FEAT_FOLDING)
-        /* Include closed folds as a whole. */
-        hasFolding(top, &top, NULL);
-        hasFolding(bot, NULL, &bot);
-#endif
         lines = bot - top + 1;
 
         if (VIsual_mode == Ctrl_V)
@@ -3745,9 +3647,6 @@ do_check_scrollbind(check)
 {
     static win_T        *old_curwin = NULL;
     static linenr_T     old_topline = 0;
-#if defined(FEAT_DIFF)
-    static int          old_topfill = 0;
-#endif
     static buf_T        *old_buf = NULL;
     static colnr_T      old_leftcol = 0;
 
@@ -3765,14 +3664,8 @@ do_check_scrollbind(check)
              * when 'diff' is set.
              */
             if ((curwin->w_buffer == old_buf
-#if defined(FEAT_DIFF)
-                        || curwin->w_p_diff
-#endif
                 )
                 && (curwin->w_topline != old_topline
-#if defined(FEAT_DIFF)
-                        || curwin->w_topfill != old_topfill
-#endif
                         || curwin->w_leftcol != old_leftcol))
             {
                 check_scrollbind(curwin->w_topline - old_topline,
@@ -3798,9 +3691,6 @@ do_check_scrollbind(check)
 
     old_curwin = curwin;
     old_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-    old_topfill = curwin->w_topfill;
-#endif
     old_buf = curwin->w_buffer;
     old_leftcol = curwin->w_leftcol;
 }
@@ -3829,9 +3719,6 @@ check_scrollbind(topline_diff, leftcol_diff)
      * check 'scrollopt' string for vertical and horizontal scroll options
      */
     want_ver = (vim_strchr(p_sbo, 'v') && topline_diff != 0);
-#if defined(FEAT_DIFF)
-    want_ver |= old_curwin->w_p_diff;
-#endif
     want_hor = (vim_strchr(p_sbo, 'h') && (leftcol_diff || topline_diff != 0));
 
     /*
@@ -3849,13 +3736,6 @@ check_scrollbind(topline_diff, leftcol_diff)
              */
             if (want_ver)
             {
-#if defined(FEAT_DIFF)
-                if (old_curwin->w_p_diff && curwin->w_p_diff)
-                {
-                    diff_set_topline(old_curwin, curwin);
-                }
-                else
-#endif
                 {
                     curwin->w_scbind_pos += topline_diff;
                     topline = curwin->w_scbind_pos;
@@ -3993,10 +3873,6 @@ nv_gd(oap, nchar, thisblock)
     if ((len = find_ident_under_cursor(&ptr, FIND_IDENT)) == 0
             || find_decl(ptr, len, nchar == 'd', thisblock, 0) == FAIL)
         clearopbeep(oap);
-#if defined(FEAT_FOLDING)
-    else if ((fdo_flags & FDO_SEARCH) && KeyTyped && oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -4212,13 +4088,6 @@ nv_screengo(oap, dir, dist)
                     break;
                 }
                 --curwin->w_cursor.lnum;
-#if defined(FEAT_FOLDING)
-                /* Move to the start of a closed fold.  Don't do that when
-                 * 'foldopen' contains "all": it will open in a moment. */
-                if (!(fdo_flags & FDO_ALL))
-                    (void)hasFolding(curwin->w_cursor.lnum,
-                                                &curwin->w_cursor.lnum, NULL);
-#endif
                 linelen = linetabsize(ml_get_curline());
                 if (linelen > width1)
                     curwin->w_curswant += (((linelen - width1 - 1) / width2)
@@ -4237,11 +4106,6 @@ nv_screengo(oap, dir, dist)
             else
             {
                 /* to next line */
-#if defined(FEAT_FOLDING)
-                /* Move to the end of a closed fold. */
-                (void)hasFolding(curwin->w_cursor.lnum, NULL,
-                                                      &curwin->w_cursor.lnum);
-#endif
                 if (curwin->w_cursor.lnum == curbuf->b_ml.ml_line_count)
                 {
                     retval = FAIL;
@@ -4373,9 +4237,6 @@ scroll_redraw(up, count)
     long        count;
 {
     linenr_T    prev_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-    int         prev_topfill = curwin->w_topfill;
-#endif
     linenr_T    prev_lnum = curwin->w_cursor.lnum;
 
     if (up)
@@ -4394,9 +4255,6 @@ scroll_redraw(up, count)
          * we get stuck at one position.  Don't move the cursor up if the
          * first line of the buffer is already on the screen */
         while (curwin->w_topline == prev_topline
-#if defined(FEAT_DIFF)
-                && curwin->w_topfill == prev_topfill
-#endif
                 )
         {
             if (up)
@@ -4433,13 +4291,6 @@ nv_zet(cap)
     long        n;
     colnr_T     col;
     int         nchar = cap->nchar;
-#if defined(FEAT_FOLDING)
-    long        old_fdl = curwin->w_p_fdl;
-    int         old_fen = curwin->w_p_fen;
-#endif
-#if defined(FEAT_SPELL)
-    int         undo = FALSE;
-#endif
 
     if (VIM_ISDIGIT(nchar))
     {
@@ -4492,15 +4343,6 @@ nv_zet(cap)
 
 dozet:
     if (
-#if defined(FEAT_FOLDING)
-            /* "zf" and "zF" are always an operator, "zd", "zo", "zO", "zc"
-             * and "zC" only in Visual mode.  "zj" and "zk" are motion
-             * commands. */
-            cap->nchar != 'f' && cap->nchar != 'F'
-            && !(VIsual_active && vim_strchr((char_u *)"dcCoO", cap->nchar))
-            && cap->nchar != 'j' && cap->nchar != 'k'
-            &&
-#endif
             checkclearop(cap->oap))
         return;
 
@@ -4610,11 +4452,6 @@ dozet:
                 /* "zs" - scroll screen, cursor at the start */
     case 's':   if (!curwin->w_p_wrap)
                 {
-#if defined(FEAT_FOLDING)
-                    if (hasFolding(curwin->w_cursor.lnum, NULL, NULL))
-                        col = 0;        /* like the cursor is in col 0 */
-                    else
-#endif
                     getvcol(curwin, &curwin->w_cursor, &col, NULL, NULL);
                     if ((long)col > p_siso)
                         col -= p_siso;
@@ -4631,11 +4468,6 @@ dozet:
                 /* "ze" - scroll screen, cursor at the end */
     case 'e':   if (!curwin->w_p_wrap)
                 {
-#if defined(FEAT_FOLDING)
-                    if (hasFolding(curwin->w_cursor.lnum, NULL, NULL))
-                        col = 0;        /* like the cursor is in col 0 */
-                    else
-#endif
                     getvcol(curwin, &curwin->w_cursor, NULL, NULL, &col);
                     n = W_WIDTH(curwin) - curwin_col_off();
                     if ((long)col + p_siso < n)
@@ -4650,266 +4482,9 @@ dozet:
                 }
                 break;
 
-#if defined(FEAT_FOLDING)
-                /* "zF": create fold command */
-                /* "zf": create fold operator */
-    case 'F':
-    case 'f':   if (foldManualAllowed(TRUE))
-                {
-                    cap->nchar = 'f';
-                    nv_operator(cap);
-                    curwin->w_p_fen = TRUE;
-
-                    /* "zF" is like "zfzf" */
-                    if (nchar == 'F' && cap->oap->op_type == OP_FOLD)
-                    {
-                        nv_operator(cap);
-                        finish_op = TRUE;
-                    }
-                }
-                else
-                    clearopbeep(cap->oap);
-                break;
-
-                /* "zd": delete fold at cursor */
-                /* "zD": delete fold at cursor recursively */
-    case 'd':
-    case 'D':   if (foldManualAllowed(FALSE))
-                {
-                    if (VIsual_active)
-                        nv_operator(cap);
-                    else
-                        deleteFold(curwin->w_cursor.lnum,
-                                  curwin->w_cursor.lnum, nchar == 'D', FALSE);
-                }
-                break;
-
-                /* "zE": erase all folds */
-    case 'E':   if (foldmethodIsManual(curwin))
-                {
-                    clearFolding(curwin);
-                    changed_window_setting();
-                }
-                else if (foldmethodIsMarker(curwin))
-                    deleteFold((linenr_T)1, curbuf->b_ml.ml_line_count,
-                                                                 TRUE, FALSE);
-                else
-                    EMSG(_("E352: Cannot erase folds with current 'foldmethod'"));
-                break;
-
-                /* "zn": fold none: reset 'foldenable' */
-    case 'n':   curwin->w_p_fen = FALSE;
-                break;
-
-                /* "zN": fold Normal: set 'foldenable' */
-    case 'N':   curwin->w_p_fen = TRUE;
-                break;
-
-                /* "zi": invert folding: toggle 'foldenable' */
-    case 'i':   curwin->w_p_fen = !curwin->w_p_fen;
-                break;
-
-                /* "za": open closed fold or close open fold at cursor */
-    case 'a':   if (hasFolding(curwin->w_cursor.lnum, NULL, NULL))
-                    openFold(curwin->w_cursor.lnum, cap->count1);
-                else
-                {
-                    closeFold(curwin->w_cursor.lnum, cap->count1);
-                    curwin->w_p_fen = TRUE;
-                }
-                break;
-
-                /* "zA": open fold at cursor recursively */
-    case 'A':   if (hasFolding(curwin->w_cursor.lnum, NULL, NULL))
-                    openFoldRecurse(curwin->w_cursor.lnum);
-                else
-                {
-                    closeFoldRecurse(curwin->w_cursor.lnum);
-                    curwin->w_p_fen = TRUE;
-                }
-                break;
-
-                /* "zo": open fold at cursor or Visual area */
-    case 'o':   if (VIsual_active)
-                    nv_operator(cap);
-                else
-                    openFold(curwin->w_cursor.lnum, cap->count1);
-                break;
-
-                /* "zO": open fold recursively */
-    case 'O':   if (VIsual_active)
-                    nv_operator(cap);
-                else
-                    openFoldRecurse(curwin->w_cursor.lnum);
-                break;
-
-                /* "zc": close fold at cursor or Visual area */
-    case 'c':   if (VIsual_active)
-                    nv_operator(cap);
-                else
-                    closeFold(curwin->w_cursor.lnum, cap->count1);
-                curwin->w_p_fen = TRUE;
-                break;
-
-                /* "zC": close fold recursively */
-    case 'C':   if (VIsual_active)
-                    nv_operator(cap);
-                else
-                    closeFoldRecurse(curwin->w_cursor.lnum);
-                curwin->w_p_fen = TRUE;
-                break;
-
-                /* "zv": open folds at the cursor */
-    case 'v':   foldOpenCursor();
-                break;
-
-                /* "zx": re-apply 'foldlevel' and open folds at the cursor */
-    case 'x':   curwin->w_p_fen = TRUE;
-                curwin->w_foldinvalid = TRUE;   /* recompute folds */
-                newFoldLevel();                 /* update right now */
-                foldOpenCursor();
-                break;
-
-                /* "zX": undo manual opens/closes, re-apply 'foldlevel' */
-    case 'X':   curwin->w_p_fen = TRUE;
-                curwin->w_foldinvalid = TRUE;   /* recompute folds */
-                old_fdl = -1;                   /* force an update */
-                break;
-
-                /* "zm": fold more */
-    case 'm':   if (curwin->w_p_fdl > 0)
-                {
-                    curwin->w_p_fdl -= cap->count1;
-                    if (curwin->w_p_fdl < 0)
-                        curwin->w_p_fdl = 0;
-                }
-                old_fdl = -1;           /* force an update */
-                curwin->w_p_fen = TRUE;
-                break;
-
-                /* "zM": close all folds */
-    case 'M':   curwin->w_p_fdl = 0;
-                old_fdl = -1;           /* force an update */
-                curwin->w_p_fen = TRUE;
-                break;
-
-                /* "zr": reduce folding */
-    case 'r':   curwin->w_p_fdl += cap->count1;
-                {
-                    int d = getDeepestNesting();
-
-                    if (curwin->w_p_fdl >= d)
-                        curwin->w_p_fdl = d;
-                }
-                break;
-
-                /* "zR": open all folds */
-    case 'R':   curwin->w_p_fdl = getDeepestNesting();
-                old_fdl = -1;           /* force an update */
-                break;
-
-    case 'j':   /* "zj" move to next fold downwards */
-    case 'k':   /* "zk" move to next fold upwards */
-                if (foldMoveTo(TRUE, nchar == 'j' ? FORWARD : BACKWARD,
-                                                          cap->count1) == FAIL)
-                    clearopbeep(cap->oap);
-                break;
-
-#endif
-
-#if defined(FEAT_SPELL)
-    case 'u':   /* "zug" and "zuw": undo "zg" and "zw" */
-                ++no_mapping;
-                ++allow_keys;   /* no mapping for nchar, but allow key codes */
-                nchar = plain_vgetc();
-                LANGMAP_ADJUST(nchar, TRUE);
-                --no_mapping;
-                --allow_keys;
-#if defined(FEAT_CMDL_INFO)
-                (void)add_to_showcmd(nchar);
-#endif
-                if (vim_strchr((char_u *)"gGwW", nchar) == NULL)
-                {
-                    clearopbeep(cap->oap);
-                    break;
-                }
-                undo = TRUE;
-                /*FALLTHROUGH*/
-
-    case 'g':   /* "zg": add good word to word list */
-    case 'w':   /* "zw": add wrong word to word list */
-    case 'G':   /* "zG": add good word to temp word list */
-    case 'W':   /* "zW": add wrong word to temp word list */
-                {
-                    char_u  *ptr = NULL;
-                    int     len;
-
-                    if (checkclearop(cap->oap))
-                        break;
-                    if (VIsual_active && get_visual_text(cap, &ptr, &len)
-                                                                      == FAIL)
-                        return;
-                    if (ptr == NULL)
-                    {
-                        pos_T   pos = curwin->w_cursor;
-
-                        /* Find bad word under the cursor.  When 'spell' is
-                         * off this fails and find_ident_under_cursor() is
-                         * used below. */
-                        emsg_off++;
-                        len = spell_move_to(curwin, FORWARD, TRUE, TRUE, NULL);
-                        emsg_off--;
-                        if (len != 0 && curwin->w_cursor.col <= pos.col)
-                            ptr = ml_get_pos(&curwin->w_cursor);
-                        curwin->w_cursor = pos;
-                    }
-
-                    if (ptr == NULL && (len = find_ident_under_cursor(&ptr,
-                                                            FIND_IDENT)) == 0)
-                        return;
-                    spell_add_word(ptr, len, nchar == 'w' || nchar == 'W',
-                                            (nchar == 'G' || nchar == 'W')
-                                                       ? 0 : (int)cap->count1,
-                                            undo);
-                }
-                break;
-
-    case '=':   /* "z=": suggestions for a badly spelled word  */
-                if (!checkclearop(cap->oap))
-                    spell_suggest((int)cap->count0);
-                break;
-#endif
-
     default:    clearopbeep(cap->oap);
     }
 
-#if defined(FEAT_FOLDING)
-    /* Redraw when 'foldenable' changed */
-    if (old_fen != curwin->w_p_fen)
-    {
-#if defined(FEAT_DIFF)
-        win_T       *wp;
-
-        if (foldmethodIsDiff(curwin) && curwin->w_p_scb)
-        {
-            /* Adjust 'foldenable' in diff-synced windows. */
-            FOR_ALL_WINDOWS(wp)
-            {
-                if (wp != curwin && foldmethodIsDiff(wp) && wp->w_p_scb)
-                {
-                    wp->w_p_fen = curwin->w_p_fen;
-                    changed_window_setting_win(wp);
-                }
-            }
-        }
-#endif
-        changed_window_setting();
-    }
-
-    /* Redraw when 'foldlevel' changed. */
-    if (old_fdl != curwin->w_p_fdl)
-        newFoldLevel();
-#endif
 }
 
 #if defined(FEAT_GUI_TABLINE)
@@ -5325,11 +4900,6 @@ nv_ident(cap)
 
         case ']':
             tag_cmd = TRUE;
-#if defined(FEAT_CSCOPE)
-            if (p_cst)
-                STRCPY(buf, "cstag ");
-            else
-#endif
                 STRCPY(buf, "ts ");
             break;
 
@@ -5494,9 +5064,6 @@ nv_scroll(cap)
 {
     int         used = 0;
     long        n;
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum;
-#endif
     int         half;
 
     cap->oap->motion_type = MLINE;
@@ -5510,20 +5077,6 @@ nv_scroll(cap)
             curwin->w_cursor.lnum = 1;
         else
         {
-#if defined(FEAT_FOLDING)
-            if (hasAnyFolding(curwin))
-            {
-                /* Count a fold for one screen line. */
-                for (n = cap->count1 - 1; n > 0
-                            && curwin->w_cursor.lnum > curwin->w_topline; --n)
-                {
-                    (void)hasFolding(curwin->w_cursor.lnum,
-                                                &curwin->w_cursor.lnum, NULL);
-                    --curwin->w_cursor.lnum;
-                }
-            }
-            else
-#endif
                 curwin->w_cursor.lnum -= cap->count1 - 1;
         }
     }
@@ -5531,32 +5084,13 @@ nv_scroll(cap)
     {
         if (cap->cmdchar == 'M')
         {
-#if defined(FEAT_DIFF)
-            /* Don't count filler lines above the window. */
-            used -= diff_check_fill(curwin, curwin->w_topline)
-                                                          - curwin->w_topfill;
-#endif
             validate_botline();     /* make sure w_empty_rows is valid */
             half = (curwin->w_height - curwin->w_empty_rows + 1) / 2;
             for (n = 0; curwin->w_topline + n < curbuf->b_ml.ml_line_count; ++n)
             {
-#if defined(FEAT_DIFF)
-                /* Count half he number of filler lines to be "below this
-                 * line" and half to be "above the next line". */
-                if (n > 0 && used + diff_check_fill(curwin, curwin->w_topline
-                                                             + n) / 2 >= half)
-                {
-                    --n;
-                    break;
-                }
-#endif
                 used += plines(curwin->w_topline + n);
                 if (used >= half)
                     break;
-#if defined(FEAT_FOLDING)
-                if (hasFolding(curwin->w_topline + n, NULL, &lnum))
-                    n = lnum - curwin->w_topline;
-#endif
             }
             if (n > 0 && used > curwin->w_height)
                 --n;
@@ -5564,19 +5098,6 @@ nv_scroll(cap)
         else /* (cap->cmdchar == 'H') */
         {
             n = cap->count1 - 1;
-#if defined(FEAT_FOLDING)
-            if (hasAnyFolding(curwin))
-            {
-                /* Count a fold for one screen line. */
-                lnum = curwin->w_topline;
-                while (n-- > 0 && lnum < curwin->w_botline - 1)
-                {
-                    hasFolding(lnum, NULL, &lnum);
-                    ++lnum;
-                }
-                n = lnum - curwin->w_topline;
-            }
-#endif
         }
         curwin->w_cursor.lnum = curwin->w_topline + n;
         if (curwin->w_cursor.lnum > curbuf->b_ml.ml_line_count)
@@ -5687,11 +5208,6 @@ nv_right(cap)
             }
         }
     }
-#if defined(FEAT_FOLDING)
-    if (n != cap->count1 && (fdo_flags & FDO_HOR) && KeyTyped
-                                               && cap->oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -5764,11 +5280,6 @@ nv_left(cap)
             break;
         }
     }
-#if defined(FEAT_FOLDING)
-    if (n != cap->count1 && (fdo_flags & FDO_HOR) && KeyTyped
-                                               && cap->oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -5920,10 +5431,6 @@ nv_dollar(cap)
     if (cursor_down((long)(cap->count1 - 1),
                                          cap->oap->op_type == OP_NOP) == FAIL)
         clearopbeep(cap->oap);
-#if defined(FEAT_FOLDING)
-    else if ((fdo_flags & FDO_HOR) && KeyTyped && cap->oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -6009,10 +5516,6 @@ normal_search(cap, dir, pat, opt)
 #if defined(FEAT_VIRTUALEDIT)
         curwin->w_cursor.coladd = 0;
 #endif
-#if defined(FEAT_FOLDING)
-        if (cap->oap->op_type == OP_NOP && (fdo_flags & FDO_SEARCH) && KeyTyped)
-            foldOpenCursor();
-#endif
     }
 
     /* "/$" will put the cursor after the end of the line, may need to
@@ -6058,10 +5561,6 @@ nv_csearch(cap)
             curwin->w_cursor.coladd = 0;
 #endif
         adjust_for_sel(cap);
-#if defined(FEAT_FOLDING)
-        if ((fdo_flags & FDO_HOR) && KeyTyped && cap->oap->op_type == OP_NOP)
-            foldOpenCursor();
-#endif
     }
 }
 
@@ -6252,11 +5751,6 @@ nv_brackets(cap)
             setpcmark();
             curwin->w_cursor = *pos;
             curwin->w_set_curswant = TRUE;
-#if defined(FEAT_FOLDING)
-            if ((fdo_flags & FDO_BLOCK) && KeyTyped
-                                               && cap->oap->op_type == OP_NOP)
-                foldOpenCursor();
-#endif
         }
     }
 
@@ -6283,10 +5777,6 @@ nv_brackets(cap)
         {
             if (cap->oap->op_type == OP_NOP)
                 beginline(BL_WHITE | BL_FIX);
-#if defined(FEAT_FOLDING)
-            if ((fdo_flags & FDO_BLOCK) && KeyTyped && cap->oap->op_type == OP_NOP)
-                foldOpenCursor();
-#endif
         }
     }
 
@@ -6380,51 +5870,6 @@ nv_brackets(cap)
     }
 #endif
 
-#if defined(FEAT_FOLDING)
-    /*
-     * "[z" and "]z": move to start or end of open fold.
-     */
-    else if (cap->nchar == 'z')
-    {
-        if (foldMoveTo(FALSE, cap->cmdchar == ']' ? FORWARD : BACKWARD,
-                                                         cap->count1) == FAIL)
-            clearopbeep(cap->oap);
-    }
-#endif
-
-#if defined(FEAT_DIFF)
-    /*
-     * "[c" and "]c": move to next or previous diff-change.
-     */
-    else if (cap->nchar == 'c')
-    {
-        if (diff_move_to(cap->cmdchar == ']' ? FORWARD : BACKWARD,
-                                                         cap->count1) == FAIL)
-            clearopbeep(cap->oap);
-    }
-#endif
-
-#if defined(FEAT_SPELL)
-    /*
-     * "[s", "[S", "]s" and "]S": move to next spell error.
-     */
-    else if (cap->nchar == 's' || cap->nchar == 'S')
-    {
-        setpcmark();
-        for (n = 0; n < cap->count1; ++n)
-            if (spell_move_to(curwin, cap->cmdchar == ']' ? FORWARD : BACKWARD,
-                          cap->nchar == 's' ? TRUE : FALSE, FALSE, NULL) == 0)
-            {
-                clearopbeep(cap->oap);
-                break;
-            }
-#if defined(FEAT_FOLDING)
-        if (cap->oap->op_type == OP_NOP && (fdo_flags & FDO_SEARCH) && KeyTyped)
-            foldOpenCursor();
-#endif
-    }
-#endif
-
     /* Not a valid cap->nchar. */
     else
         clearopbeep(cap->oap);
@@ -6438,9 +5883,6 @@ nv_percent(cap)
     cmdarg_T    *cap;
 {
     pos_T       *pos;
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum = curwin->w_cursor.lnum;
-#endif
 
     cap->oap->inclusive = TRUE;
     if (cap->count0)        /* {cnt}% : goto {cnt} percentage in file */
@@ -6481,13 +5923,6 @@ nv_percent(cap)
             adjust_for_sel(cap);
         }
     }
-#if defined(FEAT_FOLDING)
-    if (cap->oap->op_type == OP_NOP
-            && lnum != curwin->w_cursor.lnum
-            && (fdo_flags & FDO_PERCENT)
-            && KeyTyped)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -6512,10 +5947,6 @@ nv_brace(cap)
         adjust_cursor(cap->oap);
 #if defined(FEAT_VIRTUALEDIT)
         curwin->w_cursor.coladd = 0;
-#endif
-#if defined(FEAT_FOLDING)
-        if ((fdo_flags & FDO_BLOCK) && KeyTyped && cap->oap->op_type == OP_NOP)
-            foldOpenCursor();
 #endif
     }
 }
@@ -6552,10 +5983,6 @@ nv_findpar(cap)
     {
 #if defined(FEAT_VIRTUALEDIT)
         curwin->w_cursor.coladd = 0;
-#endif
-#if defined(FEAT_FOLDING)
-        if ((fdo_flags & FDO_BLOCK) && KeyTyped && cap->oap->op_type == OP_NOP)
-            foldOpenCursor();
 #endif
     }
 }
@@ -7107,10 +6534,6 @@ nv_gomark(cap)
 {
     pos_T       *pos;
     int         c;
-#if defined(FEAT_FOLDING)
-    pos_T       old_cursor = curwin->w_cursor;
-    int         old_KeyTyped = KeyTyped;    /* getting file may reset it */
-#endif
 
     if (cap->cmdchar == 'g')
         c = cap->extra_char;
@@ -7135,14 +6558,6 @@ nv_gomark(cap)
     if (!virtual_active())
         curwin->w_cursor.coladd = 0;
 #endif
-#if defined(FEAT_FOLDING)
-    if (cap->oap->op_type == OP_NOP
-            && pos != NULL
-            && (pos == (pos_T *)-1 || !equalpos(old_cursor, *pos))
-            && (fdo_flags & FDO_MARK)
-            && old_KeyTyped)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -7154,10 +6569,6 @@ nv_pcmark(cap)
 {
 #if defined(FEAT_JUMPLIST)
     pos_T       *pos;
-#if defined(FEAT_FOLDING)
-    linenr_T    lnum = curwin->w_cursor.lnum;
-    int         old_KeyTyped = KeyTyped;    /* getting file may reset it */
-#endif
 
     if (!checkclearopq(cap->oap))
     {
@@ -7183,13 +6594,6 @@ nv_pcmark(cap)
         }
         else
             clearopbeep(cap->oap);
-#if defined(FEAT_FOLDING)
-        if (cap->oap->op_type == OP_NOP
-                && (pos == (pos_T *)-1 || lnum != curwin->w_cursor.lnum)
-                && (fdo_flags & FDO_MARK)
-                && old_KeyTyped)
-            foldOpenCursor();
-#endif
     }
 #else
     clearopbeep(cap->oap);
@@ -7379,10 +6783,6 @@ n_start_visual_mode(c)
 #endif
     VIsual = curwin->w_cursor;
 
-#if defined(FEAT_FOLDING)
-    foldAdjustVisual();
-#endif
-
 #if defined(FEAT_MOUSE)
     setmouse();
 #endif
@@ -7450,14 +6850,6 @@ nv_g_cmd(cap)
 
     switch (cap->nchar)
     {
-#if defined(MEM_PROFILE)
-    /*
-     * "g^A": dump log of used memory.
-     */
-    case Ctrl_A:
-        vim_mem_profile_dump();
-        break;
-#endif
 
 #if defined(FEAT_VREPLACE)
     /*
@@ -7589,9 +6981,6 @@ nv_g_cmd(cap)
         /* with 'nowrap' it works just like the normal "j" command; also when
          * in a closed fold */
         if (!curwin->w_p_wrap
-#if defined(FEAT_FOLDING)
-                || hasFolding(curwin->w_cursor.lnum, NULL, NULL)
-#endif
                 )
         {
             oap->motion_type = MLINE;
@@ -7608,9 +6997,6 @@ nv_g_cmd(cap)
         /* with 'nowrap' it works just like the normal "k" command; also when
          * in a closed fold */
         if (!curwin->w_p_wrap
-#if defined(FEAT_FOLDING)
-                || hasFolding(curwin->w_cursor.lnum, NULL, NULL)
-#endif
            )
         {
             oap->motion_type = MLINE;
@@ -8017,16 +7403,6 @@ n_opencmd(cap)
 
     if (!checkclearopq(cap->oap))
     {
-#if defined(FEAT_FOLDING)
-        if (cap->cmdchar == 'O')
-            /* Open above the first line of a folded sequence of lines */
-            (void)hasFolding(curwin->w_cursor.lnum,
-                                                &curwin->w_cursor.lnum, NULL);
-        else
-            /* Open below the last line of a folded sequence of lines */
-            (void)hasFolding(curwin->w_cursor.lnum,
-                                                NULL, &curwin->w_cursor.lnum);
-#endif
         if (u_save((linenr_T)(curwin->w_cursor.lnum -
                                                (cap->cmdchar == 'O' ? 1 : 0)),
                    (linenr_T)(curwin->w_cursor.lnum +
@@ -8241,10 +7617,6 @@ nv_bck_word(cap)
     curwin->w_set_curswant = TRUE;
     if (bck_word(cap->count1, cap->arg, FALSE) == FAIL)
         clearopbeep(cap->oap);
-#if defined(FEAT_FOLDING)
-    else if ((fdo_flags & FDO_HOR) && KeyTyped && cap->oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -8329,10 +7701,6 @@ nv_wordcmd(cap)
     else
     {
         adjust_for_sel(cap);
-#if defined(FEAT_FOLDING)
-        if ((fdo_flags & FDO_HOR) && KeyTyped && cap->oap->op_type == OP_NOP)
-            foldOpenCursor();
-#endif
     }
 }
 
@@ -8376,10 +7744,6 @@ nv_beginline(cap)
     cap->oap->motion_type = MCHAR;
     cap->oap->inclusive = FALSE;
     beginline(cap->arg);
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_HOR) && KeyTyped && cap->oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
     ins_at_eol = FALSE;     /* Don't move cursor past eol (only necessary in a
                                one-character line). */
 }
@@ -8481,10 +7845,6 @@ nv_goto(cap)
         lnum = curbuf->b_ml.ml_line_count;
     curwin->w_cursor.lnum = lnum;
     beginline(BL_SOL | BL_FIX);
-#if defined(FEAT_FOLDING)
-    if ((fdo_flags & FDO_JUMP) && KeyTyped && cap->oap->op_type == OP_NOP)
-        foldOpenCursor();
-#endif
 }
 
 /*
@@ -8902,15 +8262,6 @@ nv_put(cap)
 
     if (cap->oap->op_type != OP_NOP)
     {
-#if defined(FEAT_DIFF)
-        /* "dp" is ":diffput" */
-        if (cap->oap->op_type == OP_DELETE && cap->cmdchar == 'p')
-        {
-            clearop(cap->oap);
-            nv_diffgetput(TRUE, cap->opcount);
-        }
-        else
-#endif
         clearopbeep(cap->oap);
     }
     else
@@ -9025,15 +8376,6 @@ nv_put(cap)
 nv_open(cap)
     cmdarg_T    *cap;
 {
-#if defined(FEAT_DIFF)
-    /* "do" is ":diffget" */
-    if (cap->oap->op_type == OP_DELETE && cap->cmdchar == 'o')
-    {
-        clearop(cap->oap);
-        nv_diffgetput(FALSE, cap->opcount);
-    }
-    else
-#endif
     if (VIsual_active)  /* switch start and end of visual */
         v_swap_corners(cap->cmdchar);
     else

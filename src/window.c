@@ -1294,9 +1294,6 @@ win_init(newp, oldp, flags)
     newp->w_curswant = oldp->w_curswant;
     newp->w_set_curswant = oldp->w_set_curswant;
     newp->w_topline = oldp->w_topline;
-#if defined(FEAT_DIFF)
-    newp->w_topfill = oldp->w_topfill;
-#endif
     newp->w_leftcol = oldp->w_leftcol;
     newp->w_pcmark = oldp->w_pcmark;
     newp->w_prev_pcmark = oldp->w_prev_pcmark;
@@ -1330,9 +1327,6 @@ win_init(newp, oldp, flags)
     }
     newp->w_tagstackidx = oldp->w_tagstackidx;
     newp->w_tagstacklen = oldp->w_tagstacklen;
-#if defined(FEAT_FOLDING)
-    copyFoldingState(oldp, newp);
-#endif
 
     win_init_some(newp, oldp);
 
@@ -3404,9 +3398,6 @@ win_init_empty(wp)
     wp->w_prev_pcmark.lnum = 0;
     wp->w_prev_pcmark.col = 0;
     wp->w_topline = 1;
-#if defined(FEAT_DIFF)
-    wp->w_topfill = 0;
-#endif
     wp->w_botline = 2;
 #if defined(FEAT_SYN_HL)
     wp->w_s = &wp->w_buffer->b_s;
@@ -3560,9 +3551,6 @@ alloc_tabpage()
     }
     init_var_dict(tp->tp_vars, &tp->tp_winvar, VAR_SCOPE);
 
-#if defined(FEAT_DIFF)
-    tp->tp_diff_invalid = TRUE;
-#endif
     tp->tp_ch_used = p_ch;
 
     return tp;
@@ -3574,9 +3562,6 @@ free_tabpage(tp)
 {
     int idx;
 
-#if defined(FEAT_DIFF)
-    diff_clear(tp);
-#endif
     for (idx = 0; idx < SNAP_COUNT; ++idx)
         clear_snapshot(tp, idx);
     vars_clear(&tp->tp_vars->dv_hashtab);       /* free all t: variables */
@@ -3830,9 +3815,6 @@ enter_tabpage(tp, old_curbuf, trigger_enter_autocmds, trigger_leave_autocmds)
     last_status(FALSE);         /* status line may appear or disappear */
     (void)win_comp_pos();       /* recompute w_winrow for all windows */
     must_redraw = CLEAR;        /* need to redraw everything */
-#if defined(FEAT_DIFF)
-    diff_need_scrollbind = TRUE;
-#endif
 
     /* The tabpage line may have appeared or disappeared, may need to resize
      * the frames for that.  When the Vim window was resized need to update
@@ -4074,26 +4056,6 @@ win_goto(wp)
         need_cursor_line_redraw = TRUE;
 #endif
 }
-
-#if (defined(FEAT_WINDOWS) && ((0)))
-/*
- * Find the tabpage for window "win".
- */
-    tabpage_T *
-win_find_tabpage(win)
-    win_T       *win;
-{
-    win_T       *wp;
-    tabpage_T   *tp;
-
-    for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
-        for (wp = (tp == curtab ? firstwin : tp->tp_firstwin);
-                                                  wp != NULL; wp = wp->w_next)
-            if (wp == win)
-                return tp;
-    return NULL;
-}
-#endif
 
 #if defined(FEAT_VERTSPLIT)
 /*
@@ -4478,9 +4440,6 @@ win_alloc(after, hidden)
 
     /* position the display and the cursor at the top of the file. */
     new_wp->w_topline = 1;
-#if defined(FEAT_DIFF)
-    new_wp->w_topfill = 0;
-#endif
     new_wp->w_botline = 2;
     new_wp->w_cursor.lnum = 1;
 #if defined(FEAT_SCROLLBIND)
@@ -4491,9 +4450,6 @@ win_alloc(after, hidden)
     new_wp->w_fraction = 0;
     new_wp->w_prev_fraction_row = -1;
 
-#if defined(FEAT_FOLDING)
-    foldInitWin(new_wp);
-#endif
 #if defined(FEAT_AUTOCMD)
     unblock_autocmds();
 #endif
@@ -4517,10 +4473,6 @@ win_free(wp, tp)
     int         i;
     buf_T       *buf;
     wininfo_T   *wip;
-
-#if defined(FEAT_FOLDING)
-    clearFolding(wp);
-#endif
 
     /* reduce the reference count to the argument list. */
     alist_unlink(wp->w_alist);
@@ -5715,23 +5667,7 @@ win_new_height(wp, height)
         {
             while (sline > 0 && lnum > 1)
             {
-#if defined(FEAT_FOLDING)
-                hasFoldingWin(wp, lnum, &lnum, NULL, TRUE, NULL);
-                if (lnum == 1)
-                {
-                    /* first line in buffer is folded */
-                    line_size = 1;
-                    --sline;
-                    break;
-                }
-#endif
                 --lnum;
-#if defined(FEAT_DIFF)
-                if (lnum == wp->w_topline)
-                    line_size = plines_win_nofill(wp, lnum, TRUE)
-                                                              + wp->w_topfill;
-                else
-#endif
                     line_size = plines_win(wp, lnum, TRUE);
                 sline -= line_size;
             }
@@ -5742,9 +5678,6 @@ win_new_height(wp, height)
                  * Line we want at top would go off top of screen.  Use next
                  * line instead.
                  */
-#if defined(FEAT_FOLDING)
-                hasFoldingWin(wp, lnum, NULL, &lnum, TRUE, NULL);
-#endif
                 lnum++;
                 wp->w_wrow -= line_size + sline;
             }

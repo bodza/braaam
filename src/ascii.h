@@ -73,10 +73,7 @@
  * fine, but there are places where it doesn't (e.g. in a command name).
  * For Acorn we use a dot.
  */
-#if defined(BACKSLASH_IN_FILENAME)
-#define PATHSEP        psepc
-#define PATHSEPSTR     pseps
-#else
+#if (1)
 #define PATHSEP        '/'
 #define PATHSEPSTR     "/"
 #endif

@@ -98,11 +98,6 @@ static int      screen_cur_row, screen_cur_col; /* last known cursor position */
 static match_T search_hl;       /* used for 'hlsearch' highlight matching */
 #endif
 
-#if defined(FEAT_FOLDING)
-static foldinfo_T win_foldinfo; /* info for 'foldcolumn' */
-static int compute_foldcolumn __ARGS((win_T *wp, int col));
-#endif
-
 /*
  * Buffer for one screen line (characters and attributes).
  */
@@ -110,11 +105,6 @@ static schar_T  *current_ScreenLine;
 
 static void win_update __ARGS((win_T *wp));
 static void win_draw_end __ARGS((win_T *wp, int c1, int c2, int row, int endrow, hlf_T hl));
-#if defined(FEAT_FOLDING)
-static void fold_line __ARGS((win_T *wp, long fold_count, foldinfo_T *foldinfo, linenr_T lnum, int row));
-static void fill_foldcolumn __ARGS((char_u *p, win_T *wp, int closed, linenr_T lnum));
-static void copy_text_attr __ARGS((int off, char_u *buf, int len, int attr));
-#endif
 static int win_line __ARGS((win_T *, linenr_T, int, int, int nochange));
 static int char_needs_redraw __ARGS((int off_from, int off_to, int cols));
 #if defined(FEAT_RIGHTLEFT)
@@ -399,9 +389,6 @@ redrawWinline(lnum, invalid)
     linenr_T    lnum;
     int         invalid UNUSED; /* window line height is invalid now */
 {
-#if defined(FEAT_FOLDING)
-    int         i;
-#endif
 
     if (curwin->w_redraw_top == 0 || curwin->w_redraw_top > lnum)
         curwin->w_redraw_top = lnum;
@@ -409,15 +396,6 @@ redrawWinline(lnum, invalid)
         curwin->w_redraw_bot = lnum;
     redraw_later(VALID);
 
-#if defined(FEAT_FOLDING)
-    if (invalid)
-    {
-        /* A w_lines[] entry for this lnum has become invalid. */
-        i = find_wl_entry(curwin, lnum);
-        if (i >= 0)
-            curwin->w_lines[i].wl_valid = FALSE;
-    }
-#endif
 }
 
 /*
@@ -562,10 +540,6 @@ update_screen(type)
     if (curwin->w_redr_type < type
             && !((type == VALID
                     && curwin->w_lines[0].wl_valid
-#if defined(FEAT_DIFF)
-                    && curwin->w_topfill == curwin->w_old_topfill
-                    && curwin->w_botfill == curwin->w_old_botfill
-#endif
                     && curwin->w_topline == curwin->w_lines[0].wl_lnum)
                 || (type == INVERTED
                     && VIsual_active
@@ -805,10 +779,6 @@ update_debug_sign(buf, lnum)
     win_T       *wp;
     int         doit = FALSE;
 
-#if defined(FEAT_FOLDING)
-    win_foldinfo.fi_level = 0;
-#endif
-
     /* update/delete a specific mark */
     FOR_ALL_WINDOWS(wp)
     {
@@ -915,9 +885,6 @@ win_update(wp)
     long        j;
     static int  recursive = FALSE;      /* being called recursively */
     int         old_botline = wp->w_botline;
-#if defined(FEAT_FOLDING)
-    long        fold_count;
-#endif
 #if defined(FEAT_SYN_HL)
     /* remember what happened to the previous line, to know if
      * check_visual_highlight() can be used */
@@ -1044,52 +1011,6 @@ win_update(wp)
             }
 #endif
         }
-#if defined(FEAT_FOLDING)
-        if (mod_top != 0 && hasAnyFolding(wp))
-        {
-            linenr_T    lnumt, lnumb;
-
-            /*
-             * A change in a line can cause lines above it to become folded or
-             * unfolded.  Find the top most buffer line that may be affected.
-             * If the line was previously folded and displayed, get the first
-             * line of that fold.  If the line is folded now, get the first
-             * folded line.  Use the minimum of these two.
-             */
-
-            /* Find last valid w_lines[] entry above mod_top.  Set lnumt to
-             * the line below it.  If there is no valid entry, use w_topline.
-             * Find the first valid w_lines[] entry below mod_bot.  Set lnumb
-             * to this line.  If there is no valid entry, use MAXLNUM. */
-            lnumt = wp->w_topline;
-            lnumb = MAXLNUM;
-            for (i = 0; i < wp->w_lines_valid; ++i)
-                if (wp->w_lines[i].wl_valid)
-                {
-                    if (wp->w_lines[i].wl_lastlnum < mod_top)
-                        lnumt = wp->w_lines[i].wl_lastlnum + 1;
-                    if (lnumb == MAXLNUM && wp->w_lines[i].wl_lnum >= mod_bot)
-                    {
-                        lnumb = wp->w_lines[i].wl_lnum;
-                        /* When there is a fold column it might need updating
-                         * in the next line ("J" just above an open fold). */
-                        if (compute_foldcolumn(wp, 0) > 0)
-                            ++lnumb;
-                    }
-                }
-
-            (void)hasFoldingWin(wp, mod_top, &mod_top, NULL, TRUE, NULL);
-            if (mod_top > lnumt)
-                mod_top = lnumt;
-
-            /* Now do the same for the bottom line (one above mod_bot). */
-            --mod_bot;
-            (void)hasFoldingWin(wp, mod_bot, NULL, &mod_bot, TRUE, NULL);
-            ++mod_bot;
-            if (mod_bot < lnumb)
-                mod_bot = lnumb;
-        }
-#endif
 
         /* When a change starts above w_topline and the end is below
          * w_topline, start redrawing at w_topline.
@@ -1152,9 +1073,6 @@ win_update(wp)
      */
     if ((type == VALID || type == SOME_VALID
                                   || type == INVERTED || type == INVERTED_ALL)
-#if defined(FEAT_DIFF)
-            && !wp->w_botfill && !wp->w_old_botfill
-#endif
             )
     {
         if (mod_top != 0 && wp->w_topline == mod_top)
@@ -1166,43 +1084,15 @@ win_update(wp)
         }
         else if (wp->w_lines[0].wl_valid
                 && (wp->w_topline < wp->w_lines[0].wl_lnum
-#if defined(FEAT_DIFF)
-                    || (wp->w_topline == wp->w_lines[0].wl_lnum
-                        && wp->w_topfill > wp->w_old_topfill)
-#endif
                    ))
         {
             /*
              * New topline is above old topline: May scroll down.
              */
-#if defined(FEAT_FOLDING)
-            if (hasAnyFolding(wp))
-            {
-                linenr_T ln;
-
-                /* count the number of lines we are off, counting a sequence
-                 * of folded lines as one */
-                j = 0;
-                for (ln = wp->w_topline; ln < wp->w_lines[0].wl_lnum; ++ln)
-                {
-                    ++j;
-                    if (j >= wp->w_height - 2)
-                        break;
-                    (void)hasFoldingWin(wp, ln, NULL, &ln, TRUE, NULL);
-                }
-            }
-            else
-#endif
                 j = wp->w_lines[0].wl_lnum - wp->w_topline;
             if (j < wp->w_height - 2)           /* not too far off */
             {
                 i = plines_m_win(wp, wp->w_topline, wp->w_lines[0].wl_lnum - 1);
-#if defined(FEAT_DIFF)
-                /* insert extra lines for previously invisible filler lines */
-                if (wp->w_lines[0].wl_lnum != wp->w_topline)
-                    i += diff_check_fill(wp, wp->w_lines[0].wl_lnum)
-                                                          - wp->w_old_topfill;
-#endif
                 if (i < wp->w_height - 2)       /* less than a screen off */
                 {
                     /*
@@ -1273,16 +1163,6 @@ win_update(wp)
                  * Try to delete the correct number of lines.
                  * wp->w_topline is at wp->w_lines[i].wl_lnum.
                  */
-#if defined(FEAT_DIFF)
-                /* If the topline didn't change, delete old filler lines,
-                 * otherwise delete filler lines of the new topline... */
-                if (wp->w_lines[0].wl_lnum == wp->w_topline)
-                    row += wp->w_old_topfill;
-                else
-                    row += diff_check_fill(wp, wp->w_topline);
-                /* ... but don't delete new filler lines. */
-                row -= wp->w_topfill;
-#endif
                 if (row > 0)
                 {
                     check_for_delay(FALSE);
@@ -1321,14 +1201,6 @@ win_update(wp)
                             break;
                         }
                     }
-#if defined(FEAT_DIFF)
-                    /* Correct the first entry for filler lines at the top
-                     * when it won't get updated below. */
-                    if (wp->w_p_diff && bot_start > 0)
-                        wp->w_lines[0].wl_size =
-                            plines_win_nofill(wp, wp->w_topline, TRUE)
-                                                              + wp->w_topfill;
-#endif
                 }
             }
         }
@@ -1540,11 +1412,6 @@ win_update(wp)
                 else if (!scrolled_down)
                     srow += wp->w_lines[idx].wl_size;
                 ++idx;
-#if defined(FEAT_FOLDING)
-                if (idx < wp->w_lines_valid && wp->w_lines[idx].wl_valid)
-                    lnum = wp->w_lines[idx].wl_lnum;
-                else
-#endif
                     ++lnum;
             }
             srow += mid_start;
@@ -1583,9 +1450,6 @@ win_update(wp)
     /* reset got_int, otherwise regexp won't work */
     save_got_int = got_int;
     got_int = 0;
-#endif
-#if defined(FEAT_FOLDING)
-    win_foldinfo.fi_level = 0;
 #endif
 
     /*
@@ -1641,10 +1505,6 @@ win_update(wp)
                                 || (did_update == DID_LINE
                                     && syntax_present(wp)
                                     && (
-#if defined(FEAT_FOLDING)
-                                        (foldmethodIsSyntax(wp)
-                                                      && hasAnyFolding(wp)) ||
-#endif
                                         syntax_check_changed(lnum)))
 #endif
 #if defined(FEAT_SEARCH_EXTRA)
@@ -1686,19 +1546,6 @@ win_update(wp)
                             && wp->w_lines[i].wl_lnum == mod_bot)
                         break;
                     old_rows += wp->w_lines[i].wl_size;
-#if defined(FEAT_FOLDING)
-                    if (wp->w_lines[i].wl_valid
-                            && wp->w_lines[i].wl_lastlnum + 1 == mod_bot)
-                    {
-                        /* Must have found the last valid entry above mod_bot.
-                         * Add following invalid entries. */
-                        ++i;
-                        while (i < wp->w_lines_valid
-                                                  && !wp->w_lines[i].wl_valid)
-                            old_rows += wp->w_lines[i++].wl_size;
-                        break;
-                    }
-#endif
                 }
 
                 if (i >= wp->w_lines_valid)
@@ -1715,17 +1562,6 @@ win_update(wp)
                     j = idx;
                     for (l = lnum; l < mod_bot; ++l)
                     {
-#if defined(FEAT_FOLDING)
-                        if (hasFoldingWin(wp, l, NULL, &l, TRUE, NULL))
-                            ++new_rows;
-                        else
-#endif
-#if defined(FEAT_DIFF)
-                            if (l == wp->w_topline)
-                            new_rows += plines_win_nofill(wp, l, TRUE)
-                                                              + wp->w_topfill;
-                        else
-#endif
                             new_rows += plines_win(wp, l, TRUE);
                         ++j;
                         if (new_rows > wp->w_height - row - 2)
@@ -1828,35 +1664,12 @@ win_update(wp)
                 }
             }
 
-#if defined(FEAT_FOLDING)
-            /*
-             * When lines are folded, display one line for all of them.
-             * Otherwise, display normally (can be several display lines when
-             * 'wrap' is on).
-             */
-            fold_count = foldedCount(wp, lnum, &win_foldinfo);
-            if (fold_count != 0)
-            {
-                fold_line(wp, fold_count, &win_foldinfo, lnum, row);
-                ++row;
-                --fold_count;
-                wp->w_lines[idx].wl_folded = TRUE;
-                wp->w_lines[idx].wl_lastlnum = lnum + fold_count;
-#if defined(FEAT_SYN_HL)
-                did_update = DID_FOLD;
-#endif
-            }
-            else
-#endif
             if (idx < wp->w_lines_valid
                     && wp->w_lines[idx].wl_valid
                     && wp->w_lines[idx].wl_lnum == lnum
                     && lnum > wp->w_topline
                     && !(dy_flags & DY_LASTLINE)
                     && srow + wp->w_lines[idx].wl_size > wp->w_height
-#if defined(FEAT_DIFF)
-                    && diff_check_fill(wp, lnum) == 0
-#endif
                     )
             {
                 /* This line is not going to fit.  Don't draw anything here,
@@ -1880,10 +1693,6 @@ win_update(wp)
                  */
                 row = win_line(wp, lnum, srow, wp->w_height, mod_top == 0);
 
-#if defined(FEAT_FOLDING)
-                wp->w_lines[idx].wl_folded = FALSE;
-                wp->w_lines[idx].wl_lastlnum = lnum;
-#endif
 #if defined(FEAT_SYN_HL)
                 did_update = DID_LINE;
                 syntax_last_parsed = lnum;
@@ -1903,11 +1712,7 @@ win_update(wp)
             if (dollar_vcol == -1)
                 wp->w_lines[idx].wl_size = row - srow;
             ++idx;
-#if defined(FEAT_FOLDING)
-            lnum += fold_count + 1;
-#else
             ++lnum;
-#endif
         }
         else
         {
@@ -1915,11 +1720,7 @@ win_update(wp)
             row += wp->w_lines[idx++].wl_size;
             if (row > wp->w_height)     /* past end of screen */
                 break;
-#if defined(FEAT_FOLDING)
-            lnum = wp->w_lines[idx - 1].wl_lastlnum + 1;
-#else
             ++lnum;
-#endif
 #if defined(FEAT_SYN_HL)
             did_update = DID_NONE;
 #endif
@@ -1951,9 +1752,6 @@ win_update(wp)
      * line we were working on, then the line didn't fit.
      */
     wp->w_empty_rows = 0;
-#if defined(FEAT_DIFF)
-    wp->w_filler_rows = 0;
-#endif
     if (!eof && !didline)
     {
         if (lnum == wp->w_topline)
@@ -1964,14 +1762,6 @@ win_update(wp)
              */
             wp->w_botline = lnum + 1;
         }
-#if defined(FEAT_DIFF)
-        else if (diff_check_fill(wp, lnum) >= wp->w_height - srow)
-        {
-            /* Window ends in filler lines. */
-            wp->w_botline = lnum;
-            wp->w_filler_rows = wp->w_height - srow;
-        }
-#endif
         else if (dy_flags & DY_LASTLINE)        /* 'display' has "lastline" */
         {
             /*
@@ -1998,23 +1788,6 @@ win_update(wp)
         if (eof)                /* we hit the end of the file */
         {
             wp->w_botline = buf->b_ml.ml_line_count + 1;
-#if defined(FEAT_DIFF)
-            j = diff_check_fill(wp, wp->w_botline);
-            if (j > 0 && !wp->w_botfill)
-            {
-                /*
-                 * Display filler lines at the end of the file
-                 */
-                if (char2cells(fill_diff) > 1)
-                    i = '-';
-                else
-                    i = fill_diff;
-                if (row + j > wp->w_height)
-                    j = wp->w_height - row;
-                win_draw_end(wp, i, i, row, row + (int)j, HLF_DED);
-                row += j;
-            }
-#endif
         }
         else if (dollar_vcol == -1)
             wp->w_botline = lnum;
@@ -2026,10 +1799,6 @@ win_update(wp)
 
     /* Reset the type of redrawing required, the window has been updated. */
     wp->w_redr_type = 0;
-#if defined(FEAT_DIFF)
-    wp->w_old_topfill = wp->w_topfill;
-    wp->w_old_botfill = wp->w_botfill;
-#endif
 
     if (dollar_vcol == -1)
     {
@@ -2099,33 +1868,17 @@ win_draw_end(wp, c1, c2, row, endrow, hl)
     int         endrow;
     hlf_T       hl;
 {
-#if defined(FEAT_FOLDING) || defined(FEAT_SIGNS) || defined(FEAT_CMDWIN)
+#if defined(FEAT_SIGNS) || defined(FEAT_CMDWIN)
     int         n = 0;
 #define FDC_OFF n
 #else
 #define FDC_OFF 0
-#endif
-#if defined(FEAT_FOLDING)
-    int         fdc = compute_foldcolumn(wp, 0);
 #endif
 
 #if defined(FEAT_RIGHTLEFT)
     if (wp->w_p_rl)
     {
         /* No check for cmdline window: should never be right-left. */
-#if defined(FEAT_FOLDING)
-        n = fdc;
-
-        if (n > 0)
-        {
-            /* draw the fold column at the right */
-            if (n > W_WIDTH(wp))
-                n = W_WIDTH(wp);
-            screen_fill(W_WINROW(wp) + row, W_WINROW(wp) + endrow,
-                    W_ENDCOL(wp) - n, (int)W_ENDCOL(wp),
-                    ' ', ' ', hl_attr(HLF_FC));
-        }
-#endif
 #if defined(FEAT_SIGNS)
         if (draw_signcolumn(wp))
         {
@@ -2160,20 +1913,6 @@ win_draw_end(wp, c1, c2, row, endrow, hl)
             screen_fill(W_WINROW(wp) + row, W_WINROW(wp) + endrow,
                     W_WINCOL(wp), (int)W_WINCOL(wp) + n,
                     cmdwin_type, ' ', hl_attr(HLF_AT));
-        }
-#endif
-#if defined(FEAT_FOLDING)
-        if (fdc > 0)
-        {
-            int     nn = n + fdc;
-
-            /* draw the fold column at the left */
-            if (nn > W_WIDTH(wp))
-                nn = W_WIDTH(wp);
-            screen_fill(W_WINROW(wp) + row, W_WINROW(wp) + endrow,
-                    W_WINCOL(wp) + n, (int)W_WINCOL(wp) + nn,
-                    ' ', ' ', hl_attr(HLF_FC));
-            n = nn;
         }
 #endif
 #if defined(FEAT_SIGNS)
@@ -2211,478 +1950,6 @@ advance_color_col(vcol, color_cols)
     while (**color_cols >= 0 && vcol > **color_cols)
         ++*color_cols;
     return (**color_cols >= 0);
-}
-#endif
-
-#if defined(FEAT_FOLDING)
-/*
- * Compute the width of the foldcolumn.  Based on 'foldcolumn' and how much
- * space is available for window "wp", minus "col".
- */
-    static int
-compute_foldcolumn(wp, col)
-    win_T *wp;
-    int   col;
-{
-    int fdc = wp->w_p_fdc;
-    int wmw = wp == curwin && p_wmw == 0 ? 1 : p_wmw;
-    int wwidth = W_WIDTH(wp);
-
-    if (fdc > wwidth - (col + wmw))
-        fdc = wwidth - (col + wmw);
-    return fdc;
-}
-
-/*
- * Display one folded line.
- */
-    static void
-fold_line(wp, fold_count, foldinfo, lnum, row)
-    win_T       *wp;
-    long        fold_count;
-    foldinfo_T  *foldinfo;
-    linenr_T    lnum;
-    int         row;
-{
-    char_u      buf[51];
-    pos_T       *top, *bot;
-    linenr_T    lnume = lnum + fold_count - 1;
-    int         len;
-    char_u      *text;
-    int         fdc;
-    int         col;
-    int         txtcol;
-    int         off = (int)(current_ScreenLine - ScreenLines);
-    int         ri;
-
-    /* Build the fold line:
-     * 1. Add the cmdwin_type for the command-line window
-     * 2. Add the 'foldcolumn'
-     * 3. Add the 'number' or 'relativenumber' column
-     * 4. Compose the text
-     * 5. Add the text
-     * 6. set highlighting for the Visual area an other text
-     */
-    col = 0;
-
-    /*
-     * 1. Add the cmdwin_type for the command-line window
-     * Ignores 'rightleft', this window is never right-left.
-     */
-#if defined(FEAT_CMDWIN)
-    if (cmdwin_type != 0 && wp == curwin)
-    {
-        ScreenLines[off] = cmdwin_type;
-        ScreenAttrs[off] = hl_attr(HLF_AT);
-        if (enc_utf8)
-            ScreenLinesUC[off] = 0;
-        ++col;
-    }
-#endif
-
-    /*
-     * 2. Add the 'foldcolumn'
-     *    Reduce the width when there is not enough space.
-     */
-    fdc = compute_foldcolumn(wp, col);
-    if (fdc > 0)
-    {
-        fill_foldcolumn(buf, wp, TRUE, lnum);
-#if defined(FEAT_RIGHTLEFT)
-        if (wp->w_p_rl)
-        {
-            int         i;
-
-            copy_text_attr(off + W_WIDTH(wp) - fdc - col, buf, fdc,
-                                                             hl_attr(HLF_FC));
-            /* reverse the fold column */
-            for (i = 0; i < fdc; ++i)
-                ScreenLines[off + W_WIDTH(wp) - i - 1 - col] = buf[i];
-        }
-        else
-#endif
-            copy_text_attr(off + col, buf, fdc, hl_attr(HLF_FC));
-        col += fdc;
-    }
-
-#if defined(FEAT_RIGHTLEFT)
-#define RL_MEMSET(p, v, l)  if (wp->w_p_rl) \
-                                for (ri = 0; ri < l; ++ri) \
-                                   ScreenAttrs[off + (W_WIDTH(wp) - (p) - (l)) + ri] = v; \
-                             else \
-                                for (ri = 0; ri < l; ++ri) \
-                                   ScreenAttrs[off + (p) + ri] = v
-#else
-#define RL_MEMSET(p, v, l)   for (ri = 0; ri < l; ++ri) \
-                                 ScreenAttrs[off + (p) + ri] = v
-#endif
-
-    /* Set all attributes of the 'number' or 'relativenumber' column and the
-     * text */
-    RL_MEMSET(col, hl_attr(HLF_FL), W_WIDTH(wp) - col);
-
-#if defined(FEAT_SIGNS)
-    /* If signs are being displayed, add two spaces. */
-    if (draw_signcolumn(wp))
-    {
-        len = W_WIDTH(wp) - col;
-        if (len > 0)
-        {
-            if (len > 2)
-                len = 2;
-#if defined(FEAT_RIGHTLEFT)
-            if (wp->w_p_rl)
-                /* the line number isn't reversed */
-                copy_text_attr(off + W_WIDTH(wp) - len - col,
-                                        (char_u *)"  ", len, hl_attr(HLF_FL));
-            else
-#endif
-                copy_text_attr(off + col, (char_u *)"  ", len, hl_attr(HLF_FL));
-            col += len;
-        }
-    }
-#endif
-
-    /*
-     * 3. Add the 'number' or 'relativenumber' column
-     */
-    if (wp->w_p_nu || wp->w_p_rnu)
-    {
-        len = W_WIDTH(wp) - col;
-        if (len > 0)
-        {
-            int     w = number_width(wp);
-            long    num;
-            char    *fmt = "%*ld ";
-
-            if (len > w + 1)
-                len = w + 1;
-
-            if (wp->w_p_nu && !wp->w_p_rnu)
-                /* 'number' + 'norelativenumber' */
-                num = (long)lnum;
-            else
-            {
-                /* 'relativenumber', don't use negative numbers */
-                num = labs((long)get_cursor_rel_lnum(wp, lnum));
-                if (num == 0 && wp->w_p_nu && wp->w_p_rnu)
-                {
-                    /* 'number' + 'relativenumber': cursor line shows absolute
-                     * line number */
-                    num = lnum;
-                    fmt = "%-*ld ";
-                }
-            }
-
-            sprintf((char *)buf, fmt, w, num);
-#if defined(FEAT_RIGHTLEFT)
-            if (wp->w_p_rl)
-                /* the line number isn't reversed */
-                copy_text_attr(off + W_WIDTH(wp) - len - col, buf, len,
-                                                             hl_attr(HLF_FL));
-            else
-#endif
-                copy_text_attr(off + col, buf, len, hl_attr(HLF_FL));
-            col += len;
-        }
-    }
-
-    /*
-     * 4. Compose the folded-line string with 'foldtext', if set.
-     */
-    text = get_foldtext(wp, lnum, lnume, foldinfo, buf);
-
-    txtcol = col;       /* remember where text starts */
-
-    /*
-     * 5. move the text to current_ScreenLine.  Fill up with "fill_fold".
-     *    Right-left text is put in columns 0 - number-col, normal text is put
-     *    in columns number-col - window-width.
-     */
-    if (has_mbyte)
-    {
-        int     cells;
-        int     u8c, u8cc[MAX_MCO];
-        int     i;
-        int     idx;
-        int     c_len;
-        char_u  *p;
-
-#if defined(FEAT_RIGHTLEFT)
-        if (wp->w_p_rl)
-            idx = off;
-        else
-#endif
-            idx = off + col;
-
-        /* Store multibyte characters in ScreenLines[] et al. correctly. */
-        for (p = text; *p != NUL; )
-        {
-            cells = (*mb_ptr2cells)(p);
-            c_len = (*mb_ptr2len)(p);
-            if (col + cells > W_WIDTH(wp)
-#if defined(FEAT_RIGHTLEFT)
-                    - (wp->w_p_rl ? col : 0)
-#endif
-                    )
-                break;
-            ScreenLines[idx] = *p;
-            if (enc_utf8)
-            {
-                u8c = utfc_ptr2char(p, u8cc);
-                if (*p < 0x80 && u8cc[0] == 0)
-                {
-                    ScreenLinesUC[idx] = 0;
-                }
-                else
-                {
-                    /* Non-BMP character: display as ? or fullwidth ?. */
-#if defined(UNICODE16)
-                    if (u8c >= 0x10000)
-                        ScreenLinesUC[idx] = (cells == 2) ? 0xff1f : (int)'?';
-                    else
-#endif
-                        ScreenLinesUC[idx] = u8c;
-                    for (i = 0; i < Screen_mco; ++i)
-                    {
-                        ScreenLinesC[i][idx] = u8cc[i];
-                        if (u8cc[i] == 0)
-                            break;
-                    }
-                }
-                if (cells > 1)
-                    ScreenLines[idx + 1] = 0;
-            }
-            else if (enc_dbcs == DBCS_JPNU && *p == 0x8e)
-                /* double-byte single width character */
-                ScreenLines2[idx] = p[1];
-            else if (cells > 1)
-                /* double-width character */
-                ScreenLines[idx + 1] = p[1];
-            col += cells;
-            idx += cells;
-            p += c_len;
-        }
-    }
-    else
-    {
-        len = (int)STRLEN(text);
-        if (len > W_WIDTH(wp) - col)
-            len = W_WIDTH(wp) - col;
-        if (len > 0)
-        {
-#if defined(FEAT_RIGHTLEFT)
-            if (wp->w_p_rl)
-                STRNCPY(current_ScreenLine, text, len);
-            else
-#endif
-                STRNCPY(current_ScreenLine + col, text, len);
-            col += len;
-        }
-    }
-
-    /* Fill the rest of the line with the fold filler */
-#if defined(FEAT_RIGHTLEFT)
-    if (wp->w_p_rl)
-        col -= txtcol;
-#endif
-    while (col < W_WIDTH(wp)
-#if defined(FEAT_RIGHTLEFT)
-                    - (wp->w_p_rl ? txtcol : 0)
-#endif
-            )
-    {
-        if (enc_utf8)
-        {
-            if (fill_fold >= 0x80)
-            {
-                ScreenLinesUC[off + col] = fill_fold;
-                ScreenLinesC[0][off + col] = 0;
-            }
-            else
-                ScreenLinesUC[off + col] = 0;
-        }
-        ScreenLines[off + col++] = fill_fold;
-    }
-
-    if (text != buf)
-        vim_free(text);
-
-    /*
-     * 6. set highlighting for the Visual area an other text.
-     * If all folded lines are in the Visual area, highlight the line.
-     */
-    if (VIsual_active && wp->w_buffer == curwin->w_buffer)
-    {
-        if (ltoreq(curwin->w_cursor, VIsual))
-        {
-            /* Visual is after curwin->w_cursor */
-            top = &curwin->w_cursor;
-            bot = &VIsual;
-        }
-        else
-        {
-            /* Visual is before curwin->w_cursor */
-            top = &VIsual;
-            bot = &curwin->w_cursor;
-        }
-        if (lnum >= top->lnum
-                && lnume <= bot->lnum
-                && (VIsual_mode != 'v'
-                    || ((lnum > top->lnum
-                            || (lnum == top->lnum
-                                && top->col == 0))
-                        && (lnume < bot->lnum
-                            || (lnume == bot->lnum
-                                && (bot->col - (*p_sel == 'e'))
-                >= (colnr_T)STRLEN(ml_get_buf(wp->w_buffer, lnume, FALSE)))))))
-        {
-            if (VIsual_mode == Ctrl_V)
-            {
-                /* Visual block mode: highlight the chars part of the block */
-                if (wp->w_old_cursor_fcol + txtcol < (colnr_T)W_WIDTH(wp))
-                {
-                    if (wp->w_old_cursor_lcol != MAXCOL
-                             && wp->w_old_cursor_lcol + txtcol
-                                                       < (colnr_T)W_WIDTH(wp))
-                        len = wp->w_old_cursor_lcol;
-                    else
-                        len = W_WIDTH(wp) - txtcol;
-                    RL_MEMSET(wp->w_old_cursor_fcol + txtcol, hl_attr(HLF_V),
-                                            len - (int)wp->w_old_cursor_fcol);
-                }
-            }
-            else
-            {
-                /* Set all attributes of the text */
-                RL_MEMSET(txtcol, hl_attr(HLF_V), W_WIDTH(wp) - txtcol);
-            }
-        }
-    }
-
-#if defined(FEAT_SYN_HL)
-    /* Show colorcolumn in the fold line, but let cursorcolumn override it. */
-    if (wp->w_p_cc_cols)
-    {
-        int i = 0;
-        int j = wp->w_p_cc_cols[i];
-        int old_txtcol = txtcol;
-
-        while (j > -1)
-        {
-            txtcol += j;
-            if (wp->w_p_wrap)
-                txtcol -= wp->w_skipcol;
-            else
-                txtcol -= wp->w_leftcol;
-            if (txtcol >= 0 && txtcol < W_WIDTH(wp))
-                ScreenAttrs[off + txtcol] = hl_combine_attr(
-                                    ScreenAttrs[off + txtcol], hl_attr(HLF_MC));
-            txtcol = old_txtcol;
-            j = wp->w_p_cc_cols[++i];
-        }
-    }
-
-    /* Show 'cursorcolumn' in the fold line. */
-    if (wp->w_p_cuc)
-    {
-        txtcol += wp->w_virtcol;
-        if (wp->w_p_wrap)
-            txtcol -= wp->w_skipcol;
-        else
-            txtcol -= wp->w_leftcol;
-        if (txtcol >= 0 && txtcol < W_WIDTH(wp))
-            ScreenAttrs[off + txtcol] = hl_combine_attr(
-                                 ScreenAttrs[off + txtcol], hl_attr(HLF_CUC));
-    }
-#endif
-
-    SCREEN_LINE(row + W_WINROW(wp), W_WINCOL(wp), (int)W_WIDTH(wp),
-                                                     (int)W_WIDTH(wp), FALSE);
-
-    /*
-     * Update w_cline_height and w_cline_folded if the cursor line was
-     * updated (saves a call to plines() later).
-     */
-    if (wp == curwin
-            && lnum <= curwin->w_cursor.lnum
-            && lnume >= curwin->w_cursor.lnum)
-    {
-        curwin->w_cline_row = row;
-        curwin->w_cline_height = 1;
-        curwin->w_cline_folded = TRUE;
-        curwin->w_valid |= (VALID_CHEIGHT|VALID_CROW);
-    }
-}
-
-/*
- * Copy "buf[len]" to ScreenLines["off"] and set attributes to "attr".
- */
-    static void
-copy_text_attr(off, buf, len, attr)
-    int         off;
-    char_u      *buf;
-    int         len;
-    int         attr;
-{
-    int         i;
-
-    mch_memmove(ScreenLines + off, buf, (size_t)len);
-    if (enc_utf8)
-        vim_memset(ScreenLinesUC + off, 0, sizeof(u8char_T) * (size_t)len);
-    for (i = 0; i < len; ++i)
-        ScreenAttrs[off + i] = attr;
-}
-
-/*
- * Fill the foldcolumn at "p" for window "wp".
- * Only to be called when 'foldcolumn' > 0.
- */
-    static void
-fill_foldcolumn(p, wp, closed, lnum)
-    char_u      *p;
-    win_T       *wp;
-    int         closed;         /* TRUE of FALSE */
-    linenr_T    lnum;           /* current line number */
-{
-    int         i = 0;
-    int         level;
-    int         first_level;
-    int         empty;
-    int         fdc = compute_foldcolumn(wp, 0);
-
-    /* Init to all spaces. */
-    copy_spaces(p, (size_t)fdc);
-
-    level = win_foldinfo.fi_level;
-    if (level > 0)
-    {
-        /* If there is only one column put more info in it. */
-        empty = (fdc == 1) ? 0 : 1;
-
-        /* If the column is too narrow, we start at the lowest level that
-         * fits and use numbers to indicated the depth. */
-        first_level = level - fdc - closed + 1 + empty;
-        if (first_level < 1)
-            first_level = 1;
-
-        for (i = 0; i + empty < fdc; ++i)
-        {
-            if (win_foldinfo.fi_lnum == lnum
-                              && first_level + i >= win_foldinfo.fi_low_level)
-                p[i] = '-';
-            else if (first_level == 1)
-                p[i] = '|';
-            else if (first_level + i <= 9)
-                p[i] = '0' + first_level + i;
-            else
-                p[i] = '>';
-            if (first_level + i == level)
-                break;
-        }
-    }
-    if (closed)
-        p[i >= fdc ? i - 1 : i] = '+';
 }
 #endif
 
@@ -2762,40 +2029,17 @@ win_line(wp, lnum, startrow, endrow, nochange)
     int         draw_color_col = FALSE; /* highlight colorcolumn */
     int         *color_cols = NULL;     /* pointer to according columns array */
 #endif
-#if defined(FEAT_SPELL)
-    int         has_spell = FALSE;      /* this buffer has spell checking */
-#define SPWORDLEN 150
-    char_u      nextline[SPWORDLEN * 2];/* text with start of the next line */
-    int         nextlinecol = 0;        /* column where nextline[] starts */
-    int         nextline_idx = 0;       /* index in nextline[] where next line
-                                           starts */
-    int         spell_attr = 0;         /* attributes desired by spelling */
-    int         word_end = 0;           /* last byte with same spell_attr */
-    static linenr_T  checked_lnum = 0;  /* line number for "checked_col" */
-    static int  checked_col = 0;        /* column in "checked_lnum" up to which
-                                         * there are no spell errors */
-    static int  cap_col = -1;           /* column to check for Cap word */
-    static linenr_T capcol_lnum = 0;    /* line number where "cap_col" used */
-    int         cur_checked_col = 0;    /* checked column for current line */
-#endif
     int         extra_check;            /* has syntax or linebreak */
     int         multi_attr = 0;         /* attributes desired by multibyte */
     int         mb_l = 1;               /* multi-byte byte length */
     int         mb_c = 0;               /* decoded multi-byte character */
     int         mb_utf8 = FALSE;        /* screen char is UTF-8 char */
     int         u8cc[MAX_MCO];          /* composing UTF-8 chars */
-#if defined(FEAT_DIFF)
-    int         filler_lines;           /* nr of filler lines to be drawn */
-    int         filler_todo;            /* nr of filler lines still to do + 1 */
-    hlf_T       diff_hlf = (hlf_T)0;    /* type of diff highlighting */
-    int         change_start = MAXCOL;  /* first col of changed area */
-    int         change_end = -1;        /* last col of changed area */
-#endif
     colnr_T     trailcol = MAXCOL;      /* start of trailing spaces */
 #if defined(FEAT_LINEBREAK)
     int         need_showbreak = FALSE;
 #endif
-#if defined(FEAT_SIGNS) || (defined(FEAT_QUICKFIX) && defined(FEAT_WINDOWS)) || defined(FEAT_SYN_HL) || defined(FEAT_DIFF)
+#if defined(FEAT_SIGNS) || (defined(FEAT_QUICKFIX) && defined(FEAT_WINDOWS)) || defined(FEAT_SYN_HL)
 #define LINE_ATTR
     int         line_attr = 0;          /* attribute for the whole line */
 #endif
@@ -2821,9 +2065,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #else
 #define WL_CMDLINE     WL_START
 #endif
-#if defined(FEAT_FOLDING)
-#define WL_FOLD        WL_CMDLINE + 1  /* 'foldcolumn' */
-#else
+#if (1)
 #define WL_FOLD        WL_CMDLINE
 #endif
 #if defined(FEAT_SIGNS)
@@ -2837,7 +2079,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #else
 #define WL_BRI         WL_NR
 #endif
-#if defined(FEAT_LINEBREAK) || defined(FEAT_DIFF)
+#if defined(FEAT_LINEBREAK)
 #define WL_SBR         WL_BRI + 1      /* 'showbreak' or 'diff' */
 #else
 #define WL_SBR         WL_BRI
@@ -2907,43 +2149,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
     color_cols = wp->w_p_cc_cols;
     if (color_cols != NULL)
         draw_color_col = advance_color_col(VCOL_HLC, &color_cols);
-#endif
-
-#if defined(FEAT_SPELL)
-    if (wp->w_p_spell
-            && *wp->w_s->b_p_spl != NUL
-            && wp->w_s->b_langp.ga_len > 0
-            && *(char **)(wp->w_s->b_langp.ga_data) != NULL)
-    {
-        /* Prepare for spell checking. */
-        has_spell = TRUE;
-        extra_check = TRUE;
-
-        /* Get the start of the next line, so that words that wrap to the next
-         * line are found too: "et<line-break>al.".
-         * Trick: skip a few chars for C/shell/Vim comments */
-        nextline[SPWORDLEN] = NUL;
-        if (lnum < wp->w_buffer->b_ml.ml_line_count)
-        {
-            line = ml_get_buf(wp->w_buffer, lnum + 1, FALSE);
-            spell_cat_line(nextline + SPWORDLEN, line, SPWORDLEN);
-        }
-
-        /* When a word wrapped from the previous line the start of the current
-         * line is valid. */
-        if (lnum == checked_lnum)
-            cur_checked_col = checked_col;
-        checked_lnum = 0;
-
-        /* When there was a sentence end in the previous line may require a
-         * word starting with capital in this line.  In line 1 always check
-         * the first word. */
-        if (lnum != capcol_lnum)
-            cap_col = -1;
-        if (lnum == 1)
-            cap_col = 0;
-        capcol_lnum = 0;
-    }
 #endif
 
     /*
@@ -3056,29 +2261,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         attr = hl_attr(HLF_I);
     }
 
-#if defined(FEAT_DIFF)
-    filler_lines = diff_check(wp, lnum);
-    if (filler_lines < 0)
-    {
-        if (filler_lines == -1)
-        {
-            if (diff_find_change(wp, lnum, &change_start, &change_end))
-                diff_hlf = HLF_ADD;     /* added line */
-            else if (change_start == 0)
-                diff_hlf = HLF_TXD;     /* changed text */
-            else
-                diff_hlf = HLF_CHD;     /* changed line */
-        }
-        else
-            diff_hlf = HLF_ADD;         /* added line */
-        filler_lines = 0;
-        area_highlighting = TRUE;
-    }
-    if (lnum == wp->w_topline)
-        filler_lines = wp->w_topfill;
-    filler_todo = filler_lines;
-#endif
-
 #if defined(LINE_ATTR)
 #if defined(FEAT_SIGNS)
     /* If this line has a sign with line highlighting set line_attr. */
@@ -3097,45 +2279,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
     line = ml_get_buf(wp->w_buffer, lnum, FALSE);
     ptr = line;
-
-#if defined(FEAT_SPELL)
-    if (has_spell)
-    {
-        /* For checking first word with a capital skip white space. */
-        if (cap_col == 0)
-            cap_col = (int)(skipwhite(line) - line);
-
-        /* To be able to spell-check over line boundaries copy the end of the
-         * current line into nextline[].  Above the start of the next line was
-         * copied to nextline[SPWORDLEN]. */
-        if (nextline[SPWORDLEN] == NUL)
-        {
-            /* No next line or it is empty. */
-            nextlinecol = MAXCOL;
-            nextline_idx = 0;
-        }
-        else
-        {
-            v = (long)STRLEN(line);
-            if (v < SPWORDLEN)
-            {
-                /* Short line, use it completely and append the start of the
-                 * next line. */
-                nextlinecol = 0;
-                mch_memmove(nextline, line, (size_t)v);
-                STRMOVE(nextline + v, nextline + SPWORDLEN);
-                nextline_idx = v + 1;
-            }
-            else
-            {
-                /* Long line, use only the last SPWORDLEN bytes. */
-                nextlinecol = v - SPWORDLEN;
-                mch_memmove(nextline, line + nextlinecol, SPWORDLEN);
-                nextline_idx = SPWORDLEN + 1;
-            }
-        }
-    }
-#endif
 
     /* find start of trailing whitespace */
     if (wp->w_p_list && lcs_trail)
@@ -3207,49 +2350,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         /* When w_skipcol is non-zero, first line needs 'showbreak' */
         if (wp->w_p_wrap)
             need_showbreak = TRUE;
-#endif
-#if defined(FEAT_SPELL)
-        /* When spell checking a word we need to figure out the start of the
-         * word and if it's badly spelled or not. */
-        if (has_spell)
-        {
-            int         len;
-            colnr_T     linecol = (colnr_T)(ptr - line);
-            hlf_T       spell_hlf = HLF_COUNT;
-
-            pos = wp->w_cursor;
-            wp->w_cursor.lnum = lnum;
-            wp->w_cursor.col = linecol;
-            len = spell_move_to(wp, FORWARD, TRUE, TRUE, &spell_hlf);
-
-            /* spell_move_to() may call ml_get() and make "line" invalid */
-            line = ml_get_buf(wp->w_buffer, lnum, FALSE);
-            ptr = line + linecol;
-
-            if (len == 0 || (int)wp->w_cursor.col > ptr - line)
-            {
-                /* no bad word found at line start, don't check until end of a
-                 * word */
-                spell_hlf = HLF_COUNT;
-                word_end = (int)(spell_to_word_end(ptr, wp) - line + 1);
-            }
-            else
-            {
-                /* bad word found, use attributes until end of word */
-                word_end = wp->w_cursor.col + len + 1;
-
-                /* Turn index into actual attributes. */
-                if (spell_hlf != HLF_COUNT)
-                    spell_attr = highlight_attr[spell_hlf];
-            }
-            wp->w_cursor = pos;
-
-#if defined(FEAT_SYN_HL)
-            /* Need to restart syntax highlighting for this line. */
-            if (has_syntax)
-                syntax_start(wp, lnum);
-#endif
-        }
 #endif
     }
 
@@ -3383,25 +2483,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
 #endif
 
-#if defined(FEAT_FOLDING)
-            if (draw_state == WL_FOLD - 1 && n_extra == 0)
-            {
-                int fdc = compute_foldcolumn(wp, 0);
-
-                draw_state = WL_FOLD;
-                if (fdc > 0)
-                {
-                    /* Draw the 'foldcolumn'. */
-                    fill_foldcolumn(extra, wp, FALSE, lnum);
-                    n_extra = fdc;
-                    p_extra = extra;
-                    p_extra[n_extra] = NUL;
-                    c_extra = NUL;
-                    char_attr = hl_attr(HLF_FC);
-                }
-            }
-#endif
-
 #if defined(FEAT_SIGNS)
             if (draw_state == WL_SIGN - 1 && n_extra == 0)
             {
@@ -3421,9 +2502,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     n_extra = 2;
 
                     if (row == startrow
-#if defined(FEAT_DIFF)
-                            + filler_lines && filler_todo <= 0
-#endif
                             )
                     {
                         text_sign = buf_getsigntype(wp->w_buffer, lnum,
@@ -3461,16 +2539,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  * first fill with blanks when the 'n' flag isn't in 'cpo' */
                 if ((wp->w_p_nu || wp->w_p_rnu)
                         && (row == startrow
-#if defined(FEAT_DIFF)
-                            + filler_lines
-#endif
                             || vim_strchr(p_cpo, CPO_NUMCOL) == NULL))
                 {
                     /* Draw the line number (empty space after wrapping). */
                     if (row == startrow
-#if defined(FEAT_DIFF)
-                            + filler_lines
-#endif
                             )
                     {
                         long num;
@@ -3533,21 +2605,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
             {
                 draw_state = WL_BRI;
                 if (wp->w_p_bri && n_extra == 0 && row != startrow
-#if defined(FEAT_DIFF)
-                        && filler_lines == 0
-#endif
                    )
                 {
                     char_attr = 0; /* was: hl_attr(HLF_AT); */
-#if defined(FEAT_DIFF)
-                    if (diff_hlf != (hlf_T)0)
-                    {
-                        char_attr = hl_attr(diff_hlf);
-                        if (wp->w_p_cul && lnum == wp->w_cursor.lnum)
-                            char_attr = hl_combine_attr(char_attr,
-                                                            hl_attr(HLF_CUL));
-                    }
-#endif
                     p_extra = NULL;
                     c_extra = ' ';
                     n_extra = get_breakindent_win(wp,
@@ -3560,27 +2620,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
 #endif
 
-#if defined(FEAT_LINEBREAK) || defined(FEAT_DIFF)
+#if defined(FEAT_LINEBREAK)
             if (draw_state == WL_SBR - 1 && n_extra == 0)
             {
                 draw_state = WL_SBR;
-#if defined(FEAT_DIFF)
-                if (filler_todo > 0)
-                {
-                    /* Draw "deleted" diff line(s). */
-                    if (char2cells(fill_diff) > 1)
-                        c_extra = '-';
-                    else
-                        c_extra = fill_diff;
-#if defined(FEAT_RIGHTLEFT)
-                    if (wp->w_p_rl)
-                        n_extra = col + 1;
-                    else
-#endif
-                        n_extra = W_WIDTH(wp) - col;
-                    char_attr = hl_attr(HLF_DED);
-                }
-#endif
 #if defined(FEAT_LINEBREAK)
                 if (*p_sbr != NUL && need_showbreak)
                 {
@@ -3625,9 +2668,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         /* When still displaying '$' of change command, stop at cursor */
         if (dollar_vcol >= 0 && wp == curwin
                    && lnum == wp->w_cursor.lnum && vcol >= (long)wp->w_virtcol
-#if defined(FEAT_DIFF)
-                                   && filler_todo <= 0
-#endif
                 )
         {
             SCREEN_LINE(screen_row, W_WINCOL(wp), col, -(int)W_WIDTH(wp),
@@ -3764,21 +2804,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     if (shl != &search_hl && cur != NULL)
                         cur = cur->next;
                 }
-            }
-#endif
-
-#if defined(FEAT_DIFF)
-            if (diff_hlf != (hlf_T)0)
-            {
-                if (diff_hlf == HLF_CHD && ptr - line >= change_start
-                                                              && n_extra == 0)
-                    diff_hlf = HLF_TXD;         /* changed text */
-                if (diff_hlf == HLF_TXD && ptr - line > change_end
-                                                              && n_extra == 0)
-                    diff_hlf = HLF_CHD;         /* changed line */
-                line_attr = hl_attr(diff_hlf);
-                if (wp->w_p_cul && lnum == wp->w_cursor.lnum)
-                    line_attr = hl_combine_attr(line_attr, hl_attr(HLF_CUL));
             }
 #endif
 
@@ -4098,9 +3123,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
             if (extra_check)
             {
-#if defined(FEAT_SPELL)
-                int     can_spell = TRUE;
-#endif
 
 #if defined(FEAT_SYN_HL)
                 /* Get syntax attribute, unless still at the start of the line
@@ -4114,9 +3136,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     did_emsg = FALSE;
 
                     syntax_attr = get_syntax_attr((colnr_T)v - 1,
-#if defined(FEAT_SPELL)
-                                                has_spell ? &can_spell :
-#endif
                                                 NULL, FALSE);
 
                     if (did_emsg)
@@ -4147,97 +3166,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 }
 #endif
 
-#if defined(FEAT_SPELL)
-                /* Check spelling (unless at the end of the line).
-                 * Only do this when there is no syntax highlighting, the
-                 * @Spell cluster is not used or the current syntax item
-                 * contains the @Spell cluster. */
-                if (has_spell && v >= word_end && v > cur_checked_col)
-                {
-                    spell_attr = 0;
-#if defined(FEAT_SYN_HL)
-                    if (!attr_pri)
-                        char_attr = syntax_attr;
-#endif
-                    if (c != 0 && (
-#if defined(FEAT_SYN_HL)
-                                !has_syntax ||
-#endif
-                                can_spell))
-                    {
-                        char_u  *prev_ptr, *p;
-                        int     len;
-                        hlf_T   spell_hlf = HLF_COUNT;
-                        if (has_mbyte)
-                        {
-                            prev_ptr = ptr - mb_l;
-                            v -= mb_l - 1;
-                        }
-                        else
-                            prev_ptr = ptr - 1;
-
-                        /* Use nextline[] if possible, it has the start of the
-                         * next line concatenated. */
-                        if ((prev_ptr - line) - nextlinecol >= 0)
-                            p = nextline + (prev_ptr - line) - nextlinecol;
-                        else
-                            p = prev_ptr;
-                        cap_col -= (int)(prev_ptr - line);
-                        len = spell_check(wp, p, &spell_hlf, &cap_col,
-                                                                    nochange);
-                        word_end = v + len;
-
-                        /* In Insert mode only highlight a word that
-                         * doesn't touch the cursor. */
-                        if (spell_hlf != HLF_COUNT
-                                && (State & INSERT) != 0
-                                && wp->w_cursor.lnum == lnum
-                                && wp->w_cursor.col >=
-                                                    (colnr_T)(prev_ptr - line)
-                                && wp->w_cursor.col < (colnr_T)word_end)
-                        {
-                            spell_hlf = HLF_COUNT;
-                            spell_redraw_lnum = lnum;
-                        }
-
-                        if (spell_hlf == HLF_COUNT && p != prev_ptr
-                                       && (p - nextline) + len > nextline_idx)
-                        {
-                            /* Remember that the good word continues at the
-                             * start of the next line. */
-                            checked_lnum = lnum + 1;
-                            checked_col = (int)((p - nextline) + len - nextline_idx);
-                        }
-
-                        /* Turn index into actual attributes. */
-                        if (spell_hlf != HLF_COUNT)
-                            spell_attr = highlight_attr[spell_hlf];
-
-                        if (cap_col > 0)
-                        {
-                            if (p != prev_ptr
-                                   && (p - nextline) + cap_col >= nextline_idx)
-                            {
-                                /* Remember that the word in the next line
-                                 * must start with a capital. */
-                                capcol_lnum = lnum + 1;
-                                cap_col = (int)((p - nextline) + cap_col
-                                                               - nextline_idx);
-                            }
-                            else
-                                /* Compute the actual column. */
-                                cap_col += (int)(prev_ptr - line);
-                        }
-                    }
-                }
-                if (spell_attr != 0)
-                {
-                    if (!attr_pri)
-                        char_attr = hl_combine_attr(char_attr, spell_attr);
-                    else
-                        char_attr = hl_combine_attr(spell_attr, char_attr);
-                }
-#endif
 #if defined(FEAT_LINEBREAK)
                 /*
                  * Found last space before word: check for line break.
@@ -4430,16 +3358,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 {
                     /* Display a '$' after the line or highlight an extra
                      * character if the line break is included. */
-#if defined(FEAT_DIFF) || defined(LINE_ATTR)
+#if defined(LINE_ATTR)
                     /* For a diff line the highlighting continues after the
                      * "$". */
                     if (
-#if defined(FEAT_DIFF)
-                            diff_hlf == (hlf_T)0
-#if defined(LINE_ATTR)
-                            &&
-#endif
-#endif
 #if defined(LINE_ATTR)
                             line_attr == 0
 #endif
@@ -4536,9 +3458,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #endif
 #if defined(LINE_ATTR)
                 else if ((
-#if defined(FEAT_DIFF)
-                            diff_hlf != (hlf_T)0 ||
-#endif
                             line_attr != 0
                         ) && (
 #if defined(FEAT_RIGHTLEFT)
@@ -4560,19 +3479,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     /* don't do search HL for the rest of the line */
                     if (line_attr != 0 && char_attr == search_attr && col > 0)
                         char_attr = line_attr;
-#if defined(FEAT_DIFF)
-                    if (diff_hlf == HLF_TXD)
-                    {
-                        diff_hlf = HLF_CHD;
-                        if (attr == 0 || char_attr != attr)
-                        {
-                            char_attr = hl_attr(diff_hlf);
-                            if (wp->w_p_cul && lnum == wp->w_cursor.lnum)
-                                char_attr = hl_combine_attr(char_attr,
-                                                            hl_attr(HLF_CUL));
-                        }
-                    }
-#endif
                 }
 #endif
             }
@@ -4673,9 +3579,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         if (lcs_prec_todo != NUL
                 && wp->w_p_list
                 && (wp->w_p_wrap ? wp->w_skipcol > 0 : wp->w_leftcol > 0)
-#if defined(FEAT_DIFF)
-                && filler_todo <= 0
-#endif
                 && draw_state > WL_NR
                 && c != NUL)
         {
@@ -4930,9 +3833,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             {
                 curwin->w_cline_row = startrow;
                 curwin->w_cline_height = row - startrow;
-#if defined(FEAT_FOLDING)
-                curwin->w_cline_folded = FALSE;
-#endif
                 curwin->w_valid |= (VALID_CHEIGHT|VALID_CROW);
             }
 
@@ -4942,9 +3842,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         /* line continues beyond line end */
         if (lcs_ext
                 && !wp->w_p_wrap
-#if defined(FEAT_DIFF)
-                && filler_todo <= 0
-#endif
                 && (
 #if defined(FEAT_RIGHTLEFT)
                     wp->w_p_rl ? col == 0 :
@@ -5172,9 +4069,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         /* Only advance the "vcol" when after the 'number' or 'relativenumber'
          * column. */
         if (draw_state > WL_NR
-#if defined(FEAT_DIFF)
-                && filler_todo <= 0
-#endif
                 )
             ++vcol;
 
@@ -5201,9 +4095,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #endif
                                     (col >= W_WIDTH(wp)))
                 && (*ptr != NUL
-#if defined(FEAT_DIFF)
-                    || filler_todo > 0
-#endif
                     || (wp->w_p_list && lcs_eol != NUL && p_extra != at_end_str)
                     || (n_extra != 0 && (c_extra != NUL || *p_extra != NUL)))
                 )
@@ -5222,17 +4113,11 @@ win_line(wp, lnum, startrow, endrow, nochange)
             /* When not wrapping and finished diff lines, or when displayed
              * '$' and highlighting until last column, break here. */
             if ((!wp->w_p_wrap
-#if defined(FEAT_DIFF)
-                    && filler_todo <= 0
-#endif
                     ) || lcs_eol_one == -1)
                 break;
 
             /* When the window is too narrow draw all "@" lines. */
             if (draw_state != WL_LINE
-#if defined(FEAT_DIFF)
-                    && filler_todo <= 0
-#endif
                     )
             {
                 win_draw_end(wp, '@', ' ', row, wp->w_height, HLF_AT);
@@ -5250,9 +4135,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
 
             if (screen_cur_row == screen_row - 1
-#if defined(FEAT_DIFF)
-                     && filler_todo <= 0
-#endif
                      && W_WIDTH(wp) == Columns)
             {
                 /* Remember that the line wraps, used for modeless copy. */
@@ -5323,30 +4205,11 @@ win_line(wp, lnum, startrow, endrow, nochange)
             n_extra = 0;
             lcs_prec_todo = lcs_prec;
 #if defined(FEAT_LINEBREAK)
-#if defined(FEAT_DIFF)
-            if (filler_todo <= 0)
-#endif
                 need_showbreak = TRUE;
-#endif
-#if defined(FEAT_DIFF)
-            --filler_todo;
-            /* When the filler lines are actually below the last line of the
-             * file, don't draw the line itself, break here. */
-            if (filler_todo == 0 && wp->w_botfill)
-                break;
 #endif
         }
 
     }   /* for every character in the line */
-
-#if defined(FEAT_SPELL)
-    /* After an empty line check first word for capital. */
-    if (*skipwhite(line) == NUL)
-    {
-        capcol_lnum = lnum + 1;
-        cap_col = 0;
-    }
-#endif
 
     return row;
 }
@@ -5886,7 +4749,7 @@ skip_status_match_char(xp, s)
 #endif
            )
     {
-#if !defined(BACKSLASH_IN_FILENAME)
+#if (1)
         if (xp->xp_shell && csh_like_shell() && s[1] == '\\' && s[2] == '!')
             return 2;
 #endif
@@ -7002,15 +5865,7 @@ prepare_search_hl(wp, lnum)
         {
             if (shl->first_lnum == 0)
             {
-#if defined(FEAT_FOLDING)
-                for (shl->first_lnum = lnum;
-                           shl->first_lnum > wp->w_topline; --shl->first_lnum)
-                    if (hasFoldingWin(wp, shl->first_lnum - 1,
-                                                      NULL, NULL, TRUE, NULL))
-                        break;
-#else
                 shl->first_lnum = wp->w_topline;
-#endif
             }
             if (cur != NULL)
                 cur->pos.cur = 0;
@@ -9819,9 +8674,6 @@ win_redr_ruler(wp, always)
 #endif
             || wp->w_topline != wp->w_ru_topline
             || wp->w_buffer->b_ml.ml_line_count != wp->w_ru_line_count
-#if defined(FEAT_DIFF)
-            || wp->w_topfill != wp->w_ru_topfill
-#endif
             || empty_line != wp->w_ru_empty)
     {
         cursor_off();
@@ -9934,9 +8786,6 @@ win_redr_ruler(wp, always)
         wp->w_ru_empty = empty_line;
         wp->w_ru_topline = wp->w_topline;
         wp->w_ru_line_count = wp->w_buffer->b_ml.ml_line_count;
-#if defined(FEAT_DIFF)
-        wp->w_ru_topfill = wp->w_topfill;
-#endif
     }
 }
 #endif

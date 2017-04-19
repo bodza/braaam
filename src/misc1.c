@@ -36,20 +36,6 @@ get_indent_lnum(lnum)
     return get_indent_str(ml_get(lnum), (int)curbuf->b_p_ts, FALSE);
 }
 
-#if defined(FEAT_FOLDING)
-/*
- * Count the size (in window cells) of the indent in line "lnum" of buffer
- * "buf".
- */
-    int
-get_indent_buf(buf, lnum)
-    buf_T       *buf;
-    linenr_T    lnum;
-{
-    return get_indent_str(ml_get_buf(buf, lnum, FALSE), (int)buf->b_p_ts, FALSE);
-}
-#endif
-
 /*
  * count the size (in window cells) of the indent in line "ptr", with
  * 'tabstop' at "ts"
@@ -1939,26 +1925,6 @@ plines_win(wp, lnum, winheight)
     linenr_T    lnum;
     int         winheight;      /* when TRUE limit to window height */
 {
-#if defined(FEAT_DIFF)
-    /* Check for filler lines above this buffer line.  When folded the result
-     * is one line anyway. */
-    return plines_win_nofill(wp, lnum, winheight) + diff_check_fill(wp, lnum);
-}
-
-    int
-plines_nofill(lnum)
-    linenr_T    lnum;
-{
-    return plines_win_nofill(curwin, lnum, TRUE);
-}
-
-    int
-plines_win_nofill(wp, lnum, winheight)
-    win_T       *wp;
-    linenr_T    lnum;
-    int         winheight;      /* when TRUE limit to window height */
-{
-#endif
     int         lines;
 
     if (!wp->w_p_wrap)
@@ -1966,13 +1932,6 @@ plines_win_nofill(wp, lnum, winheight)
 
 #if defined(FEAT_VERTSPLIT)
     if (wp->w_width == 0)
-        return 1;
-#endif
-
-#if defined(FEAT_FOLDING)
-    /* A folded lines is handled just like an empty line. */
-    /* NOTE: Caller must handle lines that are MAYBE folded. */
-    if (lineFolded(wp, lnum) == TRUE)
         return 1;
 #endif
 
@@ -2036,12 +1995,6 @@ plines_win_col(wp, lnum, column)
     int         width;
     char_u      *line;
 
-#if defined(FEAT_DIFF)
-    /* Check for filler lines above this buffer line.  When folded the result
-     * is one line anyway. */
-    lines = diff_check_fill(wp, lnum);
-#endif
-
     if (!wp->w_p_wrap)
         return lines + 1;
 
@@ -2091,25 +2044,7 @@ plines_m_win(wp, first, last)
 
     while (first <= last)
     {
-#if defined(FEAT_FOLDING)
-        int     x;
-
-        /* Check if there are any really folded lines, but also included lines
-         * that are maybe folded. */
-        x = foldedCount(wp, first, NULL);
-        if (x > 0)
         {
-            ++count;        /* count 1 for "+-- folded" line */
-            first += x;
-        }
-        else
-#endif
-        {
-#if defined(FEAT_DIFF)
-            if (first == wp->w_topline)
-                count += plines_win_nofill(wp, first, TRUE) + wp->w_topfill;
-            else
-#endif
                 count += plines_win(wp, first, TRUE);
             ++first;
         }
@@ -2750,23 +2685,6 @@ changed_bytes(lnum, col)
     changedOneline(curbuf, lnum);
     changed_common(lnum, col, lnum + 1, 0L);
 
-#if defined(FEAT_DIFF)
-    /* Diff highlighting in other diff windows may need to be updated too. */
-    if (curwin->w_p_diff)
-    {
-        win_T       *wp;
-        linenr_T    wlnum;
-
-        for (wp = firstwin; wp != NULL; wp = wp->w_next)
-            if (wp->w_p_diff && wp != curwin)
-            {
-                redraw_win_later(wp, VALID);
-                wlnum = diff_lnum_win(lnum, wp);
-                if (wlnum > 0)
-                    changedOneline(wp->w_buffer, wlnum);
-            }
-    }
-#endif
 }
 
     static void
@@ -2864,27 +2782,6 @@ changed_lines(lnum, col, lnume, xtra)
     long        xtra;       /* number of extra lines (negative when deleting) */
 {
     changed_lines_buf(curbuf, lnum, lnume, xtra);
-
-#if defined(FEAT_DIFF)
-    if (xtra == 0 && curwin->w_p_diff)
-    {
-        /* When the number of lines doesn't change then mark_adjust() isn't
-         * called and other diff buffers still need to be marked for
-         * displaying. */
-        win_T       *wp;
-        linenr_T    wlnum;
-
-        for (wp = firstwin; wp != NULL; wp = wp->w_next)
-            if (wp->w_p_diff && wp != curwin)
-            {
-                redraw_win_later(wp, VALID);
-                wlnum = diff_lnum_win(lnum, wp);
-                if (wlnum > 0)
-                    changed_lines_buf(wp->w_buffer, wlnum,
-                                                    lnume - lnum + wlnum, 0L);
-            }
-    }
-#endif
 
     changed_common(lnum, col, lnume, xtra);
 }
@@ -3027,34 +2924,6 @@ changed_common(lnum, col, lnume, xtra)
 
             /* Check if a change in the buffer has invalidated the cached
              * values for the cursor. */
-#if defined(FEAT_FOLDING)
-            /*
-             * Update the folds for this window.  Can't postpone this, because
-             * a following operator might work on the whole fold: ">>dd".
-             */
-            foldUpdate(wp, lnum, lnume + xtra - 1);
-
-            /* The change may cause lines above or below the change to become
-             * included in a fold.  Set lnum/lnume to the first/last line that
-             * might be displayed differently.
-             * Set w_cline_folded here as an efficient way to update it when
-             * inserting lines just above a closed fold. */
-            i = hasFoldingWin(wp, lnum, &lnum, NULL, FALSE, NULL);
-            if (wp->w_cursor.lnum == lnum)
-                wp->w_cline_folded = i;
-            i = hasFoldingWin(wp, lnume, NULL, &lnume, FALSE, NULL);
-            if (wp->w_cursor.lnum == lnume)
-                wp->w_cline_folded = i;
-
-            /* If the changed line is in a range of previously folded lines,
-             * compare with the first line in that range. */
-            if (wp->w_cursor.lnum <= lnum)
-            {
-                i = find_wl_entry(wp, lnum);
-                if (i >= 0 && wp->w_cursor.lnum > wp->w_lines[i].wl_lnum)
-                    changed_line_abv_curs_win(wp);
-            }
-#endif
 
             if (wp->w_cursor.lnum > lnum)
                 changed_line_abv_curs_win(wp);
@@ -3085,27 +2954,10 @@ changed_common(lnum, col, lnume, xtra)
                         {
                             /* line below change */
                             wp->w_lines[i].wl_lnum += xtra;
-#if defined(FEAT_FOLDING)
-                            wp->w_lines[i].wl_lastlnum += xtra;
-#endif
                         }
                     }
-#if defined(FEAT_FOLDING)
-                    else if (wp->w_lines[i].wl_lastlnum >= lnum)
-                    {
-                        /* change somewhere inside this range of folded lines,
-                         * may need to be redrawn */
-                        wp->w_lines[i].wl_valid = FALSE;
-                    }
-#endif
                 }
 
-#if defined(FEAT_FOLDING)
-            /* Take care of side effects for setting w_topline when folds have
-             * changed.  Esp. when the buffer was changed in another window. */
-            if (hasAnyFolding(wp))
-                set_topline(wp, wp->w_topline);
-#endif
             /* relative numbering may require updating more */
             if (wp->w_p_rnu)
                 redraw_win_later(wp, SOME_VALID);
@@ -3853,24 +3705,6 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                 }
             }
 
-#if defined(BACKSLASH_IN_FILENAME)
-            /* If 'shellslash' is set change backslashes to forward slashes.
-             * Can't use slash_adjust(), p_ssl may be set temporarily. */
-            if (p_ssl && var != NULL && vim_strchr(var, '\\') != NULL)
-            {
-                char_u  *p = vim_strsave(var);
-
-                if (p != NULL)
-                {
-                    if (mustfree)
-                        vim_free(var);
-                    var = p;
-                    mustfree = TRUE;
-                    forward_slash(var);
-                }
-            }
-#endif
-
             /* If "var" contains white space, escape it with a backslash.
              * Required for ":e ~/tt" when $HOME includes a space. */
             if (esc && var != NULL && vim_strpbrk(var, (char_u *)" \t") != NULL)
@@ -3895,9 +3729,6 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                 /* if var[] ends in a path separator and tail[] starts
                  * with it, skip a character */
                 if (*var != NUL && after_pathsep(dst, dst + c)
-#if defined(BACKSLASH_IN_FILENAME)
-                        && dst[-1] != ':'
-#endif
                         && vim_ispathsep(*tail))
                     ++tail;
                 dst += c;
@@ -4164,22 +3995,6 @@ vim_setenv(name, val)
         putenv((char *)envbuf);
     }
 #endif
-#if defined(FEAT_GETTEXT)
-    /*
-     * When setting $VIMRUNTIME adjust the directory to find message
-     * translations to $VIMRUNTIME/lang.
-     */
-    if (*val != NUL && STRICMP(name, "VIMRUNTIME") == 0)
-    {
-        char_u  *buf = concat_str(val, (char_u *)"/lang");
-
-        if (buf != NULL)
-        {
-            bindtextdomain(VIMPACKAGE, (char *)buf);
-            vim_free(buf);
-        }
-    }
-#endif
 }
 
 #if defined(FEAT_CMDL_COMPL)
@@ -4191,16 +4006,8 @@ get_env_name(xp, idx)
     expand_T    *xp UNUSED;
     int         idx;
 {
-#if defined(__MRC__) || defined(__SC__)
-    /*
-     * No environ[] on the Amiga and on the Mac (using MPW).
-     */
-    return NULL;
-#else
-#if !defined(__WIN32__)
-    /* Borland C++ 5.2 has this in a header file. */
+#if (1)
     extern char         **environ;
-#endif
 #define ENVNAMELEN 100
     static char_u       name[ENVNAMELEN];
     char_u              *str;
@@ -4614,9 +4421,6 @@ vim_ispathsep_nocolon(c)
     int c;
 {
     return vim_ispathsep(c)
-#if defined(BACKSLASH_IN_FILENAME)
-        && c != ':'
-#endif
         ;
 }
 
@@ -4705,9 +4509,7 @@ dir_of_file_exists(fname)
 vim_fnamecmp(x, y)
     char_u      *x, *y;
 {
-#if defined(BACKSLASH_IN_FILENAME)
-    return vim_fnamencmp(x, y, MAXPATHL);
-#else
+#if (1)
     if (p_fic)
         return MB_STRICMP(x, y);
     return STRCMP(x, y);
@@ -4719,29 +4521,7 @@ vim_fnamencmp(x, y, len)
     char_u      *x, *y;
     size_t      len;
 {
-#if defined(BACKSLASH_IN_FILENAME)
-    char_u      *px = x;
-    char_u      *py = y;
-    int         cx = NUL;
-    int         cy = NUL;
-
-    while (len > 0)
-    {
-        cx = PTR2CHAR(px);
-        cy = PTR2CHAR(py);
-        if (cx == NUL || cy == NUL
-            || ((p_fic ? MB_TOLOWER(cx) != MB_TOLOWER(cy) : cx != cy)
-                && !(cx == '/' && cy == '\\')
-                && !(cx == '\\' && cy == '/')))
-            break;
-        len -= MB_PTR2LEN(px);
-        px += MB_PTR2LEN(px);
-        py += MB_PTR2LEN(py);
-    }
-    if (len == 0)
-        return 0;
-    return (cx - cy);
-#else
+#if (1)
     if (p_fic)
         return MB_STRNICMP(x, y, len);
     return STRNCMP(x, y, len);
@@ -9418,17 +9198,6 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
                     if ((flags & EW_ALLLINKS) ? mch_lstat((char *)buf, &sb) >= 0
                                                       : mch_getperm(buf) >= 0)
                     {
-#if defined(MACOS_CONVERT)
-                        size_t precomp_len = STRLEN(buf)+1;
-                        char_u *precomp_buf =
-                            mac_precompose_path(buf, precomp_len, &precomp_len);
-
-                        if (precomp_buf)
-                        {
-                            mch_memmove(buf, precomp_buf, precomp_len);
-                            vim_free(precomp_buf);
-                        }
-#endif
                         addfile(gap, buf, flags);
                     }
                 }
@@ -10171,9 +9940,6 @@ addfile(gap, f, flags)
         return;
 
     STRCPY(p, f);
-#if defined(BACKSLASH_IN_FILENAME)
-    slash_adjust(p);
-#endif
     /*
      * Append a slash or backslash after directory names if none is present.
      */

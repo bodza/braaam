@@ -1420,7 +1420,7 @@ skipdigits(q)
     return p;
 }
 
-#if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
+#if defined(FEAT_SYN_HL)
 /*
  * skip over digits and hex characters
  */
@@ -1827,17 +1827,7 @@ hexhex2nr(p)
 rem_backslash(str)
     char_u  *str;
 {
-#if defined(BACKSLASH_IN_FILENAME)
-    return (str[0] == '\\'
-            && str[1] < 0x80
-            && (str[1] == ' '
-                || (str[1] != NUL
-                    && str[1] != '*'
-                    && str[1] != '?'
-                    && !vim_isfilec(str[1]))));
-#else
     return (str[0] == '\\' && str[1] != NUL);
-#endif
 }
 
 /*

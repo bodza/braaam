@@ -144,9 +144,7 @@
 /* mch_open_rw(): invoke mch_open() with third argument for user R/W. */
 #define mch_open_rw(n, f)      mch_open((n), (f), (mode_t)0600)
 
-#if defined(STARTUPTIME)
-#define TIME_MSG(s) { if (time_fd != NULL) time_msg(s, NULL); }
-#else
+#if (1)
 #define TIME_MSG(s)
 #endif
 

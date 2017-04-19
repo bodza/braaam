@@ -6992,12 +6992,6 @@ cstrchr(s, c)
  *                    regsub stuff                             *
  ***************************************************************/
 
-/* This stuff below really confuses cc on an SGI -- webb */
-#if defined(__sgi)
-#undef __ARGS
-#define __ARGS(x)  ()
-#endif
-
 /*
  * We should define ftpr as a pointer to a function returning a pointer to
  * a function returning a pointer to a function ...

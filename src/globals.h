@@ -202,9 +202,6 @@ EXTERN int      ex_nesting_level INIT(= 0);     /* nesting level */
 EXTERN int      debug_break_level INIT(= -1);   /* break below this level */
 EXTERN int      debug_did_msg INIT(= FALSE);    /* did "debug mode" message */
 EXTERN int      debug_tick INIT(= 0);           /* breakpoint change count */
-#if defined(FEAT_PROFILE)
-EXTERN int      do_profiling INIT(= PROF_NONE); /* PROF_ values */
-#endif
 
 /*
  * The exception currently being thrown.  Used to pass an exception to
@@ -362,13 +359,6 @@ EXTERN int      mouse_past_bottom INIT(= FALSE);/* mouse below last line */
 EXTERN int      mouse_past_eol INIT(= FALSE);   /* mouse right of line */
 EXTERN int      mouse_dragging INIT(= 0);       /* extending Visual area with
                                                    mouse dragging */
-#if defined(FEAT_MOUSE_DEC)
-/*
- * When the DEC mouse has been pressed but not yet released we enable
- * automatic querys for the mouse position.
- */
-EXTERN int      WantQueryMouse INIT(= FALSE);
-#endif
 
 #if defined(FEAT_MOUSESHAPE)
 EXTERN int      drag_status_line INIT(= FALSE); /* dragging the status line */
@@ -379,13 +369,6 @@ EXTERN int      drag_sep_line INIT(= FALSE);    /* dragging vert separator */
 #endif
 #endif
 
-#endif
-
-#if defined(FEAT_DIFF)
-/* Value set from 'diffopt'. */
-EXTERN int      diff_context INIT(= 6);         /* context for folds */
-EXTERN int      diff_foldcolumn INIT(= 2);      /* 'foldcolumn' for diff mode */
-EXTERN int      diff_need_scrollbind INIT(= FALSE);
 #endif
 
 #if defined(FEAT_MENU)
@@ -693,12 +676,6 @@ EXTERN int      enc_dbcs INIT(= 0);             /* One of DBCS_xxx values if
 EXTERN int      enc_unicode INIT(= 0);  /* 2: UCS-2 or UTF-16, 4: UCS-4 */
 EXTERN int      enc_utf8 INIT(= FALSE);         /* UTF-8 encoded Unicode */
 EXTERN int      enc_latin1like INIT(= TRUE);    /* 'encoding' is latin1 comp. */
-#if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
-/* Codepage nr of 'encoding'.  Negative means it's not been set yet, zero
- * means 'encoding' is not a valid codepage. */
-EXTERN int      enc_codepage INIT(= -1);
-EXTERN int      enc_latin9 INIT(= FALSE);       /* 'encoding' is latin9 */
-#endif
 EXTERN int      has_mbyte INIT(= 0);            /* any multi-byte encoding */
 
 /*
@@ -990,12 +967,12 @@ EXTERN int      lcs_trail INIT(= NUL);
 EXTERN int      lcs_conceal INIT(= ' ');
 #endif
 
-#if defined(FEAT_WINDOWS) || defined(FEAT_WILDMENU) || defined(FEAT_STL_OPT) || defined(FEAT_FOLDING)
+#if defined(FEAT_WINDOWS) || defined(FEAT_WILDMENU) || defined(FEAT_STL_OPT)
 /* Characters from 'fillchars' option */
 EXTERN int      fill_stl INIT(= ' ');
 EXTERN int      fill_stlnc INIT(= ' ');
 #endif
-#if defined(FEAT_WINDOWS) || defined(FEAT_FOLDING)
+#if defined(FEAT_WINDOWS)
 EXTERN int      fill_vert INIT(= ' ');
 EXTERN int      fill_fold INIT(= '-');
 EXTERN int      fill_diff INIT(= '-');
@@ -1098,36 +1075,15 @@ EXTERN option_table_T printer_opts[OPT_PRINT_NUM_OPTIONS]
 EXTERN linenr_T printer_page_num;
 #endif
 
-#if defined(FEAT_XCLIPBOARD)
-EXTERN char     *xterm_display INIT(= NULL);    /* xterm display name; points
-                                                   into argv[] */
-EXTERN Display  *xterm_dpy INIT(= NULL);        /* xterm display pointer */
-#endif
-#if defined(FEAT_XCLIPBOARD)
-EXTERN XtAppContext app_context INIT(= (XtAppContext)NULL);
-#endif
-
 EXTERN int      typebuf_was_filled INIT(= FALSE); /* received text from client
                                                      or from feedkeys() */
 
 #if defined(FEAT_CLIENTSERVER)
 EXTERN char_u   *serverName INIT(= NULL);       /* name of the server */
-#if (1)
 EXTERN HWND     clientWindow INIT(= 0);
-#endif
 #endif
 
 EXTERN int      term_is_xterm INIT(= FALSE);    /* xterm-like 'term' */
-
-#if defined(BACKSLASH_IN_FILENAME)
-EXTERN char     psepc INIT(= '\\');     /* normal path separator character */
-EXTERN char     psepcN INIT(= '/');     /* abnormal path separator character */
-EXTERN char     pseps[2]                /* normal path separator string */
-#if defined(DO_INIT)
-                        = {'\\', 0}
-#endif
-                        ;
-#endif
 
 #if defined(FEAT_VIRTUALEDIT)
 /* Set to TRUE when an operator is being executed with virtual editing, MAYBE
@@ -1138,12 +1094,6 @@ EXTERN int      virtual_op INIT(= MAYBE);
 #if defined(FEAT_SYN_HL)
 /* Display tick, incremented for each call to update_screen() */
 EXTERN disptick_T       display_tick INIT(= 0);
-#endif
-
-#if defined(FEAT_SPELL)
-/* Line in which spell checking wasn't highlighted because it touched the
- * cursor position in Insert mode. */
-EXTERN linenr_T         spell_redraw_lnum INIT(= 0);
 #endif
 
 #if defined(FEAT_CONCEAL)
@@ -1199,7 +1149,7 @@ EXTERN char_u e_isadir2[]       INIT(= N_("E17: \"%s\" is a directory"));
 #if defined(FEAT_LIBCALL)
 EXTERN char_u e_libcall[]       INIT(= N_("E364: Library call failed for \"%s()\""));
 #endif
-#if defined(DYNAMIC_ICONV) || defined(DYNAMIC_GETTEXT)
+#if defined(DYNAMIC_ICONV)
 EXTERN char_u e_loadlib[]       INIT(= N_("E370: Could not load library %s"));
 EXTERN char_u e_loadfunc[]      INIT(= N_("E448: Could not load library function %s"));
 #endif
@@ -1318,16 +1268,8 @@ EXTERN char_u e_invalidreg[]    INIT(= N_("E850: Invalid register name"));
 EXTERN char top_bot_msg[] INIT(= N_("search hit TOP, continuing at BOTTOM"));
 EXTERN char bot_top_msg[] INIT(= N_("search hit BOTTOM, continuing at TOP"));
 
-#if defined(FEAT_CRYPT)
-EXTERN char need_key_msg[] INIT(= N_("Need encryption key for \"%s\""));
-#endif
-
 /* For undo we need to know the lowest time possible. */
 EXTERN time_t starttime;
-
-#if defined(STARTUPTIME)
-EXTERN FILE *time_fd INIT(= NULL);  /* where to write startup timing */
-#endif
 
 /*
  * Some compilers warn for not using a return value, but in some situations we

@@ -72,10 +72,6 @@
 
 #define WINBYTE BYTE
 
-#if defined(X_LOCALE)
-#include <X11/Xlocale.h>
-#endif
-
 #if defined(HAVE_WCHAR_H)
 #include <wchar.h>
 #endif
@@ -506,11 +502,6 @@ mb_init()
     enc_dbcs = enc_dbcs_new;
     has_mbyte = (enc_dbcs != 0 || enc_utf8);
 
-#if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
-    enc_codepage = encname2codepage(p_enc);
-    enc_latin9 = (STRCMP(p_enc, "iso-8859-15") == 0);
-#endif
-
     /* Detect an encoding that uses latin1 characters. */
     enc_latin1like = (enc_utf8 || STRCMP(p_enc, "latin1") == 0
                                         || STRCMP(p_enc, "iso-8859-15") == 0);
@@ -590,11 +581,6 @@ mb_init()
 #if (1)
 #if (1)
             char buf[MB_MAXBYTES + 1];
-#if defined(X_LOCALE)
-#if !defined(mblen)
-#define mblen _Xmblen
-#endif
-#endif
             if (i == NUL)       /* just in case mblen() can't handle "" */
                 n = 1;
             else
@@ -655,22 +641,10 @@ mb_init()
         set_string_option_direct((char_u *)"fencs", -1,
                        (char_u *)"ucs-bom,utf-8,default,latin1", OPT_FREE, 0);
 
-#if defined(HAVE_BIND_TEXTDOMAIN_CODESET) && defined(FEAT_GETTEXT)
-    /* GNU gettext 0.10.37 supports this feature: set the codeset used for
-     * translated messages independently from the current locale. */
-    (void)bind_textdomain_codeset(VIMPACKAGE,
-                                          enc_utf8 ? "utf-8" : (char *)p_enc);
-#endif
-
 #if defined(FEAT_AUTOCMD)
     /* Fire an autocommand to let people do custom font setup. This must be
      * after Vim has been setup for the new encoding. */
     apply_autocmds(EVENT_ENCODINGCHANGED, NULL, (char_u *)"", FALSE, curbuf);
-#endif
-
-#if defined(FEAT_SPELL)
-    /* Need to reload spell dictionaries */
-    spell_reload();
 #endif
 
     return NULL;
@@ -3552,25 +3526,6 @@ mb_charlen(str)
     return count;
 }
 
-#if defined(FEAT_SPELL)
-/*
- * Like mb_charlen() but for a string with specified length.
- */
-    int
-mb_charlen_len(str, len)
-    char_u      *str;
-    int         len;
-{
-    char_u      *p = str;
-    int         count;
-
-    for (count = 0; *p != NUL && p < str + len; count++)
-        p += (*mb_ptr2len)(p);
-
-    return count;
-}
-#endif
-
 /*
  * Try to un-escape a multi-byte character.
  * Used for the "to" and "from" part of a mapping.
@@ -3796,7 +3751,7 @@ enc_locale()
 #if defined(HAVE_NL_LANGINFO_CODESET)
     if ((s = nl_langinfo(CODESET)) == NULL || *s == NUL)
 #endif
-#if defined(HAVE_LOCALE_H) || defined(X_LOCALE)
+#if defined(HAVE_LOCALE_H)
         if ((s = setlocale(LC_CTYPE, NULL)) == NULL || *s == NUL)
 #endif
             if ((s = getenv("LC_ALL")) == NULL || *s == NUL)
@@ -3842,36 +3797,6 @@ enc_locale()
 
     return enc_canonize((char_u *)buf);
 }
-
-#if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
-/*
- * Convert an encoding name to an MS-Windows codepage.
- * Returns zero if no codepage can be figured out.
- */
-    int
-encname2codepage(name)
-    char_u      *name;
-{
-    int         cp;
-    char_u      *p = name;
-    int         idx;
-
-    if (STRNCMP(p, "8bit-", 5) == 0)
-        p += 5;
-    else if (STRNCMP(p_enc, "2byte-", 6) == 0)
-        p += 6;
-
-    if (p[0] == 'c' && p[1] == 'p')
-        cp = atoi((char *)p + 2);
-    else if ((idx = enc_canon_search(p)) >= 0)
-        cp = enc_canon_table[idx].codepage;
-    else
-        return 0;
-    if (IsValidCodePage(cp))
-        return cp;
-    return 0;
-}
-#endif
 
 #if defined(USE_ICONV)
 
@@ -4478,28 +4403,6 @@ string_convert_ext(vcp, ptr, lenp, unconvlenp)
             if (lenp != NULL)
                 *lenp = (int)(d - retval);
             break;
-
-#if defined(MACOS_CONVERT)
-        case CONV_MAC_LATIN1:
-            retval = mac_string_convert(ptr, len, lenp, vcp->vc_fail,
-                                        'm', 'l', unconvlenp);
-            break;
-
-        case CONV_LATIN1_MAC:
-            retval = mac_string_convert(ptr, len, lenp, vcp->vc_fail,
-                                        'l', 'm', unconvlenp);
-            break;
-
-        case CONV_MAC_UTF8:
-            retval = mac_string_convert(ptr, len, lenp, vcp->vc_fail,
-                                        'm', 'u', unconvlenp);
-            break;
-
-        case CONV_UTF8_MAC:
-            retval = mac_string_convert(ptr, len, lenp, vcp->vc_fail,
-                                        'u', 'm', unconvlenp);
-            break;
-#endif
 
 #if defined(USE_ICONV)
         case CONV_ICONV:        /* conversion with output_conv.vc_fd */

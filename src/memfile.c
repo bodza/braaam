@@ -102,7 +102,7 @@ mf_open(fname, flags)
 {
     memfile_T           *mfp;
     off_t               size;
-#if defined(STATFS) && !defined(__minix)
+#if defined(STATFS)
 #define USE_FSTATFS
     struct STATFS       stf;
 #endif
@@ -136,9 +136,6 @@ mf_open(fname, flags)
     mf_hash_init(&mfp->mf_hash);
     mf_hash_init(&mfp->mf_trans);
     mfp->mf_page_size = MEMFILE_PAGE_SIZE;
-#if defined(FEAT_CRYPT)
-    mfp->mf_old_key = NULL;
-#endif
 
 #if defined(USE_FSTATFS)
     /*
@@ -503,17 +500,6 @@ mf_free(mfp, hp)
         mf_ins_free(mfp, hp);   /* put *hp in the free list */
 }
 
-#if defined(__MORPHOS__) && defined(__libnix__)
-/* function is missing in MorphOS libnix version */
-extern unsigned long *__stdfiledes;
-
-    static unsigned long
-fdtofh(int filedescriptor)
-{
-    return __stdfiledes[filedescriptor];
-}
-#endif
-
 /*
  * Sync the memory file *mfp to disk.
  * Flags:
@@ -608,14 +594,7 @@ mf_sync(mfp, flags)
         }
         else
 #endif
-            /* OpenNT is strictly POSIX (Benzinger) */
-            /* Tandem/Himalaya NSK-OSS doesn't have sync() */
-            /* No sync() on Stratus VOS */
-#if defined(__VOS__)
-            fflush(NULL);
-#else
             sync();
-#endif
 #if defined(SYNC_DUP_CLOSE)
         /*
          * Win32 is a bit more work: Duplicate the file handle and close it.
@@ -944,12 +923,6 @@ mf_read(mfp, hp)
         return FAIL;
     }
 
-#if defined(FEAT_CRYPT)
-    /* Decrypt if 'key' is set and this is a data block. */
-    if (*mfp->mf_buffer->b_p_key != NUL)
-        ml_decrypt_data(mfp, hp->bh_data, offset, size);
-#endif
-
     return OK;
 }
 
@@ -1047,23 +1020,8 @@ mf_write_block(mfp, hp, offset, size)
     char_u      *data = hp->bh_data;
     int         result = OK;
 
-#if defined(FEAT_CRYPT)
-    /* Encrypt if 'key' is set and this is a data block. */
-    if (*mfp->mf_buffer->b_p_key != NUL)
-    {
-        data = ml_encrypt_data(mfp, data, offset, size);
-        if (data == NULL)
-            return FAIL;
-    }
-#endif
-
     if ((unsigned)write_eintr(mfp->mf_fd, data, size) != size)
         result = FAIL;
-
-#if defined(FEAT_CRYPT)
-    if (data != hp->bh_data)
-        vim_free(data);
-#endif
 
     return result;
 }
@@ -1260,9 +1218,6 @@ mf_do_open(mfp, fname, flags)
         int fdflags = fcntl(mfp->mf_fd, F_GETFD);
         if (fdflags >= 0 && (fdflags & FD_CLOEXEC) == 0)
             fcntl(mfp->mf_fd, F_SETFD, fdflags | FD_CLOEXEC);
-#endif
-#if defined(HAVE_SELINUX) || defined(HAVE_SMACK)
-        mch_copy_sec(fname, mfp->mf_fname);
 #endif
         mch_hide(mfp->mf_fname);    /* try setting the 'hidden' flag */
     }

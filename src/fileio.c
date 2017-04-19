@@ -20,12 +20,6 @@ static int is_dev_fd_file(char_u *fname);
 #endif
 static char_u *next_fenc __ARGS((char_u **pp));
 static char_u *readfile_charconvert __ARGS((char_u *fname, char_u *fenc, int *fdp));
-#if defined(FEAT_VIMINFO)
-static void check_marks_read __ARGS((void));
-#endif
-#if defined(FEAT_CRYPT)
-static char_u *check_for_cryptkey __ARGS((char_u *cryptkey, char_u *ptr, long *sizep, off_t *filesizep, int newfile, char_u *fname, int *did_ask));
-#endif
 static void set_file_time __ARGS((char_u *fname, time_t atime, time_t mtime));
 static int set_rw_fname __ARGS((char_u *fname, char_u *sfname));
 static int msg_add_fileformat __ARGS((int eol_type));
@@ -71,9 +65,6 @@ struct bw_info
     int         bw_len;         /* length of data */
 #if defined(HAS_BW_FLAGS)
     int         bw_flags;       /* FIO_ flags */
-#endif
-#if defined(FEAT_CRYPT)
-    buf_T       *bw_buffer;     /* buffer being written */
 #endif
     char_u      bw_rest[CONV_RESTLEN]; /* not converted bytes */
     int         bw_restlen;     /* nr of bytes in bw_rest[] */
@@ -196,10 +187,6 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     char_u      *p;
     off_t       filesize = 0;
     int         skip_read = FALSE;
-#if defined(FEAT_CRYPT)
-    char_u      *cryptkey = NULL;
-    int         did_ask_for_key = FALSE;
-#endif
 #if defined(FEAT_PERSISTENT_UNDO)
     context_sha256_T sha_ctx;
     int         read_undo_file = FALSE;
@@ -511,11 +498,6 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
                     else
                         filemess(curbuf, sfname,
                                            (char_u *)_("[New DIRECTORY]"), 0);
-#if defined(FEAT_VIMINFO)
-                    /* Even though this is a new file, it might have been
-                     * edited before and deleted.  Get the old marks. */
-                    check_marks_read();
-#endif
                     /* Set forced 'fileencoding'.  */
                     if (eap != NULL)
                         set_forced_fenc(eap);
@@ -1011,15 +993,6 @@ retry:
         if (read_undo_file)
             sha256_start(&sha_ctx);
 #endif
-#if defined(FEAT_CRYPT)
-        if (curbuf->b_cryptstate != NULL)
-        {
-            /* Need to free the state, but keep the key, don't want to ask for
-             * it again. */
-            crypt_free_state(curbuf->b_cryptstate);
-            curbuf->b_cryptstate = NULL;
-        }
-#endif
     }
 
     while (!error && !got_int)
@@ -1159,76 +1132,6 @@ retry:
                     size = read_eintr(fd, ptr, size);
                 }
 
-#if defined(FEAT_CRYPT)
-                /*
-                 * At start of file: Check for magic number of encryption.
-                 */
-                if (filesize == 0 && size > 0)
-                    cryptkey = check_for_cryptkey(cryptkey, ptr, &size,
-                                                  &filesize, newfile, sfname,
-                                                  &did_ask_for_key);
-                /*
-                 * Decrypt the read bytes.  This is done before checking for
-                 * EOF because the crypt layer may be buffering.
-                 */
-                if (cryptkey != NULL && size > 0)
-                {
-                    if (crypt_works_inplace(curbuf->b_cryptstate))
-                    {
-                        crypt_decode_inplace(curbuf->b_cryptstate, ptr, size);
-                    }
-                    else
-                    {
-                        char_u  *newptr = NULL;
-                        int     decrypted_size;
-
-                        decrypted_size = crypt_decode_alloc(
-                                    curbuf->b_cryptstate, ptr, size, &newptr);
-
-                        /* If the crypt layer is buffering, not producing
-                         * anything yet, need to read more. */
-                        if (size > 0 && decrypted_size == 0)
-                            continue;
-
-                        if (linerest == 0)
-                        {
-                            /* Simple case: reuse returned buffer (may be
-                             * NULL, checked later). */
-                            new_buffer = newptr;
-                        }
-                        else
-                        {
-                            long_u      new_size;
-
-                            /* Need new buffer to add bytes carried over. */
-                            new_size = (long_u)(decrypted_size + linerest + 1);
-                            new_buffer = lalloc(new_size, FALSE);
-                            if (new_buffer == NULL)
-                            {
-                                do_outofmem_msg(new_size);
-                                error = TRUE;
-                                break;
-                            }
-
-                            mch_memmove(new_buffer, buffer, linerest);
-                            if (newptr != NULL)
-                                mch_memmove(new_buffer + linerest, newptr,
-                                                              decrypted_size);
-                        }
-
-                        if (new_buffer != NULL)
-                        {
-                            vim_free(buffer);
-                            buffer = new_buffer;
-                            new_buffer = NULL;
-                            line_start = buffer;
-                            ptr = buffer + linerest;
-                        }
-                        size = decrypted_size;
-                    }
-                }
-#endif
-
                 if (size <= 0)
                 {
                     if (size < 0)                   /* read error */
@@ -1301,11 +1204,6 @@ retry:
              * found.
              */
             if ((filesize == 0
-#if defined(FEAT_CRYPT)
-                   || (cryptkey != NULL
-                        && filesize == crypt_get_header_len(
-                                                 crypt_get_method_nr(curbuf)))
-#endif
                        )
                     && (fio_flags == FIO_UCSBOM
                         || (!curbuf->b_p_bomb
@@ -1429,18 +1327,6 @@ retry:
             }
 #endif
 
-#if defined(MACOS_CONVERT)
-            if (fio_flags & FIO_MACROMAN)
-            {
-                /*
-                 * Conversion from Apple MacRoman char encoding to UTF-8 or
-                 * latin1.  This is in os_mac_conv.c.
-                 */
-                if (macroman2enc(ptr, &size, real_size) == FAIL)
-                    goto rewind_retry;
-            }
-            else
-#endif
             if (fio_flags != 0)
             {
                 int     u8c;
@@ -1970,18 +1856,6 @@ failed:
     if (set_options)
         save_file_ff(curbuf);           /* remember the current file format */
 
-#if defined(FEAT_CRYPT)
-    if (curbuf->b_cryptstate != NULL)
-    {
-        crypt_free_state(curbuf->b_cryptstate);
-        curbuf->b_cryptstate = NULL;
-    }
-    if (cryptkey != NULL && cryptkey != curbuf->b_p_key)
-        crypt_free_key(cryptkey);
-    /* Don't set cryptkey to NULL, it's used below as a flag that
-     * encryption was used. */
-#endif
-
     /* If editing a new file: set 'fenc' for the current buffer.
      * Also for ":read ++edit file". */
     if (set_options)
@@ -2041,16 +1915,6 @@ failed:
         if (newfile || read_buffer)
         {
             redraw_curbuf_later(NOT_VALID);
-#if defined(FEAT_DIFF)
-            /* After reading the text into the buffer the diff info needs to
-             * be updated. */
-            diff_invalidate(curbuf);
-#endif
-#if defined(FEAT_FOLDING)
-            /* All folds in the window are invalid now.  Mark them for update
-             * before triggering autocommands. */
-            foldUpdateAll(curwin);
-#endif
         }
         else if (linecnt)               /* appended at least one line */
             appended_lines_mark(from, linecnt);
@@ -2078,9 +1942,6 @@ failed:
                     curbuf->b_p_ro = TRUE;      /* must use "w!" now */
             }
             msg_scroll = msg_save;
-#if defined(FEAT_VIMINFO)
-            check_marks_read();
-#endif
             return OK;          /* an interrupt isn't really an error */
         }
 
@@ -2148,13 +2009,6 @@ failed:
                 STRCAT(IObuff, _("[converted]"));
                 c = TRUE;
             }
-#if defined(FEAT_CRYPT)
-            if (cryptkey != NULL)
-            {
-                crypt_append_msg(curbuf);
-                c = TRUE;
-            }
-#endif
             if (conv_error != 0)
             {
                 sprintf((char *)IObuff + STRLEN(IObuff),
@@ -2175,12 +2029,6 @@ failed:
             }
             if (msg_add_fileformat(fileformat))
                 c = TRUE;
-#if defined(FEAT_CRYPT)
-            if (cryptkey != NULL)
-                msg_add_lines(c, (long)linecnt, filesize
-                         - crypt_get_header_len(crypt_get_method_nr(curbuf)));
-            else
-#endif
                 msg_add_lines(c, (long)linecnt, filesize);
 
             vim_free(keep_msg);
@@ -2235,13 +2083,6 @@ failed:
         curbuf->b_op_end.col = 0;
     }
     msg_scroll = msg_save;
-
-#if defined(FEAT_VIMINFO)
-    /*
-     * Get the marks before executing autocommands, so they can be used there.
-     */
-    check_marks_read();
-#endif
 
     /*
      * Trick: We remember if the last line of the read didn't have
@@ -2513,105 +2354,6 @@ readfile_charconvert(fname, fenc, fdp)
     return tmpname;
 }
 
-#if defined(FEAT_VIMINFO)
-/*
- * Read marks for the current buffer from the viminfo file, when we support
- * buffer marks and the buffer has a name.
- */
-    static void
-check_marks_read()
-{
-    if (!curbuf->b_marks_read && get_viminfo_parameter('\'') > 0
-                                                  && curbuf->b_ffname != NULL)
-        read_viminfo(NULL, VIF_WANT_MARKS);
-
-    /* Always set b_marks_read; needed when 'viminfo' is changed to include
-     * the ' parameter after opening a buffer. */
-    curbuf->b_marks_read = TRUE;
-}
-#endif
-
-#if defined(FEAT_CRYPT)
-/*
- * Check for magic number used for encryption.  Applies to the current buffer.
- * If found, the magic number is removed from ptr[*sizep] and *sizep and
- * *filesizep are updated.
- * Return the (new) encryption key, NULL for no encryption.
- */
-    static char_u *
-check_for_cryptkey(cryptkey, ptr, sizep, filesizep, newfile, fname, did_ask)
-    char_u      *cryptkey;      /* previous encryption key or NULL */
-    char_u      *ptr;           /* pointer to read bytes */
-    long        *sizep;         /* length of read bytes */
-    off_t       *filesizep;     /* nr of bytes used from file */
-    int         newfile;        /* editing a new buffer */
-    char_u      *fname;         /* file name to display */
-    int         *did_ask;       /* flag: whether already asked for key */
-{
-    int method = crypt_method_nr_from_magic((char *)ptr, *sizep);
-    int b_p_ro = curbuf->b_p_ro;
-
-    if (method >= 0)
-    {
-        /* Mark the buffer as read-only until the decryption has taken place.
-         * Avoids accidentally overwriting the file with garbage. */
-        curbuf->b_p_ro = TRUE;
-
-        /* Set the cryptmethod local to the buffer. */
-        crypt_set_cm_option(curbuf, method);
-        if (cryptkey == NULL && !*did_ask)
-        {
-            if (*curbuf->b_p_key)
-                cryptkey = curbuf->b_p_key;
-            else
-            {
-                /* When newfile is TRUE, store the typed key in the 'key'
-                 * option and don't free it.  bf needs hash of the key saved.
-                 * Don't ask for the key again when first time Enter was hit.
-                 * Happens when retrying to detect encoding. */
-                smsg((char_u *)_(need_key_msg), fname);
-                msg_scroll = TRUE;
-                crypt_check_method(method);
-                cryptkey = crypt_get_key(newfile, FALSE);
-                *did_ask = TRUE;
-
-                /* check if empty key entered */
-                if (cryptkey != NULL && *cryptkey == NUL)
-                {
-                    if (cryptkey != curbuf->b_p_key)
-                        vim_free(cryptkey);
-                    cryptkey = NULL;
-                }
-            }
-        }
-
-        if (cryptkey != NULL)
-        {
-            int header_len;
-
-            curbuf->b_cryptstate = crypt_create_from_header(
-                                                       method, cryptkey, ptr);
-            crypt_set_cm_option(curbuf, method);
-
-            /* Remove cryptmethod specific header from the text. */
-            header_len = crypt_get_header_len(method);
-            *filesizep += header_len;
-            *sizep -= header_len;
-            mch_memmove(ptr, ptr + header_len, (size_t)*sizep);
-
-            /* Restore the read-only flag. */
-            curbuf->b_p_ro = b_p_ro;
-        }
-    }
-    /* When starting to edit a new file which does not have encryption, clear
-     * the 'key' option, except when starting up (called with -x argument) */
-    else if (newfile && *curbuf->b_p_key != NUL && !starting)
-        set_option_value((char_u *)"key", 0L, (char_u *)"", OPT_LOCAL);
-
-    return cryptkey;
-}
-#endif
-
     static void
 set_file_time(fname, atime, mtime)
     char_u  *fname;
@@ -2632,11 +2374,7 @@ set_file_time(fname, atime, mtime)
     tvp[0].tv_usec  = 0;
     tvp[1].tv_sec   = mtime;
     tvp[1].tv_usec  = 0;
-#if defined(NeXT)
-    (void)utimes((char *)fname, tvp);
-#else
     (void)utimes((char *)fname, (const struct timeval *)&tvp);
-#endif
 #endif
 #endif
 }
@@ -2741,10 +2479,6 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
 #if defined(HAS_BW_FLAGS)
     int             wb_flags = 0;
 #endif
-#if defined(HAVE_ACL)
-    vim_acl_T       acl = NULL;         /* ACL copied from original file to
-                                           backup or new file */
-#endif
 #if defined(FEAT_PERSISTENT_UNDO)
     int             write_undo_file = FALSE;
     context_sha256_T sha_ctx;
@@ -2782,9 +2516,6 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
     write_info.bw_restlen = 0;
 #if defined(USE_ICONV)
     write_info.bw_iconv_fd = (iconv_t)-1;
-#endif
-#if defined(FEAT_CRYPT)
-    write_info.bw_buffer = buf;
 #endif
 
     /* After writing a file changedtick changes but we don't want to display
@@ -3113,14 +2844,6 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
         }
     }
 
-#if defined(HAVE_ACL)
-    /*
-     * For systems that support ACL: get the ACL from the original file.
-     */
-    if (!newfile)
-        acl = mch_get_acl(fname);
-#endif
-
     /*
      * If 'backupskip' is not empty, don't make a backup for some files.
      */
@@ -3414,9 +3137,6 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
                                                 )
                             mch_setperm(backup,
                                           (perm & 0707) | ((perm & 07) << 3));
-#if defined(HAVE_SELINUX) || defined(HAVE_SMACK)
-                        mch_copy_sec(fname, backup);
-#endif
 
                         /*
                          * copy the file.
@@ -3447,12 +3167,6 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit,
                         if (write_info.bw_len < 0)
                             errmsg = (char_u *)_("E508: Can't read file for backup (add ! to override)");
                         set_file_time(backup, st_old.st_atime, st_old.st_mtime);
-#if defined(HAVE_ACL)
-                        mch_set_acl(backup, acl);
-#endif
-#if defined(HAVE_SELINUX) || defined(HAVE_SMACK)
-                        mch_copy_sec(fname, backup);
-#endif
                         break;
                     }
                 }
@@ -3802,31 +3516,6 @@ restore_backup:
 
     write_info.bw_fd = fd;
 
-#if defined(FEAT_CRYPT)
-    if (*buf->b_p_key != NUL && !filtering)
-    {
-        char_u          *header;
-        int             header_len;
-
-        buf->b_cryptstate = crypt_create_for_writing(crypt_get_method_nr(buf),
-                                          buf->b_p_key, &header, &header_len);
-        if (buf->b_cryptstate == NULL || header == NULL)
-            end = 0;
-        else
-        {
-            /* Write magic number, so that Vim knows how this file is
-             * encrypted when reading it back. */
-            write_info.bw_buf = header;
-            write_info.bw_len = header_len;
-            write_info.bw_flags = FIO_NOCONVERT;
-            if (buf_write_bytes(&write_info) == FAIL)
-                end = 0;
-            wb_flags |= FIO_ENCRYPTED;
-            vim_free(header);
-        }
-    }
-#endif
-
     write_info.bw_buf = buffer;
     nchars = 0;
 
@@ -3978,12 +3667,6 @@ restore_backup:
     }
 #endif
 
-#if defined(HAVE_SELINUX) || defined(HAVE_SMACK)
-    /* Probably need to set the security context. */
-    if (!backup_copy)
-        mch_copy_sec(backup, wfname);
-#endif
-
     /* When creating a new file, set its owner/group to that of the original
      * file.  Get the new device and inode number. */
     if (backup != NULL && !backup_copy)
@@ -4018,19 +3701,6 @@ restore_backup:
         perm &= ~0200;          /* reset 'w' bit for security reasons */
     if (perm >= 0)              /* set perm. of new file same as old file */
         (void)mch_setperm(wfname, perm);
-#if defined(HAVE_ACL)
-    /* Probably need to set the ACL before changing the user (can't set the
-     * ACL on a file the user doesn't own). */
-    if (!backup_copy)
-        mch_set_acl(wfname, acl);
-#endif
-#if defined(FEAT_CRYPT)
-    if (buf->b_cryptstate != NULL)
-    {
-        crypt_free_state(buf->b_cryptstate);
-        buf->b_cryptstate = NULL;
-    }
-#endif
 
     if (wfname != fname)
     {
@@ -4169,13 +3839,6 @@ restore_backup:
         /* may add [unix/dos/mac] */
         if (msg_add_fileformat(fileformat))
             c = TRUE;
-#if defined(FEAT_CRYPT)
-        if (wb_flags & FIO_ENCRYPTED)
-        {
-            crypt_append_msg(buf);
-            c = TRUE;
-        }
-#endif
         msg_add_lines(c, (long)lnum, nchars);   /* add line/char count */
         if (!shortmess(SHM_WRITE))
         {
@@ -4304,9 +3967,6 @@ nofail:
         iconv_close(write_info.bw_iconv_fd);
         write_info.bw_iconv_fd = (iconv_t)-1;
     }
-#endif
-#if defined(HAVE_ACL)
-    mch_free_acl(acl);
 #endif
 
     if (errmsg != NULL)
@@ -4717,42 +4377,6 @@ buf_write_bytes(ip)
             }
         }
 
-#if defined(MACOS_CONVERT)
-        else if (flags & FIO_MACROMAN)
-        {
-            /*
-             * Convert UTF-8 or latin1 to Apple MacRoman.
-             */
-            char_u      *from;
-            size_t      fromlen;
-
-            if (ip->bw_restlen > 0)
-            {
-                /* Need to concatenate the remainder of the previous call and
-                 * the bytes of the current call.  Use the end of the
-                 * conversion buffer for this. */
-                fromlen = len + ip->bw_restlen;
-                from = ip->bw_conv_buf + ip->bw_conv_buflen - fromlen;
-                mch_memmove(from, ip->bw_rest, (size_t)ip->bw_restlen);
-                mch_memmove(from + ip->bw_restlen, buf, (size_t)len);
-            }
-            else
-            {
-                from = buf;
-                fromlen = len;
-            }
-
-            if (enc2macroman(from, fromlen,
-                        ip->bw_conv_buf, &len, ip->bw_conv_buflen,
-                        ip->bw_rest, &ip->bw_restlen) == FAIL)
-            {
-                ip->bw_conv_error = TRUE;
-                return FAIL;
-            }
-            buf = ip->bw_conv_buf;
-        }
-#endif
-
 #if defined(USE_ICONV)
         if (ip->bw_iconv_fd != (iconv_t)-1)
         {
@@ -4823,29 +4447,6 @@ buf_write_bytes(ip)
         }
 #endif
     }
-
-#if defined(FEAT_CRYPT)
-    if (flags & FIO_ENCRYPTED)
-    {
-        /* Encrypt the data. Do it in-place if possible, otherwise use an
-         * allocated buffer. */
-        if (crypt_works_inplace(ip->bw_buffer->b_cryptstate))
-        {
-            crypt_encode_inplace(ip->bw_buffer->b_cryptstate, buf, len);
-        }
-        else
-        {
-            char_u *outbuf;
-
-            len = crypt_encode_alloc(curbuf->b_cryptstate, buf, len, &outbuf);
-            if (len == 0)
-                return OK;  /* Crypt layer is buffering, will flush later. */
-            wlen = write_eintr(ip->bw_fd, outbuf, len);
-            vim_free(outbuf);
-            return (wlen < len) ? FAIL : OK;
-        }
-    }
-#endif
 
     wlen = write_eintr(ip->bw_fd, buf, len);
     return (wlen < len) ? FAIL : OK;
@@ -5101,7 +4702,7 @@ make_bom(buf, name)
     return (int)(p - buf);
 }
 
-#if defined(FEAT_VIMINFO) || defined(FEAT_BROWSE) || defined(FEAT_QUICKFIX) || defined(FEAT_AUTOCMD)
+#if defined(FEAT_QUICKFIX) || defined(FEAT_AUTOCMD)
 /*
  * Try to find a shortname by comparing the fullname with the current
  * directory.
@@ -5515,9 +5116,6 @@ vim_rename(from, to)
     char        *buffer;
     struct stat st;
     long        perm;
-#if defined(HAVE_ACL)
-    vim_acl_T   acl;            /* ACL from original file */
-#endif
     int         use_tmp_file = FALSE;
 
     /*
@@ -5602,16 +5200,9 @@ vim_rename(from, to)
      * Rename() failed, try copying the file.
      */
     perm = mch_getperm(from);
-#if defined(HAVE_ACL)
-    /* For systems that support ACL: get the ACL from the original file. */
-    acl = mch_get_acl(from);
-#endif
     fd_in = mch_open((char *)from, O_RDONLY|O_EXTRA, 0);
     if (fd_in == -1)
     {
-#if defined(HAVE_ACL)
-        mch_free_acl(acl);
-#endif
         return -1;
     }
 
@@ -5621,9 +5212,6 @@ vim_rename(from, to)
     if (fd_out == -1)
     {
         close(fd_in);
-#if defined(HAVE_ACL)
-        mch_free_acl(acl);
-#endif
         return -1;
     }
 
@@ -5632,9 +5220,6 @@ vim_rename(from, to)
     {
         close(fd_out);
         close(fd_in);
-#if defined(HAVE_ACL)
-        mch_free_acl(acl);
-#endif
         return -1;
     }
 
@@ -5654,13 +5239,6 @@ vim_rename(from, to)
         errmsg = _("E210: Error reading \"%s\"");
         to = from;
     }
-#if defined(HAVE_ACL)
-    mch_set_acl(to, acl);
-    mch_free_acl(acl);
-#endif
-#if defined(HAVE_SELINUX) || defined(HAVE_SMACK)
-    mch_copy_sec(from, to);
-#endif
     if (errmsg != NULL)
     {
         EMSG2(errmsg, to);
@@ -6180,11 +5758,6 @@ buf_reload(buf, orig_mode)
         if (savebuf != NULL && buf_valid(savebuf))
             wipe_buffer(savebuf, FALSE);
 
-#if defined(FEAT_DIFF)
-        /* Invalidate diff info if necessary. */
-        diff_invalidate(curbuf);
-#endif
-
         /* Restore the topline and cursor position and check it (lines may
          * have been removed). */
         if (old_topline > curbuf->b_ml.ml_line_count)
@@ -6196,18 +5769,6 @@ buf_reload(buf, orig_mode)
         update_topline();
 #if defined(FEAT_AUTOCMD)
         keep_filetype = FALSE;
-#endif
-#if defined(FEAT_FOLDING)
-        {
-            win_T       *wp;
-            tabpage_T   *tp;
-
-            /* Update folds unless they are defined manually. */
-            FOR_ALL_TAB_WINDOWS(tp, wp)
-                if (wp->w_buffer == curwin->w_buffer
-                        && !foldmethodIsManual(wp))
-                    foldUpdateAll(wp);
-        }
 #endif
         /* If the mode didn't change and 'readonly' was set, keep the old
          * value; the user probably used the ":view" command.  But don't
@@ -6466,26 +6027,6 @@ vim_tempname(extra_char, keep)
 #endif
 #endif
 }
-
-#if defined(BACKSLASH_IN_FILENAME)
-/*
- * Convert all backslashes in fname to forward slashes in-place.
- */
-    void
-forward_slash(fname)
-    char_u      *fname;
-{
-    char_u      *p;
-
-    for (p = fname; *p != NUL; ++p)
-        /* The Big5 encoding can have '\' in the trail byte. */
-        if (enc_dbcs != 0 && (*mb_ptr2len)(p) > 1)
-            ++p;
-        else
-        if (*p == '\\')
-            *p = '/';
-}
-#endif
 
 /*
  * Code for automatic commands.
@@ -7263,15 +6804,7 @@ do_autocmd(arg, forceit)
      * forward slashes here. */
     if (vim_strchr(pat, '$') != NULL || vim_strchr(pat, '~') != NULL)
     {
-#if defined(BACKSLASH_IN_FILENAME)
-        int     p_ssl_save = p_ssl;
-
-        p_ssl = TRUE;
-#endif
         envpat = expand_env_save(pat);
-#if defined(BACKSLASH_IN_FILENAME)
-        p_ssl = p_ssl_save;
-#endif
         if (envpat != NULL)
             pat = envpat;
     }
@@ -7902,9 +7435,6 @@ win_found:
         if (curwin->w_topline > curbuf->b_ml.ml_line_count)
         {
             curwin->w_topline = curbuf->b_ml.ml_line_count;
-#if defined(FEAT_DIFF)
-            curwin->w_topfill = 0;
-#endif
         }
     }
     else
@@ -7922,7 +7452,7 @@ win_found:
                     && buf_valid(aco->new_curbuf)
                     && aco->new_curbuf->b_ml.ml_mfp != NULL)
             {
-#if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
+#if defined(FEAT_SYN_HL)
                 if (curwin->w_s == &curbuf->b_s)
                     curwin->w_s = &aco->new_curbuf->b_s;
 #endif
@@ -8134,9 +7664,6 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     char_u      *save_cmdarg;
     long        save_cmdbang;
     static int  filechangeshell_busy = FALSE;
-#if defined(FEAT_PROFILE)
-    proftime_T  wait_time;
-#endif
     int         did_save_redobuff = FALSE;
 
     /*
@@ -8288,16 +7815,6 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
         goto BYPASS_AU;
     }
 
-#if defined(BACKSLASH_IN_FILENAME)
-    /*
-     * Replace all backslashes with forward slashes.  This makes the
-     * autocommand patterns portable between Unix and MS-DOS.
-     */
-    if (sfname != NULL)
-        forward_slash(sfname);
-    forward_slash(fname);
-#endif
-
     /*
      * Set the name to be used for <amatch>.
      */
@@ -8311,11 +7828,6 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     sourcing_lnum = 0;          /* no line number here */
 
     save_current_SID = current_SID;
-
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        prof_child_enter(&wait_time); /* doesn't count for the caller itself */
-#endif
 
     /* Don't use local function variables, if called from a function */
     save_funccalp = save_funccal();
@@ -8408,10 +7920,6 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     autocmd_match = save_autocmd_match;
     current_SID = save_current_SID;
     restore_funccal(save_funccalp);
-#if defined(FEAT_PROFILE)
-    if (do_profiling == PROF_YES)
-        prof_child_exit(&wait_time);
-#endif
     vim_free(fname);
     vim_free(sfname);
     --nesting;          /* see matching increment above */
@@ -8650,17 +8158,6 @@ has_autocmd(event, sfname, buf)
     if (fname == NULL)
         return FALSE;
 
-#if defined(BACKSLASH_IN_FILENAME)
-    /*
-     * Replace all backslashes with forward slashes.  This makes the
-     * autocommand patterns portable between Unix and MS-DOS.
-     */
-    sfname = vim_strsave(sfname);
-    if (sfname != NULL)
-        forward_slash(sfname);
-    forward_slash(fname);
-#endif
-
     for (ap = first_autopat[(int)event]; ap != NULL; ap = ap->next)
         if (ap->pat != NULL && ap->cmds != NULL
               && (ap->buflocal_nr == 0
@@ -8674,9 +8171,6 @@ has_autocmd(event, sfname, buf)
         }
 
     vim_free(fname);
-#if defined(BACKSLASH_IN_FILENAME)
-    vim_free(sfname);
-#endif
 
     return retval;
 }
@@ -9044,12 +8538,6 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
             case '~':
                 size += 2;      /* extra backslash */
                 break;
-#if defined(BACKSLASH_IN_FILENAME)
-            case '\\':
-            case '/':
-                size += 4;      /* could become "[\/]" */
-                break;
-#endif
             default:
                 size++;
                 if (enc_dbcs != 0 && (*mb_ptr2len)(p) > 1)
@@ -9099,28 +8587,6 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
             case '\\':
                 if (p[1] == NUL)
                     break;
-#if defined(BACKSLASH_IN_FILENAME)
-                if (!no_bslash)
-                {
-                    /* translate:
-                     * "\x" to "\\x"  e.g., "dir\file"
-                     * "\*" to "\\.*" e.g., "dir\*.c"
-                     * "\?" to "\\."  e.g., "dir\??.c"
-                     * "\+" to "\+"   e.g., "fileX\+.c"
-                     */
-                    if ((vim_isfilec(p[1]) || p[1] == '*' || p[1] == '?')
-                            && p[1] != '+')
-                    {
-                        reg_pat[i++] = '[';
-                        reg_pat[i++] = '\\';
-                        reg_pat[i++] = '/';
-                        reg_pat[i++] = ']';
-                        if (allow_dirs != NULL)
-                            *allow_dirs = TRUE;
-                        break;
-                    }
-                }
-#endif
                 /* Undo escaping from ExpandEscape():
                  * foo\?bar -> foo?bar
                  * foo\%bar -> foo%bar
@@ -9132,9 +8598,6 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                  * verymagic.  Use "\\\{n,m\}"" to get "\{n,m}".
                  */
                 if (*++p == '?'
-#if defined(BACKSLASH_IN_FILENAME)
-                        && no_bslash
-#endif
                         )
                     reg_pat[i++] = '?';
                 else
@@ -9150,25 +8613,12 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                     else
                     {
                         if (allow_dirs != NULL && vim_ispathsep(*p)
-#if defined(BACKSLASH_IN_FILENAME)
-                                && (!no_bslash || *p != '\\')
-#endif
                                 )
                             *allow_dirs = TRUE;
                         reg_pat[i++] = '\\';
                         reg_pat[i++] = *p;
                     }
                 break;
-#if defined(BACKSLASH_IN_FILENAME)
-            case '/':
-                reg_pat[i++] = '[';
-                reg_pat[i++] = '\\';
-                reg_pat[i++] = '/';
-                reg_pat[i++] = ']';
-                if (allow_dirs != NULL)
-                    *allow_dirs = TRUE;
-                break;
-#endif
             case '{':
                 reg_pat[i++] = '\\';
                 reg_pat[i++] = '(';

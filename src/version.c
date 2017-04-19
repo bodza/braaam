@@ -16,21 +16,13 @@ static void version_msg __ARGS((char *s));
 
 static char *(features[]) =
 {
-#if defined(HAVE_ACL)
-        "+acl",
-#else
         "-acl",
-#endif
 #if defined(FEAT_AUTOCMD)
         "+autocmd",
 #else
         "-autocmd",
 #endif
-#if defined(FEAT_BROWSE)
-        "+browse",
-#else
         "-browse",
-#endif
 #if defined(NO_BUILTIN_TCAPS)
         "-builtin_terms",
 #endif
@@ -85,16 +77,8 @@ static char *(features[]) =
 #else
         "-conceal",
 #endif
-#if defined(FEAT_CRYPT)
-        "+cryptv",
-#else
         "-cryptv",
-#endif
-#if defined(FEAT_CSCOPE)
-        "+cscope",
-#else
         "-cscope",
-#endif
 #if defined(FEAT_CURSORBIND)
         "+cursorbind",
 #else
@@ -118,11 +102,7 @@ static char *(features[]) =
 #endif
 #endif
 #endif
-#if defined(FEAT_DIFF)
-        "+diff",
-#else
         "-diff",
-#endif
 #if defined(FEAT_DIGRAPHS)
         "+digraphs",
 #else
@@ -133,11 +113,7 @@ static char *(features[]) =
 #else
         "-dnd",
 #endif
-#if defined(FEAT_EMACS_TAGS)
-        "+emacs_tags",
-#else
         "-emacs_tags",
-#endif
         "+eval",
 #if defined(FEAT_EX_EXTRA)
         "+ex_extra",
@@ -164,11 +140,7 @@ static char *(features[]) =
 #else
         "-float",
 #endif
-#if defined(FEAT_FOLDING)
-        "+folding",
-#else
         "-folding",
-#endif
 #if defined(FEAT_FOOTER)
         "+footer",
 #else
@@ -176,15 +148,7 @@ static char *(features[]) =
 #endif
             /* only interesting on Unix systems */
         "+fork()",
-#if defined(FEAT_GETTEXT)
-#if defined(DYNAMIC_GETTEXT)
-        "+gettext/dyn",
-#else
-        "+gettext",
-#endif
-#else
         "-gettext",
-#endif
 #if (defined(HAVE_ICONV_H) && defined(USE_ICONV)) || defined(DYNAMIC_ICONV)
 #if defined(DYNAMIC_ICONV)
         "+iconv/dyn",
@@ -244,11 +208,7 @@ static char *(features[]) =
 #else
         "-menu",
 #endif
-#if defined(FEAT_SESSION)
-        "+mksession",
-#else
         "-mksession",
-#endif
 #if defined(FEAT_MODIFY_FNAME)
         "+modify_fname",
 #else
@@ -265,42 +225,22 @@ static char *(features[]) =
         "-mouse",
 #endif
 
-#if defined(FEAT_MOUSE_DEC)
-        "+mouse_dec",
-#else
         "-mouse_dec",
-#endif
 #if defined(FEAT_MOUSE_GPM)
         "+mouse_gpm",
 #else
         "-mouse_gpm",
 #endif
-#if defined(FEAT_MOUSE_JSB)
-        "+mouse_jsbterm",
-#else
         "-mouse_jsbterm",
-#endif
-#if defined(FEAT_MOUSE_NET)
-        "+mouse_netterm",
-#else
         "-mouse_netterm",
-#endif
 
-#if defined(FEAT_MOUSE_SGR)
-        "+mouse_sgr",
-#else
         "-mouse_sgr",
-#endif
 #if defined(FEAT_SYSMOUSE)
         "+mouse_sysmouse",
 #else
         "-mouse_sysmouse",
 #endif
-#if defined(FEAT_MOUSE_URXVT)
-        "+mouse_urxvt",
-#else
         "-mouse_urxvt",
-#endif
 #if defined(FEAT_MOUSE_XTERM)
         "+mouse_xterm",
 #else
@@ -328,11 +268,7 @@ static char *(features[]) =
 #else
         "-printer",
 #endif
-#if defined(FEAT_PROFILE)
-        "+profile",
-#else
         "-profile",
-#endif
 #if defined(FEAT_QUICKFIX)
         "+quickfix",
 #else
@@ -363,17 +299,12 @@ static char *(features[]) =
 #else
         "-smartindent",
 #endif
-#if defined(STARTUPTIME)
-        "+startuptime",
-#else
         "-startuptime",
-#endif
 #if defined(FEAT_STL_OPT)
         "+statusline",
 #else
         "-statusline",
 #endif
-        "-sun_workshop",
 #if defined(FEAT_SYN_HL)
         "+syntax",
 #else
@@ -385,17 +316,8 @@ static char *(features[]) =
 #else
         "-tag_binary",
 #endif
-#if defined(FEAT_TAG_OLDSTATIC)
-        "+tag_old_static",
-#else
         "-tag_old_static",
-#endif
-#if defined(FEAT_TAG_ANYWHITE)
-        "+tag_any_white",
-#else
         "-tag_any_white",
-#endif
-/* only Unix (or OS/2 with EMX!) can have terminfo instead of termcap */
 #if defined(TERMINFO)
         "+terminfo",
 #else
@@ -442,11 +364,7 @@ static char *(features[]) =
 #else
         "-visualextra",
 #endif
-#if defined(FEAT_VIMINFO)
-        "+viminfo",
-#else
         "-viminfo",
-#endif
 #if defined(FEAT_VREPLACE)
         "+vreplace",
 #else
@@ -472,21 +390,13 @@ static char *(features[]) =
 #else
         "-writebackup",
 #endif
-#if defined(FEAT_XCLIPBOARD)
-        "+xterm_clipboard",
-#else
         "-xterm_clipboard",
-#endif
 #if defined(FEAT_XTERM_SAVE)
         "+xterm_save",
 #else
         "-xterm_save",
 #endif
-#if defined(HAVE_XPM)
-        "+xpm",
-#else
         "-xpm",
-#endif
         NULL
 };
 
@@ -742,12 +652,6 @@ list_version()
         }
     }
 
-#if defined(MODIFIED_BY)
-    MSG_PUTS("\n");
-    MSG_PUTS(_("Modified by "));
-    MSG_PUTS(MODIFIED_BY);
-#endif
-
 #if defined(HAVE_PATHDEF)
     if (*compiled_user != NUL || *compiled_sys != NUL)
     {
@@ -880,9 +784,6 @@ intro_message(colon)
         "",
         N_("version "),
         N_("by Bram Moolenaar et al."),
-#if defined(MODIFIED_BY)
-        " ",
-#endif
         N_("Vim is open source and freely distributable"),
         "",
         N_("Help poor children in Uganda!"),
@@ -965,18 +866,6 @@ do_intro_line(row, mesg, add_version, attr)
     char_u      *p;
     int         l;
     int         clen;
-#if defined(MODIFIED_BY)
-#define MODBY_LEN 150
-    char_u      modby[MODBY_LEN];
-
-    if (*mesg == ' ')
-    {
-        vim_strncpy(modby, (char_u *)_("Modified by "), MODBY_LEN - 1);
-        l = STRLEN(modby);
-        vim_strncpy(modby + l, (char_u *)MODIFIED_BY, MODBY_LEN - l - 1);
-        mesg = modby;
-    }
-#endif
 
     /* Center the message horizontally. */
     col = vim_strsize(mesg);

@@ -1131,9 +1131,7 @@ get_menu_names(xp, idx)
             && (   menu_is_hidden(menu->dname)
                 || (expand_emenu && menu_is_separator(menu->dname))
                 || menu_is_tearoff(menu->dname)
-#if !defined(FEAT_BROWSE)
                 || menu->dname[STRLEN(menu->dname) - 1] == '.'
-#endif
                ))
         menu = menu->next;
 

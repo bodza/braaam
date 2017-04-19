@@ -48,14 +48,6 @@ typedef struct pointer_entry    PTR_EN;     /* block/line-count pair */
 #define BLOCK0_ID1_C1  'C'                  /* block 0 id 1 'cm' 1 */
 #define BLOCK0_ID1_C2  'd'                  /* block 0 id 1 'cm' 2 */
 
-#if defined(FEAT_CRYPT)
-static int id1_codes[] = {
-    BLOCK0_ID1_C0,  /* CRYPT_M_ZIP */
-    BLOCK0_ID1_C1,  /* CRYPT_M_BF */
-    BLOCK0_ID1_C2,  /* CRYPT_M_BF2 */
-};
-#endif
-
 /*
  * pointer to a block, used in a pointer block
  */
@@ -217,10 +209,6 @@ typedef enum {
     , UB_CRYPT          /* update crypt key */
 } upd_block0_T;
 
-#if defined(FEAT_CRYPT)
-static void ml_set_mfp_crypt __ARGS((buf_T *buf));
-static void ml_set_b0_crypt __ARGS((buf_T *buf, ZERO_BL *b0p));
-#endif
 static int ml_check_b0_id __ARGS((ZERO_BL *b0p));
 static void ml_upd_block0 __ARGS((buf_T *buf, upd_block0_T what));
 static void set_b0_fname __ARGS((ZERO_BL *, buf_T *buf));
@@ -244,9 +232,6 @@ static int fnamecmp_ino __ARGS((char_u *, char_u *, long));
 static void long_to_char __ARGS((long, char_u *));
 static long char_to_long __ARGS((char_u *));
 static char_u *make_percent_swname __ARGS((char_u *dir, char_u *name));
-#if defined(FEAT_CRYPT)
-static cryptstate_T *ml_crypt_prepare __ARGS((memfile_T *mfp, off_t offset, int reading));
-#endif
 #if defined(FEAT_BYTEOFF)
 static void ml_updatechunk __ARGS((buf_T *buf, long line, long len, int updtype));
 #endif
@@ -297,9 +282,6 @@ ml_open(buf)
         goto error;
 
     buf->b_ml.ml_mfp = mfp;
-#if defined(FEAT_CRYPT)
-    mfp->mf_buffer = buf;
-#endif
     buf->b_ml.ml_flags = ML_EMPTY;
     buf->b_ml.ml_line_count = 1;
 #if defined(FEAT_LINEBREAK)
@@ -328,9 +310,6 @@ ml_open(buf)
     STRNCPY(b0p->b0_version + 4, Version, 6);
     long_to_char((long)mfp->mf_page_size, b0p->b0_page_size);
 
-#if defined(FEAT_SPELL)
-    if (!buf->b_spell)
-#endif
     {
         b0p->b0_dirty = buf->b_changed ? B0_DIRTY : 0;
         b0p->b0_flags = get_fileformat(buf) + 1;
@@ -340,9 +319,6 @@ ml_open(buf)
         mch_get_host_name(b0p->b0_hname, B0_HNAME_SIZE);
         b0p->b0_hname[B0_HNAME_SIZE - 1] = NUL;
         long_to_char(mch_get_pid(), b0p->b0_pid);
-#if defined(FEAT_CRYPT)
-        ml_set_b0_crypt(buf, b0p);
-#endif
     }
 
     /*
@@ -403,188 +379,6 @@ error:
     buf->b_ml.ml_mfp = NULL;
     return FAIL;
 }
-
-#if defined(FEAT_CRYPT)
-/*
- * Prepare encryption for "buf" for the current key and method.
- */
-    static void
-ml_set_mfp_crypt(buf)
-    buf_T       *buf;
-{
-    if (*buf->b_p_key != NUL)
-    {
-        int method_nr = crypt_get_method_nr(buf);
-
-        if (method_nr > CRYPT_M_ZIP)
-        {
-            /* Generate a seed and store it in the memfile. */
-            sha2_seed(buf->b_ml.ml_mfp->mf_seed, MF_SEED_LEN, NULL, 0);
-        }
-    }
-}
-
-/*
- * Prepare encryption for "buf" with block 0 "b0p".
- */
-    static void
-ml_set_b0_crypt(buf, b0p)
-    buf_T       *buf;
-    ZERO_BL     *b0p;
-{
-    if (*buf->b_p_key == NUL)
-        b0p->b0_id[1] = BLOCK0_ID1;
-    else
-    {
-        int method_nr = crypt_get_method_nr(buf);
-
-        b0p->b0_id[1] = id1_codes[method_nr];
-        if (method_nr > CRYPT_M_ZIP)
-        {
-            /* Generate a seed and store it in block 0 and in the memfile. */
-            sha2_seed(&b0p->b0_seed, MF_SEED_LEN, NULL, 0);
-            mch_memmove(buf->b_ml.ml_mfp->mf_seed, &b0p->b0_seed, MF_SEED_LEN);
-        }
-    }
-}
-
-/*
- * Called after the crypt key or 'cryptmethod' was changed for "buf".
- * Will apply this to the swapfile.
- * "old_key" is the previous key.  It is equal to buf->b_p_key when
- * 'cryptmethod' is changed.
- * "old_cm" is the previous 'cryptmethod'.  It is equal to the current
- * 'cryptmethod' when 'key' is changed.
- */
-    void
-ml_set_crypt_key(buf, old_key, old_cm)
-    buf_T       *buf;
-    char_u      *old_key;
-    int         old_cm;
-{
-    memfile_T   *mfp = buf->b_ml.ml_mfp;
-    bhdr_T      *hp;
-    int         page_count;
-    int         idx;
-    long        error;
-    infoptr_T   *ip;
-    PTR_BL      *pp;
-    DATA_BL     *dp;
-    blocknr_T   bnum;
-    int         top;
-
-    if (mfp == NULL)
-        return;  /* no memfile yet, nothing to do */
-
-    /* Set the key, method and seed to be used for reading, these must be the
-     * old values. */
-    mfp->mf_old_key = old_key;
-    mfp->mf_old_cm = old_cm;
-    if (old_cm > 0)
-        mch_memmove(mfp->mf_old_seed, mfp->mf_seed, MF_SEED_LEN);
-
-    /* Update block 0 with the crypt flag and may set a new seed. */
-    ml_upd_block0(buf, UB_CRYPT);
-
-    if (mfp->mf_infile_count > 2)
-    {
-        /*
-         * Need to read back all data blocks from disk, decrypt them with the
-         * old key/method and mark them to be written. The algorithm is
-         * similar to what happens in ml_recover(), but we skip negative block
-         * numbers.
-         */
-        ml_flush_line(buf);                 /* flush buffered line */
-        (void)ml_find_line(buf, (linenr_T)0, ML_FLUSH); /* flush locked block */
-
-        hp = NULL;
-        bnum = 1;               /* start with block 1 */
-        page_count = 1;         /* which is 1 page */
-        idx = 0;                /* start with first index in block 1 */
-        error = 0;
-        buf->b_ml.ml_stack_top = 0;
-        vim_free(buf->b_ml.ml_stack);
-        buf->b_ml.ml_stack = NULL;
-        buf->b_ml.ml_stack_size = 0;    /* no stack yet */
-
-        for ( ; !got_int; line_breakcheck())
-        {
-            if (hp != NULL)
-                mf_put(mfp, hp, FALSE, FALSE);  /* release previous block */
-
-            /* get the block (pointer or data) */
-            if ((hp = mf_get(mfp, (blocknr_T)bnum, page_count)) == NULL)
-            {
-                if (bnum == 1)
-                    break;
-                ++error;
-            }
-            else
-            {
-                pp = (PTR_BL *)(hp->bh_data);
-                if (pp->pb_id == PTR_ID)        /* it is a pointer block */
-                {
-                    if (pp->pb_count == 0)
-                    {
-                        /* empty block? */
-                        ++error;
-                    }
-                    else if (idx < (int)pp->pb_count)   /* go a block deeper */
-                    {
-                        if (pp->pb_pointer[idx].pe_bnum < 0)
-                        {
-                            /* Skip data block with negative block number. */
-                            ++idx;    /* get same block again for next index */
-                            continue;
-                        }
-
-                        /* going one block deeper in the tree, new entry in
-                         * stack */
-                        if ((top = ml_add_stack(buf)) < 0)
-                        {
-                            ++error;
-                            break;                  /* out of memory */
-                        }
-                        ip = &(buf->b_ml.ml_stack[top]);
-                        ip->ip_bnum = bnum;
-                        ip->ip_index = idx;
-
-                        bnum = pp->pb_pointer[idx].pe_bnum;
-                        page_count = pp->pb_pointer[idx].pe_page_count;
-                        continue;
-                    }
-                }
-                else        /* not a pointer block */
-                {
-                    dp = (DATA_BL *)(hp->bh_data);
-                    if (dp->db_id != DATA_ID)   /* block id wrong */
-                        ++error;
-                    else
-                    {
-                        /* It is a data block, need to write it back to disk. */
-                        mf_put(mfp, hp, TRUE, FALSE);
-                        hp = NULL;
-                    }
-                }
-            }
-
-            if (buf->b_ml.ml_stack_top == 0)    /* finished */
-                break;
-
-            /* go one block up in the tree */
-            ip = &(buf->b_ml.ml_stack[--(buf->b_ml.ml_stack_top)]);
-            bnum = ip->ip_bnum;
-            idx = ip->ip_index + 1;         /* go to next index */
-            page_count = 1;
-        }
-
-        if (error > 0)
-            EMSG(_("E843: Error while updating swap file crypt"));
-    }
-
-    mfp->mf_old_key = NULL;
-}
-#endif
 
 /*
  * ml_setname() is called when the file name of "buf" has been changed.
@@ -707,18 +501,6 @@ ml_open_file(buf)
     if (mfp == NULL || mfp->mf_fd >= 0 || !buf->b_p_swf || cmdmod.noswapfile)
         return;         /* nothing to do */
 
-#if defined(FEAT_SPELL)
-    /* For a spell buffer use a temp file name. */
-    if (buf->b_spell)
-    {
-        fname = vim_tempname('s', FALSE);
-        if (fname != NULL)
-            (void)mf_open_file(mfp, fname);     /* consumes fname! */
-        buf->b_may_swap = FALSE;
-        return;
-    }
-#endif
-
     /*
      * Try all directories in 'directory' option.
      */
@@ -819,9 +601,6 @@ ml_close_all(del_file)
     for (buf = firstbuf; buf != NULL; buf = buf->b_next)
         ml_close(buf, del_file && ((buf->b_flags & BF_PRESERVED) == 0
                                  || vim_strchr(p_cpo, CPO_PRESERVE) == NULL));
-#if defined(FEAT_SPELL)
-    spell_delete_wordlist();    /* delete the internal wordlist */
-#endif
 #if defined(TEMPDIRNAMES)
     vim_deltempdir();           /* delete created temp directory */
 #endif
@@ -887,11 +666,6 @@ ml_upd_block0(buf, what)
     hp = mf_get(mfp, (blocknr_T)0, 1);
     if (hp == NULL)
     {
-#if defined(FEAT_CRYPT)
-        /* Possibly update the seed in the memfile before there is a block0. */
-        if (what == UB_CRYPT)
-            ml_set_mfp_crypt(buf);
-#endif
         return;
     }
 
@@ -902,10 +676,6 @@ ml_upd_block0(buf, what)
     {
         if (what == UB_FNAME)
             set_b0_fname(b0p, buf);
-#if defined(FEAT_CRYPT)
-        else if (what == UB_CRYPT)
-            ml_set_b0_crypt(buf, b0p);
-#endif
         else /* what == UB_SAME_DIR */
             set_b0_dir_flag(b0p, buf);
     }
@@ -1008,14 +778,6 @@ add_b0_fenc(b0p, buf)
     int         n;
     int         size = B0_FNAME_SIZE_NOCRYPT;
 
-#if defined(FEAT_CRYPT)
-    /* Without encryption use the same offset as in Vim 7.2 to be compatible.
-     * With encryption it's OK to move elsewhere, the swap file is not
-     * compatible anyway. */
-    if (*buf->b_p_key != NUL)
-        size = B0_FNAME_SIZE_CRYPT;
-#endif
-
     n = (int)STRLEN(buf->b_p_fenc);
     if ((int)STRLEN(b0p->b0_fname) + n + 1 > size)
         b0p->b0_flags &= ~B0_HAS_FENC;
@@ -1042,9 +804,6 @@ ml_recover()
     ZERO_BL     *b0p;
     int         b0_ff;
     char_u      *b0_fenc = NULL;
-#if defined(FEAT_CRYPT)
-    int         b0_cm = -1;
-#endif
     PTR_BL      *pp;
     DATA_BL     *dp;
     infoptr_T   *ip;
@@ -1139,10 +898,6 @@ ml_recover()
     buf->b_ml.ml_line_lnum = 0;         /* no cached line */
     buf->b_ml.ml_locked = NULL;         /* no locked block */
     buf->b_ml.ml_flags = 0;
-#if defined(FEAT_CRYPT)
-    buf->b_p_key = empty_option;
-    buf->b_p_cm = empty_option;
-#endif
 
     /*
      * open the memfile from the old swap file
@@ -1158,9 +913,6 @@ ml_recover()
         goto theend;
     }
     buf->b_ml.ml_mfp = mfp;
-#if defined(FEAT_CRYPT)
-    mfp->mf_buffer = buf;
-#endif
 
     /*
      * The page size set in mf_open() might be different from the page size
@@ -1213,14 +965,7 @@ ml_recover()
         goto theend;
     }
 
-#if defined(FEAT_CRYPT)
-    for (i = 0; i < (int)(sizeof(id1_codes) / sizeof(int)); ++i)
-        if (id1_codes[i] == b0p->b0_id[1])
-            b0_cm = i;
-    if (b0_cm > 0)
-        mch_memmove(mfp->mf_seed, &b0p->b0_seed, MF_SEED_LEN);
-    crypt_set_cm_option(buf, b0_cm < 0 ? 0 : b0_cm);
-#else
+#if (1)
     if (b0p->b0_id[1] != BLOCK0_ID1)
     {
         EMSG2(_("E833: %s is encrypted and this version of Vim does not support encryption"), mfp->mf_fname);
@@ -1302,11 +1047,6 @@ ml_recover()
     {
         int fnsize = B0_FNAME_SIZE_NOCRYPT;
 
-#if defined(FEAT_CRYPT)
-        /* Use the same size as in add_b0_fenc(). */
-        if (b0p->b0_id[1] != BLOCK0_ID1)
-            fnsize = B0_FNAME_SIZE_CRYPT;
-#endif
         for (p = b0p->b0_fname + fnsize; p > b0p->b0_fname && p[-1] != NUL; --p)
             ;
         b0_fenc = vim_strnsave(p, (int)(b0p->b0_fname + fnsize - p));
@@ -1330,34 +1070,6 @@ ml_recover()
     if (curbuf->b_ffname != NULL)
         orig_file_status = readfile(curbuf->b_ffname, NULL, (linenr_T)0,
                               (linenr_T)0, (linenr_T)MAXLNUM, NULL, READ_NEW);
-
-#if defined(FEAT_CRYPT)
-    if (b0_cm >= 0)
-    {
-        /* Need to ask the user for the crypt key.  If this fails we continue
-         * without a key, will probably get garbage text. */
-        if (*curbuf->b_p_key != NUL)
-        {
-            smsg((char_u *)_("Swap file is encrypted: \"%s\""), fname_used);
-            MSG_PUTS(_("\nIf you entered a new crypt key but did not write the text file,"));
-            MSG_PUTS(_("\nenter the new crypt key."));
-            MSG_PUTS(_("\nIf you wrote the text file after changing the crypt key press enter"));
-            MSG_PUTS(_("\nto use the same key for text file and swap file"));
-        }
-        else
-            smsg((char_u *)_(need_key_msg), fname_used);
-        buf->b_p_key = crypt_get_key(FALSE, FALSE);
-        if (buf->b_p_key == NULL)
-            buf->b_p_key = curbuf->b_p_key;
-        else if (*buf->b_p_key == NUL)
-        {
-            vim_free(buf->b_p_key);
-            buf->b_p_key = curbuf->b_p_key;
-        }
-        if (buf->b_p_key == NULL)
-            buf->b_p_key = empty_option;
-    }
-#endif
 
     /* Use the 'fileformat' and 'fileencoding' as stored in the swap file. */
     if (b0_ff != 0)
@@ -1626,13 +1338,6 @@ ml_recover()
         MSG_PUTS(_("\nYou may want to delete the .swp file now.\n\n"));
         cmdline_row = msg_row;
     }
-#if defined(FEAT_CRYPT)
-    if (*buf->b_p_key != NUL && STRCMP(curbuf->b_p_key, buf->b_p_key) != 0)
-    {
-        MSG_PUTS(_("Using crypt key from swap file for the text file.\n"));
-        set_option_value((char_u *)"key", 0L, buf->b_p_key, OPT_LOCAL);
-    }
-#endif
     redraw_curbuf_later(NOT_VALID);
 
 theend:
@@ -1646,11 +1351,6 @@ theend:
     }
     if (buf != NULL)
     {
-#if defined(FEAT_CRYPT)
-        if (buf->b_p_key != curbuf->b_p_key)
-            free_string_option(buf->b_p_key);
-        free_string_option(buf->b_p_cm);
-#endif
         vim_free(buf->b_ml.ml_stack);
         vim_free(buf);
     }
@@ -2424,28 +2124,6 @@ ml_append(lnum, line, len, newfile)
         ml_flush_line(curbuf);
     return ml_append_int(curbuf, lnum, line, len, newfile, FALSE);
 }
-
-#if defined(FEAT_SPELL)
-/*
- * Like ml_append() but for an arbitrary buffer.  The buffer must already have
- * a memline.
- */
-    int
-ml_append_buf(buf, lnum, line, len, newfile)
-    buf_T       *buf;
-    linenr_T    lnum;           /* append after this line (can be 0) */
-    char_u      *line;          /* text of the new line */
-    colnr_T     len;            /* length of new line, including NUL, or 0 */
-    int         newfile;        /* flag, see above */
-{
-    if (buf->b_ml.ml_mfp == NULL)
-        return FAIL;
-
-    if (buf->b_ml.ml_line_lnum != 0)
-        ml_flush_line(buf);
-    return ml_append_int(buf, lnum, line, len, newfile, FALSE);
-}
-#endif
 
     static int
 ml_append_int(buf, lnum, line, len, newfile, mark)
@@ -4581,131 +4259,6 @@ ml_setflags(buf)
         }
     }
 }
-
-#if defined(FEAT_CRYPT)
-/*
- * If "data" points to a data block encrypt the text in it and return a copy
- * in allocated memory.  Return NULL when out of memory.
- * Otherwise return "data".
- */
-    char_u *
-ml_encrypt_data(mfp, data, offset, size)
-    memfile_T   *mfp;
-    char_u      *data;
-    off_t       offset;
-    unsigned    size;
-{
-    DATA_BL     *dp = (DATA_BL *)data;
-    char_u      *head_end;
-    char_u      *text_start;
-    char_u      *new_data;
-    int         text_len;
-    cryptstate_T *state;
-
-    if (dp->db_id != DATA_ID)
-        return data;
-
-    new_data = (char_u *)alloc(size);
-    if (new_data == NULL)
-        return NULL;
-    head_end = (char_u *)(&dp->db_index[dp->db_line_count]);
-    text_start = (char_u *)dp + dp->db_txt_start;
-    text_len = size - dp->db_txt_start;
-
-    /* Copy the header and the text. */
-    mch_memmove(new_data, dp, head_end - (char_u *)dp);
-
-    /* Encrypt the text. */
-    state = ml_crypt_prepare(mfp, offset, FALSE);
-    crypt_encode(state, text_start, text_len, new_data + dp->db_txt_start);
-    crypt_free_state(state);
-
-    /* Clear the gap. */
-    if (head_end < text_start)
-        vim_memset(new_data + (head_end - data), 0, text_start - head_end);
-
-    return new_data;
-}
-
-/*
- * Decrypt the text in "data" if it points to a data block.
- */
-    void
-ml_decrypt_data(mfp, data, offset, size)
-    memfile_T   *mfp;
-    char_u      *data;
-    off_t       offset;
-    unsigned    size;
-{
-    DATA_BL     *dp = (DATA_BL *)data;
-    char_u      *head_end;
-    char_u      *text_start;
-    int         text_len;
-    cryptstate_T *state;
-
-    if (dp->db_id == DATA_ID)
-    {
-        head_end = (char_u *)(&dp->db_index[dp->db_line_count]);
-        text_start = (char_u *)dp + dp->db_txt_start;
-        text_len = dp->db_txt_end - dp->db_txt_start;
-
-        if (head_end > text_start || dp->db_txt_start > size
-                                                     || dp->db_txt_end > size)
-            return;  /* data was messed up */
-
-        /* Decrypt the text in place. */
-        state = ml_crypt_prepare(mfp, offset, TRUE);
-        crypt_decode_inplace(state, text_start, text_len);
-        crypt_free_state(state);
-    }
-}
-
-/*
- * Prepare for encryption/decryption, using the key, seed and offset.
- * Return an allocated cryptstate_T *.
- */
-    static cryptstate_T *
-ml_crypt_prepare(mfp, offset, reading)
-    memfile_T   *mfp;
-    off_t       offset;
-    int         reading;
-{
-    buf_T       *buf = mfp->mf_buffer;
-    char_u      salt[50];
-    int         method_nr;
-    char_u      *key;
-    char_u      *seed;
-
-    if (reading && mfp->mf_old_key != NULL)
-    {
-        /* Reading back blocks with the previous key/method/seed. */
-        method_nr = mfp->mf_old_cm;
-        key = mfp->mf_old_key;
-        seed = mfp->mf_old_seed;
-    }
-    else
-    {
-        method_nr = crypt_get_method_nr(buf);
-        key = buf->b_p_key;
-        seed = mfp->mf_seed;
-    }
-
-    if (method_nr == CRYPT_M_ZIP)
-    {
-        /* For PKzip: Append the offset to the key, so that we use a different
-         * key for every block. */
-        vim_snprintf((char *)salt, sizeof(salt), "%s%ld", key, (long)offset);
-        return crypt_create(method_nr, salt, NULL, 0, NULL, 0);
-    }
-
-    /* Using blowfish or better: add salt and seed. We use the byte offset
-     * of the block for the salt. */
-    vim_snprintf((char *)salt, sizeof(salt), "%ld", (long)offset);
-    return crypt_create(method_nr, key, salt, (int)STRLEN(salt),
-                                                           seed, MF_SEED_LEN);
-}
-
-#endif
 
 #if defined(FEAT_BYTEOFF)
 
