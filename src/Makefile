@@ -20,8 +20,8 @@ ALL_LIBS = $(LIBS)
 BASIC_SRC = buffer.c charset.c digraph.c \
 	edit.c eval.c ex_cmds.c ex_cmds2.c ex_docmd.c ex_eval.c ex_getln.c \
 	fileio.c getchar.c hashtab.c \
-	main.c mark.c memfile.c memline.c menu.c message.c misc1.c misc2.c \
-	move.c mbyte.c normal.c ops.c option.c os_unix.c popupmnu.c \
+	main.c mark.c memfile.c memline.c message.c misc1.c misc2.c \
+	move.c mbyte.c normal.c ops.c option.c os_unix.c \
 	regexp.c screen.c search.c sha256.c syntax.c tag.c \
 	term.c ui.c undo.c version.c window.c
 
@@ -43,7 +43,6 @@ OBJ_COMMON = \
 	objects/hashtab.o \
 	objects/mark.o \
         objects/memline.o \
-	objects/menu.o \
 	objects/message.o \
 	objects/misc1.o \
 	objects/misc2.o \
@@ -53,7 +52,6 @@ OBJ_COMMON = \
 	objects/ops.o \
 	objects/option.o \
 	objects/os_unix.o \
-	objects/popupmnu.o \
 	objects/regexp.o \
 	objects/screen.o \
 	objects/search.o \
@@ -143,9 +141,6 @@ objects/memfile.o: memfile.c
 objects/memline.o: memline.c
 	$(CCC) -o $@ memline.c
 
-objects/menu.o: menu.c
-	$(CCC) -o $@ menu.c
-
 objects/message.o: message.c
 	$(CCC) -o $@ message.c
 
@@ -172,9 +167,6 @@ objects/option.o: option.c
 
 objects/os_unix.o: os_unix.c
 	$(CCC) -o $@ os_unix.c
-
-objects/popupmnu.o: popupmnu.c
-	$(CCC) -o $@ popupmnu.c
 
 objects/regexp.o: regexp.c regexp_nfa.c
 	$(CCC) -o $@ regexp.c
@@ -262,9 +254,6 @@ objects/memfile.o: memfile.c vim.h os_unix.h \
 objects/memline.o: memline.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/menu.o: menu.c vim.h os_unix.h \
- ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
- ex_cmds.h proto.h globals.h
 objects/message.o: message.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
@@ -292,10 +281,6 @@ objects/option.o: option.c vim.h os_unix.h \
 objects/os_unix.o: os_unix.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/popupmnu.o: popupmnu.c vim.h os_unix.h \
- ascii.h keymap.h term.h macros.h option.h structs.h \
- regexp.h ex_cmds.h proto.h \
- globals.h
 objects/regexp.o: regexp.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h regexp_nfa.c

@@ -399,8 +399,7 @@ start_stuff()
     int
 stuff_empty()
 {
-    return (readbuf1.bh_first.b_next == NULL
-         && readbuf2.bh_first.b_next == NULL);
+    return (readbuf1.bh_first.b_next == NULL && readbuf2.bh_first.b_next == NULL);
 }
 
 /*
@@ -1027,8 +1026,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
     else
         nrm = noremap;
     for (i = 0; i < addlen; ++i)
-        typebuf.tb_noremap[typebuf.tb_off + i + offset] =
-                                                  (--nrm >= 0) ? val : RM_YES;
+        typebuf.tb_noremap[typebuf.tb_off + i + offset] = (--nrm >= 0) ? val : RM_YES;
 
     /* tb_maplen and tb_silent only remember the length of mapped and/or
      * silent mappings at the start of the buffer, assuming that a mapped
@@ -1124,8 +1122,7 @@ del_typebuf(len, offset)
     /*
      * Easy case: Just increase typebuf.tb_off.
      */
-    if (offset == 0 && typebuf.tb_buflen - (typebuf.tb_off + len)
-                                                         >= 3 * MAXMAPLEN + 3)
+    if (offset == 0 && typebuf.tb_buflen - (typebuf.tb_off + len) >= 3 * MAXMAPLEN + 3)
         typebuf.tb_off += len;
     /*
      * Have to move the characters in typebuf.tb_buf[] and typebuf.tb_noremap[]
@@ -1235,8 +1232,7 @@ gotchars(chars, len)
     static void
 may_sync_undo()
 {
-    if ((!(State & (INSERT + CMDLINE)) || arrow_used)
-                                               && scriptin[curscript] == NULL)
+    if ((!(State & (INSERT + CMDLINE)) || arrow_used) && scriptin[curscript] == NULL)
         u_sync(FALSE);
 }
 
@@ -1303,10 +1299,8 @@ save_typebuf()
 
 static int old_char = -1;       /* character put back by vungetc() */
 static int old_mod_mask;        /* mod_mask for ungotten character */
-#if defined(FEAT_MOUSE)
 static int old_mouse_row;       /* mouse_row related to old_char */
 static int old_mouse_col;       /* mouse_col related to old_char */
-#endif
 
 /*
  * Save all three kinds of typeahead, so that the user must type at a prompt.
@@ -1454,17 +1448,6 @@ close_all_scripts()
 }
 #endif
 
-#if defined(FEAT_INS_EXPAND)
-/*
- * Return TRUE when reading keys from a script file.
- */
-    int
-using_script()
-{
-    return scriptin[curscript] != NULL;
-}
-#endif
-
 /*
  * This function is called just before doing a blocking wait.  Thus after
  * waiting 'updatetime' for a character to arrive.
@@ -1530,10 +1513,8 @@ vgetc()
         c = old_char;
         old_char = -1;
         mod_mask = old_mod_mask;
-#if defined(FEAT_MOUSE)
         mouse_row = old_mouse_row;
         mouse_col = old_mouse_col;
-#endif
     }
     else
     {
@@ -1769,10 +1750,8 @@ vungetc(c)      /* unget one character (can only be done once!) */
 {
     old_char = c;
     old_mod_mask = mod_mask;
-#if defined(FEAT_MOUSE)
     old_mouse_row = mouse_row;
     old_mouse_col = mouse_col;
-#endif
 }
 
 /*
@@ -1806,9 +1785,7 @@ vgetorpeek(advance)
     int         keylen;
     char_u      *s;
     mapblock_T  *mp;
-#if defined(FEAT_LOCALMAP)
     mapblock_T  *mp2;
-#endif
     mapblock_T  *mp_match;
     int         mp_match_len = 0;
     int         timedout = FALSE;           /* waited for more than 1 second
@@ -1819,9 +1796,7 @@ vgetorpeek(advance)
     int         mlen;
     int         max_mlen;
     int         i;
-#if defined(FEAT_CMDL_INFO)
     int         new_wcol, new_wrow;
-#endif
     int         n;
     int         old_wcol, old_wrow;
     int         wait_tb_len;
@@ -1907,8 +1882,7 @@ vgetorpeek(advance)
                      * As a result typing CTRL-C in insert mode will
                      * really insert a CTRL-C.
                      */
-                    if ((c || typebuf.tb_maplen)
-                                              && (State & (INSERT + CMDLINE)))
+                    if ((c || typebuf.tb_maplen) && (State & (INSERT + CMDLINE)))
                         c = ESC;
                     else
                         c = Ctrl_C;
@@ -1949,20 +1923,13 @@ vgetorpeek(advance)
                             && (no_zero_mapping == 0 || c1 != '0')
                             && (typebuf.tb_maplen == 0
                                 || (p_remap
-                                    && (typebuf.tb_noremap[typebuf.tb_off]
-                                                    & (RM_NONE|RM_ABBR)) == 0))
+                                    && (typebuf.tb_noremap[typebuf.tb_off] & (RM_NONE|RM_ABBR)) == 0))
                             && !(p_paste && (State & (INSERT + CMDLINE)))
                             && !(State == HITRETURN && (c1 == CAR || c1 == ' '))
                             && State != ASKMORE
                             && State != CONFIRM
-#if defined(FEAT_INS_EXPAND)
-                            && !((ctrl_x_mode != 0 && vim_is_ctrl_x_key(c1))
-                                    || ((compl_cont_status & CONT_LOCAL)
-                                        && (c1 == Ctrl_N || c1 == Ctrl_P)))
-#endif
                             )
                     {
-#if defined(FEAT_LOCALMAP)
                         /* First try buffer-local mappings. */
                         mp = curbuf->b_maphash[MAP_HASH(local_State, c1)];
                         mp2 = maphash[MAP_HASH(local_State, c1)];
@@ -1972,9 +1939,6 @@ vgetorpeek(advance)
                             mp = mp2;
                             mp2 = NULL;
                         }
-#else
-                        mp = maphash[MAP_HASH(local_State, c1)];
-#endif
                         /*
                          * Loop until a partly matching mapping is found or
                          * all (local) mappings have been checked.
@@ -1985,9 +1949,7 @@ vgetorpeek(advance)
                         mp_match = NULL;
                         mp_match_len = 0;
                         for ( ; mp != NULL;
-#if defined(FEAT_LOCALMAP)
                                 mp->m_next == NULL ? (mp = mp2, mp2 = NULL) :
-#endif
                                 (mp = mp->m_next))
                         {
                             /*
@@ -2003,8 +1965,7 @@ vgetorpeek(advance)
                                 /* find the match length of this mapping */
                                 for (mlen = 1; mlen < typebuf.tb_len; ++mlen)
                                 {
-                                    if (mp->m_keys[mlen] !=
-                                        typebuf.tb_buf[typebuf.tb_off + mlen])
+                                    if (mp->m_keys[mlen] != typebuf.tb_buf[typebuf.tb_off + mlen])
                                         break;
                                 }
 
@@ -2027,8 +1988,7 @@ vgetorpeek(advance)
                                  */
                                 keylen = mp->m_keylen;
                                 if (mlen == keylen
-                                     || (mlen == typebuf.tb_len
-                                                  && typebuf.tb_len < keylen))
+                                     || (mlen == typebuf.tb_len && typebuf.tb_len < keylen))
                                 {
                                     /*
                                      * If only script-local mappings are
@@ -2039,8 +1999,7 @@ vgetorpeek(advance)
                                     if (*s == RM_SCRIPT
                                             && (mp->m_keys[0] != K_SPECIAL
                                                 || mp->m_keys[1] != KS_EXTRA
-                                                || mp->m_keys[2]
-                                                              != (int)KE_SNR))
+                                                || mp->m_keys[2] != (int)KE_SNR))
                                         continue;
                                     /*
                                      * If one of the typed keys cannot be
@@ -2054,8 +2013,7 @@ vgetorpeek(advance)
 
                                     if (keylen > typebuf.tb_len)
                                     {
-                                        if (!timedout && !(mp_match != NULL
-                                                       && mp_match->m_nowait))
+                                        if (!timedout && !(mp_match != NULL && mp_match->m_nowait))
                                         {
                                             /* break at a partly match */
                                             keylen = KEYLEN_PART_MAP;
@@ -2123,8 +2081,7 @@ vgetorpeek(advance)
                             max_mlen = mlen + 1;
                     }
 
-                    if ((mp == NULL || max_mlen >= mp_match_len)
-                                                 && keylen != KEYLEN_PART_MAP)
+                    if ((mp == NULL || max_mlen >= mp_match_len) && keylen != KEYLEN_PART_MAP)
                     {
                         int     save_keylen = keylen;
 
@@ -2141,8 +2098,7 @@ vgetorpeek(advance)
                          */
                         if ((no_mapping == 0 || allow_keys != 0)
                                 && (typebuf.tb_maplen == 0
-                                    || (p_remap && typebuf.tb_noremap[
-                                                   typebuf.tb_off] == RM_YES))
+                                    || (p_remap && typebuf.tb_noremap[typebuf.tb_off] == RM_YES))
                                 && !timedout)
                         {
                             keylen = check_termcode(max_mlen + 1, NULL, 0, NULL);
@@ -2160,8 +2116,7 @@ vgetorpeek(advance)
                              * This helps a lot when a ":normal" command ends
                              * in an ESC.
                              */
-                            if (keylen < 0
-                                       && typebuf.tb_len == typebuf.tb_maplen)
+                            if (keylen < 0 && typebuf.tb_len == typebuf.tb_maplen)
                                 keylen = 0;
                         }
                         else
@@ -2249,8 +2204,7 @@ vgetorpeek(advance)
                          * Switch to Visual mode temporarily.  Append K_SELECT
                          * to switch back to Select mode.
                          */
-                        if (VIsual_active && VIsual_select
-                                                     && (mp->m_mode & VISUAL))
+                        if (VIsual_active && VIsual_select && (mp->m_mode & VISUAL))
                         {
                             VIsual_select = FALSE;
                             (void)ins_typebuf(K_SELECT_STRING, REMAP_NONE, 0, TRUE, FALSE);
@@ -2333,10 +2287,8 @@ vgetorpeek(advance)
                  * place does not matter.
                  */
                 c = 0;
-#if defined(FEAT_CMDL_INFO)
                 new_wcol = curwin->w_wcol;
                 new_wrow = curwin->w_wrow;
-#endif
                 if (       advance
                         && typebuf.tb_len == 1
                         && typebuf.tb_buf[typebuf.tb_off] == ESC
@@ -2414,10 +2366,8 @@ vgetorpeek(advance)
                     }
                     setcursor();
                     out_flush();
-#if defined(FEAT_CMDL_INFO)
                     new_wcol = curwin->w_wcol;
                     new_wrow = curwin->w_wrow;
-#endif
                     curwin->w_wcol = old_wcol;
                     curwin->w_wrow = old_wrow;
                 }
@@ -2439,9 +2389,7 @@ vgetorpeek(advance)
 
                 if (ex_normal_busy > 0)
                 {
-#if defined(FEAT_CMDWIN)
                     static int tc = 0;
-#endif
 
                     /* No typeahead left and inside ":normal".  Must return
                      * something to avoid getting stuck.  When an incomplete
@@ -2460,16 +2408,12 @@ vgetorpeek(advance)
                     if (p_im && (State & INSERT))
                         c = Ctrl_L;
                     else if ((State & CMDLINE)
-#if defined(FEAT_CMDWIN)
                             || (cmdwin_type > 0 && tc == ESC)
-#endif
                             )
                         c = Ctrl_C;
                     else
                         c = ESC;
-#if defined(FEAT_CMDWIN)
                     tc = c;
-#endif
                     break;
                 }
 
@@ -2495,14 +2439,11 @@ vgetorpeek(advance)
                  * input from the user), show the partially matched characters
                  * to the user with showcmd.
                  */
-#if defined(FEAT_CMDL_INFO)
                 i = 0;
-#endif
                 c1 = 0;
                 if (typebuf.tb_len > 0 && advance && !exmode_active)
                 {
-                    if (((State & (NORMAL | INSERT)) || State == LANGMAP)
-                            && State != HITRETURN)
+                    if (((State & (NORMAL | INSERT)) || State == LANGMAP) && State != HITRETURN)
                     {
                         /* this looks nice when typing a dead character map */
                         if (State & INSERT
@@ -2512,7 +2453,6 @@ vgetorpeek(advance)
                             setcursor(); /* put cursor back where it belongs */
                             c1 = 1;
                         }
-#if defined(FEAT_CMDL_INFO)
                         /* need to use the col and row from above here */
                         old_wcol = curwin->w_wcol;
                         old_wrow = curwin->w_wrow;
@@ -2525,7 +2465,6 @@ vgetorpeek(advance)
                             (void)add_to_showcmd(typebuf.tb_buf[typebuf.tb_off + i++]);
                         curwin->w_wcol = old_wcol;
                         curwin->w_wrow = old_wrow;
-#endif
                     }
 
                     /* this looks nice when typing a dead character map */
@@ -2547,17 +2486,14 @@ vgetorpeek(advance)
                         !advance
                             ? 0
                             : ((typebuf.tb_len == 0
-                                    || !(p_timeout || (p_ttimeout
-                                               && keylen == KEYLEN_PART_KEY)))
+                                    || !(p_timeout || (p_ttimeout && keylen == KEYLEN_PART_KEY)))
                                     ? -1L
                                     : ((keylen == KEYLEN_PART_KEY && p_ttm >= 0)
                                             ? p_ttm
                                             : p_tm)), typebuf.tb_change_cnt);
 
-#if defined(FEAT_CMDL_INFO)
                 if (i != 0)
                     pop_showcmd();
-#endif
                 if (c1 == 1)
                 {
                     if (State & INSERT)
@@ -2584,11 +2520,6 @@ vgetorpeek(advance)
                 {           /* allow mapping for just typed characters */
                     while (typebuf.tb_buf[typebuf.tb_off + typebuf.tb_len] != NUL)
                         typebuf.tb_noremap[typebuf.tb_off + typebuf.tb_len++] = RM_YES;
-#if defined(USE_IM_CONTROL)
-                    /* Get IM status right after getting keys, not after the
-                     * timeout for a mapping (focus may be lost by then). */
-                    vgetc_im_active = im_get_status();
-#endif
                 }
             }       /* for (;;) */
         }       /* if (!character from stuffbuf) */
@@ -2859,9 +2790,7 @@ do_map(maptype, arg, mode, abbrev)
     int         hasarg;
     int         haskey;
     int         did_it = FALSE;
-#if defined(FEAT_LOCALMAP)
     int         did_local = FALSE;
-#endif
     int         round;
     char_u      *keys_buf = NULL;
     char_u      *arg_buf = NULL;
@@ -2893,7 +2822,6 @@ do_map(maptype, arg, mode, abbrev)
      * any order. */
     for (;;)
     {
-#if defined(FEAT_LOCALMAP)
         /*
          * Check for "<buffer>": mapping local to buffer.
          */
@@ -2904,7 +2832,6 @@ do_map(maptype, arg, mode, abbrev)
             abbr_table = &curbuf->b_first_abbr;
             continue;
         }
-#endif
 
         /*
          * Check for "<nowait>": don't wait for more characters.
@@ -2978,8 +2905,7 @@ do_map(maptype, arg, mode, abbrev)
     do_backslash = (vim_strchr(p_cpo, CPO_BSLASH) == NULL);
     while (*p && (maptype == 1 || !vim_iswhite(*p)))
     {
-        if ((p[0] == Ctrl_V || (do_backslash && p[0] == '\\')) &&
-                                                                  p[1] != NUL)
+        if ((p[0] == Ctrl_V || (do_backslash && p[0] == '\\')) && p[1] != NUL)
             ++p;                /* skip CTRL-V or backslash */
         ++p;
     }
@@ -3085,7 +3011,6 @@ do_map(maptype, arg, mode, abbrev)
     if (!haskey || (maptype != 1 && !hasarg))
         msg_start();
 
-#if defined(FEAT_LOCALMAP)
     /*
      * Check if a new local mapping wasn't already defined globally.
      */
@@ -3160,7 +3085,6 @@ do_map(maptype, arg, mode, abbrev)
             }
         }
     }
-#endif
 
     /*
      * Find an entry in the maphash[] list that matches.
@@ -3170,8 +3094,7 @@ do_map(maptype, arg, mode, abbrev)
      * to be unmapped by typing ":unab foo", where "foo" will be replaced by
      * "bar" because of the abbreviation.
      */
-    for (round = 0; (round == 0 || maptype == 1) && round <= 1
-                                              && !did_it && !got_int; ++round)
+    for (round = 0; (round == 0 || maptype == 1) && round <= 1 && !did_it && !got_int; ++round)
     {
         /* need to loop over all hash lists */
         for (hash = 0; hash < 256 && !got_int; ++hash)
@@ -3304,11 +3227,9 @@ do_map(maptype, arg, mode, abbrev)
         else if (*keys == Ctrl_C)
         {
             /* If CTRL-C has been unmapped, reuse it for Interrupting. */
-#if defined(FEAT_LOCALMAP)
             if (map_table == curbuf->b_maphash)
                 curbuf->b_mapped_ctrl_c &= ~mode;
             else
-#endif
                 mapped_ctrl_c &= ~mode;
         }
         goto theend;
@@ -3317,9 +3238,7 @@ do_map(maptype, arg, mode, abbrev)
     if (!haskey || !hasarg)                 /* print entries */
     {
         if (!did_it
-#if defined(FEAT_LOCALMAP)
                 && !did_local
-#endif
                 )
         {
             if (abbrev)
@@ -3346,11 +3265,9 @@ do_map(maptype, arg, mode, abbrev)
     /* If CTRL-C has been mapped, don't always use it for Interrupting. */
     if (*keys == Ctrl_C)
     {
-#if defined(FEAT_LOCALMAP)
         if (map_table == curbuf->b_maphash)
             curbuf->b_mapped_ctrl_c |= mode;
         else
-#endif
             mapped_ctrl_c |= mode;
     }
 
@@ -3479,7 +3396,6 @@ map_clear(cmdp, arg, forceit, abbr)
     int         abbr;
 {
     int         mode;
-#if defined(FEAT_LOCALMAP)
     int         local;
 
     local = (STRCMP(arg, "<buffer>") == 0);
@@ -3488,15 +3404,10 @@ map_clear(cmdp, arg, forceit, abbr)
         EMSG(_(e_invarg));
         return;
     }
-#endif
 
     mode = get_map_mode(&cmdp, forceit);
     map_clear_int(curbuf, mode,
-#if defined(FEAT_LOCALMAP)
             local,
-#else
-            FALSE,
-#endif
             abbr);
 }
 
@@ -3522,20 +3433,16 @@ map_clear_int(buf, mode, local, abbr)
         {
             if (hash > 0)       /* there is only one abbrlist */
                 break;
-#if defined(FEAT_LOCALMAP)
             if (local)
                 mpp = &buf->b_first_abbr;
             else
-#endif
                 mpp = &first_abbr;
         }
         else
         {
-#if defined(FEAT_LOCALMAP)
             if (local)
                 mpp = &buf->b_maphash[hash];
             else
-#endif
                 mpp = &maphash[hash];
         }
         while (*mpp != NULL)
@@ -3556,14 +3463,12 @@ map_clear_int(buf, mode, local, abbr)
                 if (!abbr && new_hash != hash)
                 {
                     *mpp = mp->m_next;
-#if defined(FEAT_LOCALMAP)
                     if (local)
                     {
                         mp->m_next = buf->b_maphash[new_hash];
                         buf->b_maphash[new_hash] = mp;
                     }
                     else
-#endif
                     {
                         mp->m_next = maphash[new_hash];
                         maphash[new_hash] = mp;
@@ -3739,7 +3644,6 @@ map_to_exists_mode(rhs, mode, abbr)
 {
     mapblock_T  *mp;
     int         hash;
-#if defined(FEAT_LOCALMAP)
     int         expand_buffer = FALSE;
 
     validate_maphash();
@@ -3747,52 +3651,41 @@ map_to_exists_mode(rhs, mode, abbr)
     /* Do it twice: once for global maps and once for local maps. */
     for (;;)
     {
-#endif
         for (hash = 0; hash < 256; ++hash)
         {
             if (abbr)
             {
                 if (hash > 0)           /* there is only one abbr list */
                     break;
-#if defined(FEAT_LOCALMAP)
                 if (expand_buffer)
                     mp = curbuf->b_first_abbr;
                 else
-#endif
                     mp = first_abbr;
             }
-#if defined(FEAT_LOCALMAP)
             else if (expand_buffer)
                 mp = curbuf->b_maphash[hash];
-#endif
             else
                 mp = maphash[hash];
             for (; mp; mp = mp->m_next)
             {
-                if ((mp->m_mode & mode)
-                        && strstr((char *)mp->m_str, (char *)rhs) != NULL)
+                if ((mp->m_mode & mode) && strstr((char *)mp->m_str, (char *)rhs) != NULL)
                     return TRUE;
             }
         }
-#if defined(FEAT_LOCALMAP)
         if (expand_buffer)
             break;
         expand_buffer = TRUE;
     }
-#endif
 
     return FALSE;
 }
 
-#if defined(FEAT_CMDL_COMPL)
 /*
  * Used below when expanding mapping/abbreviation names.
  */
 static int      expand_mapmodes = 0;
 static int      expand_isabbrev = 0;
-#if defined(FEAT_LOCALMAP)
 static int      expand_buffer = FALSE;
-#endif
 
 /*
  * Work out what to complete when doing command line completion of mapping
@@ -3822,19 +3715,15 @@ set_context_in_map_cmd(xp, cmd, arg, forceit, isabbrev, isunmap, cmdidx)
         }
         expand_isabbrev = isabbrev;
         xp->xp_context = EXPAND_MAPPINGS;
-#if defined(FEAT_LOCALMAP)
         expand_buffer = FALSE;
-#endif
         for (;;)
         {
-#if defined(FEAT_LOCALMAP)
             if (STRNCMP(arg, "<buffer>", 8) == 0)
             {
                 expand_buffer = TRUE;
                 arg = skipwhite(arg + 8);
                 continue;
             }
-#endif
             if (STRNCMP(arg, "<unique>", 8) == 0)
             {
                 arg = skipwhite(arg + 8);
@@ -3909,10 +3798,8 @@ ExpandMappings(regmatch, num_file, file)
                 p = (char_u *)"<script>";
             else if (i == 3)
                 p = (char_u *)"<expr>";
-#if defined(FEAT_LOCALMAP)
             else if (i == 4 && !expand_buffer)
                 p = (char_u *)"<buffer>";
-#endif
             else if (i == 5)
                 p = (char_u *)"<nowait>";
             else
@@ -3935,10 +3822,8 @@ ExpandMappings(regmatch, num_file, file)
                     break; /* for (hash) */
                 mp = first_abbr;
             }
-#if defined(FEAT_LOCALMAP)
             else if (expand_buffer)
                 mp = curbuf->b_maphash[hash];
-#endif
             else
                 mp = maphash[hash];
             for (; mp; mp = mp->m_next)
@@ -4001,7 +3886,6 @@ ExpandMappings(regmatch, num_file, file)
     *num_file = count;
     return (count == 0 ? FAIL : OK);
 }
-#endif
 
 /*
  * Check for an abbreviation.
@@ -4032,9 +3916,7 @@ check_abbr(c, ptr, col, mincol)
     char_u      *s;
     char_u      tb[MB_MAXBYTES + 4];
     mapblock_T  *mp;
-#if defined(FEAT_LOCALMAP)
     mapblock_T  *mp2;
-#endif
     int         clen = 0;       /* length in characters */
     int         is_id = TRUE;
     int         vim_abbr;
@@ -4102,7 +3984,6 @@ check_abbr(c, ptr, col, mincol)
     {
         ptr += scol;
         len = col - scol;
-#if defined(FEAT_LOCALMAP)
         mp = curbuf->b_first_abbr;
         mp2 = first_abbr;
         if (mp == NULL)
@@ -4110,13 +3991,8 @@ check_abbr(c, ptr, col, mincol)
             mp = mp2;
             mp2 = NULL;
         }
-#else
-        mp = first_abbr;
-#endif
         for ( ; mp;
-#if defined(FEAT_LOCALMAP)
                 mp->m_next == NULL ? (mp = mp2, mp2 = NULL) :
-#endif
                 (mp = mp->m_next))
         {
             int         qlen = mp->m_keylen;
@@ -4334,8 +4210,7 @@ vim_unescape_csi(p)
             *d++ = K_SPECIAL;
             s += 3;
         }
-        else if ((s[0] == K_SPECIAL || s[0] == CSI)
-                                   && s[1] == KS_EXTRA && s[2] == (int)KE_CSI)
+        else if ((s[0] == K_SPECIAL || s[0] == CSI) && s[1] == KS_EXTRA && s[2] == (int)KE_CSI)
         {
             *d++ = CSI;
             s += 3;
@@ -4377,20 +4252,16 @@ makemap(fd, buf)
             {
                 if (hash > 0)           /* there is only one abbr list */
                     break;
-#if defined(FEAT_LOCALMAP)
                 if (buf != NULL)
                     mp = buf->b_first_abbr;
                 else
-#endif
                     mp = first_abbr;
             }
             else
             {
-#if defined(FEAT_LOCALMAP)
                 if (buf != NULL)
                     mp = buf->b_maphash[hash];
                 else
-#endif
                     mp = maphash[hash];
             }
 
@@ -4403,8 +4274,7 @@ makemap(fd, buf)
                 /* skip mappings that contain a <SNR> (script-local thing),
                  * they probably don't work when loaded again */
                 for (p = mp->m_str; *p != NUL; ++p)
-                    if (p[0] == K_SPECIAL && p[1] == KS_EXTRA
-                                                       && p[2] == (int)KE_SNR)
+                    if (p[0] == K_SPECIAL && p[1] == KS_EXTRA && p[2] == (int)KE_SNR)
                         break;
                 if (*p != NUL)
                     continue;
@@ -4527,8 +4397,7 @@ makemap(fd, buf)
                         return FAIL;
                     if (mp->m_silent && fputs(" <silent>", fd) < 0)
                         return FAIL;
-                    if (mp->m_noremap == REMAP_SCRIPT
-                                                 && fputs("<script>", fd) < 0)
+                    if (mp->m_noremap == REMAP_SCRIPT && fputs("<script>", fd) < 0)
                         return FAIL;
                     if (mp->m_expr && fputs(" <expr>", fd) < 0)
                         return FAIL;
@@ -4685,20 +4554,16 @@ check_map_keycodes()
     char_u      *save_name;
     int         abbr;
     int         hash;
-#if defined(FEAT_LOCALMAP)
     buf_T       *bp;
-#endif
 
     validate_maphash();
     save_name = sourcing_name;
     sourcing_name = (char_u *)"mappings"; /* avoids giving error messages */
 
-#if defined(FEAT_LOCALMAP)
     /* This this once for each buffer, and then once for global
      * mappings/abbreviations with bp == NULL */
     for (bp = firstbuf; ; bp = bp->b_next)
     {
-#endif
         /*
          * Do the loop twice: Once for mappings, once for abbreviations.
          * Then loop over all map hash lists.
@@ -4710,20 +4575,16 @@ check_map_keycodes()
                 {
                     if (hash)       /* there is only one abbr list */
                         break;
-#if defined(FEAT_LOCALMAP)
                     if (bp != NULL)
                         mp = bp->b_first_abbr;
                     else
-#endif
                         mp = first_abbr;
                 }
                 else
                 {
-#if defined(FEAT_LOCALMAP)
                     if (bp != NULL)
                         mp = bp->b_maphash[hash];
                     else
-#endif
                         mp = maphash[hash];
                 }
                 for ( ; mp != NULL; mp = mp->m_next)
@@ -4753,11 +4614,9 @@ check_map_keycodes()
                     }
                 }
             }
-#if defined(FEAT_LOCALMAP)
         if (bp == NULL)
             break;
     }
-#endif
     sourcing_name = save_name;
 }
 
@@ -4780,16 +4639,12 @@ check_map(keys, mode, exact, ign_mod, abbr, mp_ptr, local_ptr)
     int         len, minlen;
     mapblock_T  *mp;
     char_u      *s;
-#if defined(FEAT_LOCALMAP)
     int         local;
-#endif
 
     validate_maphash();
 
     len = (int)STRLEN(keys);
-#if defined(FEAT_LOCALMAP)
     for (local = 1; local >= 0; --local)
-#endif
         /* loop over all hash lists */
         for (hash = 0; hash < 256; ++hash)
         {
@@ -4797,17 +4652,13 @@ check_map(keys, mode, exact, ign_mod, abbr, mp_ptr, local_ptr)
             {
                 if (hash > 0)           /* there is only one list. */
                     break;
-#if defined(FEAT_LOCALMAP)
                 if (local)
                     mp = curbuf->b_first_abbr;
                 else
-#endif
                     mp = first_abbr;
             }
-#if defined(FEAT_LOCALMAP)
             else if (local)
                 mp = curbuf->b_maphash[hash];
-#endif
             else
                 mp = maphash[hash];
             for ( ; mp != NULL; mp = mp->m_next)
@@ -4821,8 +4672,7 @@ check_map(keys, mode, exact, ign_mod, abbr, mp_ptr, local_ptr)
                     else
                         minlen = len;
                     s = mp->m_keys;
-                    if (ign_mod && s[0] == K_SPECIAL && s[1] == KS_MODIFIER
-                                                               && s[2] != NUL)
+                    if (ign_mod && s[0] == K_SPECIAL && s[1] == KS_MODIFIER && s[2] != NUL)
                     {
                         s += 3;
                         if (len > mp->m_keylen - 3)
@@ -4833,11 +4683,7 @@ check_map(keys, mode, exact, ign_mod, abbr, mp_ptr, local_ptr)
                         if (mp_ptr != NULL)
                             *mp_ptr = mp;
                         if (local_ptr != NULL)
-#if defined(FEAT_LOCALMAP)
                             *local_ptr = local;
-#else
-                            *local_ptr = 0;
-#endif
                         return mp->m_str;
                     }
                 }
@@ -4855,7 +4701,6 @@ init_mappings()
 {
 }
 
-#if defined(FEAT_CMDWIN)
 /*
  * Add a mapping "map" for mode "mode".
  * Need to put string in allocated memory, because do_map() will modify it.
@@ -4877,4 +4722,3 @@ add_map(map, mode)
     }
     p_cpo = cpo_save;
 }
-#endif

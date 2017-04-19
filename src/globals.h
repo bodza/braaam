@@ -95,33 +95,6 @@ EXTERN int      screen_cleared INIT(= FALSE);   /* screen has been cleared */
  */
 EXTERN colnr_T  dollar_vcol INIT(= -1);
 
-#if defined(FEAT_INS_EXPAND)
-/*
- * Variables for Insert mode completion.
- */
-
-/* Length in bytes of the text being completed (this is deleted to be replaced
- * by the match.) */
-EXTERN int      compl_length INIT(= 0);
-
-/* Set when character typed while looking for matches and it means we should
- * stop looking for matches. */
-EXTERN int      compl_interrupted INIT(= FALSE);
-
-/* List of flags for method of completion. */
-EXTERN int      compl_cont_status INIT(= 0);
-#define CONT_ADDING    1       /* "normal" or "adding" expansion */
-#define CONT_INTRPT    (2 + 4) /* a ^X interrupted the current expansion */
-                                /* it's set only iff N_ADDS is set */
-#define CONT_N_ADDS    4       /* next ^X<> will add-new or expand-current */
-#define CONT_S_IPOS    8       /* next ^X<> will set initial_pos?
-                                 * if so, word-wise-expansion will set SOL */
-#define CONT_SOL       16      /* pattern includes start of line, just for
-                                 * word-wise expansion, not set for ^X^L */
-#define CONT_LOCAL     32      /* for ctrl_x_mode 0, ^X^P/^X^N do a local
-                                 * expansion, (eg use complete=.) */
-#endif
-
 /*
  * Functions for putting characters in the command line,
  * while keeping ScreenLines[] updated.
@@ -308,15 +281,8 @@ EXTERN int      did_check_timestamps INIT(= FALSE); /* did check timestamps
 EXTERN int      no_check_timestamps INIT(= 0);  /* Don't check timestamps */
 
 EXTERN int      highlight_attr[HLF_COUNT];  /* Highl. attr for each context. */
-#if defined(FEAT_STL_OPT)
-#define USER_HIGHLIGHT
-#endif
-#if defined(USER_HIGHLIGHT)
 EXTERN int      highlight_user[9];              /* User[1-9] attributes */
-#if defined(FEAT_STL_OPT)
 EXTERN int      highlight_stlnc[9];             /* On top of user */
-#endif
-#endif
 EXTERN int      cterm_normal_fg_color INIT(= 0);
 EXTERN int      cterm_normal_fg_bold INIT(= 0);
 EXTERN int      cterm_normal_bg_color INIT(= 0);
@@ -341,7 +307,6 @@ EXTERN buf_T    *au_new_curbuf INIT(= NULL);
 EXTERN buf_T    *au_pending_free_buf INIT(= NULL);
 EXTERN win_T    *au_pending_free_win INIT(= NULL);
 
-#if defined(FEAT_MOUSE)
 /*
  * Mouse coordinates, set by check_termcode()
  */
@@ -352,30 +317,10 @@ EXTERN int      mouse_past_eol INIT(= FALSE);   /* mouse right of line */
 EXTERN int      mouse_dragging INIT(= 0);       /* extending Visual area with
                                                    mouse dragging */
 
-#if defined(FEAT_MOUSESHAPE)
-EXTERN int      drag_status_line INIT(= FALSE); /* dragging the status line */
-EXTERN int      postponed_mouseshape INIT(= FALSE); /* postponed updating the
-                                                       mouse pointer shape */
-EXTERN int      drag_sep_line INIT(= FALSE);    /* dragging vert separator */
-#endif
-
-#endif
-
-#if defined(FEAT_MENU)
-/* The root of the menu hierarchy. */
-EXTERN vimmenu_T        *root_menu INIT(= NULL);
-/*
- * While defining the system menu, sys_menu is TRUE.  This avoids
- * overruling of menus that the user already defined.
- */
-EXTERN int      sys_menu INIT(= FALSE);
-#endif
-
 /* While redrawing the screen this flag is set.  It means the screen size
  * ('lines' and 'rows') must not be changed. */
 EXTERN int      updating_screen INIT(= FALSE);
 
-#if defined(FEAT_CLIPBOARD)
 EXTERN VimClipboard clip_star;  /* PRIMARY selection in X11 */
 #define clip_plus clip_star   /* there is only one clipboard */
 #define ONE_CLIPBOARD
@@ -391,7 +336,6 @@ EXTERN int      clip_html INIT(= FALSE);
 EXTERN regprog_T *clip_exclude_prog INIT(= NULL);
 EXTERN int      clip_did_set_selection INIT(= TRUE);
 EXTERN int      clip_unnamed_saved INIT(= 0);
-#endif
 
 /*
  * All windows are linked in a list. firstwin points to the first entry,
@@ -453,9 +397,7 @@ EXTERN int      arg_had_last INIT(= FALSE); /* accessed last file in
                                                global_alist */
 
 EXTERN int      ru_col;         /* column for ruler */
-#if defined(FEAT_STL_OPT)
 EXTERN int      ru_wid;         /* 'rulerfmt' width of ruler when non-zero */
-#endif
 EXTERN int      sc_col;         /* column for shown command */
 
 #if defined(TEMPDIRNAMES)
@@ -525,13 +467,11 @@ EXTERN int      VIsual_mode INIT(= 'v');
 EXTERN int      redo_VIsual_busy INIT(= FALSE);
                                 /* TRUE when redoing Visual */
 
-#if defined(FEAT_MOUSE)
 /*
  * When pasting text with the middle mouse button in visual mode with
  * restart_edit set, remember where it started so we can set Insstart.
  */
 EXTERN pos_T    where_paste_started;
-#endif
 
 /*
  * This flag is used to make auto-indent work right on lines where only a
@@ -555,7 +495,6 @@ EXTERN colnr_T  ai_col INIT(= 0);
  */
 EXTERN int     end_comment_pending INIT(= NUL);
 
-#if defined(FEAT_SCROLLBIND)
 /*
  * This flag is set after a ":syncbind" to let the check_scrollbind() function
  * know that it should not attempt to perform scrollbinding due to the scroll
@@ -563,7 +502,6 @@ EXTERN int     end_comment_pending INIT(= NUL);
  * undo some of the work done by ":syncbind.")  -ralston
  */
 EXTERN int     did_syncbind INIT(= FALSE);
-#endif
 
 /*
  * This flag is set when a smart indent has been performed. When the next typed
@@ -706,13 +644,6 @@ EXTERN int arrow_used;                  /* Normally FALSE, set to TRUE after
                                          * to call u_sync() */
 EXTERN int      ins_at_eol INIT(= FALSE); /* put cursor after eol when
                                            restarting edit after CTRL-O */
-#if defined(FEAT_INS_EXPAND)
-EXTERN char_u   *edit_submode INIT(= NULL); /* msg for CTRL-X submode */
-EXTERN char_u   *edit_submode_pre INIT(= NULL); /* prepended to edit_submode */
-EXTERN char_u   *edit_submode_extra INIT(= NULL);/* appended to edit_submode */
-EXTERN hlf_T    edit_submode_highl;     /* highl. method for extra info */
-EXTERN int      ctrl_x_mode INIT(= 0);  /* Which Ctrl-X mode are we in? */
-#endif
 
 EXTERN int      no_abbr INIT(= TRUE);   /* TRUE when no abbreviations loaded */
 
@@ -758,10 +689,6 @@ EXTERN int      stop_insert_mode;       /* for ":stopinsert" and 'insertmode' */
 
 EXTERN int      KeyTyped;               /* TRUE if user typed current char */
 EXTERN int      KeyStuffed;             /* TRUE if current char from stuffbuf */
-#if defined(USE_IM_CONTROL)
-EXTERN int      vgetc_im_active;        /* Input Method was active for last
-                                           character obtained from vgetc() */
-#endif
 EXTERN int      maptick INIT(= 0);      /* tick for each non-mapped char */
 
 EXTERN char_u   chartab[256];           /* table used in charset.c; See
@@ -810,9 +737,7 @@ EXTERN int      need_start_insertmode INIT(= FALSE);
                                             /* start insert mode soon */
 EXTERN char_u   *last_cmdline INIT(= NULL); /* last command line (for ":) */
 EXTERN char_u   *repeat_cmdline INIT(= NULL); /* command line for "." */
-#if defined(FEAT_CMDHIST)
 EXTERN char_u   *new_last_cmdline INIT(= NULL); /* new value for last_cmdline */
-#endif
 EXTERN char_u   *autocmd_fname INIT(= NULL); /* fname for <afile> on cmdline */
 EXTERN int      autocmd_fname_full;          /* autocmd_fname is full path */
 EXTERN int      autocmd_bufnr INIT(= 0);     /* fnum for <abuf> on cmdline */
@@ -848,14 +773,6 @@ EXTERN FILE *redir_fd INIT(= NULL);     /* message redirection file */
 EXTERN int  redir_reg INIT(= 0);        /* message redirection register */
 EXTERN int  redir_vname INIT(= 0);      /* message redirection variable */
 
-#if defined(FEAT_WILDMENU)
-EXTERN int  save_p_ls INIT(= -1);       /* Save 'laststatus' setting */
-EXTERN int  save_p_wmh INIT(= -1);      /* Save 'winminheight' setting */
-EXTERN int  wild_menu_showing INIT(= 0);
-#define WM_SHOWN       1               /* wildmenu showing */
-#define WM_SCROLLED    2               /* wildmenu showing with scroll */
-#endif
-
 EXTERN char     breakat_flags[256];     /* which characters are in 'breakat' */
 
 /* these are in version.c */
@@ -888,11 +805,9 @@ EXTERN int      fill_diff INIT(= '-');
 EXTERN int      km_stopsel INIT(= FALSE);
 EXTERN int      km_startsel INIT(= FALSE);
 
-#if defined(FEAT_CMDWIN)
 EXTERN int      cedit_key INIT(= -1);   /* key value of 'cedit' option */
 EXTERN int      cmdwin_type INIT(= 0);  /* type of cmdline window or 0 */
 EXTERN int      cmdwin_result INIT(= 0); /* result of cmdline window or 0 */
-#endif
 
 EXTERN char_u no_lines_msg[]    INIT(= "--No lines in buffer--");
 
@@ -907,20 +822,16 @@ EXTERN linenr_T sub_nlines;     /* total number of lines changed */
 /* table to store parsed 'wildmode' */
 EXTERN char_u   wim_flags[4];
 
-#if defined(FEAT_STL_OPT)
 /* whether titlestring and iconstring contains statusline syntax */
 #define STL_IN_ICON    1
 #define STL_IN_TITLE   2
 EXTERN int      stl_syntax INIT(= 0);
-#endif
 
 /* don't use 'hlsearch' temporarily */
 EXTERN int      no_hlsearch INIT(= FALSE);
 
-#if defined(CURSOR_SHAPE)
 /* the table is in misc2.c, because of initializations */
 extern cursorentry_T shape_table[SHAPE_IDX_COUNT];
-#endif
 
 EXTERN int      typebuf_was_filled INIT(= FALSE); /* received text from client
                                                      or from feedkeys() */
@@ -961,9 +872,7 @@ EXTERN garray_T error_ga
 EXTERN char_u e_abort[]         INIT(= "E470: Command aborted");
 EXTERN char_u e_argreq[]        INIT(= "E471: Argument required");
 EXTERN char_u e_backslash[]     INIT(= "E10: \\ should be followed by /, ? or &");
-#if defined(FEAT_CMDWIN)
 EXTERN char_u e_cmdwin[]        INIT(= "E11: Invalid in command-line window; <CR> executes, CTRL-C quits");
-#endif
 EXTERN char_u e_curdir[]        INIT(= "E12: Command not allowed from exrc/vimrc in current dir or tag search");
 EXTERN char_u e_endif[]         INIT(= "E171: Missing :endif");
 EXTERN char_u e_endtry[]        INIT(= "E600: Missing :endtry");
@@ -1013,9 +922,6 @@ EXTERN char_u e_nowrtmsg_nobang[]   INIT(= "E37: No write since last change");
 EXTERN char_u e_null[]          INIT(= "E38: Null argument");
 EXTERN char_u e_number_exp[]    INIT(= "E39: Number expected");
 EXTERN char_u e_outofmem[]      INIT(= "E41: Out of memory!");
-#if defined(FEAT_INS_EXPAND)
-EXTERN char_u e_patnotf[]       INIT(= "Pattern not found");
-#endif
 EXTERN char_u e_patnotf2[]      INIT(= "E486: Pattern not found: %s");
 EXTERN char_u e_positive[]      INIT(= "E487: Argument must be positive");
 EXTERN char_u e_prev_dir[]      INIT(= "E459: Cannot go back to previous directory");
@@ -1052,9 +958,6 @@ EXTERN char_u e_nobufnr[]       INIT(= "E86: Buffer %ld does not exist");
 EXTERN char_u e_invalpat[]      INIT(= "E682: Invalid search pattern or delimiter");
 EXTERN char_u e_bufloaded[]     INIT(= "E139: File is loaded in another buffer");
 EXTERN char_u e_notset[]        INIT(= "E764: Option '%s' is not set");
-#if !defined(FEAT_CLIPBOARD)
-EXTERN char_u e_invalidreg[]    INIT(= "E850: Invalid register name");
-#endif
 
 EXTERN char top_bot_msg[] INIT(= "search hit TOP, continuing at BOTTOM");
 EXTERN char bot_top_msg[] INIT(= "search hit BOTTOM, continuing at TOP");

@@ -180,8 +180,7 @@ setpcmark()
 checkpcmark()
 {
     if (curwin->w_prev_pcmark.lnum != 0
-            && (equalpos(curwin->w_pcmark, curwin->w_cursor)
-                || curwin->w_pcmark.lnum == 0))
+            && (equalpos(curwin->w_pcmark, curwin->w_cursor) || curwin->w_pcmark.lnum == 0))
     {
         curwin->w_pcmark = curwin->w_prev_pcmark;
         curwin->w_prev_pcmark.lnum = 0;         /* Show it has been checked */
@@ -416,8 +415,7 @@ getmark_buf_fnum(buf, c, changefile, fnum)
             /* mark is in another file */
             posp = &pos_copy;
 
-            if (namedfm[c].fmark.mark.lnum != 0
-                                       && changefile && namedfm[c].fmark.fnum)
+            if (namedfm[c].fmark.mark.lnum != 0 && changefile && namedfm[c].fmark.fnum)
             {
                 if (buflist_getfile(namedfm[c].fmark.fnum, (linenr_T)1, GETF_SETMARK, FALSE) == OK)
                 {
@@ -468,14 +466,12 @@ getnextmark(startpos, dir, begin_line)
         {
             if (dir == FORWARD)
             {
-                if ((result == NULL || lt(curbuf->b_namedm[i], *result))
-                        && lt(pos, curbuf->b_namedm[i]))
+                if ((result == NULL || lt(curbuf->b_namedm[i], *result)) && lt(pos, curbuf->b_namedm[i]))
                     result = &curbuf->b_namedm[i];
             }
             else
             {
-                if ((result == NULL || lt(*result, curbuf->b_namedm[i]))
-                        && lt(curbuf->b_namedm[i], pos))
+                if ((result == NULL || lt(*result, curbuf->b_namedm[i])) && lt(curbuf->b_namedm[i], pos))
                     result = &curbuf->b_namedm[i];
             }
         }
@@ -559,9 +555,7 @@ fmarks_check_one(fm, name, buf)
     char_u      *name;
     buf_T       *buf;
 {
-    if (fm->fmark.fnum == 0
-            && fm->fname != NULL
-            && fnamecmp(name, fm->fname) == 0)
+    if (fm->fmark.fnum == 0 && fm->fname != NULL && fnamecmp(name, fm->fname) == 0)
     {
         fm->fmark.fnum = buf->b_fnum;
         vim_free(fm->fname);
@@ -738,9 +732,7 @@ show_one_mark(c, arg, p, name, current)
         }
     }
     /* don't output anything if 'q' typed at --more-- prompt */
-    else if (!got_int
-            && (arg == NULL || vim_strchr(arg, c) != NULL)
-            && p->lnum != 0)
+    else if (!got_int && (arg == NULL || vim_strchr(arg, c) != NULL) && p->lnum != 0)
     {
         if (!did_title)
         {
@@ -1105,7 +1097,6 @@ mark_adjust(line1, line2, amount, amount_after)
             }
         }
     }
-
 }
 
 /* This code is used often, needs to be fast. */

@@ -95,28 +95,6 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
 {
     int         retval = 0;
 
-#if defined(NO_CONSOLE_INPUT)
-    /* Don't wait for character input when the window hasn't been opened yet.
-     * Do try reading, this works when redirecting stdin from a file.
-     * Must return something, otherwise we'll loop forever.  If we run into
-     * this very often we probably got stuck, exit Vim. */
-    if (no_console_input())
-    {
-        static int count = 0;
-
-#if !defined(NO_CONSOLE)
-        retval = mch_inchar(buf, maxlen, (wtime >= 0 && wtime < 10) ? 10L : wtime, tb_change_cnt);
-        if (retval > 0 || typebuf_changed(tb_change_cnt) || wtime >= 0)
-            goto theend;
-#endif
-        if (wtime == -1 && ++count == 1000)
-            read_error_exit();
-        buf[0] = CAR;
-        retval = 1;
-        goto theend;
-    }
-#endif
-
     /* If we are going to wait for some time or block... */
     if (wtime == -1 || wtime > 100L)
     {
@@ -141,9 +119,6 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
 
     ctrl_c_interrupts = TRUE;
 
-#if defined(NO_CONSOLE_INPUT)
-theend:
-#endif
     return retval;
 }
 
@@ -154,10 +129,6 @@ theend:
 ui_char_avail()
 {
 #if !defined(NO_CONSOLE)
-#if defined(NO_CONSOLE_INPUT)
-    if (no_console_input())
-        return 0;
-#endif
     return mch_char_avail();
 #else
     return 0;
@@ -271,8 +242,6 @@ ui_breakcheck()
  * for them.
  */
 
-#if defined(FEAT_CLIPBOARD)
-
 static void clip_copy_selection(VimClipboard *clip);
 
 /*
@@ -337,9 +306,7 @@ clip_update_selection(clip)
             start = curwin->w_cursor;
             end = VIsual;
         }
-        if (!equalpos(clip->start, start)
-                || !equalpos(clip->end, end)
-                || clip->vmode != VIsual_mode)
+        if (!equalpos(clip->start, start) || !equalpos(clip->end, end) || clip->vmode != VIsual_mode)
         {
             clip_clear_selection(clip);
             clip->start = start;
@@ -516,8 +483,7 @@ clip_modeless(button, is_click, is_drag)
 {
     int         repeat;
 
-    repeat = ((clip_star.mode == SELECT_MODE_CHAR
-                || clip_star.mode == SELECT_MODE_LINE)
+    repeat = ((clip_star.mode == SELECT_MODE_CHAR || clip_star.mode == SELECT_MODE_LINE)
                                               && (mod_mask & MOD_MASK_2CLICK))
             || (clip_star.mode == SELECT_MODE_WORD
                                              && (mod_mask & MOD_MASK_3CLICK));
@@ -618,10 +584,6 @@ clip_start_selection(col, row, repeated_click)
     }
 
     cb->prev = cb->start;
-
-#if defined(DEBUG_SELECTION)
-    printf("Selection started at (%u,%u)\n", cb->start.lnum, cb->start.col);
-#endif
 }
 
 /*
@@ -647,13 +609,7 @@ clip_process_selection(button, col, row, repeated_click)
             return;
         }
 
-#if defined(DEBUG_SELECTION)
-        printf("Selection ended: (%u,%u) to (%u,%u)\n", cb->start.lnum,
-                cb->start.col, cb->end.lnum, cb->end.col);
-#endif
-        if (clip_isautosel_star()
-                || (
-                    clip_autoselectml))
+        if (clip_isautosel_star() || (clip_autoselectml))
             clip_copy_modeless_selection(FALSE);
 
         cb->state = SELECT_DONE;
@@ -679,14 +635,11 @@ clip_process_selection(button, col, row, repeated_click)
          * end of the selection.
          */
         if (clip_compare_pos(row, col, (int)cb->start.lnum, cb->start.col) < 0
-                || (clip_compare_pos(row, col,
-                                           (int)cb->end.lnum, cb->end.col) < 0
+                || (clip_compare_pos(row, col, (int)cb->end.lnum, cb->end.col) < 0
                     && (((cb->start.lnum == cb->end.lnum
                             && cb->end.col - col > col - cb->start.col))
-                        || ((diff = (cb->end.lnum - row) -
-                                                   (row - cb->start.lnum)) > 0
-                            || (diff == 0 && col < (int)(cb->start.col +
-                                                         cb->end.col) / 2)))))
+                        || ((diff = (cb->end.lnum - row) - (row - cb->start.lnum)) > 0
+                            || (diff == 0 && col < (int)(cb->start.col + cb->end.col) / 2)))))
         {
             cb->origin_row = (short_u)cb->end.lnum;
             cb->origin_start_col = cb->end.col - 1;
@@ -704,10 +657,6 @@ clip_process_selection(button, col, row, repeated_click)
 
     /* set state, for when using the right mouse button */
     cb->state = SELECT_IN_PROGRESS;
-
-#if defined(DEBUG_SELECTION)
-    printf("Selection extending to (%d,%d)\n", row, col);
-#endif
 
     if (repeated_click && ++cb->mode > SELECT_MODE_LINE)
         cb->mode = SELECT_MODE_CHAR;
@@ -735,8 +684,7 @@ clip_process_selection(button, col, row, repeated_click)
             }
             else
             {
-                if (has_mbyte
-                        && mb_lefthalve(cb->origin_row, cb->origin_start_col))
+                if (has_mbyte && mb_lefthalve(cb->origin_row, cb->origin_start_col))
                     slen = 2;
                 if (col >= (int)cb->word_end_col)
                     clip_update_modeless_selection(cb, row, cb->word_end_col,
@@ -778,11 +726,6 @@ clip_process_selection(button, col, row, repeated_click)
 
     cb->prev.lnum = row;
     cb->prev.col  = col;
-
-#if defined(DEBUG_SELECTION)
-        printf("Selection is: (%u,%u) to (%u,%u)\n", cb->start.lnum,
-                cb->start.col, cb->end.lnum, cb->end.col);
-#endif
 }
 
 /*
@@ -792,7 +735,6 @@ clip_process_selection(button, col, row, repeated_click)
 clip_clear_selection(cbd)
     VimClipboard    *cbd;
 {
-
     if (cbd->state == SELECT_CLEARED)
         return;
 
@@ -1115,8 +1057,7 @@ clip_get_word_boundaries(cb, row, col)
 
     temp_col = col;
     for ( ; temp_col > 0; temp_col--)
-        if (enc_dbcs != 0
-                   && (mboff = dbcs_screen_head_off(p, p + temp_col - 1)) > 0)
+        if (enc_dbcs != 0 && (mboff = dbcs_screen_head_off(p, p + temp_col - 1)) > 0)
             temp_col -= mboff;
         else
         if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
@@ -1180,6 +1121,12 @@ clip_update_modeless_selection(cb, row1, col1, row2, col2)
     }
 }
 
+    static int
+clip_mch_own_selection(VimClipboard *cbd)
+{
+    return TRUE;
+}
+
     int
 clip_gen_own_selection(cbd)
     VimClipboard        *cbd;
@@ -1187,11 +1134,21 @@ clip_gen_own_selection(cbd)
     return clip_mch_own_selection(cbd);
 }
 
+    static void
+clip_mch_lose_selection(VimClipboard *cbd)
+{
+}
+
     void
 clip_gen_lose_selection(cbd)
     VimClipboard        *cbd;
 {
     clip_mch_lose_selection(cbd);
+}
+
+    static void
+clip_mch_set_selection(VimClipboard *cbd)
+{
 }
 
     void
@@ -1212,6 +1169,11 @@ clip_gen_set_selection(cbd)
     clip_mch_set_selection(cbd);
 }
 
+    static void
+clip_mch_request_selection(VimClipboard *cbd)
+{
+}
+
     void
 clip_gen_request_selection(cbd)
     VimClipboard        *cbd;
@@ -1225,8 +1187,6 @@ clip_gen_owner_exists(cbd)
 {
     return TRUE;
 }
-
-#endif
 
 /*****************************************************************************
  * Functions that handle the input buffer.
@@ -1475,22 +1435,16 @@ read_error_exit()
     preserve_exit();
 }
 
-#if defined(CURSOR_SHAPE)
 /*
  * May update the shape of the cursor.
  */
     void
 ui_cursor_shape()
 {
-        term_cursor_shape();
-
-#if defined(MCH_CURSOR_SHAPE)
-    mch_update_cursor();
-#endif
+    term_cursor_shape();
 
     conceal_check_cursur_line();
 }
-#endif
 
 /*
  * Check bounds for column number
@@ -1523,8 +1477,6 @@ check_row(row)
 /*
  * Stuff for the X clipboard.  Shared between VMS and Unix.
  */
-
-#if defined(FEAT_MOUSE)
 
 /*
  * Move the cursor to the specified row and column on the screen.
@@ -1601,11 +1553,9 @@ retnomove:
             end_visual_mode();
             redraw_curbuf_later(INVERTED);      /* delete the inversion */
         }
-#if defined(FEAT_CMDWIN) && defined(FEAT_CLIPBOARD)
         /* Continue a modeless selection in another window. */
         if (cmdwin_type != 0 && row < W_WINROW(curwin))
             return IN_OTHER_WIN;
-#endif
         return IN_BUFFER;
     }
 
@@ -1665,23 +1615,15 @@ retnomove:
             end_visual_mode();
             redraw_curbuf_later(INVERTED);      /* delete the inversion */
         }
-#if defined(FEAT_CMDWIN)
         if (cmdwin_type != 0 && wp != curwin)
         {
             /* A click outside the command-line window: Use modeless
              * selection if possible.  Allow dragging the status lines. */
             on_sep_line = 0;
-#if defined(FEAT_CLIPBOARD)
             if (on_status_line)
                 return IN_STATUS_LINE;
             return IN_OTHER_WIN;
-#else
-            row = 0;
-            col += wp->w_wincol;
-            wp = curwin;
-#endif
         }
-#endif
         /* Only change window focus when not clicking on or dragging the
          * status line.  Do change focus when releasing the mouse button
          * (MOUSE_FOCUS was set above if we dragged first). */
@@ -1742,11 +1684,9 @@ retnomove:
             redraw_curbuf_later(INVERTED);      /* delete the inversion */
         }
 
-#if defined(FEAT_CMDWIN) && defined(FEAT_CLIPBOARD)
         /* Continue a modeless selection in another window. */
         if (cmdwin_type != 0 && row < W_WINROW(curwin))
             return IN_OTHER_WIN;
-#endif
 
         row -= W_WINROW(curwin);
         col -= W_WINCOL(curwin);
@@ -1768,8 +1708,7 @@ retnomove:
                     --curwin->w_topline;
                 }
             }
-            curwin->w_valid &=
-                      ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);
+            curwin->w_valid &= ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);
             redraw_later(VALID);
             row = 0;
         }
@@ -1787,8 +1726,7 @@ retnomove:
                 }
             }
             redraw_later(VALID);
-            curwin->w_valid &=
-                      ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);
+            curwin->w_valid &= ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);
             row = curwin->w_height - 1;
         }
         else if (row == 0)
@@ -1943,31 +1881,3 @@ mouse_find_win(rowp, colp)
     }
     return fp->fr_win;
 }
-
-#endif
-
-#if defined(USE_IM_CONTROL)
-/*
- * Save current Input Method status to specified place.
- */
-    void
-im_save_status(psave)
-    long *psave;
-{
-    /* Don't save when 'imdisable' is set or "xic" is NULL, IM is always
-     * disabled then (but might start later).
-     * Also don't save when inside a mapping, vgetc_im_active has not been set
-     * then.
-     * And don't save when the keys were stuffed (e.g., for a "." command).
-     * And don't save when the GUI is running but our window doesn't have
-     * input focus (e.g., when a find dialog is open). */
-    if (!p_imdisable && KeyTyped && !KeyStuffed)
-    {
-        /* Do save when IM is on, or IM is off and saved status is on. */
-        if (vgetc_im_active)
-            *psave = B_IMODE_IM;
-        else if (*psave == B_IMODE_IM)
-            *psave = B_IMODE_NONE;
-    }
-}
-#endif

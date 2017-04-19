@@ -1441,10 +1441,8 @@ get_digraph(cmdline)
             if (char2cells(c) == 1 && cmdline_star == 0)
                 putcmdline(c, TRUE);
         }
-#if defined(FEAT_CMDL_INFO)
         else
             add_to_showcmd(c);
-#endif
         ++no_mapping;
         ++allow_keys;
         cc = plain_vgetc();

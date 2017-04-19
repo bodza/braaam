@@ -15,8 +15,6 @@
 
 #include "vim.h"
 
-#if defined(FEAT_PERSISTENT_UNDO)
-
 static void sha256_process(context_sha256_T *ctx, char_u data[64]);
 
 #define GET_UINT32(n, b, i)                 \
@@ -263,4 +261,3 @@ sha256_finish(ctx, digest)
     PUT_UINT32(ctx->state[6], digest, 24);
     PUT_UINT32(ctx->state[7], digest, 28);
 }
-#endif

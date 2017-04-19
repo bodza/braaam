@@ -156,8 +156,7 @@ buf_init_chartab(buf, global)
                 else
                     c2 = *p++;
             }
-            if (c <= 0 || c >= 256 || (c2 < c && c2 != -1) || c2 >= 256
-                                                 || !(*p == NUL || *p == ','))
+            if (c <= 0 || c >= 256 || (c2 < c && c2 != -1) || c2 >= 256 || !(*p == NUL || *p == ','))
                 return FAIL;
 
             if (c2 == -1)       /* not a range */
@@ -1578,7 +1577,6 @@ skiptowhite(p)
     return p;
 }
 
-#if defined(FEAT_LISTCMDS)
 /*
  * skiptowhite_esc: Like skiptowhite(), but also skip escaped chars
  */
@@ -1594,7 +1592,6 @@ skiptowhite_esc(p)
     }
     return p;
 }
-#endif
 
 /*
  * Getdigits: Get a number from a string and skip over it.

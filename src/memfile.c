@@ -1303,8 +1303,7 @@ mf_hash_add_item(mht, mhi)
      * Grow hashtable when we have more thank 2^MHT_LOG_LOAD_FACTOR
      * items per bucket on average
      */
-    if (mht->mht_fixed == 0
-        && (mht->mht_count >> MHT_LOG_LOAD_FACTOR) > mht->mht_mask)
+    if (mht->mht_fixed == 0 && (mht->mht_count >> MHT_LOG_LOAD_FACTOR) > mht->mht_mask)
     {
         if (mf_hash_grow(mht) == FAIL)
         {

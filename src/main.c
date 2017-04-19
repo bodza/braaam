@@ -34,7 +34,6 @@ typedef struct
     int         use_debug_break_level;
     int         window_count;           /* number of windows to use */
     int         window_layout;          /* 0, WIN_HOR, WIN_VER or WIN_TABS */
-
 } mparm_T;
 
 /* Values for edit_type. */
@@ -136,10 +135,8 @@ main
      */
     early_arg_scan(&params);
 
-#if defined(FEAT_CLIPBOARD)
     clip_init(FALSE);           /* Initialise clipboard stuff */
     TIME_MSG("clipboard setup");
-#endif
 
     /*
      * Check if we have an interactive window.
@@ -359,9 +356,7 @@ main
     may_req_ambiguous_char_width();
 #endif
 
-#if defined(FEAT_MOUSE)
     setmouse();                         /* may start using the mouse */
-#endif
     if (scroll_region)
         scroll_region_reset();          /* In case Rows changed */
     scroll_start();     /* may scroll the screen to the right position */
@@ -452,7 +447,6 @@ main
     apply_autocmds(EVENT_VIMENTER, NULL, NULL, FALSE, curbuf);
     TIME_MSG("VimEnter autocommands");
 
-#if defined(FEAT_CLIPBOARD)
     /* Adjust default register name for "unnamed" in 'clipboard'. Can only be
      * done after the clipboard is available and all initial commands that may
      * modify the 'clipboard' setting have run; i.e. just before entering the
@@ -462,7 +456,6 @@ main
         adjust_clip_reg(&default_regname);
         set_reg_var(default_regname);
     }
-#endif
 
     /* If ":startinsert" command used, stuff a dummy command to be able to
      * call normal_cmd(), which will then start Insert mode. */
@@ -499,9 +492,7 @@ main_loop(cmdwin, noexmode)
 
     clear_oparg(&oa);
     while (!cmdwin
-#if defined(FEAT_CMDWIN)
             || cmdwin_result == 0
-#endif
             )
     {
         if (stuff_empty())
@@ -575,8 +566,7 @@ main_loop(cmdwin, noexmode)
             }
 
             /* Trigger TextChanged if b_changedtick differs. */
-            if (!finish_op && has_textchanged()
-                    && last_changedtick != curbuf->b_changedtick)
+            if (!finish_op && has_textchanged() && last_changedtick != curbuf->b_changedtick)
             {
                 if (last_changedtick_buf == curbuf)
                     apply_autocmds(EVENT_TEXTCHANGED, NULL, NULL,
@@ -631,8 +621,7 @@ main_loop(cmdwin, noexmode)
                         || need_cursor_line_redraw))
             {
                 if (conceal_old_cursor_line != conceal_new_cursor_line
-                        && conceal_old_cursor_line
-                                                <= curbuf->b_ml.ml_line_count)
+                        && conceal_old_cursor_line <= curbuf->b_ml.ml_line_count)
                     update_single_line(curwin, conceal_old_cursor_line);
                 update_single_line(curwin, conceal_new_cursor_line);
                 curwin->w_valid &= ~VALID_CROW;
@@ -1303,11 +1292,6 @@ scripterror:
                     || (p = vim_strsave((char_u *)argv[0])) == NULL)
                 mch_exit(2);
 
-#if defined(USE_FNAME_CASE)
-            /* Make the case of the file name match the actual file. */
-            fname_case(p, 0);
-#endif
-
             alist_add(&global_alist, p, 2);           /* add buffer number now and use curbuf */
         }
 
@@ -1763,18 +1747,9 @@ source_startup_scripts(parmp)
 #if defined(USR_VIMRC_FILE2)
                 && do_source((char_u *)USR_VIMRC_FILE2, TRUE, DOSO_VIMRC) == FAIL
 #endif
-#if defined(USR_VIMRC_FILE3)
-                && do_source((char_u *)USR_VIMRC_FILE3, TRUE, DOSO_VIMRC) == FAIL
-#endif
-#if defined(USR_VIMRC_FILE4)
-                && do_source((char_u *)USR_VIMRC_FILE4, TRUE, DOSO_VIMRC) == FAIL
-#endif
                 && process_env((char_u *)"EXINIT", FALSE) == FAIL
                 && do_source((char_u *)USR_EXRC_FILE, FALSE, DOSO_NONE) == FAIL)
             {
-#if defined(USR_EXRC_FILE2)
-                (void)do_source((char_u *)USR_EXRC_FILE2, FALSE, DOSO_NONE);
-#endif
             }
         }
 
@@ -1800,10 +1775,6 @@ source_startup_scripts(parmp)
                     && fullpathcmp((char_u *)USR_VIMRC_FILE2,
                                       (char_u *)VIMRC_FILE, FALSE) != FPC_SAME
 #endif
-#if defined(USR_VIMRC_FILE3)
-                    && fullpathcmp((char_u *)USR_VIMRC_FILE3,
-                                      (char_u *)VIMRC_FILE, FALSE) != FPC_SAME
-#endif
 #if defined(SYS_VIMRC_FILE)
                     && fullpathcmp((char_u *)SYS_VIMRC_FILE,
                                       (char_u *)VIMRC_FILE, FALSE) != FPC_SAME
@@ -1818,13 +1789,7 @@ source_startup_scripts(parmp)
                     secure = p_secure;
                 else
                     secure = 0;
-                if (       fullpathcmp((char_u *)USR_EXRC_FILE,
-                                      (char_u *)EXRC_FILE, FALSE) != FPC_SAME
-#if defined(USR_EXRC_FILE2)
-                        && fullpathcmp((char_u *)USR_EXRC_FILE2,
-                                      (char_u *)EXRC_FILE, FALSE) != FPC_SAME
-#endif
-                                )
+                if (fullpathcmp((char_u *)USR_EXRC_FILE, (char_u *)EXRC_FILE, FALSE) != FPC_SAME)
                     (void)do_source((char_u *)EXRC_FILE, FALSE, DOSO_NONE);
             }
         }

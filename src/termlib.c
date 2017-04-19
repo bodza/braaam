@@ -138,8 +138,7 @@ getent(tbuf, term, termcap, buflen)
             while (*tptr == '|')                /* | separates names */
                 tptr++;
             nexttptr = _find(tptr, ":|");       /* Rhialto */
-            if (tptr + tlen == nexttptr &&
-                _match(tptr, term) == tlen)     /* FOUND! */
+            if (tptr + tlen == nexttptr && _match(tptr, term) == tlen)     /* FOUND! */
             {
                 tent = tbuf;
                 return 1;

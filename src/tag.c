@@ -170,9 +170,7 @@ do_tag(tag, type, count, forceit, verbose)
             use_tagstack = TRUE;
 
         /* new pattern, add to the tag stack */
-        if (*tag != NUL
-                && (type == DT_TAG || type == DT_SELECT || type == DT_JUMP
-                    ))
+        if (*tag != NUL && (type == DT_TAG || type == DT_SELECT || type == DT_JUMP))
         {
             {
                 /*
@@ -380,9 +378,7 @@ do_tag(tag, type, count, forceit, verbose)
         else
             name = tag;
         other_name = (tagmatchname == NULL || STRCMP(tagmatchname, name) != 0);
-        if (new_tag
-                || (cur_match >= num_matches && max_num_matches != MAXCOL)
-                || other_name)
+        if (new_tag || (cur_match >= num_matches && max_num_matches != MAXCOL) || other_name)
         {
             if (other_name)
             {
@@ -481,9 +477,7 @@ do_tag(tag, type, count, forceit, verbose)
                 for (i = 0; i < num_matches && !got_int; ++i)
                 {
                     parse_match(matches[i], &tagp);
-                    if (!new_tag && (
-                                (use_tagstack
-                                 && i == tagstack[tagstackidx].cur_match)))
+                    if (!new_tag && ((use_tagstack && i == tagstack[tagstackidx].cur_match)))
                         *IObuff = '>';
                     else
                         *IObuff = ' ';
@@ -523,16 +517,14 @@ do_tag(tag, type, count, forceit, verbose)
                                 ++p;
 
                             /* skip "file:" without a value (static tag) */
-                            if (STRNCMP(p, "file:", 5) == 0
-                                                         && vim_isspace(p[5]))
+                            if (STRNCMP(p, "file:", 5) == 0 && vim_isspace(p[5]))
                             {
                                 p += 5;
                                 continue;
                             }
                             /* skip "kind:<kind>" and "<kind>" */
                             if (p == tagp.tagkind
-                                    || (p + 5 == tagp.tagkind
-                                            && STRNCMP(p, "kind:", 5) == 0))
+                                    || (p + 5 == tagp.tagkind && STRNCMP(p, "kind:", 5) == 0))
                             {
                                 p = tagp.tagkind_end;
                                 continue;
@@ -598,8 +590,7 @@ do_tag(tag, type, count, forceit, verbose)
 
                         /* skip backslash used for escaping a command char or
                          * a backslash */
-                        if (*p == '\\' && (*(p + 1) == *tagp.command
-                                        || *(p + 1) == '\\'))
+                        if (*p == '\\' && (*(p + 1) == *tagp.command || *(p + 1) == '\\'))
                             ++p;
 
                         if (*p == TAB)
@@ -652,8 +643,7 @@ do_tag(tag, type, count, forceit, verbose)
                 /* Avoid giving this error when a file wasn't found and we're
                  * looking for a match in another file, which wasn't found.
                  * There will be an EMSG("file doesn't exist") below then. */
-                if ((type == DT_NEXT || type == DT_FIRST)
-                                                      && nofile_fname == NULL)
+                if ((type == DT_NEXT || type == DT_FIRST) && nofile_fname == NULL)
                 {
                     if (num_matches == 1)
                         EMSG(_("E427: There is only one matching tag"));
@@ -678,9 +668,7 @@ do_tag(tag, type, count, forceit, verbose)
                 smsg((char_u *)_("File \"%s\" does not exist"), nofile_fname);
 
             ic = (matches[cur_match][0] & MT_IC_OFF);
-            if (type != DT_SELECT && type != DT_JUMP
-                && (num_matches > 1 || ic)
-                && !skip_msg)
+            if (type != DT_SELECT && type != DT_JUMP && (num_matches > 1 || ic) && !skip_msg)
             {
                 /* Give an indication of the number of matching tags */
                 sprintf((char *)IObuff, _("tag %d of %d%s"),
@@ -689,8 +677,7 @@ do_tag(tag, type, count, forceit, verbose)
                                 max_num_matches != MAXCOL ? _(" or more") : "");
                 if (ic)
                     STRCAT(IObuff, _("  Using tag with different case!"));
-                if ((num_matches > prev_num_matches || new_tag)
-                                                           && num_matches > 1)
+                if ((num_matches > prev_num_matches || new_tag) && num_matches > 1)
                 {
                     if (ic)
                         msg_attr(IObuff, hl_attr(HLF_W));
@@ -722,10 +709,8 @@ do_tag(tag, type, count, forceit, verbose)
             {
                 /* File not found: try again with another matching tag */
                 if ((type == DT_PREV && cur_match > 0)
-                        || ((type == DT_TAG || type == DT_NEXT
-                                                          || type == DT_FIRST)
-                            && (max_num_matches != MAXCOL
-                                             || cur_match < num_matches - 1)))
+                        || ((type == DT_TAG || type == DT_NEXT || type == DT_FIRST)
+                            && (max_num_matches != MAXCOL || cur_match < num_matches - 1)))
                 {
                     error_cur_match = cur_match;
                     if (use_tagstack)
@@ -830,7 +815,6 @@ do_tags(eap)
  */
 #define tag_fgets vim_fgets
 
-#if defined(FEAT_TAG_BINS)
 static int tag_strnicmp(char_u *s1, char_u *s2, size_t len);
 
 /*
@@ -859,7 +843,6 @@ tag_strnicmp(s1, s2, len)
     }
     return 0;                           /* strings match */
 }
-#endif
 
 /*
  * Structure to hold info about the tag pattern being used.
@@ -961,7 +944,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     char_u      *p;
     char_u      *s;
     int         i;
-#if defined(FEAT_TAG_BINS)
     int         tag_file_sorted = NUL;  /* !_TAG_FILE_SORTED value */
     struct tag_search_info      /* Binary search file offsets */
     {
@@ -979,16 +961,13 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     int         tagcmp;
     off_t       offset;
     int         round;
-#endif
     enum
     {
         TS_START,               /* at start of file */
         TS_LINEAR               /* linear searching forward, till EOF */
-#if defined(FEAT_TAG_BINS)
         , TS_BINARY,            /* binary searching */
         TS_SKIP_BACK,           /* skipping backwards */
         TS_STEP_FORWARD         /* stepping forwards */
-#endif
     }   state;                  /* Current search state */
 
     int         cmplen;
@@ -1012,13 +991,11 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     pat_T       orgpat;                 /* holds unconverted pattern info */
     vimconv_T   vimconv;
 
-#if defined(FEAT_TAG_BINS)
     int         findall = (mincount == MAXCOL || mincount == TAG_MANY);
                                                 /* find all matching tags */
     int         sort_error = FALSE;             /* tags file not sorted */
     int         linear;                         /* do a linear search */
     int         sortic = FALSE;                 /* tag file sorted in nocase */
-#endif
     int         line_error = FALSE;             /* syntax error */
     int         has_re = (flags & TAG_REGEXP);  /* regexp used */
     int         help_only = (flags & TAG_HELP);
@@ -1060,11 +1037,9 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     if (has_re && orgpat.regmatch.regprog == NULL)
         goto findtag_end;
 
-#if defined(FEAT_TAG_BINS)
     /* This is only to avoid a compiler warning for using search_info
      * uninitialised. */
     vim_memset(&search_info, 0, (size_t)1);
-#endif
 
     /*
      * When finding a specified number of matches, first try with matching
@@ -1076,15 +1051,10 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
      * When the tag file is case-fold sorted, it is either one or the other.
      * Only ignore case when TAG_NOIC not used or 'ignorecase' set.
      */
-#if defined(FEAT_TAG_BINS)
-    orgpat.regmatch.rm_ic = ((p_ic || !noic)
-                                && (findall || orgpat.headlen == 0 || !p_tbs));
+    orgpat.regmatch.rm_ic = ((p_ic || !noic) && (findall || orgpat.headlen == 0 || !p_tbs));
     for (round = 1; round <= 2; ++round)
     {
       linear = (orgpat.headlen == 0 || !p_tbs || round == 2);
-#else
-      orgpat.regmatch.rm_ic = (p_ic || !noic);
-#endif
 
       /*
        * Try tag file names from tags option one by one.
@@ -1118,13 +1088,7 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
         for (;;)
         {
             line_breakcheck();      /* check for CTRL-C typed */
-#if defined(FEAT_INS_EXPAND)
-            if ((flags & TAG_INS_COMP)) /* Double brackets for gcc */
-                ins_compl_check_keys(30);
-            if (got_int || compl_interrupted)
-#else
             if (got_int)
-#endif
             {
                 stop_searching = TRUE;
                 break;
@@ -1139,7 +1103,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
             }
             if (get_it_again)
                 goto line_read_in;
-#if defined(FEAT_TAG_BINS)
             /*
              * For binary search: compute the next offset to use.
              */
@@ -1210,7 +1173,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
              * Not jumping around in the file: Read the next line.
              */
             else
-#endif
             {
                 /* skip empty and blank lines */
                 do
@@ -1260,8 +1222,7 @@ line_read_in:
             {
                 /* The header ends when the line sorts below "!_TAG_".  When
                  * case is folded lower case letters sort before "_". */
-                if (STRNCMP(lbuf, "!_TAG_", 6) <= 0
-                                || (lbuf[0] == '!' && ASCII_ISLOWER(lbuf[1])))
+                if (STRNCMP(lbuf, "!_TAG_", 6) <= 0 || (lbuf[0] == '!' && ASCII_ISLOWER(lbuf[1])))
                 {
                     if (STRNCMP(lbuf, "!_TAG_", 6) != 0)
                         /* Non-header item before the header, e.g. "!" itself.
@@ -1271,10 +1232,8 @@ line_read_in:
                     /*
                      * Read header line.
                      */
-#if defined(FEAT_TAG_BINS)
                     if (STRNCMP(lbuf, "!_TAG_FILE_SORTED\t", 18) == 0)
                         tag_file_sorted = lbuf[18];
-#endif
                     if (STRNCMP(lbuf, "!_TAG_FILE_ENCODING\t", 20) == 0)
                     {
                         /* Prepare to convert every line from the specified
@@ -1291,7 +1250,6 @@ line_read_in:
 
                 /* Headers ends. */
 
-#if defined(FEAT_TAG_BINS)
                 /*
                  * When there is no tag head, or ignoring case, need to do a
                  * linear search.
@@ -1323,11 +1281,7 @@ line_read_in:
                     linear = TRUE;
                     state = TS_LINEAR;
                 }
-#else
-                state = TS_LINEAR;
-#endif
 
-#if defined(FEAT_TAG_BINS)
                 /*
                  * When starting a binary search, get the size of the file and
                  * compute the first offset.
@@ -1352,7 +1306,6 @@ line_read_in:
                     }
                     continue;
                 }
-#endif
             }
 
 parse_line:
@@ -1377,7 +1330,6 @@ parse_line:
                             MSG(_("Ignoring long line in tags file"));
                             verbose_leave();
                         }
-#if defined(FEAT_TAG_BINS)
                         if (state != TS_LINEAR)
                         {
                             /* Avoid getting stuck. */
@@ -1385,7 +1337,6 @@ parse_line:
                             state = TS_LINEAR;
                             fseeko(fp, search_info.low_offset, SEEK_SET);
                         }
-#endif
                         continue;
                     }
 
@@ -1406,7 +1357,6 @@ parse_line:
                 else if (state == TS_LINEAR && orgpat.headlen != cmplen)
                     continue;
 
-#if defined(FEAT_TAG_BINS)
                 if (state == TS_BINARY)
                 {
                     /*
@@ -1454,20 +1404,17 @@ parse_line:
                         {
                             search_info.low_offset = search_info.curr_offset;
                             if (sortic)
-                                search_info.low_char =
-                                                 TOUPPER_ASC(tagp.tagname[0]);
+                                search_info.low_char = TOUPPER_ASC(tagp.tagname[0]);
                             else
                                 search_info.low_char = tagp.tagname[0];
                             continue;
                         }
                     }
-                    if (tagcmp > 0
-                        && search_info.curr_offset != search_info.high_offset)
+                    if (tagcmp > 0 && search_info.curr_offset != search_info.high_offset)
                     {
                         search_info.high_offset = search_info.curr_offset;
                         if (sortic)
-                            search_info.high_char =
-                                                 TOUPPER_ASC(tagp.tagname[0]);
+                            search_info.high_char = TOUPPER_ASC(tagp.tagname[0]);
                         else
                             search_info.high_char = tagp.tagname[0];
                         continue;
@@ -1497,7 +1444,6 @@ parse_line:
                     }
                 }
                 else
-#endif
                     /* skip this match if it can't match */
                     if (MB_STRNICMP(tagp.tagname, orgpat.head, cmplen) != 0)
                     continue;
@@ -1716,8 +1662,7 @@ parse_line:
                               mfp2 = ((struct match_found **)
                                                   (ga_match[mtt].ga_data))[i];
                               if (mfp2->len == mfp->len
-                                      && vim_memcmp(mfp2->match, mfp->match,
-                                                       (size_t)mfp->len) == 0)
+                                      && vim_memcmp(mfp2->match, mfp->match, (size_t)mfp->len) == 0)
                                   break;
                               line_breakcheck();
                           }
@@ -1752,14 +1697,12 @@ parse_line:
         if (vimconv.vc_type != CONV_NONE)
             convert_setup(&vimconv, NULL, NULL);
 
-#if defined(FEAT_TAG_BINS)
         tag_file_sorted = NUL;
         if (sort_error)
         {
             EMSG2(_("E432: Tags file not sorted: %s"), tag_fname);
             sort_error = FALSE;
         }
-#endif
 
         /*
          * Stop searching if sufficient tags have been found.
@@ -1776,14 +1719,12 @@ parse_line:
 
             tagname_free(&tn);
 
-#if defined(FEAT_TAG_BINS)
       /* stop searching when already did a linear search, or when TAG_NOIC
        * used, and 'ignorecase' not set or already did case-ignore search */
       if (stop_searching || linear || (!p_ic && noic) || orgpat.regmatch.rm_ic)
           break;
       orgpat.regmatch.rm_ic = TRUE;     /* try another time while ignoring case */
     }
-#endif
 
     if (!stop_searching)
     {
@@ -1850,8 +1791,7 @@ found_tagfile_cb(fname, cookie)
     void        *cookie UNUSED;
 {
     if (ga_grow(&tag_fnames, 1) == OK)
-        ((char_u **)(tag_fnames.ga_data))[tag_fnames.ga_len++] =
-                                                           vim_strsave(fname);
+        ((char_u **)(tag_fnames.ga_data))[tag_fnames.ga_len++] = vim_strsave(fname);
 }
 
 #if defined(EXITFREE)
@@ -1861,7 +1801,6 @@ free_tag_stuff()
     ga_clear_strings(&tag_fnames);
     do_tag(NULL, DT_FREE, 0, 0, 0);
     tag_freematch();
-
 }
 #endif
 
@@ -1957,11 +1896,7 @@ get_tagfname(tnp, first, buf)
             buf[0] = NUL;
             (void)copy_option_part(&tnp->tn_np, buf, MAXPATHL - 1, " ,");
 
-#if defined(FEAT_PATH_EXTRA)
-            r_ptr = vim_findfile_stopdir(buf);
-#else
             r_ptr = NULL;
-#endif
             /* move the filename one char forward and truncate the
              * filepath with a NUL */
             filename = gettail(buf);
@@ -2300,10 +2235,8 @@ jumpto_tag(lbuf, forceit, keep_help)
             p_ic = FALSE;       /* don't ignore case now */
             p_scs = FALSE;
 #if 0 /* disabled for now */
-#if defined(FEAT_CMDHIST)
             /* put pattern in search history */
             add_to_history(HIST_SEARCH, pbuf + 1, TRUE, pbuf[0]);
-#endif
 #endif
             save_lnum = curwin->w_cursor.lnum;
             curwin->w_cursor.lnum = 0;  /* start search before first line */
@@ -2456,9 +2389,7 @@ expand_tag_fname(fname, tag_fname, expand)
             fname = expanded_fname;
     }
 
-    if ((p_tr || curbuf->b_help)
-            && !vim_isAbsName(fname)
-            && (p = gettail(tag_fname)) != tag_fname)
+    if ((p_tr || curbuf->b_help) && !vim_isAbsName(fname) && (p = gettail(tag_fname)) != tag_fname)
     {
         retval = alloc(MAXPATHL);
         if (retval != NULL)
@@ -2530,8 +2461,7 @@ simplify_filename(filename)
                 STRMOVE(p, tail);
             }
         }
-        else if (p[0] == '.' && p[1] == '.' &&
-            (vim_ispathsep(p[2]) || p[2] == NUL))
+        else if (p[0] == '.' && p[1] == '.' && (vim_ispathsep(p[2]) || p[2] == NUL))
         {
             /* Skip to after ".." or "../" or "..///". */
             tail = p + 2;
@@ -2601,8 +2531,7 @@ simplify_filename(filename)
                                 *p = saved_char;
                             }
 
-                            if (new_st.st_ino != st.st_ino ||
-                                new_st.st_dev != st.st_dev)
+                            if (new_st.st_ino != st.st_ino || new_st.st_dev != st.st_dev)
                             {
                                 do_strip = FALSE;
                                 /* We don't disable stripping of later
@@ -2723,8 +2652,7 @@ find_extra(pp)
         }
         else
             str = NULL;
-        if (str == NULL || *str != ';'
-                  || !(VIM_ISDIGIT(str[1]) || str[1] == '/' || str[1] == '?'))
+        if (str == NULL || *str != ';' || !(VIM_ISDIGIT(str[1]) || str[1] == '/' || str[1] == '?'))
             break;
         ++str;  /* skip ';' */
     }
@@ -2737,7 +2665,6 @@ find_extra(pp)
     return FAIL;
 }
 
-#if defined(FEAT_CMDL_COMPL)
     int
 expand_tags(tagnames, pat, num_file, file)
     int         tagnames;       /* expand tag names */
@@ -2784,7 +2711,6 @@ expand_tags(tagnames, pat, num_file, file)
     }
     return ret;
 }
-#endif
 
 static int add_tag_field(dict_T *dict, char *field_name, char_u *start, char_u *end);
 
@@ -2871,12 +2797,9 @@ get_tags(list, pat)
 
             full_fname = tag_full_fname(&tp);
             if (add_tag_field(dict, "name", tp.tagname, tp.tagname_end) == FAIL
-                    || add_tag_field(dict, "filename", full_fname,
-                                                         NULL) == FAIL
-                    || add_tag_field(dict, "cmd", tp.command,
-                                                       tp.command_end) == FAIL
-                    || add_tag_field(dict, "kind", tp.tagkind,
-                                                      tp.tagkind_end) == FAIL
+                    || add_tag_field(dict, "filename", full_fname, NULL) == FAIL
+                    || add_tag_field(dict, "cmd", tp.command, tp.command_end) == FAIL
+                    || add_tag_field(dict, "kind", tp.tagkind, tp.tagkind_end) == FAIL
                     || dict_add_nr_str(dict, "static", is_static, NULL) == FAIL)
                 ret = FAIL;
 
@@ -2886,8 +2809,7 @@ get_tags(list, pat)
             {
                 for (p = tp.command_end + 3; *p != NUL && *p != '\n' && *p != '\r'; ++p)
                 {
-                    if (p == tp.tagkind || (p + 5 == tp.tagkind
-                                              && STRNCMP(p, "kind:", 5) == 0))
+                    if (p == tp.tagkind || (p + 5 == tp.tagkind && STRNCMP(p, "kind:", 5) == 0))
                         /* skip "kind:<kind>" and "<kind>" */
                         p = tp.tagkind_end - 1;
                     else if (STRNCMP(p, "file:", 5) == 0)

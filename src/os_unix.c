@@ -270,8 +270,7 @@ mch_inchar(buf, maxlen, wtime, tb_change_cnt)
          */
         if (WaitForChar(p_ut) == 0)
         {
-            if (trigger_cursorhold() && maxlen >= 3
-                                           && !typebuf_changed(tb_change_cnt))
+            if (trigger_cursorhold() && maxlen >= 3 && !typebuf_changed(tb_change_cnt))
             {
                 buf[0] = K_SPECIAL;
                 buf[1] = KS_EXTRA;
@@ -688,29 +687,6 @@ deathtrap SIGDEFARG(sigarg)
     get_stack_limit();
 #endif
 
-#if 0
-    /* This is for opening gdb the moment Vim crashes.
-     * You need to manually adjust the file name and Vim executable name.
-     * Suggested by SungHyun Nam. */
-    {
-#define VI_GDB_FILE "/tmp/vimgdb"
-#define VIM_NAME "/usr/bin/vim"
-        FILE *fp = fopen(VI_GDB_FILE, "w");
-        if (fp)
-        {
-            fprintf(fp,
-                    "file %s\n"
-                    "attach %d\n"
-                    "set height 1000\n"
-                    "bt full\n"
-                    , VIM_NAME, getpid());
-            fclose(fp);
-            system("xterm -e gdb -x "VI_GDB_FILE);
-            unlink(VI_GDB_FILE);
-        }
-    }
-#endif
-
     /* try to find the name of this signal */
     for (i = 0; signal_info[i].sig != -1; i++)
         if (sigarg == signal_info[i].sig)
@@ -837,7 +813,6 @@ mch_init()
 
     out_flush();
     set_signals();
-
 }
 
     static void
@@ -891,7 +866,6 @@ set_signals()
      * Arrange for other signals to gracefully shutdown Vim.
      */
     catch_signals(deathtrap, SIG_ERR);
-
 }
 
 #if defined(SIGINT)
@@ -948,11 +922,9 @@ catch_signals(func_deadly, func_other)
 
 /*
  * Handling of SIGHUP, SIGQUIT and SIGTERM:
- * "when" == a signal:       when busy, postpone and return FALSE, otherwise
- *                           return TRUE
+ * "when" == a signal:       when busy, postpone and return FALSE, otherwise return TRUE
  * "when" == SIGNAL_BLOCK:   Going to be busy, block signals
- * "when" == SIGNAL_UNBLOCK: Going to wait, unblock signals, use postponed
- *                           signal
+ * "when" == SIGNAL_UNBLOCK: Going to wait, unblock signals, use postponed signal
  * Returns TRUE when Vim should exit.
  */
     int
@@ -1125,14 +1097,10 @@ vim_is_xterm(name)
     if (name == NULL)
         return FALSE;
     return (STRNICMP(name, "xterm", 5) == 0
-                || STRNICMP(name, "nxterm", 6) == 0
-                || STRNICMP(name, "kterm", 5) == 0
-                || STRNICMP(name, "mlterm", 6) == 0
                 || STRNICMP(name, "rxvt", 4) == 0
                 || STRCMP(name, "builtin_xterm") == 0);
 }
 
-#if defined(FEAT_MOUSE_XTERM)
 /*
  * Return TRUE if "name" appears to be that of a terminal
  * known to support the xterm-style mouse protocol.
@@ -1142,12 +1110,9 @@ vim_is_xterm(name)
 use_xterm_like_mouse(name)
     char_u *name;
 {
-    return (name != NULL
-            && (term_is_xterm || STRNICMP(name, "screen", 6) == 0));
+    return (name != NULL && (term_is_xterm || STRNICMP(name, "screen", 6) == 0));
 }
-#endif
 
-#if defined(FEAT_MOUSE_TTY)
 /*
  * Return non-zero when using an xterm mouse, according to 'ttymouse'.
  * Return 1 for "xterm".
@@ -1168,7 +1133,6 @@ use_xterm_mouse()
         return 1;
     return 0;
 }
-#endif
 
     int
 vim_is_iris(name)
@@ -1176,8 +1140,7 @@ vim_is_iris(name)
 {
     if (name == NULL)
         return FALSE;
-    return (STRNICMP(name, "iris-ansi", 9) == 0
-            || STRCMP(name, "builtin_iris-ansi") == 0);
+    return (STRNICMP(name, "iris-ansi", 9) == 0 || STRCMP(name, "builtin_iris-ansi") == 0);
 }
 
     int
@@ -1234,8 +1197,7 @@ mch_get_uname(uid, s, len)
 {
     struct passwd   *pw;
 
-    if ((pw = getpwuid(uid)) != NULL
-            && pw->pw_name != NULL && *(pw->pw_name) != NUL)
+    if ((pw = getpwuid(uid)) != NULL && pw->pw_name != NULL && *(pw->pw_name) != NUL)
     {
         vim_strncpy(s, (char_u *)pw->pw_name, len - 1);
         return OK;
@@ -1350,8 +1312,7 @@ mch_FullName(fname, buf, len, force)
 
             /* Only change directory when we are sure we can return to where
              * we are now.  After doing "su" chdir(".") might not work. */
-            if (
-                fd < 0 &&
+            if (fd < 0 &&
                         (mch_dirname(olddir, MAXPATHL) == FAIL
                                            || mch_chdir((char *)olddir) != 0))
             {
@@ -1403,8 +1364,7 @@ mch_FullName(fname, buf, len, force)
         l = STRLEN(buf);
         if (l >= len - 1)
             retval = FAIL; /* no space for trailing "/" */
-        else if (l > 0 && buf[l - 1] != '/' && *fname != NUL
-                                                   && STRCMP(fname, ".") != 0)
+        else if (l > 0 && buf[l - 1] != '/' && *fname != NUL && STRCMP(fname, ".") != 0)
             STRCAT(buf, "/");
     }
 
@@ -1428,70 +1388,6 @@ mch_isFullName(fname)
 {
     return (*fname == '/' || *fname == '~');
 }
-
-#if defined(USE_FNAME_CASE)
-/*
- * Set the case of the file name, if it already exists.  This will cause the
- * file name to remain exactly the same.
- * Only required for file systems where case is ignored and preserved.
- */
-    void
-fname_case(name, len)
-    char_u      *name;
-    int         len UNUSED;  /* buffer size, only used when name gets longer */
-{
-    struct stat st;
-    char_u      *slash, *tail;
-    DIR         *dirp;
-    struct dirent *dp;
-
-    if (lstat((char *)name, &st) >= 0)
-    {
-        /* Open the directory where the file is located. */
-        slash = vim_strrchr(name, '/');
-        if (slash == NULL)
-        {
-            dirp = opendir(".");
-            tail = name;
-        }
-        else
-        {
-            *slash = NUL;
-            dirp = opendir((char *)name);
-            *slash = '/';
-            tail = slash + 1;
-        }
-
-        if (dirp != NULL)
-        {
-            while ((dp = readdir(dirp)) != NULL)
-            {
-                /* Only accept names that differ in case and are the same byte
-                 * length. TODO: accept different length name. */
-                if (STRICMP(tail, dp->d_name) == 0
-                        && STRLEN(tail) == STRLEN(dp->d_name))
-                {
-                    char_u      newname[MAXPATHL + 1];
-                    struct stat st2;
-
-                    /* Verify the inode is equal. */
-                    vim_strncpy(newname, name, MAXPATHL);
-                    vim_strncpy(newname + (tail - name), (char_u *)dp->d_name, MAXPATHL - (tail - name));
-                    if (lstat((char *)newname, &st2) >= 0
-                            && st.st_ino == st2.st_ino
-                            && st.st_dev == st2.st_dev)
-                    {
-                        STRCPY(tail, dp->d_name);
-                        break;
-                    }
-                }
-            }
-
-            closedir(dirp);
-        }
-    }
-}
-#endif
 
 /*
  * Get file permissions for 'name'.
@@ -1841,8 +1737,7 @@ mch_settmode(tmode)
 
         /* A signal may cause tcsetattr() to fail (e.g., SIGCONT).  Retry a
          * few times. */
-        while (tcsetattr(read_cmd_fd, TCSANOW, &tnew) == -1
-                                                   && errno == EINTR && n > 0)
+        while (tcsetattr(read_cmd_fd, TCSANOW, &tnew) == -1 && errno == EINTR && n > 0)
             --n;
     }
 
@@ -1920,7 +1815,6 @@ get_stty()
     }
 }
 
-#if defined(FEAT_MOUSE_TTY)
 /*
  * Set mouse clicks on or off.
  */
@@ -1944,7 +1838,6 @@ mch_setmouse(on)
             out_str_nf((char_u *) (xterm_mouse_vers > 1 ? "\033[?1002l" : "\033[?1000l"));
         ison = on;
     }
-
 }
 
 /*
@@ -1953,7 +1846,6 @@ mch_setmouse(on)
     void
 check_mouse_termcode()
 {
-#if defined(FEAT_MOUSE_XTERM)
     if (use_xterm_mouse())
     {
         set_mouse_termcode(KS_MOUSE, (char_u *)(term_is_8bit(T_NAME) ? "\233M" : "\033[M"));
@@ -1967,10 +1859,7 @@ check_mouse_termcode()
     }
     else
         del_mouse_termcode(KS_MOUSE);
-#endif
-
 }
-#endif
 
 /*
  * set screen mode, always fails.
@@ -2574,16 +2463,14 @@ mch_call_shell(cmd, options)
                              * Send SIGINT to the child's group or all
                              * processes in our group.
                              */
-                            if (ta_buf[ta_len] == Ctrl_C
-                                               || ta_buf[ta_len] == intr_char)
+                            if (ta_buf[ta_len] == Ctrl_C || ta_buf[ta_len] == intr_char)
                             {
                                 kill(-pid, SIGINT);
                                 if (wpid > 0)
                                     kill(wpid, SIGINT);
                             }
 #endif
-                            if (pty_master_fd < 0 && toshell_fd >= 0
-                                               && ta_buf[ta_len] == Ctrl_D)
+                            if (pty_master_fd < 0 && toshell_fd >= 0 && ta_buf[ta_len] == Ctrl_D)
                             {
                                 close(toshell_fd);
                                 toshell_fd = -1;
@@ -3004,7 +2891,6 @@ select_eintr:
     return (ret > 0);
 }
 
-#if !defined(NO_EXPANDPATH)
 /*
  * Expand a path into all matching files and/or directories.  Handles "*",
  * "?", "[a-z]", "**", etc.
@@ -3019,7 +2905,6 @@ mch_expandpath(gap, path, flags)
 {
     return unix_expandpath(gap, path, 0, flags, FALSE);
 }
-#endif
 
 /*
  * mch_expand_wildcards() - this code does wild-card pattern matching using
@@ -3095,8 +2980,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
      */
     if (secure || restricted)
         for (i = 0; i < num_pat; ++i)
-            if (vim_strchr(pat[i], '`') != NULL
-                    && (check_restricted() || check_secure()))
+            if (vim_strchr(pat[i], '`') != NULL && (check_restricted() || check_secure()))
                 return FAIL;
 
     /*
@@ -3122,9 +3006,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
      * STYLE_ECHO:      space separated.
      *      A shell we don't know, stay safe and use "echo".
      */
-    if (num_pat == 1 && *pat[0] == '`'
-            && (len = STRLEN(pat[0])) > 2
-            && *(pat[0] + len - 1) == '`')
+    if (num_pat == 1 && *pat[0] == '`' && (len = STRLEN(pat[0])) > 2 && *(pat[0] + len - 1) == '`')
         shell_style = STYLE_BT;
     else if ((len = STRLEN(p_sh)) >= 3)
     {
@@ -3437,11 +3319,9 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
     {
         (*file)[i] = p;
         /* Space or NL separates */
-        if (shell_style == STYLE_ECHO || shell_style == STYLE_BT
-                                              || shell_style == STYLE_VIMGLOB)
+        if (shell_style == STYLE_ECHO || shell_style == STYLE_BT || shell_style == STYLE_VIMGLOB)
         {
-            while (!(shell_style == STYLE_ECHO && *p == ' ')
-                                                   && *p != '\n' && *p != NUL)
+            while (!(shell_style == STYLE_ECHO && *p == ' ') && *p != '\n' && *p != NUL)
                 ++p;
             if (p == buffer + len)              /* last entry */
                 *p = NUL;
@@ -3474,8 +3354,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
             continue;
 
         /* Skip files that are not executable if we check for that. */
-        if (!dir && (flags & EW_EXEC)
-                    && !mch_can_exe((*file)[i], NULL, !(flags & EW_SHELLCMD)))
+        if (!dir && (flags & EW_EXEC) && !mch_can_exe((*file)[i], NULL, !(flags & EW_SHELLCMD)))
             continue;
 
         p = alloc((unsigned)(STRLEN((*file)[i]) + 1 + dir));

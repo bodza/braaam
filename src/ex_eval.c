@@ -465,8 +465,7 @@ get_exception_string(value, type, cmdname, should_free)
                 else
                 {
                     /* '"filename" E123: message text' */
-                    if (mesg[0] != '"' || p-2 < &mesg[1] ||
-                            p[-2] != '"' || p[-1] != ' ')
+                    if (mesg[0] != '"' || p-2 < &mesg[1] || p[-2] != '"' || p[-1] != ' ')
                         /* "E123:" is part of the file name. */
                         continue;
 
@@ -925,8 +924,7 @@ ex_endif(eap)
 {
     did_endif = TRUE;
     if (eap->cstack->cs_idx < 0
-            || (eap->cstack->cs_flags[eap->cstack->cs_idx]
-                                           & (CSF_WHILE | CSF_FOR | CSF_TRY)))
+            || (eap->cstack->cs_flags[eap->cstack->cs_idx] & (CSF_WHILE | CSF_FOR | CSF_TRY)))
         eap->errmsg = (char_u *)"E580: :endif without :if";
     else
     {
@@ -939,8 +937,7 @@ ex_endif(eap)
          * Doing this here prevents an exception for a parsing error being
          * discarded by throwing the interrupt exception later on.
          */
-        if (!(eap->cstack->cs_flags[eap->cstack->cs_idx] & CSF_TRUE)
-                                                    && dbg_check_skipped(eap))
+        if (!(eap->cstack->cs_flags[eap->cstack->cs_idx] & CSF_TRUE) && dbg_check_skipped(eap))
             (void)do_intthrow(eap->cstack);
 
         --eap->cstack->cs_idx;
@@ -966,9 +963,7 @@ ex_else(eap)
     skip = did_emsg || got_int || did_throw || (cstack->cs_idx > 0
             && !(cstack->cs_flags[cstack->cs_idx - 1] & CSF_ACTIVE));
 
-    if (cstack->cs_idx < 0
-            || (cstack->cs_flags[cstack->cs_idx]
-                                           & (CSF_WHILE | CSF_FOR | CSF_TRY)))
+    if (cstack->cs_idx < 0 || (cstack->cs_flags[cstack->cs_idx] & (CSF_WHILE | CSF_FOR | CSF_TRY)))
     {
         if (eap->cmdidx == CMD_else)
         {
@@ -1066,8 +1061,7 @@ ex_while(eap)
             ++cstack->cs_looplevel;
             cstack->cs_line[cstack->cs_idx] = -1;
         }
-        cstack->cs_flags[cstack->cs_idx] =
-                               eap->cmdidx == CMD_while ? CSF_WHILE : CSF_FOR;
+        cstack->cs_flags[cstack->cs_idx] = eap->cmdidx == CMD_while ? CSF_WHILE : CSF_FOR;
 
         /*
          * Don't do something after an error, interrupt, or throw, or when
@@ -1787,8 +1781,7 @@ ex_endtry(eap)
          * made inactive by a ":continue", ":break", ":return", or ":finish" in
          * the finally clause.  The latter case need not be tested since then
          * anything pending has already been discarded. */
-        skip = did_emsg || got_int || did_throw ||
-            !(cstack->cs_flags[cstack->cs_idx] & CSF_TRUE);
+        skip = did_emsg || got_int || did_throw || !(cstack->cs_flags[cstack->cs_idx] & CSF_TRUE);
 
         if (!(cstack->cs_flags[cstack->cs_idx] & CSF_TRY))
         {
@@ -2173,8 +2166,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
              */
             if (!(cstack->cs_flags[idx] & CSF_FINALLY))
             {
-                if ((cstack->cs_flags[idx] & CSF_ACTIVE)
-                        && (cstack->cs_flags[idx] & CSF_CAUGHT))
+                if ((cstack->cs_flags[idx] & CSF_ACTIVE) && (cstack->cs_flags[idx] & CSF_CAUGHT))
                     finish_exception((except_T *)cstack->cs_exception[idx]);
                 /* Stop at this try conditional - except the try block never
                  * got active (because of an inactive surrounding conditional
@@ -2208,8 +2200,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
          * entry after saving the original value, restore that value here and
          * free the memory used to store it.
          */
-        if ((cstack->cs_flags[idx] & CSF_TRY)
-                && (cstack->cs_flags[idx] & CSF_SILENT))
+        if ((cstack->cs_flags[idx] & CSF_TRY) && (cstack->cs_flags[idx] & CSF_SILENT))
         {
             eslist_T    *elem;
 
@@ -2292,8 +2283,7 @@ has_loop_cmd(p)
             break;
         p += len;
     }
-    if ((p[0] == 'w' && p[1] == 'h')
-            || (p[0] == 'f' && p[1] == 'o' && p[2] == 'r'))
+    if ((p[0] == 'w' && p[1] == 'h') || (p[0] == 'f' && p[1] == 'o' && p[2] == 'r'))
         return TRUE;
     return FALSE;
 }

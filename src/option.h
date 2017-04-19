@@ -274,9 +274,6 @@ static char *(p_bkc_values[]) = {"yes", "auto", "no", "breaksymlink", "breakhard
 #define BKC_BREAKHARDLINK      0x010
 EXTERN char_u   *p_bdir;        /* 'backupdir' */
 EXTERN char_u   *p_bex;         /* 'backupext' */
-#if defined(FEAT_WILDIGN)
-EXTERN char_u   *p_bsk;         /* 'backupskip' */
-#endif
 EXTERN char_u   *p_breakat;     /* 'breakat' */
 EXTERN char_u   *p_cmp;         /* 'casemap' */
 EXTERN unsigned cmp_flags;
@@ -288,31 +285,14 @@ static char *(p_cmp_values[]) = {"internal", "keepascii", NULL};
 EXTERN char_u   *p_enc;         /* 'encoding' */
 EXTERN int      p_deco;         /* 'delcombine' */
 EXTERN char_u   *p_ccv;         /* 'charconvert' */
-#if defined(FEAT_CMDWIN)
 EXTERN char_u   *p_cedit;       /* 'cedit' */
 EXTERN long     p_cwh;          /* 'cmdwinheight' */
-#endif
-#if defined(FEAT_CLIPBOARD)
 EXTERN char_u   *p_cb;          /* 'clipboard' */
-#endif
 EXTERN long     p_ch;           /* 'cmdheight' */
-#if defined(FEAT_CON_DIALOG)
 EXTERN int      p_confirm;      /* 'confirm' */
-#endif
 EXTERN int      p_cp;           /* 'compatible' */
-#if defined(FEAT_INS_EXPAND)
-EXTERN char_u   *p_cot;         /* 'completeopt' */
-EXTERN long     p_ph;           /* 'pumheight' */
-#endif
 EXTERN char_u   *p_cpo;         /* 'cpoptions' */
 EXTERN char_u   *p_debug;       /* 'debug' */
-#if defined(FEAT_FIND_ID)
-EXTERN char_u   *p_def;         /* 'define' */
-EXTERN char_u   *p_inc;
-#endif
-#if defined(FEAT_INS_EXPAND)
-EXTERN char_u   *p_dict;        /* 'dictionary' */
-#endif
 EXTERN int      p_dg;           /* 'digraph' */
 EXTERN char_u   *p_dir;         /* 'directory' */
 EXTERN char_u   *p_dy;          /* 'display' */
@@ -337,12 +317,7 @@ EXTERN char_u   *p_fp;          /* 'formatprg' */
 EXTERN int      p_fs;           /* 'fsync' */
 EXTERN int      p_gd;           /* 'gdefault' */
 EXTERN int      p_prompt;       /* 'prompt' */
-#if defined(CURSOR_SHAPE)
 EXTERN char_u   *p_guicursor;   /* 'guicursor' */
-#endif
-#if defined(FEAT_MOUSESHAPE)
-EXTERN char_u   *p_mouseshape;  /* 'mouseshape' */
-#endif
 EXTERN char_u   *p_hf;          /* 'helpfile' */
 EXTERN long     p_hh;           /* 'helpheight' */
 EXTERN int      p_hid;          /* 'hidden' */
@@ -357,10 +332,6 @@ EXTERN int      p_hkmapp;       /* 'hkmapp' */
 EXTERN int      p_icon;         /* 'icon' */
 EXTERN char_u   *p_iconstring;  /* 'iconstring' */
 EXTERN int      p_ic;           /* 'ignorecase' */
-#if defined(USE_IM_CONTROL)
-EXTERN int      p_imcmdline;    /* 'imcmdline' */
-EXTERN int      p_imdisable;    /* 'imdisable' */
-#endif
 EXTERN int      p_is;           /* 'incsearch' */
 EXTERN int      p_im;           /* 'insertmode' */
 EXTERN char_u   *p_isf;         /* 'isfname' */
@@ -386,9 +357,6 @@ EXTERN long     p_mmd;          /* 'maxmapdepth' */
 EXTERN long     p_mm;           /* 'maxmem' */
 EXTERN long     p_mmp;          /* 'maxmempattern' */
 EXTERN long     p_mmt;          /* 'maxmemtot' */
-#if defined(FEAT_MENU)
-EXTERN long     p_mis;          /* 'menuitems' */
-#endif
 EXTERN long     p_mls;          /* 'modelines' */
 EXTERN char_u   *p_mouse;       /* 'mouse' */
 EXTERN char_u   *p_mousem;      /* 'mousemodel' */
@@ -400,30 +368,18 @@ EXTERN int      p_paste;        /* 'paste' */
 EXTERN char_u   *p_pt;          /* 'pastetoggle' */
 EXTERN char_u   *p_pm;          /* 'patchmode' */
 EXTERN char_u   *p_path;        /* 'path' */
-#if defined(FEAT_SEARCHPATH)
-EXTERN char_u   *p_cdpath;      /* 'cdpath' */
-#endif
 EXTERN long     p_rdt;          /* 'redrawtime' */
 EXTERN int      p_remap;        /* 'remap' */
 EXTERN long     p_re;           /* 'regexpengine' */
-#if defined(FEAT_RENDER_OPTIONS)
-EXTERN char_u   *p_rop;         /* 'renderoptions' */
-#endif
 EXTERN long     p_report;       /* 'report' */
 EXTERN int      p_ari;          /* 'allowrevins' */
 EXTERN int      p_ri;           /* 'revins' */
-#if defined(FEAT_CMDL_INFO)
 EXTERN int      p_ru;           /* 'ruler' */
-#endif
-#if defined(FEAT_STL_OPT)
 EXTERN char_u   *p_ruf;         /* 'rulerformat' */
-#endif
 EXTERN char_u   *p_rtp;         /* 'runtimepath' */
 EXTERN long     p_sj;           /* 'scrolljump' */
 EXTERN long     p_so;           /* 'scrolloff' */
-#if defined(FEAT_SCROLLBIND)
 EXTERN char_u   *p_sbo;         /* 'scrollopt' */
-#endif
 EXTERN char_u   *p_sections;    /* 'sections' */
 EXTERN int      p_secure;       /* 'secure' */
 EXTERN char_u   *p_sel;         /* 'selection' */
@@ -435,15 +391,11 @@ EXTERN char_u   *p_sxq;         /* 'shellxquote' */
 EXTERN char_u   *p_sxe;         /* 'shellxescape' */
 EXTERN char_u   *p_srr;         /* 'shellredir' */
 EXTERN int      p_stmp;         /* 'shelltemp' */
-#if defined(FEAT_STL_OPT)
 EXTERN char_u   *p_stl;         /* 'statusline' */
-#endif
 EXTERN int      p_sr;           /* 'shiftround' */
 EXTERN char_u   *p_shm;         /* 'shortmess' */
 EXTERN char_u   *p_sbr;         /* 'showbreak' */
-#if defined(FEAT_CMDL_INFO)
 EXTERN int      p_sc;           /* 'showcmd' */
-#endif
 EXTERN int      p_sft;          /* 'showfulltag' */
 EXTERN int      p_sm;           /* 'showmatch' */
 EXTERN int      p_smd;          /* 'showmode' */
@@ -453,9 +405,7 @@ EXTERN int      p_scs;          /* 'smartcase' */
 EXTERN int      p_sta;          /* 'smarttab' */
 EXTERN int      p_sb;           /* 'splitbelow' */
 EXTERN long     p_tpm;          /* 'tabpagemax' */
-#if defined(FEAT_STL_OPT)
 EXTERN char_u   *p_tal;         /* 'tabline' */
-#endif
 EXTERN int      p_spr;          /* 'splitright' */
 EXTERN int      p_sol;          /* 'startofline' */
 EXTERN char_u   *p_su;          /* 'suffixes' */
@@ -484,15 +434,11 @@ EXTERN int      p_title;        /* 'title' */
 EXTERN long     p_titlelen;     /* 'titlelen' */
 EXTERN char_u   *p_titleold;    /* 'titleold' */
 EXTERN char_u   *p_titlestring; /* 'titlestring' */
-#if defined(FEAT_INS_EXPAND)
-EXTERN char_u   *p_tsr;         /* 'thesaurus' */
-#endif
 EXTERN int      p_ttimeout;     /* 'ttimeout' */
 EXTERN long     p_ttm;          /* 'ttimeoutlen' */
 EXTERN int      p_tbi;          /* 'ttybuiltin' */
 EXTERN int      p_tf;           /* 'ttyfast' */
 EXTERN long     p_ttyscroll;    /* 'ttyscroll' */
-#if defined(FEAT_MOUSE)
 EXTERN char_u   *p_ttym;        /* 'ttymouse' */
 EXTERN unsigned ttym_flags;
 #if defined(IN_OPTION_C)
@@ -506,7 +452,6 @@ static char *(p_ttym_values[]) = {"xterm", "xterm2", "dec", "netterm", "jsbterm"
 #define TTYM_PTERM             0x20
 #define TTYM_URXVT             0x40
 #define TTYM_SGR               0x80
-#endif
 EXTERN char_u   *p_udir;        /* 'undodir' */
 EXTERN long     p_ul;           /* 'undolevels' */
 EXTERN long     p_ur;           /* 'undoreload' */
@@ -530,22 +475,14 @@ char_u  *p_vfile = (char_u *)""; /* used before options are initialized */
 extern char_u   *p_vfile;       /* 'verbosefile' */
 #endif
 EXTERN int      p_warn;         /* 'warn' */
-#if defined(FEAT_CMDL_COMPL)
 EXTERN char_u   *p_wop;         /* 'wildoptions' */
-#endif
 EXTERN long     p_window;       /* 'window' */
-#if defined(FEAT_WILDIGN)
-EXTERN char_u   *p_wig;         /* 'wildignore' */
-#endif
 EXTERN int      p_wiv;          /* 'weirdinvert' */
 EXTERN char_u   *p_ww;          /* 'whichwrap' */
 EXTERN long     p_wc;           /* 'wildchar' */
 EXTERN long     p_wcm;          /* 'wildcharm' */
 EXTERN long     p_wic;          /* 'wildignorecase' */
 EXTERN char_u   *p_wim;         /* 'wildmode' */
-#if defined(FEAT_WILDMENU)
-EXTERN int      p_wmnu;         /* 'wildmenu' */
-#endif
 EXTERN long     p_wh;           /* 'winheight' */
 EXTERN long     p_wmh;          /* 'winminheight' */
 EXTERN long     p_wmw;          /* 'winminwidth' */
@@ -576,18 +513,6 @@ enum
     , BV_CINW
     , BV_CM
     , BV_COM
-#if defined(FEAT_INS_EXPAND)
-    , BV_CPT
-    , BV_DICT
-    , BV_TSR
-#endif
-#if defined(FEAT_COMPL_FUNC)
-    , BV_CFU
-#endif
-#if defined(FEAT_FIND_ID)
-    , BV_DEF
-    , BV_INC
-#endif
     , BV_EOL
     , BV_EP
     , BV_ET
@@ -602,9 +527,6 @@ enum
     , BV_IMS
     , BV_INDE
     , BV_INDK
-#if defined(FEAT_FIND_ID)
-    , BV_INEX
-#endif
     , BV_INF
     , BV_ISK
     , BV_KP
@@ -615,23 +537,15 @@ enum
     , BV_MOD
     , BV_MPS
     , BV_NF
-#if defined(FEAT_COMPL_FUNC)
-    , BV_OFU
-#endif
     , BV_PATH
     , BV_PI
-#if defined(FEAT_TEXTOBJ)
     , BV_QE
-#endif
     , BV_RO
     , BV_SI
     , BV_SN
     , BV_SMC
     , BV_SYN
     , BV_STS
-#if defined(FEAT_SEARCHPATH)
-    , BV_SUA
-#endif
     , BV_SW
     , BV_SWF
     , BV_TAGS
@@ -654,9 +568,7 @@ enum
     WV_LIST = 0
     , WV_COCU
     , WV_COLE
-#if defined(FEAT_CURSORBIND)
     , WV_CRBIND
-#endif
     , WV_BRI
     , WV_BRIOPT
     , WV_LBR
@@ -665,16 +577,12 @@ enum
     , WV_NUW
     , WV_RL
     , WV_RLC
-#if defined(FEAT_SCROLLBIND)
     , WV_SCBIND
-#endif
     , WV_SCROLL
     , WV_CUC
     , WV_CUL
     , WV_CC
-#if defined(FEAT_STL_OPT)
     , WV_STL
-#endif
     , WV_WFH
     , WV_WFW
     , WV_WRAP

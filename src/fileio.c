@@ -161,8 +161,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     int         filtering = (flags & READ_FILTER);
     int         read_stdin = (flags & READ_STDIN);
     int         read_buffer = (flags & READ_BUFFER);
-    int         set_options = newfile || read_buffer
-                                           || (eap != NULL && eap->read_edit);
+    int         set_options = newfile || read_buffer || (eap != NULL && eap->read_edit);
     linenr_T    read_buf_lnum = 1;      /* next line to read from curbuf */
     colnr_T     read_buf_col = 0;       /* next char to read from this line */
     char_u      c;
@@ -177,10 +176,8 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     char_u      *p;
     off_t       filesize = 0;
     int         skip_read = FALSE;
-#if defined(FEAT_PERSISTENT_UNDO)
     context_sha256_T sha_ctx;
     int         read_undo_file = FALSE;
-#endif
     int         split = 0;              /* number of split lines */
 #define UNKNOWN  0x0fffffff             /* file size is unknown */
     linenr_T    linecnt;
@@ -258,8 +255,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     old_curbuf = curbuf;
     old_b_ffname = curbuf->b_ffname;
     old_b_fname = curbuf->b_fname;
-    using_b_ffname = (fname == curbuf->b_ffname)
-                                              || (sfname == curbuf->b_ffname);
+    using_b_ffname = (fname == curbuf->b_ffname) || (sfname == curbuf->b_ffname);
     using_b_fname = (fname == curbuf->b_fname) || (sfname == curbuf->b_fname);
 
     /* After reading a file the cursor line changes but we don't want to
@@ -420,9 +416,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     else if (!read_buffer)
     {
 #if defined(USE_MCH_ACCESS)
-        if (
-            !(perm & 0222) ||
-                                mch_access((char *)fname, W_OK))
+        if (!(perm & 0222) || mch_access((char *)fname, W_OK))
             file_readonly = TRUE;
         fd = mch_open((char *)fname, O_RDONLY | O_EXTRA, 0);
 #else
@@ -461,10 +455,8 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
                         check_need_swap(newfile);
                         /* SwapExists autocommand may mess things up */
                         if (curbuf != old_curbuf
-                                || (using_b_ffname
-                                        && (old_b_ffname != curbuf->b_ffname))
-                                || (using_b_fname
-                                         && (old_b_fname != curbuf->b_fname)))
+                                || (using_b_ffname && (old_b_ffname != curbuf->b_ffname))
+                                || (using_b_fname && (old_b_fname != curbuf->b_fname)))
                         {
                             EMSG(_(e_auchangedbuf));
                             return FAIL;
@@ -937,7 +929,6 @@ retry:
         skip_count = lines_to_skip;
         read_count = lines_to_read;
         conv_restlen = 0;
-#if defined(FEAT_PERSISTENT_UNDO)
         read_undo_file = (newfile && (flags & READ_KEEP_UNDO) == 0
                                   && curbuf->b_ffname != NULL
                                   && curbuf->b_p_udf
@@ -946,7 +937,6 @@ retry:
                                   && !read_buffer);
         if (read_undo_file)
             sha256_start(&sha_ctx);
-#endif
     }
 
     while (!error && !got_int)
@@ -1361,8 +1351,7 @@ retry:
                             u8c = *--p;
                             u8c += (*--p << 8);
                         }
-                        if ((fio_flags & FIO_UTF16)
-                                            && u8c >= 0xdc00 && u8c <= 0xdfff)
+                        if ((fio_flags & FIO_UTF16) && u8c >= 0xdc00 && u8c <= 0xdfff)
                         {
                             int u16c;
 
@@ -1591,8 +1580,7 @@ rewind_retry:
                     {
                         if (*p == NL)
                         {
-                            if (!try_unix
-                                    || (try_dos && p > ptr && p[-1] == CAR))
+                            if (!try_unix || (try_dos && p > ptr && p[-1] == CAR))
                                 fileformat = EOL_DOS;
                             else
                                 fileformat = EOL_UNIX;
@@ -1670,10 +1658,8 @@ rewind_retry:
                             error = TRUE;
                             break;
                         }
-#if defined(FEAT_PERSISTENT_UNDO)
                         if (read_undo_file)
                             sha256_update(&sha_ctx, line_start, len);
-#endif
                         ++lnum;
                         if (--read_count == 0)
                         {
@@ -1720,8 +1706,7 @@ rewind_retry:
                             {
                                 if (   try_unix
                                     && !read_stdin
-                                    && (read_buffer
-                                        || lseek(fd, (off_t)0L, SEEK_SET) == 0))
+                                    && (read_buffer || lseek(fd, (off_t)0L, SEEK_SET) == 0))
                                 {
                                     fileformat = EOL_UNIX;
                                     if (set_options)
@@ -1738,10 +1723,8 @@ rewind_retry:
                             error = TRUE;
                             break;
                         }
-#if defined(FEAT_PERSISTENT_UNDO)
                         if (read_undo_file)
                             sha256_update(&sha_ctx, line_start, len);
-#endif
                         ++lnum;
                         if (--read_count == 0)
                         {
@@ -1787,10 +1770,8 @@ failed:
             error = TRUE;
         else
         {
-#if defined(FEAT_PERSISTENT_UNDO)
             if (read_undo_file)
                 sha256_update(&sha_ctx, line_start, len);
-#endif
             read_no_eol_lnum = ++lnum;
         }
     }
@@ -2028,7 +2009,6 @@ failed:
     if (flags & READ_KEEP_UNDO)
         u_find_first_changed();
 
-#if defined(FEAT_PERSISTENT_UNDO)
     /*
      * When opening a new file locate undo info and read it.
      */
@@ -2039,7 +2019,6 @@ failed:
         sha256_finish(&sha_ctx, hash);
         u_read_undo(NULL, hash, fname);
     }
-#endif
 
     if (!read_stdin && !read_buffer)
     {
@@ -2088,8 +2067,7 @@ is_dev_fd_file(fname)
     return (STRNCMP(fname, "/dev/fd/", 8) == 0
             && VIM_ISDIGIT(fname[8])
             && *skipdigits(fname + 9) == NUL
-            && (fname[9] != NUL
-                || (fname[8] != '0' && fname[8] != '1' && fname[8] != '2')));
+            && (fname[9] != NUL || (fname[8] != '0' && fname[8] != '1' && fname[8] != '2')));
 }
 #endif
 
@@ -2304,8 +2282,7 @@ check_file_readonly(fname, perm)
 
     return (
 #if defined(USE_MCH_ACCESS)
-        (perm & 0222) == 0 ||
-        mch_access((char *)fname, W_OK)
+        (perm & 0222) == 0 || mch_access((char *)fname, W_OK)
 #else
         (fd = mch_open((char *)fname, O_RDWR | O_EXTRA, 0)) < 0 ? TRUE : (close(fd), FALSE)
 #endif
@@ -2386,10 +2363,8 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
 #if defined(HAS_BW_FLAGS)
     int             wb_flags = 0;
 #endif
-#if defined(FEAT_PERSISTENT_UNDO)
     int             write_undo_file = FALSE;
     context_sha256_T sha_ctx;
-#endif
     unsigned int    bkc = get_bkc_value(buf);
 
     if (fname == NULL || *fname == NUL) /* safety check */
@@ -2726,10 +2701,6 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
      * If 'backupskip' is not empty, don't make a backup for some files.
      */
     dobackup = (p_wb || p_bk || *p_pm != NUL);
-#if defined(FEAT_WILDIGN)
-    if (dobackup && *p_bsk != NUL && match_file_list(p_bsk, sfname, ffname))
-        dobackup = FALSE;
-#endif
 
     /*
      * Save the value of got_int and reset it.  We don't want a previous
@@ -2835,8 +2806,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
         else
             backup_ext = p_bex;
 
-        if (backup_copy
-                && (fd = mch_open((char *)fname, O_RDONLY | O_EXTRA, 0)) >= 0)
+        if (backup_copy && (fd = mch_open((char *)fname, O_RDONLY | O_EXTRA, 0)) >= 0)
         {
             int         bfd;
             char_u      *copybuf, *wp;
@@ -2915,8 +2885,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                          * If we don't check here, we either ruin the file
                          * when copying or erase it after writing. jw.
                          */
-                        if (st_new.st_dev == st_old.st_dev
-                                            && st_new.st_ino == st_old.st_ino)
+                        if (st_new.st_dev == st_old.st_dev && st_new.st_ino == st_old.st_ino)
                         {
                             vim_free(backup);
                             backup = NULL;      /* no backup file to delete */
@@ -2946,8 +2915,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                             if (wp < backup)    /* empty file name ??? */
                                 wp = backup;
                             *wp = 'z';
-                            while (*wp > 'a'
-                                    && mch_stat((char *)backup, &st_new) >= 0)
+                            while (*wp > 'a' && mch_stat((char *)backup, &st_new) >= 0)
                                 --*wp;
                             /* They all exist??? Must be something wrong. */
                             if (*wp == 'a')
@@ -3163,8 +3131,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
      * the original file.
      * Don't do this if there is a backup file and we are exiting.
      */
-    if (reset_changed && !newfile && overwriting
-                                              && !(exiting && backup != NULL))
+    if (reset_changed && !newfile && overwriting && !(exiting && backup != NULL))
     {
         ml_preserve(buf, FALSE);
         if (got_int)
@@ -3295,8 +3262,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
             else
             {
                 errmsg = (char_u *)_("E212: Can't open file for writing");
-                if (forceit && vim_strchr(p_cpo, CPO_FWRITE) == NULL
-                                                                 && perm >= 0)
+                if (forceit && vim_strchr(p_cpo, CPO_FWRITE) == NULL && perm >= 0)
                 {
                     /* we write to the file, thus it should be marked
                        writable after all */
@@ -3387,13 +3353,10 @@ restore_backup:
     }
     write_info.bw_start_lnum = start;
 
-#if defined(FEAT_PERSISTENT_UNDO)
-    write_undo_file = (buf->b_p_udf && overwriting && !append
-                                              && !filtering && reset_changed);
+    write_undo_file = (buf->b_p_udf && overwriting && !append && !filtering && reset_changed);
     if (write_undo_file)
         /* Prepare for computing the hash value of the text. */
         sha256_start(&sha_ctx);
-#endif
 
     write_info.bw_len = bufsize;
 #if defined(HAS_BW_FLAGS)
@@ -3409,10 +3372,8 @@ restore_backup:
          * Keep it fast!
          */
         ptr = ml_get_buf(buf, lnum, FALSE) - 1;
-#if defined(FEAT_PERSISTENT_UNDO)
         if (write_undo_file)
             sha256_update(&sha_ctx, ptr + 1, (UINT32_T)(STRLEN(ptr + 1) + 1));
-#endif
         while ((c = *++ptr) != NUL)
         {
             if (c == NL)
@@ -3694,8 +3655,7 @@ restore_backup:
         unchanged(buf, TRUE);
         /* buf->b_changedtick is always incremented in unchanged() but that
          * should not trigger a TextChanged event. */
-        if (last_changedtick + 1 == buf->b_changedtick
-                                               && last_changedtick_buf == buf)
+        if (last_changedtick + 1 == buf->b_changedtick && last_changedtick_buf == buf)
             last_changedtick = buf->b_changedtick;
         u_unchanged(buf);
         u_update_save_nr(buf);
@@ -3835,7 +3795,6 @@ nofail:
     }
     msg_scroll = msg_save;
 
-#if defined(FEAT_PERSISTENT_UNDO)
     /*
      * When writing the whole file and 'undofile' is set, also write the undo
      * file.
@@ -3847,7 +3806,6 @@ nofail:
         sha256_finish(&sha_ctx, hash);
         u_write_undo(NULL, FALSE, buf, hash);
     }
-#endif
 
     if (!should_abort(retval))
     {
@@ -4027,8 +3985,7 @@ check_mtime(buf, st)
     buf_T               *buf;
     struct stat         *st;
 {
-    if (buf->b_mtime_read != 0
-            && time_differs((long)st->st_mtime, buf->b_mtime_read))
+    if (buf->b_mtime_read != 0 && time_differs((long)st->st_mtime, buf->b_mtime_read))
     {
         msg_scroll = TRUE;          /* don't overwrite messages here */
         msg_silent = 0;             /* must give this prompt */
@@ -4649,8 +4606,7 @@ buf_modname(shortname, fname, ext, prepend_dot)
         retval = alloc((unsigned)(MAXPATHL + extlen + 3));
         if (retval == NULL)
             return NULL;
-        if (mch_dirname(retval, MAXPATHL) == FAIL ||
-                                     (fnamelen = (int)STRLEN(retval)) == 0)
+        if (mch_dirname(retval, MAXPATHL) == FAIL || (fnamelen = (int)STRLEN(retval)) == 0)
         {
             vim_free(retval);
             return NULL;
@@ -4680,11 +4636,7 @@ buf_modname(shortname, fname, ext, prepend_dot)
     for (ptr = retval + fnamelen; ptr > retval; mb_ptr_back(retval, ptr))
     {
         if (*ext == '.'
-#if defined(USE_LONG_FNAME)
-                    && (!USE_LONG_FNAME || shortname)
-#else
                     && shortname
-#endif
                                                                 )
             if (*ptr == '.')    /* replace '.' by '_' */
                 *ptr = '_';
@@ -4704,19 +4656,14 @@ buf_modname(shortname, fname, ext, prepend_dot)
     /*
      * For 8.3 file names we may have to reduce the length.
      */
-#if defined(USE_LONG_FNAME)
-    if (!USE_LONG_FNAME || shortname)
-#else
     if (shortname)
-#endif
     {
         /*
          * If there is no file name, or the file name ends in '/', and the
          * extension starts with '.', put a '_' before the dot, because just
          * ".ext" is invalid.
          */
-        if (fname == NULL || *fname == NUL
-                                   || vim_ispathsep(fname[STRLEN(fname) - 1]))
+        if (fname == NULL || *fname == NUL || vim_ispathsep(fname[STRLEN(fname) - 1]))
         {
             if (*ext == '.')
                 *s++ = '_';
@@ -4746,15 +4693,6 @@ buf_modname(shortname, fname, ext, prepend_dot)
         else if ((int)STRLEN(e) + extlen > 4)
             s = e + 4 - extlen;
     }
-#if defined(USE_LONG_FNAME)
-    /*
-     * If there is no file name, and the extension starts with '.', put a
-     * '_' before the dot, because just ".ext" may be invalid if it's on a
-     * FAT partition, and on HPFS it doesn't matter.
-     */
-    else if ((fname == NULL || *fname == NUL) && *ext == '.')
-        *s++ = '_';
-#endif
 
     /*
      * Append the extension.
@@ -4766,9 +4704,6 @@ buf_modname(shortname, fname, ext, prepend_dot)
      * Prepend the dot.
      */
     if (prepend_dot && !shortname && *(e = gettail(retval)) != '.'
-#if defined(USE_LONG_FNAME)
-            && USE_LONG_FNAME
-#endif
                                 )
     {
         STRMOVE(e + 1, e);
@@ -5112,9 +5047,7 @@ buf_check_timestamp(buf, focus)
     char        *mesg2 = "";
     int         helpmesg = FALSE;
     int         reload = FALSE;
-#if defined(FEAT_CON_DIALOG)
     int         can_reload = FALSE;
-#endif
     off_t       orig_size = buf->b_orig_size;
     int         orig_mode = buf->b_orig_mode;
     static int  busy = FALSE;
@@ -5214,9 +5147,7 @@ buf_check_timestamp(buf, focus)
                 else
                 {
                     helpmesg = TRUE;
-#if defined(FEAT_CON_DIALOG)
                     can_reload = TRUE;
-#endif
                     /*
                      * Check if the file contents really changed to avoid
                      * giving a warning when only the timestamp was set (e.g.,
@@ -5246,15 +5177,12 @@ buf_check_timestamp(buf, focus)
             }
         }
     }
-    else if ((buf->b_flags & BF_NEW) && !(buf->b_flags & BF_NEW_W)
-                                                && vim_fexists(buf->b_ffname))
+    else if ((buf->b_flags & BF_NEW) && !(buf->b_flags & BF_NEW_W) && vim_fexists(buf->b_ffname))
     {
         retval = 1;
         mesg = _("W13: Warning: File \"%s\" has been created after editing started");
         buf->b_flags |= BF_NEW_W;
-#if defined(FEAT_CON_DIALOG)
         can_reload = TRUE;
-#endif
     }
 
     if (mesg != NULL)
@@ -5269,7 +5197,6 @@ buf_check_timestamp(buf, focus)
             /* Set warningmsg here, before the unimportant and output-specific
              * mesg2 has been appended. */
             set_vim_var_string(VV_WARNINGMSG, tbuf, -1);
-#if defined(FEAT_CON_DIALOG)
             if (can_reload)
             {
                 if (*mesg2 != NUL)
@@ -5282,7 +5209,6 @@ buf_check_timestamp(buf, focus)
                     reload = TRUE;
             }
             else
-#endif
             if (State > NORMAL_BUSY || (State & CMDLINE) || already_warned)
             {
                 if (*mesg2 != NUL)
@@ -5325,7 +5251,6 @@ buf_check_timestamp(buf, focus)
     {
         /* Reload the buffer. */
         buf_reload(buf, orig_mode);
-#if defined(FEAT_PERSISTENT_UNDO)
         if (buf->b_p_udf && buf->b_ffname != NULL)
         {
             char_u          hash[UNDO_HASH_SIZE];
@@ -5337,7 +5262,6 @@ buf_check_timestamp(buf, focus)
             u_write_undo(NULL, FALSE, buf, hash);
             curbuf = save_curbuf;
         }
-#endif
     }
 
     /* Trigger FileChangedShell when the file was changed in any way. */
@@ -5409,8 +5333,7 @@ buf_reload(buf, orig_mode)
                 curbuf = buf;
                 curwin->w_buffer = buf;
             }
-            if (savebuf == NULL || saved == FAIL || buf != curbuf
-                                      || move_lines(buf, savebuf) == FAIL)
+            if (savebuf == NULL || saved == FAIL || buf != curbuf || move_lines(buf, savebuf) == FAIL)
             {
                 EMSG2(_("E462: Could not prepare for reloading \"%s\""), buf->b_fname);
                 saved = FAIL;
@@ -6607,8 +6530,7 @@ do_autocmd_event(event, pat, nested, cmd, forceit, group)
          * Watch out for a comma in braces, like "*.\{obj,o\}".
          */
         brace_level = 0;
-        for (endpat = pat; *endpat && (*endpat != ',' || brace_level
-                                             || endpat[-1] == '\\'); ++endpat)
+        for (endpat = pat; *endpat && (*endpat != ',' || brace_level || endpat[-1] == '\\'); ++endpat)
         {
             if (*endpat == '{')
                 brace_level++;
@@ -6625,8 +6547,7 @@ do_autocmd_event(event, pat, nested, cmd, forceit, group)
         is_buflocal = FALSE;
         buflocal_nr = 0;
 
-        if (patlen >= 8 && STRNCMP(pat, "<buffer", 7) == 0
-                                                    && pat[patlen - 1] == '>')
+        if (patlen >= 8 && STRNCMP(pat, "<buffer", 7) == 0 && pat[patlen - 1] == '>')
         {
             /* "<buffer...>": Error will be printed only for addition.
              * printing and removing will proceed silently. */
@@ -6719,8 +6640,7 @@ do_autocmd_event(event, pat, nested, cmd, forceit, group)
             if (ap == NULL)
             {
                 /* refuse to add buffer-local ap if buffer number is invalid */
-                if (is_buflocal && (buflocal_nr == 0
-                                      || buflist_findnr(buflocal_nr) == NULL))
+                if (is_buflocal && (buflocal_nr == 0 || buflist_findnr(buflocal_nr) == NULL))
                 {
                     EMSGN(_("E680: <buffer=%d>: invalid buffer number "), buflocal_nr);
                     return FAIL;
@@ -7167,9 +7087,6 @@ trigger_cursorhold()
             && has_cursorhold()
             && !Recording
             && typebuf.tb_len == 0
-#if defined(FEAT_INS_EXPAND)
-            && !ins_compl_active()
-#endif
             )
     {
         state = get_real_state();
@@ -7300,8 +7217,7 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     /*
      * FileChangedShell never nests, because it can create an endless loop.
      */
-    if (filechangeshell_busy && (event == EVENT_FILECHANGEDSHELL
-                                      || event == EVENT_FILECHANGEDSHELLPOST))
+    if (filechangeshell_busy && (event == EVENT_FILECHANGEDSHELL || event == EVENT_FILECHANGEDSHELLPOST))
         goto BYPASS_AU;
 
     /*
@@ -7324,10 +7240,8 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
      * Check if these autocommands are disabled.  Used when doing ":all" or
      * ":ball".
      */
-    if (       (autocmd_no_enter
-                && (event == EVENT_WINENTER || event == EVENT_BUFENTER))
-            || (autocmd_no_leave
-                && (event == EVENT_WINLEAVE || event == EVENT_BUFLEAVE)))
+    if (       (autocmd_no_enter && (event == EVENT_WINENTER || event == EVENT_BUFENTER))
+            || (autocmd_no_leave && (event == EVENT_WINLEAVE || event == EVENT_BUFLEAVE)))
         goto BYPASS_AU;
 
     /*
@@ -7446,7 +7360,6 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     if (!autocmd_busy)
     {
         save_search_patterns();
-        if (!ins_compl_active())
         {
             saveRedobuff();
             did_save_redobuff = TRUE;
@@ -7606,8 +7519,7 @@ unblock_autocmds()
     /* When v:termresponse was set while autocommands were blocked, trigger
      * the autocommands now.  Esp. useful when executing a shell command
      * during startup (vimdiff). */
-    if (autocmd_blocked == 0
-                      && get_vim_var_str(VV_TERMRESPONSE) != old_termresponse)
+    if (autocmd_blocked == 0 && get_vim_var_str(VV_TERMRESPONSE) != old_termresponse)
         apply_autocmds(EVENT_TERMRESPONSE, NULL, NULL, FALSE, curbuf);
 }
 
@@ -7640,8 +7552,7 @@ auto_next_pat(apc, stop_at_last)
         /* Only use a pattern when it has not been removed, has commands and
          * the group matches. For buffer-local autocommands only check the
          * buffer number. */
-        if (ap->pat != NULL && ap->cmds != NULL
-                && (apc->group == AUGROUP_ALL || apc->group == ap->group))
+        if (ap->pat != NULL && ap->cmds != NULL && (apc->group == AUGROUP_ALL || apc->group == ap->group))
         {
             /* execution-condition */
             if (ap->buflocal_nr == 0
@@ -7777,7 +7688,6 @@ has_autocmd(event, sfname, buf)
     return retval;
 }
 
-#if defined(FEAT_CMDL_COMPL)
 /*
  * Function given to ExpandGeneric() to obtain the list of autocommand group
  * names.
@@ -7863,8 +7773,6 @@ get_event_name(xp, idx)
     }
     return (char_u *)event_names[idx - augroups.ga_len].name;
 }
-
-#endif
 
 /*
  * Return TRUE if autocmd is supported.
@@ -7964,9 +7872,7 @@ au_exists(arg)
         if (ap->pat != NULL && ap->cmds != NULL
             && (group == AUGROUP_ALL || ap->group == group)
             && (pattern == NULL
-                || (buflocal_buf == NULL
-                    ? fnamecmp(ap->pat, pattern) == 0
-                    : ap->buflocal_nr == buflocal_buf->b_fnum)))
+                || (buflocal_buf == NULL ? fnamecmp(ap->pat, pattern) == 0 : ap->buflocal_nr == buflocal_buf->b_fnum)))
         {
             retval = TRUE;
             break;
@@ -8022,44 +7928,6 @@ match_file_pat(pattern, prog, fname, sfname, tail, allow_dirs)
         vim_regfree(regmatch.regprog);
     return result;
 }
-
-#if defined(FEAT_WILDIGN)
-/*
- * Return TRUE if a file matches with a pattern in "list".
- * "list" is a comma-separated list of patterns, like 'wildignore'.
- * "sfname" is the short file name or NULL, "ffname" the long file name.
- */
-    int
-match_file_list(list, sfname, ffname)
-    char_u      *list;
-    char_u      *sfname;
-    char_u      *ffname;
-{
-    char_u      buf[100];
-    char_u      *tail;
-    char_u      *regpat;
-    char        allow_dirs;
-    int         match;
-    char_u      *p;
-
-    tail = gettail(sfname);
-
-    /* try all patterns in 'wildignore' */
-    p = list;
-    while (*p)
-    {
-        copy_option_part(&p, buf, 100, ",");
-        regpat = file_pat_to_reg_pat(buf, NULL, &allow_dirs, FALSE);
-        if (regpat == NULL)
-            break;
-        match = match_file_pat(regpat, NULL, ffname, sfname, tail, (int)allow_dirs);
-        vim_free(regpat);
-        if (match)
-            return TRUE;
-    }
-    return FALSE;
-}
-#endif
 
 /*
  * Convert the given pattern "pat" which has shell style wildcards in it, into
@@ -8164,8 +8032,7 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                 if (*++p == '?')
                     reg_pat[i++] = '?';
                 else
-                    if (*p == ',' || *p == '%' || *p == '#'
-                                       || *p == ' ' || *p == '{' || *p == '}')
+                    if (*p == ',' || *p == '%' || *p == '#' || *p == ' ' || *p == '{' || *p == '}')
                         reg_pat[i++] = *p;
                     else if (*p == '\\' && p[1] == '\\' && p[2] == '{')
                     {

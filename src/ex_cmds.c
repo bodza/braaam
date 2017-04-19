@@ -483,8 +483,7 @@ ex_sort(eap)
     for (i = 0; i < count; ++i)
     {
         s = ml_get(nrs[eap->forceit ? count - i - 1 : i].lnum);
-        if (!unique || i == 0
-                || (sort_ic ? STRICMP(s, sortbuf1) : STRCMP(s, sortbuf1)) != 0)
+        if (!unique || i == 0 || (sort_ic ? STRICMP(s, sortbuf1) : STRCMP(s, sortbuf1)) != 0)
         {
             if (ml_append(lnum++, s, (colnr_T)0, FALSE) == FAIL)
                 break;
@@ -601,8 +600,7 @@ ex_retab(eap)
                         num_tabs += num_spaces / new_ts;
                         num_spaces -= (num_spaces / new_ts) * new_ts;
                     }
-                    if (curbuf->b_p_et || got_tab ||
-                                        (num_spaces + num_tabs < len))
+                    if (curbuf->b_p_et || got_tab || (num_spaces + num_tabs < len))
                     {
                         if (did_undo == FALSE)
                         {
@@ -1060,7 +1058,6 @@ do_filter(line1, line2, eap, cmd, do_in, do_out)
     if (do_out)
         shell_flags |= SHELL_DOOUT;
 
-#if defined(FEAT_FILTERPIPE)
     if (!do_in && do_out && !p_stmp)
     {
         /* Use a pipe to fetch stdout of the command, do not use a temp file. */
@@ -1084,7 +1081,6 @@ do_filter(line1, line2, eap, cmd, do_in, do_out)
         curwin->w_cursor.lnum = line2;
     }
     else
-#endif
         if ((do_in && (itmp = vim_tempname('i', FALSE)) == NULL)
                 || (do_out && (otmp = vim_tempname('o', FALSE)) == NULL))
         {
@@ -1480,8 +1476,7 @@ do_fixdel(eap)
     char_u  *p;
 
     p = find_termcode((char_u *)"kb");
-    add_termcode((char_u *)"kD", p != NULL
-            && *p == DEL ? (char_u *)CTRL_H_STR : DEL_STR, FALSE);
+    add_termcode((char_u *)"kD", p != NULL && *p == DEL ? (char_u *)CTRL_H_STR : DEL_STR, FALSE);
 }
 
     void
@@ -1582,10 +1577,7 @@ ex_file(eap)
 {
     /* ":0file" removes the file name.  Check for illegal uses ":3file",
      * "0file name", etc. */
-    if (eap->addr_count > 0
-            && (*eap->arg != NUL
-                || eap->line2 > 0
-                || eap->addr_count > 1))
+    if (eap->addr_count > 0 && (*eap->arg != NUL || eap->line2 > 0 || eap->addr_count > 1))
     {
         EMSG(_(e_invarg));
         return;
@@ -1674,8 +1666,7 @@ do_write(eap)
      */
     if (other)
     {
-        if (vim_strchr(p_cpo, CPO_ALTWRITE) != NULL
-                                                 || eap->cmdidx == CMD_saveas)
+        if (vim_strchr(p_cpo, CPO_ALTWRITE) != NULL || eap->cmdidx == CMD_saveas)
             alt_buf = setaltfname(ffname, fname, (linenr_T)1);
         else
             alt_buf = buflist_findname(ffname);
@@ -1710,7 +1701,6 @@ do_write(eap)
                 && !eap->append
                 && !p_wa)
         {
-#if defined(FEAT_CON_DIALOG)
             if (p_confirm || cmdmod.confirm)
             {
                 if (vim_dialog_yesno(VIM_QUESTION, NULL,
@@ -1719,7 +1709,6 @@ do_write(eap)
                 eap->forceit = TRUE;
             }
             else
-#endif
             {
                 EMSG(_("E140: Use ! to write partial buffer"));
                 goto theend;
@@ -1839,7 +1828,6 @@ check_overwrite(eap, buf, fname, ffname, other)
                 EMSG2(_(e_isadir2), ffname);
                 return FAIL;
             }
-#if defined(FEAT_CON_DIALOG)
             if (p_confirm || cmdmod.confirm)
             {
                 char_u  buff[DIALOG_MSG_SIZE];
@@ -1850,7 +1838,6 @@ check_overwrite(eap, buf, fname, ffname, other)
                 eap->forceit = TRUE;
             }
             else
-#endif
             {
                 EMSG(_(e_exists));
                 return FAIL;
@@ -1890,7 +1877,6 @@ check_overwrite(eap, buf, fname, ffname, other)
             r = vim_fexists(swapname);
             if (r)
             {
-#if defined(FEAT_CON_DIALOG)
                 if (p_confirm || cmdmod.confirm)
                 {
                     char_u      buff[DIALOG_MSG_SIZE];
@@ -1905,7 +1891,6 @@ check_overwrite(eap, buf, fname, ffname, other)
                     eap->forceit = TRUE;
                 }
                 else
-#endif
                 {
                     EMSG2(_("E768: Swap file exists: %s (:silent! overrides)"), swapname);
                     vim_free(swapname);
@@ -2029,7 +2014,6 @@ check_readonly(forceit, buf)
                 || (mch_stat((char *)buf->b_ffname, &st) >= 0
                     && check_file_readonly(buf->b_ffname, 0777))))
     {
-#if defined(FEAT_CON_DIALOG)
         if ((p_confirm || cmdmod.confirm) && buf->b_fname != NULL)
         {
             char_u      buff[DIALOG_MSG_SIZE];
@@ -2049,7 +2033,6 @@ check_readonly(forceit, buf)
                 return TRUE;
         }
         else
-#endif
         if (buf->b_p_ro)
             EMSG(_(e_readonly));
         else
@@ -2101,11 +2084,9 @@ getfile(fnum, ffname, sfname, setpm, lnum, forceit)
     if (other && !forceit && curbuf->b_nwindows == 1 && !P_HID(curbuf)
                    && curbufIsChanged() && autowrite(curbuf, forceit) == FAIL)
     {
-#if defined(FEAT_CON_DIALOG)
         if (p_confirm && p_write)
             dialog_changed(curbuf, FALSE);
         if (curbufIsChanged())
-#endif
         {
             if (other)
                 --no_wait_return;
@@ -2209,18 +2190,9 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
         /* if no short name given, use ffname for short name */
         if (sfname == NULL)
             sfname = ffname;
-#if defined(USE_FNAME_CASE)
-#if defined(USE_LONG_FNAME)
-        if (USE_LONG_FNAME)
-#endif
-            if (sfname != NULL)
-                fname_case(sfname, 0);   /* set correct case for sfname */
-#endif
 
-#if defined(FEAT_LISTCMDS)
         if ((flags & ECMD_ADDBUF) && (ffname == NULL || *ffname == NUL))
             goto theend;
-#endif
 
         if (ffname == NULL)
             other_file = TRUE;
@@ -2265,8 +2237,7 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
      */
     reset_VIsual();
 
-    if ((command != NULL || newlnum > (linenr_T)0)
-            && *get_vim_var_str(VV_SWAPCOMMAND) == NUL)
+    if ((command != NULL || newlnum > (linenr_T)0) && *get_vim_var_str(VV_SWAPCOMMAND) == NUL)
     {
         int     len;
         char_u  *p;
@@ -2295,9 +2266,7 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
      */
     if (other_file)
     {
-#if defined(FEAT_LISTCMDS)
         if (!(flags & ECMD_ADDBUF))
-#endif
         {
             if (!cmdmod.keepalt)
                 curwin->w_alt_fnum = curbuf->b_fnum;
@@ -2309,7 +2278,6 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
             buf = buflist_findnr(fnum);
         else
         {
-#if defined(FEAT_LISTCMDS)
             if (flags & ECMD_ADDBUF)
             {
                 linenr_T        tlnum = 1L;
@@ -2323,7 +2291,6 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
                 (void)buflist_new(ffname, sfname, tlnum, BLN_LISTED);
                 goto theend;
             }
-#endif
             buf = buflist_new(ffname, sfname, 0L,
                     BLN_CURBUF | ((flags & ECMD_SET_HELP) ? 0 : BLN_LISTED));
             /* autocommands may change curwin and curbuf */
@@ -2457,11 +2424,7 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
     }
     else /* !other_file */
     {
-        if (
-#if defined(FEAT_LISTCMDS)
-                (flags & ECMD_ADDBUF) ||
-#endif
-                check_fname() == FAIL)
+        if ((flags & ECMD_ADDBUF) || check_fname() == FAIL)
             goto theend;
 
         oldbuf = (flags & ECMD_OLDBUF);
@@ -2699,9 +2662,7 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
         if (topline == 0 && command == NULL)
             p_so = 999;                 /* force cursor halfway the window */
         update_topline();
-#if defined(FEAT_SCROLLBIND)
         curwin->w_scbind_pos = curwin->w_topline;
-#endif
         p_so = n;
         redraw_curbuf_later(NOT_VALID); /* redraw this buffer later */
     }
@@ -2824,8 +2785,7 @@ ex_append(eap)
             else
                 break;
         }
-        if ((p[0] == '.' && p[1] == NUL)
-                || (!did_undo && u_save(lnum, lnum + 1 + (empty ? 1 : 0)) == FAIL))
+        if ((p[0] == '.' && p[1] == NUL) || (!did_undo && u_save(lnum, lnum + 1 + (empty ? 1 : 0)) == FAIL))
         {
             vim_free(theline);
             break;
@@ -2880,8 +2840,7 @@ ex_change(eap)
 {
     linenr_T    lnum;
 
-    if (eap->line2 >= eap->line1
-            && u_save(eap->line1 - 1, eap->line2 + 1) == FAIL)
+    if (eap->line2 >= eap->line1 && u_save(eap->line1 - 1, eap->line2 + 1) == FAIL)
         return;
 
     /* the ! flag toggles autoindent */
@@ -2929,8 +2888,7 @@ ex_z(eap)
 
     x = eap->arg;
     kind = x;
-    if (*kind == '-' || *kind == '+' || *kind == '='
-                                              || *kind == '^' || *kind == '.')
+    if (*kind == '-' || *kind == '+' || *kind == '=' || *kind == '^' || *kind == '.')
         ++x;
     while (*x == '-' || *x == '+')
         ++x;
@@ -3190,8 +3148,7 @@ do_sub(eap)
         if (!eap->skip)
         {
             /* In POSIX vi ":s/pat/%/" uses the previous subst. string. */
-            if (STRCMP(sub, "%") == 0
-                                 && vim_strchr(p_cpo, CPO_SUBPERCENT) != NULL)
+            if (STRCMP(sub, "%") == 0 && vim_strchr(p_cpo, CPO_SUBPERCENT) != NULL)
             {
                 if (old_sub == NULL)    /* there is no previous command */
                 {
@@ -3229,8 +3186,7 @@ do_sub(eap)
      */
     if (pat != NULL && STRCMP(pat, "\\n") == 0
             && *sub == NUL
-            && (*cmd == NUL || (cmd[1] == NUL && (*cmd == 'g' || *cmd == 'l'
-                                             || *cmd == 'p' || *cmd == '#'))))
+            && (*cmd == NUL || (cmd[1] == NUL && (*cmd == 'g' || *cmd == 'l' || *cmd == 'p' || *cmd == '#'))))
     {
         linenr_T    joined_lines_count;
 
@@ -3258,10 +3214,8 @@ do_sub(eap)
 
         if (!cmdmod.keeppatterns)
             save_re_pat(RE_SUBST, pat, p_magic);
-#if defined(FEAT_CMDHIST)
         /* put pattern in history */
         add_to_history(HIST_SEARCH, pat, TRUE, NUL);
-#endif
 
         return;
     }
@@ -3395,9 +3349,7 @@ do_sub(eap)
      * Check for a match on each line.
      */
     line2 = eap->line2;
-    for (lnum = eap->line1; lnum <= line2 && !(got_quit
-                || aborting()
-                ); ++lnum)
+    for (lnum = eap->line1; lnum <= line2 && !(got_quit || aborting()); ++lnum)
     {
         nmatch = vim_regexec_multi(&regmatch, curwin, curbuf, lnum, (colnr_T)0, NULL);
         if (nmatch)
@@ -3570,9 +3522,7 @@ do_sub(eap)
                      * properly */
                     save_State = State;
                     State = CONFIRM;
-#if defined(FEAT_MOUSE)
                     setmouse();         /* disable mouse in xterm */
-#endif
                     curwin->w_cursor.col = regmatch.startpos[0].col;
 
                     /* When 'cpoptions' contains "u" don't sync undo when
@@ -3722,17 +3672,9 @@ do_sub(eap)
                             do_ask = FALSE;
                             break;
                         }
-#if defined(FEAT_INS_EXPAND)
-                        if (typed == Ctrl_E)
-                            scrollup_clamp();
-                        else if (typed == Ctrl_Y)
-                            scrolldown_clamp();
-#endif
                     }
                     State = save_State;
-#if defined(FEAT_MOUSE)
                     setmouse();
-#endif
                     if (vim_strchr(p_cpo, CPO_UNDO) != NULL)
                         --no_u_sync;
 
@@ -4116,8 +4058,7 @@ do_sub_msg(count_only)
      * - command was typed by user, or number of changed lines > 'report'
      * - giving messages is not disabled by 'lazyredraw'
      */
-    if (((sub_nsubs > p_report && (KeyTyped || sub_nlines > 1 || p_report < 1))
-                || count_only)
+    if (((sub_nsubs > p_report && (KeyTyped || sub_nlines > 1 || p_report < 1)) || count_only)
             && messaging())
     {
         if (got_int)
@@ -4263,13 +4204,9 @@ ex_global(eap)
     }
     else
     {
-#if defined(FEAT_CLIPBOARD)
         start_global_changes();
-#endif
         global_exe(cmd);
-#if defined(FEAT_CLIPBOARD)
         end_global_changes();
-#endif
     }
 
     ml_clearmarked();      /* clear rest of the marks */
@@ -4372,8 +4309,7 @@ ex_help(eap)
          */
         for (arg = eap->arg; *arg; ++arg)
         {
-            if (*arg == '\n' || *arg == '\r'
-                    || (*arg == '|' && arg[1] != NUL && arg[1] != '|'))
+            if (*arg == '\n' || *arg == '\r' || (*arg == '|' && arg[1] != NUL && arg[1] != '|'))
             {
                 *arg++ = NUL;
                 eap->nextcmd = arg;
@@ -4452,8 +4388,7 @@ ex_help(eap)
              * specified, the current window is vertically split and
              * narrow. */
             n = WSP_HELP;
-            if (cmdmod.split == 0 && curwin->w_width != Columns
-                                                  && curwin->w_width < 80)
+            if (cmdmod.split == 0 && curwin->w_width != Columns && curwin->w_width < 80)
                 n |= WSP_TOP;
             if (win_split(0, n) == FAIL)
                 goto erret;
@@ -4642,8 +4577,7 @@ find_help_tags(arg, num_matches, matches, keep_lang)
          * And also "\_$" and "\_^". */
         if (arg[0] == '\\'
                 && ((arg[1] != NUL && arg[2] == NUL)
-                    || (vim_strchr((char_u *)"%_z@", arg[1]) != NULL
-                                                           && arg[2] != NUL)))
+                    || (vim_strchr((char_u *)"%_z@", arg[1]) != NULL && arg[2] != NUL)))
         {
             STRCPY(d, "/\\\\");
             STRCPY(d + 3, arg + 1);
@@ -4724,8 +4658,7 @@ find_help_tags(arg, num_matches, matches, keep_lang)
              * Insert a backslash before a backslash after a slash, for search
              * pattern tags: "/\|" --> "/\\|".
              */
-            else if (s[0] == '\\' && s[1] != '\\'
-                                               && *arg == '/' && s == arg + 1)
+            else if (s[0] == '\\' && s[1] != '\\' && *arg == '/' && s == arg + 1)
                 *d++ = '\\';
 
             /* "CTRL-\_" -> "CTRL-\\_" to avoid the special meaning of "\_" in
@@ -4762,8 +4695,7 @@ find_help_tags(arg, num_matches, matches, keep_lang)
                   mch_memmove(IObuff, IObuff + 1, STRLEN(IObuff));
                   d[-3] = NUL;
               }
-              else if (d > IObuff + 4 && d[-3] == '`'
-                                             && d[-2] == '\\' && d[-1] == '.')
+              else if (d > IObuff + 4 && d[-3] == '`' && d[-2] == '\\' && d[-1] == '.')
               {
                   /* remove the backticks and dot from `command`\. */
                   mch_memmove(IObuff, IObuff + 1, STRLEN(IObuff));
@@ -4778,8 +4710,7 @@ find_help_tags(arg, num_matches, matches, keep_lang)
     flags = TAG_HELP | TAG_REGEXP | TAG_NAMES | TAG_VERBOSE;
     if (keep_lang)
         flags |= TAG_KEEP_LANG;
-    if (find_tags(IObuff, num_matches, matches, flags, (int)MAXCOL, NULL) == OK
-            && *num_matches > 0)
+    if (find_tags(IObuff, num_matches, matches, flags, (int)MAXCOL, NULL) == OK && *num_matches > 0)
     {
         /* Sort the matches found on the heuristic number that is after the
          * tag name. */
@@ -4918,9 +4849,7 @@ fix_help_buffer()
                     /* Find all "doc/ *.txt" files in this directory. */
                     add_pathsep(NameBuff);
                     STRCAT(NameBuff, "doc/*.txt");
-                    if (gen_expand_wildcards(1, &NameBuff, &fcount,
-                                         &fnames, EW_FILE|EW_SILENT) == OK
-                            && fcount > 0)
+                    if (gen_expand_wildcards(1, &NameBuff, &fcount, &fnames, EW_FILE|EW_SILENT) == OK && fcount > 0)
                     {
                         for (fi = 0; fi < fcount; ++fi)
                         {
@@ -5192,8 +5121,7 @@ helptags_one(dir, ext, tagfname, add_help_tags)
                      */
                     if (s == p2
                             && (p1 == IObuff || p1[-1] == ' ' || p1[-1] == '\t')
-                            && (vim_strchr((char_u *)" \t\n\r", s[1]) != NULL
-                                || s[1] == '\0'))
+                            && (vim_strchr((char_u *)" \t\n\r", s[1]) != NULL || s[1] == '\0'))
                     {
                         *p2 = '\0';
                         ++p1;

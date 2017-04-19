@@ -411,8 +411,7 @@ mb_init()
         output_conv.vc_type = CONV_NONE;
         return NULL;
     }
-    else if (STRNCMP(p_enc, "8bit-", 5) == 0
-            || STRNCMP(p_enc, "iso-8859-", 9) == 0)
+    else if (STRNCMP(p_enc, "8bit-", 5) == 0 || STRNCMP(p_enc, "iso-8859-", 9) == 0)
     {
         /* Accept any "8bit-" or "iso-8859-" name. */
         enc_unicode = 0;
@@ -461,8 +460,7 @@ mb_init()
     has_mbyte = (enc_dbcs != 0 || enc_utf8);
 
     /* Detect an encoding that uses latin1 characters. */
-    enc_latin1like = (enc_utf8 || STRCMP(p_enc, "latin1") == 0
-                                        || STRCMP(p_enc, "iso-8859-15") == 0);
+    enc_latin1like = (enc_utf8 || STRCMP(p_enc, "latin1") == 0 || STRCMP(p_enc, "iso-8859-15") == 0);
 
     /*
      * Set the function pointers.
@@ -1470,8 +1468,7 @@ utf_ptr2char(p)
         if ((p[2] & 0xc0) == 0x80)
         {
             if (len == 3)
-                return ((p[0] & 0x0f) << 12) + ((p[1] & 0x3f) << 6)
-                    + (p[2] & 0x3f);
+                return ((p[0] & 0x0f) << 12) + ((p[1] & 0x3f) << 6) + (p[2] & 0x3f);
             if ((p[3] & 0xc0) == 0x80)
             {
                 if (len == 4)
@@ -1606,9 +1603,7 @@ utfc_ptr2char(p, pcc)
     len = utf_ptr2len(p);
 
     /* Only accept a composing char when the first char isn't illegal. */
-    if ((len > 1 || *p < 0x80)
-            && p[len] >= 0x80
-            && UTF_COMPOSINGLIKE(p, p + len))
+    if ((len > 1 || *p < 0x80) && p[len] >= 0x80 && UTF_COMPOSINGLIKE(p, p + len))
     {
         cc = utf_ptr2char(p + len);
         for (;;)
@@ -3366,8 +3361,7 @@ utf_find_illegal()
             /* Illegal means that there are not enough trail bytes (checked by
              * utf_ptr2len()) or too many of them (overlong sequence). */
             len = utf_ptr2len(p);
-            if (*p >= 0x80 && (len == 1
-                                     || utf_char2len(utf_ptr2char(p)) != len))
+            if (*p >= 0x80 && (len == 1 || utf_char2len(utf_ptr2char(p)) != len))
             {
                 if (vimconv.vc_type == CONV_NONE)
                     curwin->w_cursor.col += (colnr_T)(p - ml_get_cursor());
@@ -3731,8 +3725,7 @@ enc_locale()
 static char_u *iconv_string(vimconv_T *vcp, char_u *str, int slen, int *unconvlenp, int *resultlenp);
 
 /*
- * Call iconv_open() with a check if iconv() works properly (there are broken
- * versions).
+ * Call iconv_open() with a check if iconv() works properly (there are broken versions).
  * Returns (void *)-1 if failed.
  * (should return iconv_t, but that causes problems with prototypes).
  */

@@ -836,8 +836,7 @@ autowrite(buf, forceit)
 {
     int         r;
 
-    if (!(p_aw || p_awa) || !p_write
-            || (!forceit && buf->b_p_ro) || buf->b_ffname == NULL)
+    if (!(p_aw || p_awa) || !p_write || (!forceit && buf->b_p_ro) || buf->b_ffname == NULL)
         return FAIL;
     r = buf_write_all(buf, forceit);
 
@@ -884,7 +883,6 @@ check_changed(buf, flags)
             && ((flags & CCGD_MULTWIN) || buf->b_nwindows <= 1)
             && (!(flags & CCGD_AW) || autowrite(buf, forceit) == FAIL))
     {
-#if defined(FEAT_CON_DIALOG)
         if ((p_confirm || cmdmod.confirm) && p_write)
         {
             buf_T       *buf2;
@@ -903,7 +901,6 @@ check_changed(buf, flags)
                 return FALSE;
             return bufIsChanged(buf);
         }
-#endif
         if (flags & CCGD_EXCMD)
             EMSG(_(e_nowrtmsg));
         else
@@ -912,8 +909,6 @@ check_changed(buf, flags)
     }
     return FALSE;
 }
-
-#if defined(FEAT_CON_DIALOG)
 
 /*
  * Ask the user what to do when abandoning a changed buffer.
@@ -981,7 +976,6 @@ dialog_changed(buf, checkall)
             unchanged(buf2, TRUE);
     }
 }
-#endif
 
 /*
  * Return TRUE if the buffer "buf" can be abandoned, either by making it
@@ -1084,12 +1078,10 @@ check_changed_any(hidden)
 
     ret = TRUE;
     exiting = FALSE;
-#if defined(FEAT_CON_DIALOG)
     /*
      * When ":confirm" used, don't give an error message.
      */
     if (!(p_confirm || cmdmod.confirm))
-#endif
     {
         /* There must be a wait_return for this message, do_buffer()
          * may cause a redraw.  But wait_return() is a no-op when vgetc()
@@ -1181,9 +1173,7 @@ static char_u   *do_one_arg(char_u *str);
 static int      do_arglist(char_u *str, int what, int after);
 static void     alist_check_arg_idx(void);
 static int      editing_arg_idx(win_T *win);
-#if defined(FEAT_LISTCMDS)
 static int      alist_add_list(int count, char_u **files, int after);
-#endif
 #define AL_SET  1
 #define AL_ADD  2
 #define AL_DEL  3
@@ -1296,10 +1286,8 @@ do_arglist(str, what, after)
     int         exp_count;
     char_u      **exp_files;
     int         i;
-#if defined(FEAT_LISTCMDS)
     char_u      *p;
     int         match;
-#endif
 
     /*
      * Collect all file name arguments in "new_ga".
@@ -1307,7 +1295,6 @@ do_arglist(str, what, after)
     if (get_arglist(&new_ga, str) == FAIL)
         return FAIL;
 
-#if defined(FEAT_LISTCMDS)
     if (what == AL_DEL)
     {
         regmatch_T      regmatch;
@@ -1353,7 +1340,6 @@ do_arglist(str, what, after)
         ga_clear(&new_ga);
     }
     else
-#endif
     {
         i = expand_wildcards(new_ga.ga_len, (char_u **)new_ga.ga_data,
                 &exp_count, &exp_files, EW_DIR|EW_FILE|EW_ADDSLASH|EW_NOTFOUND);
@@ -1366,14 +1352,12 @@ do_arglist(str, what, after)
             return FAIL;
         }
 
-#if defined(FEAT_LISTCMDS)
         if (what == AL_ADD)
         {
             (void)alist_add_list(exp_count, exp_files, after);
             vim_free(exp_files);
         }
         else /* what == AL_SET */
-#endif
             alist_set(ALIST(curwin), exp_count, exp_files, FALSE, NULL, 0);
     }
 
@@ -1405,8 +1389,7 @@ editing_arg_idx(win)
     win_T       *win;
 {
     return !(win->w_arg_idx >= WARGCOUNT(win)
-                || (win->w_buffer->b_fnum
-                                      != WARGLIST(win)[win->w_arg_idx].ae_fnum
+                || (win->w_buffer->b_fnum != WARGLIST(win)[win->w_arg_idx].ae_fnum
                     && (win->w_buffer->b_ffname == NULL
                          || !(fullpathcmp(
                                  alist_name(&WARGLIST(win)[win->w_arg_idx]),
@@ -1457,16 +1440,11 @@ ex_args(eap)
 
     if (eap->cmdidx != CMD_args)
     {
-#if defined(FEAT_LISTCMDS)
         alist_unlink(ALIST(curwin));
         if (eap->cmdidx == CMD_argglobal)
             ALIST(curwin) = &global_alist;
         else /* eap->cmdidx == CMD_arglocal */
             alist_new();
-#else
-        ex_ni(eap);
-        return;
-#endif
     }
 
     if (!ends_excmd(*eap->arg))
@@ -1478,9 +1456,7 @@ ex_args(eap)
         ex_next(eap);
     }
     else
-#if defined(FEAT_LISTCMDS)
         if (eap->cmdidx == CMD_args)
-#endif
     {
         /*
          * ":args": list arguments.
@@ -1501,7 +1477,6 @@ ex_args(eap)
             }
         }
     }
-#if defined(FEAT_LISTCMDS)
     else if (eap->cmdidx == CMD_arglocal)
     {
         garray_T        *gap = &curwin->w_alist->al_ga;
@@ -1513,14 +1488,11 @@ ex_args(eap)
             for (i = 0; i < GARGCOUNT; ++i)
                 if (GARGLIST[i].ae_fname != NULL)
                 {
-                    AARGLIST(curwin->w_alist)[gap->ga_len].ae_fname =
-                                            vim_strsave(GARGLIST[i].ae_fname);
-                    AARGLIST(curwin->w_alist)[gap->ga_len].ae_fnum =
-                                                          GARGLIST[i].ae_fnum;
+                    AARGLIST(curwin->w_alist)[gap->ga_len].ae_fname = vim_strsave(GARGLIST[i].ae_fname);
+                    AARGLIST(curwin->w_alist)[gap->ga_len].ae_fnum = GARGLIST[i].ae_fnum;
                     ++gap->ga_len;
                 }
     }
-#endif
 }
 
 /*
@@ -1675,7 +1647,6 @@ ex_next(eap)
     }
 }
 
-#if defined(FEAT_LISTCMDS)
 /*
  * ":argedit"
  */
@@ -1782,9 +1753,7 @@ ex_listdo(eap)
         /* Don't do syntax HL autocommands.  Skipping the syntax file is a
          * great speed improvement. */
         save_ei = au_event_disable(",Syntax");
-#if defined(FEAT_CLIPBOARD)
     start_global_changes();
-#endif
 
     if (eap->cmdidx == CMD_windo
             || eap->cmdidx == CMD_tabdo
@@ -1917,11 +1886,9 @@ ex_listdo(eap)
             if (eap->cmdidx == CMD_windo)
             {
                 validate_cursor();      /* cursor may have moved */
-#if defined(FEAT_SCROLLBIND)
                 /* required when 'scrollbind' has been set */
                 if (curwin->w_p_scb)
                     do_check_scrollbind(TRUE);
-#endif
             }
 
             if (eap->cmdidx == CMD_windo || eap->cmdidx == CMD_tabdo)
@@ -1938,9 +1905,7 @@ ex_listdo(eap)
         au_event_restore(save_ei);
         apply_autocmds(EVENT_SYNTAX, curbuf->b_p_syn, curbuf->b_fname, TRUE, curbuf);
     }
-#if defined(FEAT_CLIPBOARD)
     end_global_changes();
-#endif
 }
 
 /*
@@ -1981,8 +1946,6 @@ alist_add_list(count, files, after)
         vim_free(files[i]);
     return -1;
 }
-
-#endif
 
 /*
  * ":compiler[!] {name}"
@@ -2535,11 +2498,9 @@ do_source(fname, check_other, is_vimrc)
     }
 
     /*
-     * After a "finish" in debug mode, need to break at first command of next
-     * sourced file.
+     * After a "finish" in debug mode, need to break at first command of next sourced file.
      */
-    if (save_debug_break_level > ex_nesting_level
-            && debug_break_level == ex_nesting_level)
+    if (save_debug_break_level > ex_nesting_level && debug_break_level == ex_nesting_level)
         ++debug_break_level;
 
 almosttheend:
@@ -2865,11 +2826,9 @@ source_finished(fgetline, cookie)
     void        *cookie;
 {
     return (getline_equal(fgetline, cookie, getsourceline)
-            && ((struct source_cookie *)getline_cookie(
-                                                fgetline, cookie))->finished);
+            && ((struct source_cookie *)getline_cookie(fgetline, cookie))->finished);
 }
 
-#if defined(FEAT_LISTCMDS)
 /*
  * ":checktime [buffer]"
  */
@@ -2891,7 +2850,6 @@ ex_checktime(eap)
     }
     no_check_timestamps = save_no_check_timestamps;
 }
-#endif
 
 /* Complicated #if; matches with where get_mess_env() is used below. */
 static char_u *get_mess_env(void);
@@ -2913,10 +2871,6 @@ get_mess_env()
             p = mch_getenv((char_u *)"LANG");
             if (p != NULL && VIM_ISDIGIT(*p))
                 p = NULL;               /* ignore something like "1043" */
-#if defined(HAVE_GET_LOCALE_VAL)
-            if (p == NULL || *p == NUL)
-                p = (char_u *)get_locale_val(LC_CTYPE);
-#endif
         }
     }
     return p;
@@ -2931,25 +2885,14 @@ set_lang_var()
 {
     char_u      *loc;
 
-#if defined(HAVE_GET_LOCALE_VAL)
-    loc = (char_u *)get_locale_val(LC_CTYPE);
-#else
     /* setlocale() not supported: use the default value */
     loc = (char_u *)"C";
-#endif
     set_vim_var_string(VV_CTYPE, loc, -1);
 
     /* When LC_MESSAGES isn't defined use the value from $LC_MESSAGES, fall
      * back to LC_CTYPE if it's empty. */
-#if defined(HAVE_GET_LOCALE_VAL) && defined(LC_MESSAGES)
-    loc = (char_u *)get_locale_val(LC_MESSAGES);
-#else
     loc = get_mess_env();
-#endif
     set_vim_var_string(VV_LANG, loc, -1);
 
-#if defined(HAVE_GET_LOCALE_VAL)
-    loc = (char_u *)get_locale_val(LC_TIME);
-#endif
     set_vim_var_string(VV_LC_TIME, loc, -1);
 }

@@ -9,7 +9,6 @@
 
 #include <sys/param.h>
 
-/* always use unlink() to remove files */
 #define vim_mkdir(x, y) mkdir((char *)(x), y)
 #define mch_rmdir(x) rmdir((char *)(x))
 #define mch_remove(x) unlink((char *)(x))
@@ -57,33 +56,14 @@
 #if !defined(SYS_VIMRC_FILE)
 #define SYS_VIMRC_FILE "$VIM/vimrc"
 #endif
-#if !defined(SYS_GVIMRC_FILE)
-#define SYS_GVIMRC_FILE "$VIM/gvimrc"
-#endif
-#if !defined(DFLT_HELPFILE)
+
 #define DFLT_HELPFILE  "$VIMRUNTIME/doc/help.txt"
-#endif
-#if !defined(FILETYPE_FILE)
 #define FILETYPE_FILE  "filetype.vim"
-#endif
-#if !defined(FTPLUGIN_FILE)
 #define FTPLUGIN_FILE  "ftplugin.vim"
-#endif
-#if !defined(INDENT_FILE)
 #define INDENT_FILE    "indent.vim"
-#endif
-#if !defined(FTOFF_FILE)
 #define FTOFF_FILE     "ftoff.vim"
-#endif
-#if !defined(FTPLUGOF_FILE)
 #define FTPLUGOF_FILE  "ftplugof.vim"
-#endif
-#if !defined(INDOFF_FILE)
 #define INDOFF_FILE    "indoff.vim"
-#endif
-#if !defined(SYS_MENU_FILE)
-#define SYS_MENU_FILE  "$VIMRUNTIME/menu.vim"
-#endif
 
 #if !defined(USR_EXRC_FILE)
 #define USR_EXRC_FILE "$HOME/.exrc"
@@ -93,9 +73,7 @@
 #define USR_VIMRC_FILE "$HOME/.vimrc"
 #endif
 
-#if !defined(USR_EXRC_FILE2)
 #define USR_VIMRC_FILE2     "~/.vim/vimrc"
-#endif
 
 #if !defined(EVIM_FILE)
 #define EVIM_FILE      "$VIMRUNTIME/evim.vim"
@@ -109,21 +87,10 @@
 #define VIMRC_FILE     ".vimrc"
 #endif
 
-#if !defined(SYNTAX_FNAME)
 #define SYNTAX_FNAME   "$VIMRUNTIME/syntax/%s.vim"
-#endif
 
-#if !defined(DFLT_BDIR)
 #define DFLT_BDIR    ".,~/tmp,~/"    /* default for 'backupdir' */
-#endif
-
-#if !defined(DFLT_DIR)
 #define DFLT_DIR     ".,~/tmp,/var/tmp,/tmp" /* default for 'directory' */
-#endif
-
-#if !defined(DFLT_VDIR)
-#define DFLT_VDIR    "$HOME/.vim/view"       /* default for 'viewdir' */
-#endif
 
 #define DFLT_ERRORFILE          "errors.err"
 
@@ -134,10 +101,6 @@
 
 /* Special wildcards that need to be handled by the shell */
 #define SPECIAL_WILDCHAR    "`'{"
-
-#if !defined(HAVE_OPENDIR)
-#define NO_EXPANDPATH
-#endif
 
 /*
  * Unix has plenty of memory, use large buffers

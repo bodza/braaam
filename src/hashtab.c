@@ -353,8 +353,7 @@ hash_may_resize(ht, minitems)
     {
         /* Return quickly for small tables with at least two NULL items.  NULL
          * items are required for the lookup to decide a key isn't there. */
-        if (ht->ht_filled < HT_INIT_SIZE - 1
-                                         && ht->ht_array == ht->ht_smallarray)
+        if (ht->ht_filled < HT_INIT_SIZE - 1 && ht->ht_array == ht->ht_smallarray)
             return OK;
 
         /*

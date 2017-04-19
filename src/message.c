@@ -26,12 +26,10 @@ static int do_more_prompt(int typed_char);
 static void msg_screen_putchar(int c, int attr);
 static int  msg_check_screen(void);
 static void redir_write(char_u *s, int maxlen);
-#if defined(FEAT_CON_DIALOG)
 static char_u *msg_show_console_dialog(char_u *message, char_u *buttons, int dfltbutton);
 static int      confirm_msg_used = FALSE;       /* displaying confirm_msg */
 static char_u   *confirm_msg = NULL;            /* ":confirm" message */
 static char_u   *confirm_msg_tail;              /* tail of confirm_msg */
-#endif
 
 struct msg_hist
 {
@@ -640,8 +638,7 @@ msg_may_trunc(force, s)
     int         room;
 
     room = (int)(Rows - cmdline_row - 1) * Columns + sc_col - 1;
-    if ((force || (shortmess(SHM_TRUNC) && !exmode_active))
-            && (n = (int)STRLEN(s) - room) > 0)
+    if ((force || (shortmess(SHM_TRUNC) && !exmode_active)) && (n = (int)STRLEN(s) - room) > 0)
     {
         if (has_mbyte)
         {
@@ -751,7 +748,6 @@ ex_messages(eap)
     msg_hist_off = FALSE;
 }
 
-#if defined(FEAT_CON_DIALOG) || defined(FIND_REPLACE_DIALOG)
 /*
  * Call this after prompting the user.  This will avoid a hit-return message
  * and a delay.
@@ -766,7 +762,6 @@ msg_end_prompt()
     msg_clr_eos();
     lines_left = -1;
 }
-#endif
 
 /*
  * wait for the user to hit a key (normally a return)
@@ -830,9 +825,7 @@ wait_return(redraw)
         screenalloc(FALSE);
 
         State = HITRETURN;
-#if defined(FEAT_MOUSE)
         setmouse();
-#endif
 #if defined(USE_ON_FLY_SCROLL)
         dont_scroll = TRUE;             /* disallow scrolling here */
 #endif
@@ -870,7 +863,6 @@ wait_return(redraw)
             Recording = save_Recording;
             scriptout = save_scriptout;
 
-#if defined(FEAT_CLIPBOARD)
             /* Strange way to allow copying (yanking) a modeless selection at
              * the hit-enter prompt.  Use CTRL-Y, because the same is used in
              * Cmdline-mode and it's harmless when there is no selection. */
@@ -879,7 +871,6 @@ wait_return(redraw)
                 clip_copy_modeless_selection(TRUE);
                 c = K_IGNORE;
             }
-#endif
 
             /*
              * Allow scrolling back in the messages.
@@ -889,8 +880,7 @@ wait_return(redraw)
              */
             if (p_more && !p_cp)
             {
-                if (c == 'b' || c == 'k' || c == 'u' || c == 'g'
-                                                || c == K_UP || c == K_PAGEUP)
+                if (c == 'b' || c == 'k' || c == 'u' || c == 'g' || c == K_UP || c == K_PAGEUP)
                 {
                     if (msg_scrolled > Rows)
                         /* scroll back to show older messages */
@@ -899,9 +889,7 @@ wait_return(redraw)
                     {
                         msg_didout = FALSE;
                         c = K_IGNORE;
-                        msg_col =
-                            cmdmsg_rl ? Columns - 1 :
-                            0;
+                        msg_col = cmdmsg_rl ? Columns - 1 : 0;
                     }
                     if (quit_more)
                     {
@@ -916,13 +904,11 @@ wait_return(redraw)
                     }
                 }
                 else if (msg_scrolled > Rows - 2
-                         && (c == 'j' || c == 'd' || c == 'f'
-                                           || c == K_DOWN || c == K_PAGEDOWN))
+                         && (c == 'j' || c == 'd' || c == 'f' || c == K_DOWN || c == K_PAGEDOWN))
                     c = K_IGNORE;
             }
         } while ((had_got_int && c == Ctrl_C)
                                 || c == K_IGNORE
-#if defined(FEAT_MOUSE)
                                 || c == K_LEFTDRAG   || c == K_LEFTRELEASE
                                 || c == K_MIDDLEDRAG || c == K_MIDDLERELEASE
                                 || c == K_RIGHTDRAG  || c == K_RIGHTRELEASE
@@ -935,10 +921,8 @@ wait_return(redraw)
                                         || c == K_RIGHTMOUSE
                                         || c == K_X1MOUSE
                                         || c == K_X2MOUSE))
-#endif
                                 );
         ui_breakcheck();
-#if defined(FEAT_MOUSE)
         /*
          * Avoid that the mouse-up event causes visual mode to start.
          */
@@ -946,7 +930,6 @@ wait_return(redraw)
                                           || c == K_X1MOUSE || c == K_X2MOUSE)
             (void)jump_to_mouse(MOUSE_SETPOS, NULL, 0);
         else
-#endif
             if (vim_strchr((char_u *)"\r\n ", c) == NULL && c != Ctrl_C)
         {
             /* Put the character back in the typeahead buffer.  Don't use the
@@ -977,9 +960,7 @@ wait_return(redraw)
      */
     tmpState = State;
     State = oldState;               /* restore State before set_shellsize */
-#if defined(FEAT_MOUSE)
     setmouse();
-#endif
     msg_check();
 
     /*
@@ -993,8 +974,7 @@ wait_return(redraw)
     emsg_on_display = FALSE;    /* can delete error message now */
     lines_left = -1;            /* reset lines_left at next msg_start() */
     reset_last_sourcing();
-    if (keep_msg != NULL && vim_strsize(keep_msg) >=
-                                  (Rows - cmdline_row - 1) * Columns + sc_col)
+    if (keep_msg != NULL && vim_strsize(keep_msg) >= (Rows - cmdline_row - 1) * Columns + sc_col)
     {
         vim_free(keep_msg);
         keep_msg = NULL;            /* don't redisplay message, it's too long */
@@ -1005,8 +985,7 @@ wait_return(redraw)
         starttermcap();             /* start termcap before redrawing */
         shell_resized();
     }
-    else if (!skip_redraw
-            && (redraw == TRUE || (msg_scrolled != 0 && redraw != -1)))
+    else if (!skip_redraw && (redraw == TRUE || (msg_scrolled != 0 && redraw != -1)))
     {
         starttermcap();             /* start termcap before redrawing */
         redraw_later(VALID);
@@ -1058,8 +1037,7 @@ set_keep_msg(s, attr)
     void
 set_keep_msg_from_hist()
 {
-    if (keep_msg == NULL && last_msg_hist != NULL && msg_scrolled == 0
-                                                          && (State & NORMAL))
+    if (keep_msg == NULL && last_msg_hist != NULL && msg_scrolled == 0 && (State & NORMAL))
         set_keep_msg(last_msg_hist->msg, last_msg_hist->attr);
 }
 #endif
@@ -1089,9 +1067,7 @@ msg_start()
     if (!msg_scroll && full_screen)     /* overwrite last message */
     {
         msg_row = cmdline_row;
-        msg_col =
-            cmdmsg_rl ? Columns - 1 :
-            0;
+        msg_col = cmdmsg_rl ? Columns - 1 : 0;
     }
     else if (msg_didout)                    /* start message on next line */
     {
@@ -1167,15 +1143,6 @@ msg_home_replace(fname)
 {
     msg_home_replace_attr(fname, 0);
 }
-
-#if defined(FEAT_FIND_ID)
-    void
-msg_home_replace_hl(fname)
-    char_u      *fname;
-{
-    msg_home_replace_attr(fname, hl_attr(HLF_D));
-}
-#endif
 
     static void
 msg_home_replace_attr(fname, attr)
@@ -1799,8 +1766,7 @@ msg_puts_display(str, maxlen, attr, recurse)
                     :
                       (msg_col + t_col >= Columns - 1
                        || (*s == TAB && msg_col + t_col >= ((Columns - 1) & ~7))
-                       || (has_mbyte && (*mb_ptr2cells)(s) > 1
-                                            && msg_col + t_col >= Columns - 2)
+                       || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col + t_col >= Columns - 2)
                       ))))
         {
             /*
@@ -1860,15 +1826,10 @@ msg_puts_display(str, maxlen, attr, recurse)
              */
             if (lines_left > 0)
                 --lines_left;
-            if (p_more && lines_left == 0 && State != HITRETURN
-                                            && !msg_no_more && !exmode_active)
+            if (p_more && lines_left == 0 && State != HITRETURN && !msg_no_more && !exmode_active)
             {
-#if defined(FEAT_CON_DIALOG)
                 if (do_more_prompt(NUL))
                     s = confirm_msg_tail;
-#else
-                (void)do_more_prompt(NUL);
-#endif
                 if (quit_more)
                     return;
             }
@@ -1881,11 +1842,9 @@ msg_puts_display(str, maxlen, attr, recurse)
 
         wrap = *s == '\n'
                     || msg_col + t_col >= Columns
-                    || (has_mbyte && (*mb_ptr2cells)(s) > 1
-                                            && msg_col + t_col >= Columns - 1)
+                    || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col + t_col >= Columns - 1)
                     ;
-        if (t_col > 0 && (wrap || *s == '\r' || *s == '\b'
-                                                 || *s == '\t' || *s == BELL))
+        if (t_col > 0 && (wrap || *s == '\r' || *s == '\b' || *s == '\t' || *s == BELL))
             /* output any postponed text */
             t_puts(&t_col, t_s, s, attr);
 
@@ -2295,9 +2254,7 @@ do_more_prompt(typed_char)
     int         used_typed_char = typed_char;
     int         oldState = State;
     int         c;
-#if defined(FEAT_CON_DIALOG)
     int         retval = FALSE;
-#endif
     int         toscroll;
     msgchunk_T  *mp_last = NULL;
     msgchunk_T  *mp;
@@ -2307,15 +2264,12 @@ do_more_prompt(typed_char)
     {
         /* "g<": Find first line on the last page. */
         mp_last = msg_sb_start(last_msgchunk);
-        for (i = 0; i < Rows - 2 && mp_last != NULL
-                                             && mp_last->sb_prev != NULL; ++i)
+        for (i = 0; i < Rows - 2 && mp_last != NULL && mp_last->sb_prev != NULL; ++i)
             mp_last = msg_sb_start(mp_last->sb_prev);
     }
 
     State = ASKMORE;
-#if defined(FEAT_MOUSE)
     setmouse();
-#endif
     if (typed_char == NUL)
         msg_moremsg(FALSE);
     for (;;)
@@ -2378,9 +2332,7 @@ do_more_prompt(typed_char)
             break;
 
         case ':':               /* start new command line */
-#if defined(FEAT_CON_DIALOG)
             if (!confirm_msg_used)
-#endif
             {
                 /* Since got_int is set all typeahead will be flushed, but we
                  * want to keep this ':', remember that in a special way. */
@@ -2393,14 +2345,12 @@ do_more_prompt(typed_char)
         case 'q':               /* quit */
         case Ctrl_C:
         case ESC:
-#if defined(FEAT_CON_DIALOG)
             if (confirm_msg_used)
             {
                 /* Jump to the choices of the dialog. */
                 retval = TRUE;
             }
             else
-#endif
             {
                 got_int = TRUE;
                 quit_more = TRUE;
@@ -2410,7 +2360,6 @@ do_more_prompt(typed_char)
             lines_left = Rows - 1;
             break;
 
-#if defined(FEAT_CLIPBOARD)
         case Ctrl_Y:
             /* Strange way to allow copying (yanking) a modeless
              * selection at the more prompt.  Use CTRL-Y,
@@ -2420,7 +2369,6 @@ do_more_prompt(typed_char)
             if (clip_star.state == SELECT_DONE)
                 clip_copy_modeless_selection(TRUE);
             continue;
-#endif
         default:                /* no valid response */
             msg_moremsg(TRUE);
             continue;
@@ -2506,9 +2454,7 @@ do_more_prompt(typed_char)
     /* clear the --more-- message */
     screen_fill((int)Rows - 1, (int)Rows, 0, (int)Columns, ' ', ' ', 0);
     State = oldState;
-#if defined(FEAT_MOUSE)
     setmouse();
-#endif
     if (quit_more)
     {
         msg_row = Rows - 1;
@@ -2517,11 +2463,7 @@ do_more_prompt(typed_char)
     else if (cmdmsg_rl)
         msg_col = Columns - 1;
 
-#if defined(FEAT_CON_DIALOG)
     return retval;
-#else
-    return FALSE;
-#endif
 }
 
 #if defined(USE_MCH_ERRMSG)
@@ -2661,13 +2603,11 @@ repeat_message()
         msg_moremsg(TRUE);      /* display --more-- message again */
         msg_row = Rows - 1;
     }
-#if defined(FEAT_CON_DIALOG)
     else if (State == CONFIRM)
     {
         display_confirm_msg();  /* display ":confirm" message again */
         msg_row = Rows - 1;
     }
-#endif
     else if (State == EXTERNCMD)
     {
         windgoto(msg_row, msg_col); /* put cursor back */
@@ -2869,9 +2809,7 @@ redir_write(str, maxlen)
     int
 redirecting()
 {
-    return redir_fd != NULL || *p_vfile != NUL
-                          || redir_reg || redir_vname
-                                       ;
+    return redir_fd != NULL || *p_vfile != NUL || redir_reg || redir_vname;
 }
 
 /*
@@ -3015,7 +2953,6 @@ msg_advance(col)
             msg_putchar(' ');
 }
 
-#if defined(FEAT_CON_DIALOG)
 /*
  * Used for "confirm()" function, and the :confirm command prefix.
  * Versions which haven't got flexible dialogs yet, and console
@@ -3060,9 +2997,7 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
 
     oldState = State;
     State = CONFIRM;
-#if defined(FEAT_MOUSE)
     setmouse();
-#endif
 
     /*
      * Since we wait for a keypress, don't make the
@@ -3125,9 +3060,7 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
     }
 
     State = oldState;
-#if defined(FEAT_MOUSE)
     setmouse();
-#endif
     --no_wait_return;
     msg_end_prompt();
 
@@ -3346,10 +3279,6 @@ display_confirm_msg()
     --confirm_msg_used;
 }
 
-#endif
-
-#if defined(FEAT_CON_DIALOG)
-
     int
 vim_dialog_yesno(type, title, message, dflt)
     int         type;
@@ -3402,8 +3331,6 @@ vim_dialog_yesnoallcancel(type, title, message, dflt)
     }
     return VIM_CANCEL;
 }
-
-#endif
 
 static char *e_printf = "E766: Insufficient arguments for printf()";
 
@@ -3647,8 +3574,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 }
                 p++;
             }
-            /* If the '0' and '-' flags both appear, the '0' flag should be
-             * ignored. */
+            /* If the '0' and '-' flags both appear, the '0' flag should be ignored. */
 
             /* parse field width */
             if (*p == '*')
@@ -3656,9 +3582,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 int j;
 
                 p++;
-                j =
-                    tvs != NULL ? tv_nr(tvs, &arg_idx) :
-                        va_arg(ap, int);
+                j = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                 if (j >= 0)
                     min_field_width = j;
                 else
@@ -3687,9 +3611,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 {
                     int j;
 
-                    j =
-                        tvs != NULL ? tv_nr(tvs, &arg_idx) :
-                            va_arg(ap, int);
+                    j = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                     p++;
                     if (j >= 0)
                         precision = j;
@@ -3757,9 +3679,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     {
                         int j;
 
-                        j =
-                            tvs != NULL ? tv_nr(tvs, &arg_idx) :
-                                va_arg(ap, int);
+                        j = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                         /* standard demands unsigned char */
                         uchar_arg = (unsigned char)j;
                         str_arg = (char *)&uchar_arg;
@@ -3768,9 +3688,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
 
                 case 's':
                 case 'S':
-                    str_arg =
-                                tvs != NULL ? tv_str(tvs, &arg_idx) :
-                                    va_arg(ap, char *);
+                    str_arg = tvs != NULL ? tv_str(tvs, &arg_idx) : va_arg(ap, char *);
                     if (str_arg == NULL)
                     {
                         str_arg = "[NULL]";
@@ -3841,9 +3759,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     if (fmt_spec == 'p')
                     {
                         length_modifier = '\0';
-                        ptr_arg =
-                                 tvs != NULL ? (void *)tv_str(tvs, &arg_idx) :
-                                        va_arg(ap, void *);
+                        ptr_arg = tvs != NULL ? (void *)tv_str(tvs, &arg_idx) : va_arg(ap, void *);
                         if (ptr_arg != NULL)
                             arg_sign = 1;
                     }
@@ -3855,18 +3771,14 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         case '\0':
                         case 'h':
                             /* char and short arguments are passed as int. */
-                            int_arg =
-                                        tvs != NULL ? tv_nr(tvs, &arg_idx) :
-                                            va_arg(ap, int);
+                            int_arg = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                             if (int_arg > 0)
                                 arg_sign =  1;
                             else if (int_arg < 0)
                                 arg_sign = -1;
                             break;
                         case 'l':
-                            long_arg =
-                                        tvs != NULL ? tv_nr(tvs, &arg_idx) :
-                                            va_arg(ap, long int);
+                            long_arg = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, long int);
                             if (long_arg > 0)
                                 arg_sign =  1;
                             else if (long_arg < 0)
@@ -3881,16 +3793,14 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         {
                             case '\0':
                             case 'h':
-                                uint_arg =
-                                            tvs != NULL ? (unsigned)
+                                uint_arg = tvs != NULL ? (unsigned)
                                                         tv_nr(tvs, &arg_idx) :
                                                 va_arg(ap, unsigned int);
                                 if (uint_arg != 0)
                                     arg_sign = 1;
                                 break;
                             case 'l':
-                                ulong_arg =
-                                            tvs != NULL ? (unsigned long)
+                                ulong_arg = tvs != NULL ? (unsigned long)
                                                         tv_nr(tvs, &arg_idx) :
                                                 va_arg(ap, unsigned long int);
                                 if (ulong_arg != 0)
@@ -3919,8 +3829,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     }
                     else if (alternate_form)
                     {
-                        if (arg_sign != 0
-                                     && (fmt_spec == 'x' || fmt_spec == 'X') )
+                        if (arg_sign != 0 && (fmt_spec == 'x' || fmt_spec == 'X') )
                         {
                             tmp[str_arg_l++] = '0';
                             tmp[str_arg_l++] = fmt_spec;
@@ -4012,8 +3921,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         {
                             /* assure leading zero for alternate-form
                              * octal numbers */
-                            if (!precision_specified
-                                             || precision < num_of_digits + 1)
+                            if (!precision_specified || precision < num_of_digits + 1)
                             {
                                 /* precision is increased to force the
                                  * first character to be zero, except if a
@@ -4050,9 +3958,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     int         l;
                     int         remove_trailing_zeroes = FALSE;
 
-                    f =
-                        tvs != NULL ? tv_float(tvs, &arg_idx) :
-                            va_arg(ap, double);
+                    f = tvs != NULL ? tv_float(tvs, &arg_idx) : va_arg(ap, double);
                     abs_f = f < 0 ? -f : f;
 
                     if (fmt_spec == 'g' || fmt_spec == 'G')
@@ -4127,8 +4033,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             if (tp != NULL && !precision_specified)
                                 /* Remove trailing zeroes, but keep the one
                                  * just after a dot. */
-                                while (tp > tmp + 2 && *tp == '0'
-                                                             && tp[-1] != '.')
+                                while (tp > tmp + 2 && *tp == '0' && tp[-1] != '.')
                                 {
                                     STRMOVE(tp, tp + 1);
                                     --tp;

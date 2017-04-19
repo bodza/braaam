@@ -131,30 +131,24 @@ typedef struct
 #define w_p_cul w_onebuf_opt.wo_cul    /* 'cursorline' */
     char_u      *wo_cc;
 #define w_p_cc w_onebuf_opt.wo_cc      /* 'colorcolumn' */
-#if defined(FEAT_STL_OPT)
     char_u      *wo_stl;
 #define w_p_stl w_onebuf_opt.wo_stl     /* 'statusline' */
-#endif
-#if defined(FEAT_SCROLLBIND)
     int         wo_scb;
 #define w_p_scb w_onebuf_opt.wo_scb    /* 'scrollbind' */
     int         wo_diff_saved; /* options were saved for starting diff mode */
 #define w_p_diff_saved w_onebuf_opt.wo_diff_saved
     int         wo_scb_save;    /* 'scrollbind' saved for diff mode*/
 #define w_p_scb_save w_onebuf_opt.wo_scb_save
-#endif
     int         wo_wrap;
 #define w_p_wrap w_onebuf_opt.wo_wrap   /* 'wrap' */
     char_u      *wo_cocu;               /* 'concealcursor' */
 #define w_p_cocu w_onebuf_opt.wo_cocu
     long        wo_cole;                /* 'conceallevel' */
 #define w_p_cole w_onebuf_opt.wo_cole
-#if defined(FEAT_CURSORBIND)
     int         wo_crb;
 #define w_p_crb w_onebuf_opt.wo_crb    /* 'cursorbind' */
     int         wo_crb_save;    /* 'cursorbind' state saved for diff mode*/
 #define w_p_crb_save w_onebuf_opt.wo_crb_save
-#endif
 
     int         wo_scriptID[WV_COUNT];  /* SIDs for window-local options */
 #define w_p_scriptID w_onebuf_opt.wo_scriptID
@@ -216,9 +210,6 @@ struct u_entry
     linenr_T    ue_lcount;      /* linecount when u_save called */
     char_u      **ue_array;     /* array of lines in undo block */
     long        ue_size;        /* number of lines in ue_array */
-#if defined(U_DEBUG)
-    int         ue_magic;       /* magic number to check allocation */
-#endif
 };
 
 struct u_header
@@ -253,9 +244,6 @@ struct u_header
     time_t      uh_time;        /* timestamp when the change was made */
     long        uh_save_nr;     /* set when the file was saved after the
                                    changes in this block */
-#if defined(U_DEBUG)
-    int         uh_magic;       /* magic number to check allocation */
-#endif
 };
 
 /* values for uh_flags */
@@ -399,10 +387,8 @@ typedef struct expand
     int         xp_context;             /* type of expansion */
     char_u      *xp_pattern;            /* start of item to expand */
     int         xp_pattern_len;         /* bytes in xp_pattern before cursor */
-#if defined(FEAT_USR_CMDS) && defined(FEAT_CMDL_COMPL)
     char_u      *xp_arg;                /* completion function */
     int         xp_scriptID;            /* SID for completion function */
-#endif
     int         xp_backslash;           /* one of the XP_BS_ values */
     int         xp_shell;               /* TRUE for a shell command, more
                                            characters need to be escaped */
@@ -428,9 +414,7 @@ typedef struct
     int         hide;                   /* TRUE when ":hide" was used */
     int         split;                  /* flags for win_split() */
     int         tab;                    /* > 0 when ":tab" was used */
-#if defined(FEAT_CON_DIALOG)
     int         confirm;                /* TRUE to invoke yes/no dialog */
-#endif
     int         keepalt;                /* TRUE when ":keepalt" was used */
     int         keepmarks;              /* TRUE when ":keepmarks" was used */
     int         keepjumps;              /* TRUE when ":keepjumps" was used */
@@ -1075,7 +1059,6 @@ typedef struct {
     int         b_sst_freecount;
     linenr_T    b_sst_check_lnum;
     short_u     b_sst_lasttick; /* last display tick */
-
 } synblock_T;
 
 /*
@@ -1169,17 +1152,13 @@ struct file_buffer
      */
     char_u      b_chartab[32];
 
-#if defined(FEAT_LOCALMAP)
     /* Table used for mappings local to a buffer. */
     mapblock_T  *(b_maphash[256]);
 
     /* First abbreviation local to a buffer. */
     mapblock_T  *b_first_abbr;
-#endif
-#if defined(FEAT_USR_CMDS)
     /* User commands local to the buffer. */
     garray_T    b_ucmds;
-#endif
     /*
      * start and end of an operator, also used for '[ and ']
      */
@@ -1209,22 +1188,13 @@ struct file_buffer
     linenr_T    b_u_line_lnum;  /* line number of line in u_line */
     colnr_T     b_u_line_colnr; /* optional column number */
 
-#if defined(FEAT_INS_EXPAND)
-    int         b_scanned;      /* ^N/^P have scanned this buffer */
-#endif
-
     /* flags for use of ":lmap" and IM control */
     long        b_p_iminsert;   /* input mode for insert */
     long        b_p_imsearch;   /* input mode for search */
 #define B_IMODE_USE_INSERT -1   /*      Use b_p_iminsert value for search */
 #define B_IMODE_NONE 0          /*      Input via none */
 #define B_IMODE_LMAP 1          /*      Input via langmap */
-#if !defined(USE_IM_CONTROL)
 #define B_IMODE_LAST 1
-#else
-#define B_IMODE_IM 2           /*      Input via input method */
-#define B_IMODE_LAST 2
-#endif
 
     /*
      * Options local to a buffer.
@@ -1248,13 +1218,6 @@ struct file_buffer
     char_u      *b_p_cink;      /* 'cinkeys' */
     char_u      *b_p_cinw;      /* 'cinwords' */
     char_u      *b_p_com;       /* 'comments' */
-#if defined(FEAT_INS_EXPAND)
-    char_u      *b_p_cpt;       /* 'complete' */
-#endif
-#if defined(FEAT_COMPL_FUNC)
-    char_u      *b_p_cfu;       /* 'completefunc' */
-    char_u      *b_p_ofu;       /* 'omnifunc' */
-#endif
     int         b_p_eol;        /* 'endofline' */
     int         b_p_et;         /* 'expandtab' */
     int         b_p_et_nobin;   /* b_p_et saved for binary mode */
@@ -1265,12 +1228,6 @@ struct file_buffer
     char_u      *b_p_flp;       /* 'formatlistpat' */
     int         b_p_inf;        /* 'infercase' */
     char_u      *b_p_isk;       /* 'iskeyword' */
-#if defined(FEAT_FIND_ID)
-    char_u      *b_p_def;       /* 'define' local value */
-    char_u      *b_p_inc;       /* 'include' */
-    char_u      *b_p_inex;      /* 'includeexpr' */
-    long_u      b_p_inex_flags; /* flags for 'includeexpr' */
-#endif
     char_u      *b_p_inde;      /* 'indentexpr' */
     long_u      b_p_inde_flags; /* flags for 'indentexpr' */
     char_u      *b_p_indk;      /* 'indentkeys' */
@@ -1284,18 +1241,13 @@ struct file_buffer
     int         b_p_ma;         /* 'modifiable' */
     char_u      *b_p_nf;        /* 'nrformats' */
     int         b_p_pi;         /* 'preserveindent' */
-#if defined(FEAT_TEXTOBJ)
     char_u      *b_p_qe;        /* 'quoteescape' */
-#endif
     int         b_p_ro;         /* 'readonly' */
     long        b_p_sw;         /* 'shiftwidth' */
     int         b_p_sn;         /* 'shortname' */
     int         b_p_si;         /* 'smartindent' */
     long        b_p_sts;        /* 'softtabstop' */
     long        b_p_sts_nopaste; /* b_p_sts saved for paste mode */
-#if defined(FEAT_SEARCHPATH)
-    char_u      *b_p_sua;       /* 'suffixesadd' */
-#endif
     int         b_p_swf;        /* 'swapfile' */
     long        b_p_smc;        /* 'synmaxcol' */
     char_u      *b_p_syn;       /* 'syntax' */
@@ -1313,14 +1265,8 @@ struct file_buffer
     char_u      *b_p_path;      /* 'path' local value */
     int         b_p_ar;         /* 'autoread' local value */
     char_u      *b_p_tags;      /* 'tags' local value */
-#if defined(FEAT_INS_EXPAND)
-    char_u      *b_p_dict;      /* 'dictionary' local value */
-    char_u      *b_p_tsr;       /* 'thesaurus' local value */
-#endif
     long        b_p_ul;         /* 'undolevels' local value */
-#if defined(FEAT_PERSISTENT_UNDO)
     int         b_p_udf;        /* 'undofile' */
-#endif
     char_u      *b_p_lw;        /* 'lispwords' local value */
 
     /* end of buffer options */
@@ -1397,7 +1343,6 @@ struct file_buffer
                                  * may use a different synblock_T. */
 
     int         b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
-
 }; /* file_buffer */
 
 #define SNAP_HELP_IDX   0
@@ -1426,7 +1371,6 @@ struct tabpage_S
     frame_T         *(tp_snapshot[SNAP_COUNT]);  /* window layout snapshots */
     dictitem_T      tp_winvar;      /* variable for "t:" Dictionary */
     dict_T          *tp_vars;       /* internal variables, local to tab page */
-
 };
 
 /*
@@ -1672,14 +1616,12 @@ struct window_S
     linenr_T    w_redraw_bot;       /* when != 0: last line needing redraw */
     int         w_redr_status;      /* if TRUE status line must be redrawn */
 
-#if defined(FEAT_CMDL_INFO)
     /* remember what is shown in the ruler for this window (if 'ruler' set) */
     pos_T       w_ru_cursor;        /* cursor position shown in ruler */
     colnr_T     w_ru_virtcol;       /* virtcol shown in ruler */
     linenr_T    w_ru_topline;       /* topline shown in ruler */
     linenr_T    w_ru_line_count;    /* line count used for ruler */
     char        w_ru_empty;         /* TRUE if ruler shows 0-1 (empty line) */
-#endif
 
     int         w_alt_fnum;         /* alternate file (for # and CTRL-^) */
 
@@ -1701,9 +1643,7 @@ struct window_S
     winopt_T    w_allbuf_opt;
 
     /* A few options have local flags for P_INSECURE. */
-#if defined(FEAT_STL_OPT)
     long_u      w_p_stl_flags;      /* flags for 'statusline' */
-#endif
     long_u      w_p_fde_flags;      /* flags for 'foldexpr' */
     long_u      w_p_fdt_flags;      /* flags for 'foldtext' */
     int         *w_p_cc_cols;       /* array of columns to highlight or NULL */
@@ -1714,9 +1654,7 @@ struct window_S
     /* transform a pointer to a "onebuf" option into a "allbuf" option */
 #define GLOBAL_WO(p)    ((char *)p + sizeof(winopt_T))
 
-#if defined(FEAT_SCROLLBIND)
     long        w_scbind_pos;
-#endif
 
     dictitem_T  w_winvar;       /* variable for "w:" Dictionary */
     dict_T      *w_vars;        /* internal variables, local to window */
@@ -1764,7 +1702,6 @@ struct window_S
                                          * was computed. */
     long        w_nuw_cached;           /* 'numberwidth' option cached */
     int         w_nrwidth_width;        /* nr of chars to print line count. */
-
 };
 
 /*
@@ -1822,7 +1759,6 @@ typedef struct cmdarg_S
 #define CA_COMMAND_BUSY     1   /* skip restarting edit() once */
 #define CA_NO_ADJ_OP_END    2   /* don't adjust operator end */
 
-#if defined(CURSOR_SHAPE)
 /*
  * struct to store values from 'guicursor' and 'mouseshape'
  */
@@ -1869,58 +1805,9 @@ typedef struct cursor_entry
     char        *name;          /* mode name (fixed) */
     char        used_for;       /* SHAPE_MOUSE and/or SHAPE_CURSOR */
 } cursorentry_T;
-#endif
 
-#if defined(FEAT_MENU)
-
-/* Indices into vimmenu_T->strings[] and vimmenu_T->noremap[] for each mode */
-#define MENU_INDEX_INVALID      -1
-#define MENU_INDEX_NORMAL       0
-#define MENU_INDEX_VISUAL       1
-#define MENU_INDEX_SELECT       2
-#define MENU_INDEX_OP_PENDING   3
-#define MENU_INDEX_INSERT       4
-#define MENU_INDEX_CMDLINE      5
-#define MENU_INDEX_TIP          6
-#define MENU_MODES              7
-
-/* Menu modes */
-#define MENU_NORMAL_MODE        (1 << MENU_INDEX_NORMAL)
-#define MENU_VISUAL_MODE        (1 << MENU_INDEX_VISUAL)
-#define MENU_SELECT_MODE        (1 << MENU_INDEX_SELECT)
-#define MENU_OP_PENDING_MODE    (1 << MENU_INDEX_OP_PENDING)
-#define MENU_INSERT_MODE        (1 << MENU_INDEX_INSERT)
-#define MENU_CMDLINE_MODE       (1 << MENU_INDEX_CMDLINE)
-#define MENU_TIP_MODE           (1 << MENU_INDEX_TIP)
-#define MENU_ALL_MODES          ((1 << MENU_INDEX_TIP) - 1)
-/*note MENU_INDEX_TIP is not a 'real' mode*/
-
-/* Start a menu name with this to not include it on the main menu bar */
-#define MNU_HIDDEN_CHAR         ']'
-
-typedef struct VimMenu vimmenu_T;
-
-struct VimMenu
-{
-    int         modes;              /* Which modes is this menu visible for? */
-    int         enabled;            /* for which modes the menu is enabled */
-    char_u      *name;              /* Name of menu, possibly translated */
-    char_u      *dname;             /* Displayed Name ("name" without '&') */
-    int         mnemonic;           /* mnemonic key (after '&') */
-    char_u      *actext;            /* accelerator text (after TAB) */
-    int         priority;           /* Menu order priority */
-    char_u      *strings[MENU_MODES]; /* Mapped string for each mode */
-    int         noremap[MENU_MODES]; /* A REMAP_ flag for each mode */
-    char        silent[MENU_MODES]; /* A silent flag for each mode */
-    vimmenu_T   *children;          /* Children of sub-menu */
-    vimmenu_T   *parent;            /* Parent of menu */
-    vimmenu_T   *next;              /* Next item in menu */
-};
-#else
 /* For generating prototypes when FEAT_MENU isn't defined. */
 typedef int vimmenu_T;
-
-#endif
 
 /*
  * Struct to save values in before executing autocommands for a buffer that is

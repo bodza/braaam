@@ -1664,13 +1664,9 @@ EX(CMD_tilde,           "~",            do_sub,
                         ADDR_LINES),
 
 #if !defined(DO_DECLARE_EXCMD)
-#if defined(FEAT_USR_CMDS)
     CMD_SIZE,           /* MUST be after all real commands! */
     CMD_USER = -1,      /* User-defined command */
     CMD_USER_BUF = -2   /* User-defined command local to buffer */
-#else
-    CMD_SIZE    /* MUST be the last one! */
-#endif
 #endif
 };
 
@@ -1706,9 +1702,7 @@ struct exarg
     int         force_ff;       /* ++ff= argument (index in cmd[]) */
     int         force_enc;      /* ++enc= argument (index in cmd[]) */
     int         bad_char;       /* BAD_KEEP, BAD_DROP or replacement byte */
-#if defined(FEAT_USR_CMDS)
     int         useridx;        /* user command index */
-#endif
     char_u      *errmsg;        /* returned error message */
     char_u      *(*getline)(int, void *, int);
     void        *cookie;        /* argument for getline() */

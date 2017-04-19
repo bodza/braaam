@@ -13,54 +13,18 @@ static void version_msg(char *s);
 static char *(features[]) =
 {
         "+autocmd",
-#if defined(NO_BUILTIN_TCAPS)
-        "-builtin_terms",
-#endif
-#if defined(SOME_BUILTIN_TCAPS)
         "+builtin_terms",
-#endif
-#if defined(ALL_BUILTIN_TCAPS)
-        "++builtin_terms",
-#endif
         "+byte_offset",
         "+cindent",
-#if defined(FEAT_CLIPBOARD)
         "+clipboard",
-#else
-        "-clipboard",
-#endif
-#if defined(FEAT_CMDL_COMPL)
         "+cmdline_compl",
-#else
-        "-cmdline_compl",
-#endif
-#if defined(FEAT_CMDHIST)
         "+cmdline_hist",
-#else
-        "-cmdline_hist",
-#endif
-#if defined(FEAT_CMDL_INFO)
         "+cmdline_info",
-#else
-        "-cmdline_info",
-#endif
         "+comments",
         "+conceal",
-#if defined(FEAT_CURSORBIND)
         "+cursorbind",
-#else
-        "-cursorbind",
-#endif
-#if defined(CURSOR_SHAPE)
         "+cursorshape",
-#else
-        "-cursorshape",
-#endif
-#if defined(FEAT_CON_DIALOG)
         "+dialog_con",
-#else
-        "-dialog",
-#endif
         "+digraphs",
 #if defined(FEAT_DND)
         "+dnd",
@@ -70,16 +34,8 @@ static char *(features[]) =
         "+eval",
         "+ex_extra",
         "+extra_search",
-#if defined(FEAT_SEARCHPATH)
-        "+file_in_path",
-#else
         "-file_in_path",
-#endif
-#if defined(FEAT_FIND_ID)
-        "+find_in_path",
-#else
         "-find_in_path",
-#endif
         "+float",
 #if defined(FEAT_FOOTER)
         "+footer",
@@ -92,121 +48,49 @@ static char *(features[]) =
 #else
         "-iconv",
 #endif
-#if defined(FEAT_INS_EXPAND)
-        "+insert_expand",
-#else
         "-insert_expand",
-#endif
         "+jumplist",
         "-keymap",
         "-langmap",
         "+linebreak",
         "+lispindent",
-#if defined(FEAT_LISTCMDS)
         "+listcmds",
-#else
-        "-listcmds",
-#endif
-#if defined(FEAT_LOCALMAP)
         "+localmap",
-#else
-        "-localmap",
-#endif
-#if defined(FEAT_MENU)
-        "+menu",
-#else
         "-menu",
-#endif
-#if defined(FEAT_MODIFY_FNAME)
         "+modify_fname",
-#else
-        "-modify_fname",
-#endif
-#if defined(FEAT_MOUSE)
         "+mouse",
-#if defined(FEAT_MOUSESHAPE)
-        "+mouseshape",
-#else
         "-mouseshape",
-#endif
-#else
-        "-mouse",
-#endif
         "-mouse_gpm",
         "-mouse_sysmouse",
-#if defined(FEAT_MOUSE_XTERM)
         "+mouse_xterm",
-#else
-        "-mouse_xterm",
-#endif
         "+multi_byte",
-#if defined(FEAT_PATH_EXTRA)
-        "+path_extra",
-#else
         "-path_extra",
-#endif
-#if defined(FEAT_PERSISTENT_UNDO)
         "+persistent_undo",
-#else
-        "-persistent_undo",
-#endif
         "+reltime",
         "+rightleft",
-#if defined(FEAT_SCROLLBIND)
         "+scrollbind",
-#else
-        "-scrollbind",
-#endif
         "+smartindent",
-#if defined(FEAT_STL_OPT)
         "+statusline",
-#else
-        "-statusline",
-#endif
         "+syntax",
-#if defined(FEAT_TAG_BINS)
         "+tag_binary",
-#else
-        "-tag_binary",
-#endif
         "+terminfo",
 #if defined(FEAT_TERMRESPONSE)
         "+termresponse",
 #else
         "-termresponse",
 #endif
-#if defined(FEAT_TEXTOBJ)
         "+textobjects",
-#else
-        "-textobjects",
-#endif
         "+title",
-#if defined(FEAT_USR_CMDS)
         "+user_commands",
-#else
-        "-user_commands",
-#endif
         "+vertsplit",
         "+virtualedit",
         "+visual",
         "+visualextra",
         "+vreplace",
-#if defined(FEAT_WILDIGN)
-        "+wildignore",
-#else
         "-wildignore",
-#endif
-#if defined(FEAT_WILDMENU)
-        "+wildmenu",
-#else
         "-wildmenu",
-#endif
         "+windows",
-#if defined(FEAT_WRITEBACKUP)
         "+writebackup",
-#else
-        "-writebackup",
-#endif
 #if defined(FEAT_XTERM_SAVE)
         "+xterm_save",
 #else
@@ -297,8 +181,7 @@ static int included_patches[] =
  * one line only.  Create it by hand or use "diff -C2" and edit the patch.
  */
 static char *(extra_patches[]) =
-{   /* Add your patch description below this line */
-/**/
+{
     NULL
 };
 
@@ -355,8 +238,7 @@ list_features()
     int         nfeat = 0;
     int         width = 0;
 
-    /* Find the length of the longest feature name, use that + 1 as the column
-     * width */
+    /* Find the length of the longest feature name, use that + 1 as the column width */
     for (i = 0; features[i] != NULL; ++i)
     {
         int l = (int)STRLEN(features[i]);
@@ -488,24 +370,10 @@ list_version()
     version_msg(USR_VIMRC_FILE2);
     version_msg("\"\n");
 #endif
-#if defined(USR_VIMRC_FILE3)
-    version_msg(_(" 3rd user vimrc file: \""));
-    version_msg(USR_VIMRC_FILE3);
-    version_msg("\"\n");
-#endif
 #if defined(USR_EXRC_FILE)
     version_msg(_("      user exrc file: \""));
     version_msg(USR_EXRC_FILE);
     version_msg("\"\n");
-#endif
-#if defined(USR_EXRC_FILE2)
-    version_msg(_("  2nd user exrc file: \""));
-    version_msg(USR_EXRC_FILE2);
-    version_msg("\"\n");
-#endif
-#if defined(DEBUG)
-    version_msg("\n");
-    version_msg(_("  DEBUG BUILD"));
 #endif
 }
 
@@ -519,8 +387,7 @@ version_msg(s)
 {
     int         len = (int)STRLEN(s);
 
-    if (!got_int && len < (int)Columns && msg_col + len >= (int)Columns
-                                                                && *s != '\n')
+    if (!got_int && len < (int)Columns && msg_col + len >= (int)Columns && *s != '\n')
         msg_putchar('\n');
     if (!got_int)
         MSG_PUTS(s);

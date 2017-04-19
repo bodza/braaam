@@ -75,14 +75,6 @@ do_window(nchar, Prenum, xchar)
 {
     long        Prenum1;
     win_T       *wp;
-#if defined(FEAT_SEARCHPATH) || defined(FEAT_FIND_ID)
-    char_u      *ptr;
-    linenr_T    lnum = -1;
-#endif
-#if defined(FEAT_FIND_ID)
-    int         type = FIND_DEFINE;
-    int         len;
-#endif
     char_u      cbuf[40];
 
     if (Prenum == 0)
@@ -90,11 +82,7 @@ do_window(nchar, Prenum, xchar)
     else
         Prenum1 = Prenum;
 
-#if defined(FEAT_CMDWIN)
 #define CHECK_CMDWIN if (cmdwin_type != 0) { EMSG(_(e_cmdwin)); break; }
-#else
-#define CHECK_CMDWIN
-#endif
 
     switch (nchar)
     {
@@ -247,8 +235,7 @@ do_window(nchar, Prenum, xchar)
                     /* First create a new tab with the window, then go back to
                      * the old tab and close the window there. */
                     wp = curwin;
-                    if (win_new_tabpage((int)Prenum) == OK
-                                                     && valid_tabpage(oldtab))
+                    if (win_new_tabpage((int)Prenum) == OK && valid_tabpage(oldtab))
                     {
                         newtab = curtab;
                         goto_tabpage_tp(oldtab, TRUE, TRUE);
@@ -365,54 +352,6 @@ do_window(nchar, Prenum, xchar)
                 do_nv_ident(Ctrl_RSB, NUL);
                 break;
 
-#if defined(FEAT_SEARCHPATH)
-/* edit file name under cursor in a new window */
-    case 'f':
-    case 'F':
-    case Ctrl_F:
-wingotofile:
-                CHECK_CMDWIN
-
-                ptr = grab_file_name(Prenum1, &lnum);
-                if (ptr != NULL)
-                {
-                    setpcmark();
-                    if (win_split(0, 0) == OK)
-                    {
-                        RESET_BINDING(curwin);
-                        (void)do_ecmd(0, ptr, NULL, NULL, ECMD_LASTL, ECMD_HIDE, NULL);
-                        if (nchar == 'F' && lnum >= 0)
-                        {
-                            curwin->w_cursor.lnum = lnum;
-                            check_cursor_lnum();
-                            beginline(BL_SOL | BL_FIX);
-                        }
-                    }
-                    vim_free(ptr);
-                }
-                break;
-#endif
-
-#if defined(FEAT_FIND_ID)
-/* Go to the first occurrence of the identifier under cursor along path in a
- * new window -- webb
- */
-    case 'i':                       /* Go to any match */
-    case Ctrl_I:
-                type = FIND_ANY;
-                /* FALLTHROUGH */
-    case 'd':                       /* Go to definition, using 'define' */
-    case Ctrl_D:
-                CHECK_CMDWIN
-                if ((len = find_ident_under_cursor(&ptr, FIND_IDENT)) == 0)
-                    break;
-                find_pattern_in_path(ptr, 0, len, TRUE,
-                        Prenum == 0 ? TRUE : FALSE, type,
-                        Prenum1, ACTION_SPLIT, (linenr_T)1, (linenr_T)MAXLNUM);
-                curwin->w_set_curswant = TRUE;
-                break;
-#endif
-
     case K_KENTER:
     case CAR:
                 break;
@@ -431,9 +370,7 @@ wingotofile:
                 LANGMAP_ADJUST(xchar, TRUE);
                 --no_mapping;
                 --allow_keys;
-#if defined(FEAT_CMDL_INFO)
                 (void)add_to_showcmd(xchar);
-#endif
                 switch (xchar)
                 {
                     case ']':
@@ -449,13 +386,6 @@ wingotofile:
                         do_nv_ident('g', xchar);
                         break;
 
-#if defined(FEAT_SEARCHPATH)
-                    case 'f':       /* CTRL-W gf: "gf" in a new tab page */
-                    case 'F':       /* CTRL-W gF: "gF" in a new tab page */
-                        cmdmod.tab = tabpage_index(curtab) + 1;
-                        nchar = xchar;
-                        goto wingotofile;
-#endif
                     default:
                         beep_flush();
                         break;
@@ -511,17 +441,6 @@ get_wincmd_addr_type(arg, eap)
     case 'L':
     case '>':
     case '<':
-#if defined(FEAT_SEARCHPATH)
-    case 'f':
-    case 'F':
-    case Ctrl_F:
-#endif
-#if defined(FEAT_FIND_ID)
-    case 'i':
-    case Ctrl_I:
-    case 'd':
-    case Ctrl_D:
-#endif
                 /* window size or any count */
                 eap->addr_type = ADDR_LINES;
                 break;
@@ -730,8 +649,7 @@ win_split_ins(size, flags, new_wp, dir)
 
         /* Only make all windows the same width if one of them (except oldwin)
          * is wider than one of the split windows. */
-        if (!do_equal && p_ea && size == 0 && *p_ead != 'v'
-           && oldwin->w_frame->fr_parent != NULL)
+        if (!do_equal && p_ea && size == 0 && *p_ead != 'v' && oldwin->w_frame->fr_parent != NULL)
         {
             frp = oldwin->w_frame->fr_parent->fr_child;
             while (frp != NULL)
@@ -822,9 +740,7 @@ win_split_ins(size, flags, new_wp, dir)
 
         /* Only make all windows the same height if one of them (except oldwin)
          * is higher than one of the split windows. */
-        if (!do_equal && p_ea && size == 0
-                && *p_ead != 'h'
-           && oldwin->w_frame->fr_parent != NULL)
+        if (!do_equal && p_ea && size == 0 && *p_ead != 'h' && oldwin->w_frame->fr_parent != NULL)
         {
             frp = oldwin->w_frame->fr_parent->fr_child;
             while (frp != NULL)
@@ -848,9 +764,7 @@ win_split_ins(size, flags, new_wp, dir)
             && ((flags & WSP_BOT)
                 || (flags & WSP_BELOW)
                 || (!(flags & WSP_ABOVE)
-                    && (
-                        (flags & WSP_VERT) ? p_spr :
-                        p_sb))))
+                    && ((flags & WSP_VERT) ? p_spr : p_sb))))
     {
         /* new window below/right of current one */
         if (new_wp == NULL)
@@ -1144,8 +1058,7 @@ win_init(newp, oldp, flags)
     {
         newp->w_tagstack[i] = oldp->w_tagstack[i];
         if (newp->w_tagstack[i].tagname != NULL)
-            newp->w_tagstack[i].tagname =
-                                   vim_strsave(newp->w_tagstack[i].tagname);
+            newp->w_tagstack[i].tagname = vim_strsave(newp->w_tagstack[i].tagname);
     }
     newp->w_tagstackidx = oldp->w_tagstackidx;
     newp->w_tagstacklen = oldp->w_tagstacklen;
@@ -1478,7 +1391,6 @@ win_totop(size, flags)
         if (p_ea)
             win_equal(curwin, TRUE, 'v');
     }
-
 }
 
 /*
@@ -1666,9 +1578,7 @@ win_equal_rec(next_curwin, current, topfr, dir, col, row, width, height)
                 {
                     if (!has_next_curwin)
                         next_curwin_size = 0;
-                    else if (totwincount > 1
-                            && (room + (totwincount - 2))
-                                                  / (totwincount - 1) > p_wiw)
+                    else if (totwincount > 1 && (room + (totwincount - 2)) / (totwincount - 1) > p_wiw)
                     {
                         /* Can make all windows wider than 'winwidth', spread
                          * the room equally. */
@@ -1892,9 +1802,7 @@ close_windows(buf, keep_curwin)
 
     for (wp = firstwin; wp != NULL && lastwin != firstwin; )
     {
-        if (wp->w_buffer == buf && (!keep_curwin || wp != curwin)
-                && !(wp->w_closing || wp->w_buffer->b_closing)
-                )
+        if (wp->w_buffer == buf && (!keep_curwin || wp != curwin) && !(wp->w_closing || wp->w_buffer->b_closing))
         {
             win_close(wp, FALSE);
 
@@ -1911,9 +1819,7 @@ close_windows(buf, keep_curwin)
         nexttp = tp->tp_next;
         if (tp != curtab)
             for (wp = tp->tp_firstwin; wp != NULL; wp = wp->w_next)
-                if (wp->w_buffer == buf
-                    && !(wp->w_closing || wp->w_buffer->b_closing)
-                    )
+                if (wp->w_buffer == buf && !(wp->w_closing || wp->w_buffer->b_closing))
                 {
                     win_close_othertab(wp, FALSE, tp);
 
@@ -3027,7 +2933,6 @@ close_others(message, forceit)
             }
             if (!r)
             {
-#if defined(FEAT_CON_DIALOG)
                 if (message && (p_confirm || cmdmod.confirm) && p_write)
                 {
                     dialog_changed(wp->w_buffer, FALSE);
@@ -3038,7 +2943,6 @@ close_others(message, forceit)
                     }
                 }
                 if (bufIsChanged(wp->w_buffer))
-#endif
                     continue;
             }
             win_close(wp, !P_HID(wp->w_buffer) && !bufIsChanged(wp->w_buffer));
@@ -3270,8 +3174,7 @@ win_new_tabpage(after)
             {
                 /* Put new tab page before tab page "after". */
                 n = 2;
-                for (tp = first_tabpage; tp->tp_next != NULL
-                                               && n < after; tp = tp->tp_next)
+                for (tp = first_tabpage; tp->tp_next != NULL && n < after; tp = tp->tp_next)
                     ++n;
             }
             newtp->tp_next = tp->tp_next;
@@ -3501,11 +3404,9 @@ goto_tabpage(n)
     if (text_locked())
     {
         /* Not allowed when editing the command line. */
-#if defined(FEAT_CMDWIN)
         if (cmdwin_type != 0)
             EMSG(_(e_cmdwin));
         else
-#endif
             EMSG(_(e_secure));
         return;
     }
@@ -3726,8 +3627,7 @@ win_goto_ver(up, count)
             {
                 /* Find the frame at the cursor row. */
                 while (fr->fr_next != NULL
-                        && frame2win(fr)->w_wincol + fr->fr_width
-                                         <= curwin->w_wincol + curwin->w_wcol)
+                        && frame2win(fr)->w_wincol + fr->fr_width <= curwin->w_wincol + curwin->w_wcol)
                     fr = fr->fr_next;
             }
             if (nfr->fr_layout == FR_COL && up)
@@ -3789,8 +3689,7 @@ win_goto_hor(left, count)
             {
                 /* Find the frame at the cursor row. */
                 while (fr->fr_next != NULL
-                        && frame2win(fr)->w_winrow + fr->fr_height
-                                         <= curwin->w_winrow + curwin->w_wrow)
+                        && frame2win(fr)->w_winrow + fr->fr_height <= curwin->w_winrow + curwin->w_wrow)
                     fr = fr->fr_next;
             }
             if (nfr->fr_layout == FR_ROW && left)
@@ -3924,9 +3823,7 @@ win_enter_ext(wp, undo_sync, curwin_invalid, trigger_enter_autocmds, trigger_lea
     if (curwin->w_width < p_wiw && !curwin->w_p_wfw)
         win_setwidth((int)p_wiw);
 
-#if defined(FEAT_MOUSE)
     setmouse();                 /* in case jumped to/from help buffer */
-#endif
 
     /* Change directories when the 'acd' option is set. */
     DO_AUTOCHDIR
@@ -4035,9 +3932,7 @@ win_alloc(after, hidden)
     new_wp->w_topline = 1;
     new_wp->w_botline = 2;
     new_wp->w_cursor.lnum = 1;
-#if defined(FEAT_SCROLLBIND)
     new_wp->w_scbind_pos = 1;
-#endif
 
     /* We won't calculate w_fraction until resizing the window */
     new_wp->w_fraction = 0;
@@ -4287,7 +4182,6 @@ shell_new_columns()
 #endif
 }
 
-#if defined(FEAT_CMDWIN)
 /*
  * Save the size of all windows in "gap".
  */
@@ -4302,8 +4196,7 @@ win_size_save(gap)
     if (ga_grow(gap, win_count() * 2) == OK)
         for (wp = firstwin; wp != NULL; wp = wp->w_next)
         {
-            ((int *)gap->ga_data)[gap->ga_len++] =
-                                               wp->w_width + wp->w_vsep_width;
+            ((int *)gap->ga_data)[gap->ga_len++] = wp->w_width + wp->w_vsep_width;
             ((int *)gap->ga_data)[gap->ga_len++] = wp->w_height;
         }
 }
@@ -4336,7 +4229,6 @@ win_size_restore(gap)
         (void)win_comp_pos();
     }
 }
-#endif
 
 /*
  * Update the position for all windows, using the width and height of the
@@ -4514,9 +4406,7 @@ frame_setheight(curfrp, height)
             room_reserved = 0;
             for (frp = curfrp->fr_parent->fr_child; frp != NULL; frp = frp->fr_next)
             {
-                if (frp != curfrp
-                        && frp->fr_win != NULL
-                        && frp->fr_win->w_p_wfh)
+                if (frp != curfrp && frp->fr_win != NULL && frp->fr_win->w_p_wfh)
                     room_reserved += frp->fr_height;
                 room += frp->fr_height;
                 if (frp != curfrp)
@@ -4588,9 +4478,7 @@ frame_setheight(curfrp, height)
             while (frp != NULL && take != 0)
             {
                 h = frame_minheight(frp, NULL);
-                if (room_reserved > 0
-                        && frp->fr_win != NULL
-                        && frp->fr_win->w_p_wfh)
+                if (room_reserved > 0 && frp->fr_win != NULL && frp->fr_win->w_p_wfh)
                 {
                     if (room_reserved >= frp->fr_height)
                         room_reserved -= frp->fr_height;
@@ -4711,9 +4599,7 @@ frame_setwidth(curfrp, width)
             room_reserved = 0;
             for (frp = curfrp->fr_parent->fr_child; frp != NULL; frp = frp->fr_next)
             {
-                if (frp != curfrp
-                        && frp->fr_win != NULL
-                        && frp->fr_win->w_p_wfw)
+                if (frp != curfrp && frp->fr_win != NULL && frp->fr_win->w_p_wfw)
                     room_reserved += frp->fr_width;
                 room += frp->fr_width;
                 if (frp != curfrp)
@@ -4766,9 +4652,7 @@ frame_setwidth(curfrp, width)
             while (frp != NULL && take != 0)
             {
                 w = frame_minwidth(frp, NULL);
-                if (room_reserved > 0
-                        && frp->fr_win != NULL
-                        && frp->fr_win->w_p_wfw)
+                if (room_reserved > 0 && frp->fr_win != NULL && frp->fr_win->w_p_wfw)
                 {
                     if (room_reserved >= frp->fr_width)
                         room_reserved -= frp->fr_width;
@@ -4830,8 +4714,6 @@ win_setminheight()
         }
     }
 }
-
-#if defined(FEAT_MOUSE)
 
 /*
  * Status line of dragwin is dragged "offset" lines down (negative is up).
@@ -5066,7 +4948,6 @@ win_drag_vsep_line(dragwin, offset)
     (void)win_comp_pos();
     redraw_all_later(NOT_VALID);
 }
-#endif
 
 #define FRACTION_MULT   16384L
 
@@ -5120,9 +5001,7 @@ win_new_height(wp, height)
     /* Don't change w_topline when height is zero.  Don't set w_topline when
      * 'scrollbind' is set and this isn't the current window. */
     if (height > 0
-#if defined(FEAT_SCROLLBIND)
             && (!wp->w_p_scb || wp == curwin)
-#endif
        )
     {
         /*
@@ -5156,8 +5035,7 @@ win_new_height(wp, height)
              * room use w_skipcol;
              */
             wp->w_wrow = line_size;
-            if (wp->w_wrow >= wp->w_height
-                                       && (W_WIDTH(wp) - win_col_off(wp)) > 0)
+            if (wp->w_wrow >= wp->w_height && (W_WIDTH(wp) - win_col_off(wp)) > 0)
             {
                 wp->w_skipcol += W_WIDTH(wp) - win_col_off(wp);
                 --wp->w_wrow;
@@ -5264,8 +5142,7 @@ command_height()
         frp = frp->fr_parent;
 
     /* Avoid changing the height of a window with 'winfixheight' set. */
-    while (frp->fr_prev != NULL && frp->fr_layout == FR_LEAF
-                                                      && frp->fr_win->w_p_wfh)
+    while (frp->fr_prev != NULL && frp->fr_layout == FR_LEAF && frp->fr_win->w_p_wfh)
         frp = frp->fr_prev;
 
     if (starting != NO_SCREEN)
@@ -5423,240 +5300,6 @@ tabline_height()
     }
     return 1;
 }
-
-#if defined(FEAT_SEARCHPATH)
-/*
- * Get the file name at the cursor.
- * If Visual mode is active, use the selected text if it's in one line.
- * Returns the name in allocated memory, NULL for failure.
- */
-    char_u *
-grab_file_name(count, file_lnum)
-    long        count;
-    linenr_T    *file_lnum;
-{
-    int options = FNAME_MESS|FNAME_EXP|FNAME_REL|FNAME_UNESC;
-
-    if (VIsual_active)
-    {
-        int     len;
-        char_u  *ptr;
-
-        if (get_visual_text(NULL, &ptr, &len) == FAIL)
-            return NULL;
-        return find_file_name_in_path(ptr, len, options, count, curbuf->b_ffname);
-    }
-    return file_name_at_cursor(options | FNAME_HYP, count, file_lnum);
-
-}
-
-/*
- * Return the file name under or after the cursor.
- *
- * The 'path' option is searched if the file name is not absolute.
- * The string returned has been alloc'ed and should be freed by the caller.
- * NULL is returned if the file name or file is not found.
- *
- * options:
- * FNAME_MESS       give error messages
- * FNAME_EXP        expand to path
- * FNAME_HYP        check for hypertext link
- * FNAME_INCL       apply "includeexpr"
- */
-    char_u *
-file_name_at_cursor(options, count, file_lnum)
-    int         options;
-    long        count;
-    linenr_T    *file_lnum;
-{
-    return file_name_in_line(ml_get_curline(),
-                      curwin->w_cursor.col, options, count, curbuf->b_ffname,
-                      file_lnum);
-}
-
-/*
- * Return the name of the file under or after ptr[col].
- * Otherwise like file_name_at_cursor().
- */
-    char_u *
-file_name_in_line(line, col, options, count, rel_fname, file_lnum)
-    char_u      *line;
-    int         col;
-    int         options;
-    long        count;
-    char_u      *rel_fname;     /* file we are searching relative to */
-    linenr_T    *file_lnum;     /* line number after the file name */
-{
-    char_u      *ptr;
-    int         len;
-
-    /*
-     * search forward for what could be the start of a file name
-     */
-    ptr = line + col;
-    while (*ptr != NUL && !vim_isfilec(*ptr))
-        mb_ptr_adv(ptr);
-    if (*ptr == NUL)            /* nothing found */
-    {
-        if (options & FNAME_MESS)
-            EMSG(_("E446: No file name under cursor"));
-        return NULL;
-    }
-
-    /*
-     * Search backward for first char of the file name.
-     * Go one char back to ":" before "//" even when ':' is not in 'isfname'.
-     */
-    while (ptr > line)
-    {
-        if (has_mbyte && (len = (*mb_head_off)(line, ptr - 1)) > 0)
-            ptr -= len + 1;
-        else
-        if (vim_isfilec(ptr[-1])
-                || ((options & FNAME_HYP) && path_is_url(ptr - 1)))
-            --ptr;
-        else
-            break;
-    }
-
-    /*
-     * Search forward for the last char of the file name.
-     * Also allow "://" when ':' is not in 'isfname'.
-     */
-    len = 0;
-    while (vim_isfilec(ptr[len]) || (ptr[len] == '\\' && ptr[len + 1] == ' ')
-                         || ((options & FNAME_HYP) && path_is_url(ptr + len)))
-    {
-        if (ptr[len] == '\\')
-            /* Skip over the "\" in "\ ". */
-            ++len;
-        if (has_mbyte)
-            len += (*mb_ptr2len)(ptr + len);
-        else
-            ++len;
-    }
-
-    /*
-     * If there is trailing punctuation, remove it.
-     * But don't remove "..", could be a directory name.
-     */
-    if (len > 2 && vim_strchr((char_u *)".,:;!", ptr[len - 1]) != NULL
-                                                       && ptr[len - 2] != '.')
-        --len;
-
-    if (file_lnum != NULL)
-    {
-        char_u *p;
-
-        /* Get the number after the file name and a separator character */
-        p = ptr + len;
-        p = skipwhite(p);
-        if (*p != NUL)
-        {
-            if (!isdigit(*p))
-                ++p;                /* skip the separator */
-            p = skipwhite(p);
-            if (isdigit(*p))
-                *file_lnum = (int)getdigits(&p);
-        }
-    }
-
-    return find_file_name_in_path(ptr, len, options, count, rel_fname);
-}
-
-#if defined(FEAT_FIND_ID)
-static char_u *eval_includeexpr(char_u *ptr, int len);
-
-    static char_u *
-eval_includeexpr(ptr, len)
-    char_u      *ptr;
-    int         len;
-{
-    char_u      *res;
-
-    set_vim_var_string(VV_FNAME, ptr, len);
-    res = eval_to_string_safe(curbuf->b_p_inex, NULL,
-                      was_set_insecurely((char_u *)"includeexpr", OPT_LOCAL));
-    set_vim_var_string(VV_FNAME, NULL, 0);
-    return res;
-}
-#endif
-
-/*
- * Return the name of the file ptr[len] in 'path'.
- * Otherwise like file_name_at_cursor().
- */
-    char_u *
-find_file_name_in_path(ptr, len, options, count, rel_fname)
-    char_u      *ptr;
-    int         len;
-    int         options;
-    long        count;
-    char_u      *rel_fname;     /* file we are searching relative to */
-{
-    char_u      *file_name;
-    int         c;
-#if defined(FEAT_FIND_ID)
-    char_u      *tofree = NULL;
-
-    if ((options & FNAME_INCL) && *curbuf->b_p_inex != NUL)
-    {
-        tofree = eval_includeexpr(ptr, len);
-        if (tofree != NULL)
-        {
-            ptr = tofree;
-            len = (int)STRLEN(ptr);
-        }
-    }
-#endif
-
-    if (options & FNAME_EXP)
-    {
-        file_name = find_file_in_path(ptr, len, options & ~FNAME_MESS, TRUE, rel_fname);
-
-#if defined(FEAT_FIND_ID)
-        /*
-         * If the file could not be found in a normal way, try applying
-         * 'includeexpr' (unless done already).
-         */
-        if (file_name == NULL
-                && !(options & FNAME_INCL) && *curbuf->b_p_inex != NUL)
-        {
-            tofree = eval_includeexpr(ptr, len);
-            if (tofree != NULL)
-            {
-                ptr = tofree;
-                len = (int)STRLEN(ptr);
-                file_name = find_file_in_path(ptr, len, options & ~FNAME_MESS, TRUE, rel_fname);
-            }
-        }
-#endif
-        if (file_name == NULL && (options & FNAME_MESS))
-        {
-            c = ptr[len];
-            ptr[len] = NUL;
-            EMSG2(_("E447: Can't find file \"%s\" in path"), ptr);
-            ptr[len] = c;
-        }
-
-        /* Repeat finding the file "count" times.  This matters when it
-         * appears several times in the path. */
-        while (file_name != NULL && --count > 0)
-        {
-            vim_free(file_name);
-            file_name = find_file_in_path(ptr, len, options, FALSE, rel_fname);
-        }
-    }
-    else
-        file_name = vim_strnsave(ptr, len);
-
-#if defined(FEAT_FIND_ID)
-    vim_free(tofree);
-#endif
-
-    return file_name;
-}
-#endif
 
 /*
  * Check if the "://" of a URL is at the pointer, return URL_SLASH.

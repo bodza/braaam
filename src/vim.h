@@ -29,11 +29,9 @@
 
 /* Define if you the function: */
 #define HAVE_BCMP 1
-#define HAVE_ICONV 1
 #define HAVE_MEMCMP 1
 #define HAVE_MEMSET 1
 #define HAVE_MKDTEMP 1
-#define HAVE_OPENDIR 1
 #define HAVE_PUTENV 1
 #define HAVE_QSORT 1
 #define HAVE_RENAME 1
@@ -53,190 +51,16 @@
 #define ROOT_UID 0
 
 /*
- * Optional code (see ":help +feature-list")
- * =============
- */
-
-/*
- * +listcmds            Vim commands for the buffer list and the argument
- *                      list.  Without this there is no ":buffer" ":bnext",
- *                      ":bdel", ":argdelete", etc.
- */
-#define FEAT_LISTCMDS
-
-/*
- * +cmdhist             Command line history.
- */
-#define FEAT_CMDHIST
-
-/*
  * Message history is fixed at 200 message, 20 for the tiny version.
  */
 #define MAX_MSG_HIST_LEN 200
-
-/* the cmdline-window requires FEAT_CMDHIST */
-#if defined(FEAT_CMDHIST)
-#define FEAT_CMDWIN
-#endif
-
-/*
- * +localmap            Mappings and abbreviations local to a buffer.
- */
-#define FEAT_LOCALMAP
-
-/*
- * +insert_expand       CTRL-N/CTRL-P/CTRL-X in insert mode. Takes about
- *                      4Kbyte of code.
- */
-#define FEAT_INS_EXPAND
-
-/*
- * +cmdline_compl       completion of mappings/abbreviations in cmdline mode.
- *                      Takes a few Kbyte of code.
- */
-#define FEAT_CMDL_COMPL
-
-/*
- * +cmdline_info        'showcmd' and 'ruler' options.
- */
-#define FEAT_CMDL_INFO
-
-/*
- * +file_in_path        "gf" and "<cfile>" commands.
- */
-#define FEAT_SEARCHPATH
-
-/*
- * +find_in_path        "[I" ":isearch" "^W^I", ":checkpath", etc.
- */
-#if defined(FEAT_SEARCHPATH)
-#define FEAT_FIND_ID
-#endif
-
-/*
- * +path_extra          up/downwards searching in 'path' and 'tags'.
- */
-#define FEAT_PATH_EXTRA
-
-/*
- * +tag_binary          Can use a binary search for the tags file.
- */
-#define FEAT_TAG_BINS
-
-/*
- * +textobjects         Text objects: "vaw", "das", etc.
- */
-#define FEAT_TEXTOBJ
-
-/*
- *                      Insert mode completion with 'completefunc'.
- */
-#if defined(FEAT_INS_EXPAND)
-#define FEAT_COMPL_FUNC
-#endif
-
-/*
- * +user_commands       Allow the user to define his own commands.
- */
-#define FEAT_USR_CMDS
-
-/*
- * +modify_fname        modifiers for file name.  E.g., "%:p:h".
- */
-#define FEAT_MODIFY_FNAME
-
-/*
- * +statusline          'statusline', 'rulerformat' and special format of
- *                      'titlestring' and 'iconstring' options.
- */
-
-#define FEAT_STL_OPT
-#if !defined(FEAT_CMDL_INFO)
-#define FEAT_CMDL_INFO        /* 'ruler' is required for 'statusline' */
-#endif
-
-/*
- * +wildignore          'wildignore' and 'backupskip' options
- *                      Needed for Unix to make "crontab -e" work.
- */
-#define FEAT_WILDIGN
-
-/*
- * +wildmenu            'wildmenu' option
- */
-#define FEAT_WILDMENU
-
-/*
- * +builtin_terms       Choose one out of the following four:
- *
- * NO_BUILTIN_TCAPS     Do not include any builtin termcap entries (used only
- *                      with HAVE_TGETENT defined).
- *
- * (nothing)            Machine specific termcap entries will be included.
- *                      This is default for win16 to save static data.
- *
- * SOME_BUILTIN_TCAPS   Include most useful builtin termcap entries (used only
- *                      with NO_BUILTIN_TCAPS not defined).
- *                      This is the default.
- *
- * ALL_BUILTIN_TCAPS    Include all builtin termcap entries
- *                      (used only with NO_BUILTIN_TCAPS not defined).
- */
-#if defined(HAVE_TGETENT)
-/* #define NO_BUILTIN_TCAPS */
-#endif
-
-#if !defined(NO_BUILTIN_TCAPS)
-#if defined(FEAT_UNSURE)
-#define ALL_BUILTIN_TCAPS
-#else
-#define SOME_BUILTIN_TCAPS            /* default */
-#endif
-#endif
 
 /* Define this if you want to use 16 bit Unicode only, reduces memory used for
  * the screen structures. */
 /* #define UNICODE16 */
 
 /* Use iconv() when it's available. */
-#if defined(HAVE_ICONV)
 #define USE_ICONV
-#endif
-
-/*
- * +scrollbind          synchronization of split windows
- */
-#define FEAT_SCROLLBIND
-
-/*
- * +cursorbind          synchronization of split windows
- */
-#define FEAT_CURSORBIND
-
-/*
- * +menu                ":menu" command
- */
-#define FEAT_MENU
-
-/*
- * +dialog_con          May use Console dialog.
- */
-#define FEAT_CON_DIALOG
-
-/*
- * Preferences:
- * ============
- */
-
-/*
- * +writebackup         'writebackup' is default on:
- *                      Use a backup file while overwriting a file.  But it's
- *                      deleted again when 'backup' is not set.  Changing this
- *                      is strongly discouraged: You can lose all your
- *                      changes when the computer crashes while writing the
- *                      file.
- */
-#define FEAT_WRITEBACKUP
 
 /*
  * +xterm_save          The t_ti and t_te entries for the builtin xterm will
@@ -246,124 +70,19 @@
 /* #define FEAT_XTERM_SAVE */
 
 /*
- * DEBUG                Output a lot of debugging garbage.
- */
-/* #define DEBUG */
-
-/*
- * VIMRC_FILE           Name of the .vimrc file in current dir.
- */
-/* #define VIMRC_FILE   ".vimrc" */
-
-/*
- * EXRC_FILE            Name of the .exrc file in current dir.
- */
-/* #define EXRC_FILE    ".exrc" */
-
-/*
- * GVIMRC_FILE          Name of the .gvimrc file in current dir.
- */
-/* #define GVIMRC_FILE  ".gvimrc" */
-
-/*
  * SESSION_FILE         Name of the default ":mksession" file.
  */
 #define SESSION_FILE    "Session.vim"
 
 /*
- * USR_VIMRC_FILE       Name of the user .vimrc file.
- * USR_VIMRC_FILE2      Name of alternate user .vimrc file.
- * USR_VIMRC_FILE3      Name of alternate user .vimrc file.
- */
-/* #define USR_VIMRC_FILE       "~/foo/.vimrc" */
-/* #define USR_VIMRC_FILE2      "~/bar/.vimrc" */
-/* #define USR_VIMRC_FILE3      "$VIM/.vimrc" */
-
-/*
- * EVIM_FILE            Name of the evim.vim script file
- */
-/* #define EVIM_FILE            "$VIMRUNTIME/evim.vim" */
-
-/*
- * USR_EXRC_FILE        Name of the user .exrc file.
- * USR_EXRC_FILE2       Name of the alternate user .exrc file.
- */
-/* #define USR_EXRC_FILE        "~/foo/.exrc" */
-/* #define USR_EXRC_FILE2       "~/bar/.exrc" */
-
-/*
- * SYS_VIMRC_FILE       Name of the system-wide .vimrc file.
- */
-/* #define SYS_VIMRC_FILE       "/etc/vimrc" */
-
-/*
- * SYS_GVIMRC_FILE      Name of the system-wide .gvimrc file.
- */
-/* #define SYS_GVIMRC_FILE      "/etc/gvimrc" */
-
-/*
- * DFLT_HELPFILE        Name of the help file.
- */
-/* # define DFLT_HELPFILE       "$VIMRUNTIME/doc/help.txt.gz" */
-
-/*
- * File names for:
- * FILETYPE_FILE        switch on file type detection
- * FTPLUGIN_FILE        switch on loading filetype plugin files
- * INDENT_FILE          switch on loading indent files
- * FTOFF_FILE           switch off file type detection
- * FTPLUGOF_FILE        switch off loading settings files
- * INDOFF_FILE          switch off loading indent files
- */
-/* # define FILETYPE_FILE       "filetype.vim" */
-/* # define FTPLUGIN_FILE       "ftplugin.vim" */
-/* # define INDENT_FILE         "indent.vim" */
-/* # define FTOFF_FILE          "ftoff.vim" */
-/* # define FTPLUGOF_FILE       "ftplugof.vim" */
-/* # define INDOFF_FILE         "indoff.vim" */
-
-/*
- * SYS_MENU_FILE        Name of the default menu.vim file.
- */
-/* # define SYS_MENU_FILE       "$VIMRUNTIME/menu.vim" */
-
-/*
  * SYS_OPTWIN_FILE      Name of the default optwin.vim file.
  */
-#if !defined(SYS_OPTWIN_FILE)
 #define SYS_OPTWIN_FILE        "$VIMRUNTIME/optwin.vim"
-#endif
-
-/*
- * SYNTAX_FNAME         Name of a syntax file, where %s is the syntax name.
- */
-/* #define SYNTAX_FNAME "/foo/%s.vim" */
 
 /*
  * RUNTIME_DIRNAME      Generic name for the directory of the runtime files.
  */
-#if !defined(RUNTIME_DIRNAME)
 #define RUNTIME_DIRNAME "runtime"
-#endif
-
-/*
- * Machine dependent:
- * ==================
- */
-
-/*
- * +mouse_xterm         Unix only: Include code for xterm mouse handling.
- * +mouse               Any mouse support (any of the above enabled).
- */
-#define FEAT_MOUSE_XTERM
-
-/* Define FEAT_MOUSE when any of the above is defined or FEAT_GUI. */
-#if !defined(FEAT_MOUSE_TTY) && defined(FEAT_MOUSE_XTERM)
-#define FEAT_MOUSE_TTY         /* include non-GUI mouse support */
-#endif
-#if !defined(FEAT_MOUSE) && defined(FEAT_MOUSE_TTY)
-#define FEAT_MOUSE             /* include generic mouse support */
-#endif
 
 /*
  * +termresponse        send t_RV to obtain terminal response.  Used for xterm
@@ -373,26 +92,6 @@
 #if defined(HAVE_TGETENT)
 #define FEAT_TERMRESPONSE
 #endif
-
-/*
- * cursor shape         Adjust the shape of the cursor to the mode.
- * mouse shape          Adjust the shape of the mouse pointer to the mode.
- */
-
-/* GUI and some consoles can change the shape of the cursor.  The code is also
- * needed for the 'mouseshape' and 'concealcursor' options. */
-#define CURSOR_SHAPE
-
-/*
- * +persistent_undo     'undofile', 'undodir' options, :wundo and :rundo, and
- * implementation.
- */
-#define FEAT_PERSISTENT_UNDO
-
-/*
- * +filterpipe
- */
-#define FEAT_FILTERPIPE
 
 #include "os_unix.h"       /* bring lots of system header files */
 
@@ -441,11 +140,6 @@ typedef unsigned int    int_u;
 #define __w64
 typedef unsigned long __w64     long_u;
 typedef          long __w64     long_i;
-#define SCANF_HEX_LONG_U       "%lx"
-#define SCANF_DECIMAL_LONG_U   "%lu"
-#define PRINTF_HEX_LONG_U      "0x%lx"
-
-#define PRINTF_DECIMAL_LONG_U SCANF_DECIMAL_LONG_U
 
 /*
  * Only systems which use configure will have SIZEOF_OFF_T and VIM_SIZEOF_LONG
@@ -502,8 +196,7 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
  * flags for update_screen()
  * The higher the value, the higher the priority
  */
-#define VALID                   10  /* buffer not changed, or changes marked
-                                       with b_mod_* */
+#define VALID                   10  /* buffer not changed, or changes marked with b_mod_* */
 #define INVERTED                20  /* redisplay inverted part that changed */
 #define INVERTED_ALL            25  /* redisplay whole inverted part */
 #define REDRAW_TOP              30  /* display first w_upd_rows screen lines */
@@ -588,8 +281,7 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define CONFIRM         0x800   /* ":confirm" prompt */
 #define SELECTMODE      0x1000  /* Select mode, only for mappings */
 
-#define MAP_ALL_MODES   (0x3f | SELECTMODE)     /* all mode bits used for
-                                                 * mapping */
+#define MAP_ALL_MODES   (0x3f | SELECTMODE)     /* all mode bits used for mapping */
 
 /* directions */
 #define FORWARD                 1
@@ -598,10 +290,7 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define BACKWARD_FILE           (-3)
 
 /* return values for functions */
-#if !(defined(OK) && (OK == 1))
-/* OK already defined to 1 in MacOS X curses, skip this */
-#define OK                     1
-#endif
+#define OK                      1
 #define FAIL                    0
 #define NOTDONE                 2   /* not OK or FAIL but skipped */
 
@@ -731,10 +420,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define W_STATUS_HEIGHT(wp) (wp->w_status_height)
 #define W_WINROW(wp)   (wp->w_winrow)
 
-#if defined(NO_EXPANDPATH)
-#define gen_expand_wildcards mch_expand_wildcards
-#endif
-
 /* Values for the find_pattern_in_path() function args 'type' and 'action': */
 #define FIND_ANY        1
 #define FIND_DEFINE     2
@@ -744,9 +429,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define ACTION_GOTO     2
 #define ACTION_SPLIT    3
 #define ACTION_SHOW_ALL 4
-#if defined(FEAT_INS_EXPAND)
-#define ACTION_EXPAND  5
-#endif
 
 #define SST_MIN_ENTRIES 150    /* minimal size for state stack array */
 #define SST_MAX_ENTRIES 1000  /* maximal size for state stack array */
@@ -1552,8 +1234,6 @@ typedef struct timeval proftime_T;
 #define PROF_YES        1       /* profiling busy */
 #define PROF_PAUSED     2       /* profiling paused */
 
-#if defined(FEAT_MOUSE)
-
 /* Codes for mouse button events in lower three bits: */
 #define MOUSE_LEFT     0x00
 #define MOUSE_MIDDLE   0x01
@@ -1588,11 +1268,9 @@ typedef struct timeval proftime_T;
 
 #define MOUSE_CLICK_MASK       0x03
 
-#define NUM_MOUSE_CLICKS(code) \
-    (((unsigned)((code) & 0xC0) >> 6) + 1)
+#define NUM_MOUSE_CLICKS(code) (((unsigned)((code) & 0xC0) >> 6) + 1)
 
-#define SET_NUM_MOUSE_CLICKS(code, num) \
-    (code) = ((code) & 0x3f) | ((((num) - 1) & 3) << 6)
+#define SET_NUM_MOUSE_CLICKS(code, num) (code) = ((code) & 0x3f) | ((((num) - 1) & 3) << 6)
 
 /* Added to mouse column for GUI when 'mousefocus' wants to give focus to a
  * window by simulating a click on its status line.  We could use up to 128 *
@@ -1621,8 +1299,6 @@ typedef struct timeval proftime_T;
 #define MOUSE_RELEASED         0x20    /* button was released */
 
 #define CHECK_DOUBLE_CLICK 1  /* Checking for double clicks ourselves. */
-
-#endif
 
 /* defines for eval_vars() */
 #define VALID_PATH              1
@@ -1689,8 +1365,6 @@ typedef struct timeval proftime_T;
 #define VV_PROGPATH     57
 #define VV_LEN          58      /* number of v: vars */
 
-#if defined(FEAT_CLIPBOARD)
-
 /* VIM_ATOM_NAME is the older Vim-specific selection type for X11.  Still
  * supported for when a mix of Vim versions is used. VIMENC_ATOM_NAME includes
  * the encoding to support Vims using different 'encoding' values. */
@@ -1725,11 +1399,7 @@ typedef struct VimClipboard
     pos_T       prev;           /* Previous position */
     short_u     state;          /* Current selection state */
     short_u     mode;           /* Select by char, word, or line. */
-
 } VimClipboard;
-#else
-typedef int VimClipboard;       /* This is required for the prototypes. */
-#endif
 
 #include "ex_cmds.h"        /* Ex command defines */
 #include "proto.h"          /* function prototypes */

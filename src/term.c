@@ -63,9 +63,7 @@ static void req_more_codes_from_term(void);
 static void got_code_from_term(char_u *code, int len);
 static void check_for_codes_from_term(void);
 #endif
-#if (defined(FEAT_MOUSE) && defined(FEAT_MOUSE_XTERM))
 static int get_bytes_from_buf(char_u *, char_u *, int);
-#endif
 static void del_termcode_idx(int idx);
 static int term_is_builtin(char_u *name);
 static int term_7to8bit(char_u *p);
@@ -84,13 +82,7 @@ char            *tgetstr(char *, char **);
 
 #if defined(FEAT_TERMRESPONSE)
     /* Change this to "if 1" to debug what happens with termresponse. */
-#if 0
-#define DEBUG_TERMRESPONSE
-    static void log_tr(char *msg);
-#define LOG_TR(msg) log_tr(msg)
-#else
 #define LOG_TR(msg)
-#endif
 /* Request Terminal Version status: */
 #define CRV_GET       1       /* send T_CRV when switched to RAW mode */
 #define CRV_SENT      2       /* did send T_CRV, waiting for answer */
@@ -123,8 +115,6 @@ static int  detected_8bit = FALSE;      /* detected 8-bit terminal */
 
 static struct builtin_term builtin_termcaps[] =
 {
-#if !defined(NO_BUILTIN_TCAPS)
-
 /*
  * standard ANSI terminal, default for unix
  */
@@ -142,96 +132,6 @@ static struct builtin_term builtin_termcaps[] =
     {(int)KS_LE,        "\b"},
     {(int)KS_CM,        "\033[%i%p1%d;%p2%dH"},
     {(int)KS_CRI,       "\033[%p1%dC"},
-
-#if defined(ALL_BUILTIN_TCAPS)
-/*
- * VT320 is working as an ANSI terminal compatible DEC terminal.
- * (it covers VT1x0, VT2x0 and VT3x0 up to VT320 on VMS as well)
- * Note: K_F1...K_F5 are for internal use, should not be defined.
- * TODO:- rewrite ESC[ codes to CSI
- *      - keyboard languages (CSI ? 26 n)
- */
-    {(int)KS_NAME,      "vt320"},
-    {(int)KS_CE,        "\033[K"},
-    {(int)KS_AL,        "\033[L"},
-    {(int)KS_CAL,       "\033[%p1%dL"},
-    {(int)KS_DL,        "\033[M"},
-    {(int)KS_CDL,       "\033[%p1%dM"},
-    {(int)KS_CL,        "\033[H\033[2J"},
-    {(int)KS_CD,        "\033[J"},
-    {(int)KS_CCO,       "8"},                   /* allow 8 colors */
-    {(int)KS_ME,        "\033[0m"},
-    {(int)KS_MR,        "\033[7m"},
-    {(int)KS_MD,        "\033[1m"},  /* bold mode */
-    {(int)KS_SE,        "\033[22m"},/* normal mode */
-    {(int)KS_UE,        "\033[24m"},/* exit underscore mode */
-    {(int)KS_US,        "\033[4m"},  /* underscore mode */
-    {(int)KS_CZH,       "\033[34;43m"},  /* italic mode: blue text on yellow */
-    {(int)KS_CZR,       "\033[0m"},           /* italic mode end */
-    {(int)KS_CAB,       "\033[4%dm"},       /* set background color (ANSI) */
-    {(int)KS_CAF,       "\033[3%dm"},       /* set foreground color (ANSI) */
-    {(int)KS_CSB,       "\033[102;%dm"},     /* set screen background color */
-    {(int)KS_CSF,       "\033[101;%dm"},     /* set screen foreground color */
-    {(int)KS_MS,        "y"},
-    {(int)KS_UT,        "y"},
-    {(int)KS_XN,        "y"},
-    {(int)KS_LE,        "\b"},
-    {(int)KS_CM,        "\033[%i%p1%d;%p2%dH"},
-    {(int)KS_CRI,       "\033[%p1%dC"},
-    {K_UP,              "\033[A"},
-    {K_DOWN,            "\033[B"},
-    {K_RIGHT,           "\033[C"},
-    {K_LEFT,            "\033[D"},
-    {K_F1,              "\033[11~"},
-    {K_F2,              "\033[12~"},
-    {K_F3,              "\033[13~"},
-    {K_F4,              "\033[14~"},
-    {K_F5,              "\033[15~"},
-    {K_F6,              "\033[17~"},
-    {K_F7,              "\033[18~"},
-    {K_F8,              "\033[19~"},
-    {K_F9,              "\033[20~"},
-    {K_F10,             "\033[21~"},
-    {K_F11,             "\033[23~"},
-    {K_F12,             "\033[24~"},
-    {K_F13,             "\033[25~"},
-    {K_F14,             "\033[26~"},
-    {K_F15,             "\033[28~"},     /* Help */
-    {K_F16,             "\033[29~"},     /* Select */
-    {K_F17,             "\033[31~"},
-    {K_F18,             "\033[32~"},
-    {K_F19,             "\033[33~"},
-    {K_F20,             "\033[34~"},
-    {K_INS,             "\033[2~"},
-    {K_DEL,             "\033[3~"},
-    {K_HOME,            "\033[1~"},
-    {K_END,             "\033[4~"},
-    {K_PAGEUP,          "\033[5~"},
-    {K_PAGEDOWN,        "\033[6~"},
-    {K_KPLUS,           "\033Ok"}, /* keypad plus */
-    {K_KMINUS,          "\033Om"}, /* keypad minus */
-    {K_KDIVIDE,         "\033Oo"}, /* keypad / */
-    {K_KMULTIPLY,       "\033Oj"}, /* keypad * */
-    {K_KENTER,          "\033OM"}, /* keypad Enter */
-    {K_BS,              "\x7f"},        /* for some reason 0177 doesn't work */
-#endif
-
-#if defined(ALL_BUILTIN_TCAPS)
-/*
- * Ordinary vt52
- */
-    {(int)KS_NAME,      "vt52"},
-    {(int)KS_CE,        "\033K"},
-    {(int)KS_CD,        "\033J"},
-    {(int)KS_CM,        "\033Y%+ %+ "},
-    {(int)KS_LE,        "\b"},
-    {(int)KS_AL,        "\033T"},
-    {(int)KS_DL,        "\033U"},
-    {(int)KS_CL,        "\033H\033J"},
-    {(int)KS_ME,        "\033SO"},
-    {(int)KS_MR,        "\033S2"},
-    {(int)KS_MS,        "y"},
-#endif
 
     {(int)KS_NAME,      "xterm"},
     {(int)KS_CE,        "\033[K"},
@@ -350,148 +250,6 @@ static struct builtin_term builtin_termcaps[] =
     {TERMCAP2KEY('F', 'Q'), "\033[57;*~"}, /* F36 */
     {TERMCAP2KEY('F', 'R'), "\033[58;*~"}, /* F37 */
 
-#if defined(DEBUG) || defined(ALL_BUILTIN_TCAPS)
-/*
- * for debugging
- */
-    {(int)KS_NAME,      "debug"},
-    {(int)KS_CE,        "[CE]"},
-    {(int)KS_CD,        "[CD]"},
-    {(int)KS_AL,        "[AL]"},
-    {(int)KS_CAL,       "[CAL%p1%d]"},
-    {(int)KS_DL,        "[DL]"},
-    {(int)KS_CDL,       "[CDL%p1%d]"},
-    {(int)KS_CS,        "[%p1%dCS%p2%d]"},
-    {(int)KS_CSV,       "[%p1%dCSV%p2%d]"},
-    {(int)KS_CAB,       "[CAB%p1%d]"},
-    {(int)KS_CAF,       "[CAF%p1%d]"},
-    {(int)KS_CSB,       "[CSB%p1%d]"},
-    {(int)KS_CSF,       "[CSF%p1%d]"},
-    {(int)KS_OP,        "[OP]"},
-    {(int)KS_LE,        "[LE]"},
-    {(int)KS_CL,        "[CL]"},
-    {(int)KS_VI,        "[VI]"},
-    {(int)KS_VE,        "[VE]"},
-    {(int)KS_VS,        "[VS]"},
-    {(int)KS_ME,        "[ME]"},
-    {(int)KS_MR,        "[MR]"},
-    {(int)KS_MB,        "[MB]"},
-    {(int)KS_MD,        "[MD]"},
-    {(int)KS_SE,        "[SE]"},
-    {(int)KS_SO,        "[SO]"},
-    {(int)KS_UE,        "[UE]"},
-    {(int)KS_US,        "[US]"},
-    {(int)KS_UCE,       "[UCE]"},
-    {(int)KS_UCS,       "[UCS]"},
-    {(int)KS_MS,        "[MS]"},
-    {(int)KS_UT,        "[UT]"},
-    {(int)KS_XN,        "[XN]"},
-    {(int)KS_CM,        "[%p1%dCM%p2%d]"},
-    {(int)KS_SR,        "[SR]"},
-    {(int)KS_CRI,       "[CRI%p1%d]"},
-    {(int)KS_VB,        "[VB]"},
-    {(int)KS_KS,        "[KS]"},
-    {(int)KS_KE,        "[KE]"},
-    {(int)KS_TI,        "[TI]"},
-    {(int)KS_TE,        "[TE]"},
-    {(int)KS_CIS,       "[CIS]"},
-    {(int)KS_CIE,       "[CIE]"},
-    {(int)KS_TS,        "[TS]"},
-    {(int)KS_FS,        "[FS]"},
-    {(int)KS_CWS,       "[%p1%dCWS%p2%d]"},
-    {(int)KS_CWP,       "[%p1%dCWP%p2%d]"},
-    {(int)KS_CRV,       "[CRV]"},
-    {(int)KS_U7,        "[U7]"},
-    {K_UP,              "[KU]"},
-    {K_DOWN,            "[KD]"},
-    {K_LEFT,            "[KL]"},
-    {K_RIGHT,           "[KR]"},
-    {K_XUP,             "[xKU]"},
-    {K_XDOWN,           "[xKD]"},
-    {K_XLEFT,           "[xKL]"},
-    {K_XRIGHT,          "[xKR]"},
-    {K_S_UP,            "[S-KU]"},
-    {K_S_DOWN,          "[S-KD]"},
-    {K_S_LEFT,          "[S-KL]"},
-    {K_C_LEFT,          "[C-KL]"},
-    {K_S_RIGHT,         "[S-KR]"},
-    {K_C_RIGHT,         "[C-KR]"},
-    {K_F1,              "[F1]"},
-    {K_XF1,             "[xF1]"},
-    {K_F2,              "[F2]"},
-    {K_XF2,             "[xF2]"},
-    {K_F3,              "[F3]"},
-    {K_XF3,             "[xF3]"},
-    {K_F4,              "[F4]"},
-    {K_XF4,             "[xF4]"},
-    {K_F5,              "[F5]"},
-    {K_F6,              "[F6]"},
-    {K_F7,              "[F7]"},
-    {K_F8,              "[F8]"},
-    {K_F9,              "[F9]"},
-    {K_F10,             "[F10]"},
-    {K_F11,             "[F11]"},
-    {K_F12,             "[F12]"},
-    {K_S_F1,            "[S-F1]"},
-    {K_S_XF1,           "[S-xF1]"},
-    {K_S_F2,            "[S-F2]"},
-    {K_S_XF2,           "[S-xF2]"},
-    {K_S_F3,            "[S-F3]"},
-    {K_S_XF3,           "[S-xF3]"},
-    {K_S_F4,            "[S-F4]"},
-    {K_S_XF4,           "[S-xF4]"},
-    {K_S_F5,            "[S-F5]"},
-    {K_S_F6,            "[S-F6]"},
-    {K_S_F7,            "[S-F7]"},
-    {K_S_F8,            "[S-F8]"},
-    {K_S_F9,            "[S-F9]"},
-    {K_S_F10,           "[S-F10]"},
-    {K_S_F11,           "[S-F11]"},
-    {K_S_F12,           "[S-F12]"},
-    {K_HELP,            "[HELP]"},
-    {K_UNDO,            "[UNDO]"},
-    {K_BS,              "[BS]"},
-    {K_INS,             "[INS]"},
-    {K_KINS,            "[KINS]"},
-    {K_DEL,             "[DEL]"},
-    {K_KDEL,            "[KDEL]"},
-    {K_HOME,            "[HOME]"},
-    {K_S_HOME,          "[C-HOME]"},
-    {K_C_HOME,          "[C-HOME]"},
-    {K_KHOME,           "[KHOME]"},
-    {K_XHOME,           "[XHOME]"},
-    {K_ZHOME,           "[ZHOME]"},
-    {K_END,             "[END]"},
-    {K_S_END,           "[C-END]"},
-    {K_C_END,           "[C-END]"},
-    {K_KEND,            "[KEND]"},
-    {K_XEND,            "[XEND]"},
-    {K_ZEND,            "[ZEND]"},
-    {K_PAGEUP,          "[PAGEUP]"},
-    {K_PAGEDOWN,        "[PAGEDOWN]"},
-    {K_KPAGEUP,         "[KPAGEUP]"},
-    {K_KPAGEDOWN,       "[KPAGEDOWN]"},
-    {K_MOUSE,           "[MOUSE]"},
-    {K_KPLUS,           "[KPLUS]"},
-    {K_KMINUS,          "[KMINUS]"},
-    {K_KDIVIDE,         "[KDIVIDE]"},
-    {K_KMULTIPLY,       "[KMULTIPLY]"},
-    {K_KENTER,          "[KENTER]"},
-    {K_KPOINT,          "[KPOINT]"},
-    {K_K0,              "[K0]"},
-    {K_K1,              "[K1]"},
-    {K_K2,              "[K2]"},
-    {K_K3,              "[K3]"},
-    {K_K4,              "[K4]"},
-    {K_K5,              "[K5]"},
-    {K_K6,              "[K6]"},
-    {K_K7,              "[K7]"},
-    {K_K8,              "[K8]"},
-    {K_K9,              "[K9]"},
-#endif
-
-#endif
-
 /*
  * The most minimal terminal: only clear screen and cursor positioning
  * Always included.
@@ -504,7 +262,6 @@ static struct builtin_term builtin_termcaps[] =
  * end marker
  */
     {(int)KS_NAME,      NULL}
-
 };
 
 /*
@@ -752,29 +509,22 @@ set_termname(term)
                 {
                     if (term_str(string_names[i].dest) == NULL
                             || term_str(string_names[i].dest) == empty_option)
-                        term_str(string_names[i].dest) =
-                                           TGETSTR(string_names[i].name, &tp);
+                        term_str(string_names[i].dest) = TGETSTR(string_names[i].name, &tp);
                 }
 
                 /* tgetflag() returns 1 if the flag is present, 0 if not and
                  * possibly -1 if the flag doesn't exist. */
-                if ((T_MS == NULL || T_MS == empty_option)
-                                                        && tgetflag("ms") > 0)
+                if ((T_MS == NULL || T_MS == empty_option) && tgetflag("ms") > 0)
                     T_MS = (char_u *)"y";
-                if ((T_XS == NULL || T_XS == empty_option)
-                                                        && tgetflag("xs") > 0)
+                if ((T_XS == NULL || T_XS == empty_option) && tgetflag("xs") > 0)
                     T_XS = (char_u *)"y";
-                if ((T_XN == NULL || T_XN == empty_option)
-                                                        && tgetflag("xn") > 0)
+                if ((T_XN == NULL || T_XN == empty_option) && tgetflag("xn") > 0)
                     T_XN = (char_u *)"y";
-                if ((T_DB == NULL || T_DB == empty_option)
-                                                        && tgetflag("db") > 0)
+                if ((T_DB == NULL || T_DB == empty_option) && tgetflag("db") > 0)
                     T_DB = (char_u *)"y";
-                if ((T_DA == NULL || T_DA == empty_option)
-                                                        && tgetflag("da") > 0)
+                if ((T_DA == NULL || T_DA == empty_option) && tgetflag("da") > 0)
                     T_DA = (char_u *)"y";
-                if ((T_UT == NULL || T_UT == empty_option)
-                                                        && tgetflag("ut") > 0)
+                if ((T_UT == NULL || T_UT == empty_option) && tgetflag("ut") > 0)
                     T_UT = (char_u *)"y";
 
                 /*
@@ -803,8 +553,7 @@ set_termname(term)
                 /*
                  * Get number of colors (if not done already).
                  */
-                if (term_str(KS_CCO) == NULL
-                        || term_str(KS_CCO) == empty_option)
+                if (term_str(KS_CCO) == NULL || term_str(KS_CCO) == empty_option)
                     set_color_count(tgetnum("Co"));
 
                 BC = (char *)TGETSTR("bc", &tp);
@@ -945,8 +694,6 @@ set_termname(term)
 
     term_is_xterm = vim_is_xterm(term);
 
-#if defined(FEAT_MOUSE)
-#if defined(FEAT_MOUSE_TTY)
     /*
      * For Unix, set the 'ttymouse' option to the type of mouse to be used.
      * The termcode for the mouse is added as a side effect in option.c.
@@ -955,10 +702,7 @@ set_termname(term)
         char_u  *p;
 
         p = (char_u *)"";
-#if defined(FEAT_MOUSE_XTERM)
-#if defined(FEAT_CLIPBOARD)
             clip_init(FALSE);
-#endif
         if (use_xterm_like_mouse(term))
         {
             if (use_xterm_mouse())
@@ -966,7 +710,6 @@ set_termname(term)
             else
                 p = (char_u *)"xterm";
         }
-#endif
         if (p != NULL)
         {
             set_option_value((char_u *)"ttym", 0L, p, 0);
@@ -977,8 +720,6 @@ set_termname(term)
         if (p == NULL)
             check_mouse_termcode();     /* set mouse termcode anyway */
     }
-#endif
-#endif
 
 #if defined(USE_TERM_CONSOLE)
     /* DEFAULT_TERM indicates that it is the machine console. */
@@ -1021,9 +762,7 @@ set_termname(term)
     if (starting != NO_SCREEN)
     {
         starttermcap();         /* may change terminal mode */
-#if defined(FEAT_MOUSE)
         setmouse();             /* may start using the mouse */
-#endif
         maketitle();            /* may display window title */
     }
 
@@ -1067,9 +806,6 @@ set_termname(term)
     return OK;
 }
 
-#if defined(FEAT_MOUSE)
-
-#if defined(FEAT_MOUSE_TTY)
 #define HMT_NORMAL    1
 #define HMT_NETTERM   2
 #define HMT_DEC       4
@@ -1078,9 +814,7 @@ set_termname(term)
 #define HMT_URXVT     32
 #define HMT_SGR       64
 static int has_mouse_termcode = 0;
-#endif
 
-#if defined(FEAT_MOUSE_TTY)
     void
 set_mouse_termcode(n, s)
     int         n;      /* KS_MOUSE, KS_NETTERM_MOUSE or KS_DEC_MOUSE */
@@ -1091,13 +825,9 @@ set_mouse_termcode(n, s)
     name[0] = n;
     name[1] = KE_FILLER;
     add_termcode(name, s, FALSE);
-#if defined(FEAT_MOUSE_TTY)
         has_mouse_termcode |= HMT_NORMAL;
-#endif
 }
-#endif
 
-#if defined(FEAT_MOUSE_TTY)
     void
 del_mouse_termcode(n)
     int         n;      /* KS_MOUSE, KS_NETTERM_MOUSE or KS_DEC_MOUSE */
@@ -1107,12 +837,8 @@ del_mouse_termcode(n)
     name[0] = n;
     name[1] = KE_FILLER;
     del_termcode(name);
-#if defined(FEAT_MOUSE_TTY)
         has_mouse_termcode &= ~HMT_NORMAL;
-#endif
 }
-#endif
-#endif
 
 #if defined(HAVE_TGETENT)
 /*
@@ -1670,8 +1396,7 @@ term_color(s, n)
     if (n >= 8 && t_colors >= 16
               && ((s[0] == ESC && s[1] == '[') || (s[0] == CSI && (i = 1) == 1))
               && s[i] != NUL
-              && (STRCMP(s + i + 1, "%p1%dm") == 0
-                  || STRCMP(s + i + 1, "%dm") == 0)
+              && (STRCMP(s + i + 1, "%p1%dm") == 0 || STRCMP(s + i + 1, "%dm") == 0)
               && (s[i] == '3' || s[i] == '4'))
     {
         sprintf(buf,
@@ -1797,7 +1522,6 @@ ttest(pairs)
     t_colors = atoi((char *)T_CCO);
 }
 
-#if (defined(FEAT_MOUSE) && defined(FEAT_MOUSE_XTERM))
 /*
  * Read the next num_bytes bytes from buf, and store them in bytes.  Assume
  * that buf has been through inchar().  Returns the actual number of bytes used
@@ -1829,8 +1553,7 @@ get_bytes_from_buf(buf, bytes, num_bytes)
             if (buf[len++] == (int)KE_CSI)
                 c = CSI;
         }
-        else if (c == CSI && buf[len] == KS_EXTRA
-                                               && buf[len + 1] == (int)KE_CSI)
+        else if (c == CSI && buf[len] == KS_EXTRA && buf[len + 1] == (int)KE_CSI)
             /* CSI is stored as CSI KS_SPECIAL KE_CSI to avoid confusion with
              * the start of a special key, see add_to_input_buf_csi(). */
             len += 2;
@@ -1838,7 +1561,6 @@ get_bytes_from_buf(buf, bytes, num_bytes)
     }
     return len;
 }
-#endif
 
 /*
  * Check if the new shell size is valid, correct it if it's too small or way
@@ -1996,18 +1718,15 @@ set_shellsize(width, height, mustset)
          * Always need to call update_screen() or screenalloc(), to make
          * sure Rows/Columns and the size of ScreenLines[] is correct!
          */
-        if (State == ASKMORE || State == EXTERNCMD || State == CONFIRM
-                                                             || exmode_active)
+        if (State == ASKMORE || State == EXTERNCMD || State == CONFIRM || exmode_active)
         {
             screenalloc(FALSE);
             repeat_message();
         }
         else
         {
-#if defined(FEAT_SCROLLBIND)
             if (curwin->w_p_scb)
                 do_check_scrollbind(TRUE);
-#endif
             if (State & CMDLINE)
             {
                 update_screen(NOT_VALID);
@@ -2016,14 +1735,6 @@ set_shellsize(width, height, mustset)
             else
             {
                 update_topline();
-#if defined(FEAT_INS_EXPAND)
-                if (pum_visible())
-                {
-                    redraw_later(NOT_VALID);
-                    ins_compl_show_pum(); /* This includes the redraw. */
-                }
-                else
-#endif
                     update_screen(NOT_VALID);
                 if (redrawing())
                     setcursor();
@@ -2043,7 +1754,6 @@ set_shellsize(width, height, mustset)
 settmode(tmode)
     int  tmode;
 {
-
     if (full_screen)
     {
         /*
@@ -2061,23 +1771,18 @@ settmode(tmode)
                 /* May need to check for T_CRV response and termcodes, it
                  * doesn't work in Cooked mode, an external program may get
                  * them. */
-                if (tmode != TMODE_RAW && (crv_status == CRV_SENT
-                                         || u7_status == U7_SENT))
+                if (tmode != TMODE_RAW && (crv_status == CRV_SENT || u7_status == U7_SENT))
                     (void)vpeekc_nomap();
                 check_for_codes_from_term();
             }
 #endif
-#if defined(FEAT_MOUSE_TTY)
             if (tmode != TMODE_RAW)
                 mch_setmouse(FALSE);            /* switch mouse off */
-#endif
             out_flush();
             mch_settmode(tmode);    /* machine specific function */
             cur_tmode = tmode;
-#if defined(FEAT_MOUSE)
             if (tmode == TMODE_RAW)
                 setmouse();                     /* may switch mouse on */
-#endif
             out_flush();
         }
 #if defined(FEAT_TERMRESPONSE)
@@ -2253,22 +1958,14 @@ swapping_screen()
     return (full_screen && *T_TI != NUL);
 }
 
-#if defined(FEAT_MOUSE)
 /*
  * setmouse() - switch mouse on/off depending on current mode and 'mouse'
  */
     void
 setmouse()
 {
-#if defined(FEAT_MOUSE_TTY)
     int     checkfor;
-#endif
 
-#if defined(FEAT_MOUSESHAPE)
-    update_mouseshape(-1);
-#endif
-
-#if defined(FEAT_MOUSE_TTY) /* Should be outside proc, but may break MOUSESHAPE */
     /* be quick when mouse is off */
     if (*p_mouse == NUL || has_mouse_termcode == 0)
         return;
@@ -2297,7 +1994,6 @@ setmouse()
         mch_setmouse(TRUE);
     else
         mch_setmouse(FALSE);
-#endif
 }
 
 /*
@@ -2335,7 +2031,6 @@ mouse_model_popup()
 {
     return (p_mousem[0] == 'p');
 }
-#endif
 
 /*
  * By outputting the 'cursor very visible' termcap code, for some windowed
@@ -2382,7 +2077,6 @@ cursor_off()
     }
 }
 
-#if defined(CURSOR_SHAPE)
 /*
  * Set cursor shape to match Insert or Replace mode.
  */
@@ -2426,7 +2120,6 @@ term_cursor_shape()
         showing_mode = NORMAL;
     }
 }
-#endif
 
 /*
  * Set scrolling region for window 'wp'.
@@ -2648,7 +2341,6 @@ find_termcode(name)
     return NULL;
 }
 
-#if defined(FEAT_CMDL_COMPL)
     char_u *
 get_termcode(i)
     int     i;
@@ -2657,7 +2349,6 @@ get_termcode(i)
         return NULL;
     return &termcodes[i].name[0];
 }
-#endif
 
     void
 del_termcode(name)
@@ -2777,11 +2468,8 @@ check_termcode(max_offset, buf, bufsize, buflen)
     char_u      string[MAX_KEY_CODE_LEN + 1];
     int         i, j;
     int         idx = 0;
-#if defined(FEAT_MOUSE)
-#if defined(FEAT_MOUSE_XTERM)
     char_u      bytes[6];
     int         num_bytes;
-#endif
     int         mouse_code = 0;     /* init for GCC */
     int         is_click, is_drag;
     int         wheel_code = 0;
@@ -2796,7 +2484,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                                         /* time of previous mouse click */
     struct timeval  mouse_time;         /* time of current mouse click */
     long        timediff;               /* elapsed time in msec */
-#endif
 #endif
     int         cpo_koffset;
 
@@ -2888,8 +2575,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                      * found instead of <kHome> when they produce the same
                      * key code.
                      */
-                    if (termcodes[idx].name[0] == 'K'
-                                       && VIM_ISDIGIT(termcodes[idx].name[1]))
+                    if (termcodes[idx].name[0] == 'K' && VIM_ISDIGIT(termcodes[idx].name[1]))
                     {
                         for (j = idx + 1; j < tc_len; ++j)
                             if (termcodes[j].len == slen &&
@@ -2983,8 +2669,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
              */
             p = tp[0] == CSI ? tp + 1 : tp + 2;
             if ((*T_CRV != NUL || *T_U7 != NUL)
-                        && ((tp[0] == ESC && tp[1] == '[' && len >= 3)
-                            || (tp[0] == CSI && len >= 2))
+                        && ((tp[0] == ESC && tp[1] == '[' && len >= 3) || (tp[0] == CSI && len >= 2))
                         && (VIM_ISDIGIT(*p) || *p == '>' || *p == '?'))
             {
                 int col;
@@ -3105,14 +2790,11 @@ check_termcode(max_offset, buf, bufsize, buflen)
 
             /* Check for '<Esc>P1+r<hex bytes><Esc>\'.  A "0" instead of the
              * "1" means an invalid request. */
-            else if (check_for_codes
-                    && ((tp[0] == ESC && tp[1] == 'P' && len >= 2)
-                        || tp[0] == DCS))
+            else if (check_for_codes && ((tp[0] == ESC && tp[1] == 'P' && len >= 2) || tp[0] == DCS))
             {
                 j = 1 + (tp[0] != DCS);
                 for (i = j; i < len; ++i)
-                    if ((tp[i] == ESC && tp[i + 1] == '\\' && i + 1 < len)
-                            || tp[i] == STERM)
+                    if ((tp[i] == ESC && tp[i + 1] == '\\' && i + 1 < len) || tp[i] == STERM)
                     {
                         if (i - j >= 3 && tp[j + 1] == '+' && tp[j + 2] == 'r')
                             got_code_from_term(tp + j, i);
@@ -3136,7 +2818,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
 
         /* We only get here when we have a complete termcode match */
 
-#if defined(FEAT_MOUSE)
         /*
          * If it is a mouse click, get the coordinates.
          */
@@ -3144,7 +2825,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
         {
             is_click = is_drag = FALSE;
 
-#if defined(FEAT_MOUSE_XTERM)
             if (key_name[0] == (int)KS_MOUSE)
             {
                 /*
@@ -3208,32 +2888,22 @@ check_termcode(max_offset, buf, bufsize, buflen)
                      * remember that it was a mouse wheel click. */
                     wheel_code = mouse_code;
                 }
-#if defined(FEAT_MOUSE_XTERM)
-                else if (held_button == MOUSE_RELEASE
-                        && (mouse_code == 0x23 || mouse_code == 0x24))
+                else if (held_button == MOUSE_RELEASE && (mouse_code == 0x23 || mouse_code == 0x24))
                 {
                     /* Apparently used by rxvt scroll wheel. */
                     wheel_code = mouse_code - 0x23 + MOUSEWHEEL_LOW;
                 }
-#endif
 
-#if defined(FEAT_MOUSE_TTY)
                 else if (use_xterm_mouse() > 1)
                 {
                     if (mouse_code & MOUSE_DRAG_XTERM)
                         mouse_code |= MOUSE_DRAG;
                 }
-#endif
             }
-#endif
 
             /* Interpret the mouse code */
             current_button = (mouse_code & MOUSE_CLICK_MASK);
-            if (current_button == MOUSE_RELEASE
-#if defined(FEAT_MOUSE_XTERM)
-                    && wheel_code == 0
-#endif
-                    )
+            if (current_button == MOUSE_RELEASE && wheel_code == 0)
             {
                 /*
                  * If we get a mouse drag or release event when
@@ -3317,7 +2987,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
             else
                 key_name[1] = get_pseudo_mouse_code(current_button, is_click, is_drag);
         }
-#endif
 
         /*
          * Change <xHome> to <Home>, <xUp> to <Up>, etc.
@@ -3352,8 +3021,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
             else
                 string[new_slen++] = key_name[1];
         }
-        else if (new_slen == 0 && key_name[0] == KS_EXTRA
-                                                  && key_name[1] == KE_IGNORE)
+        else if (new_slen == 0 && key_name[0] == KS_EXTRA && key_name[1] == KE_IGNORE)
         {
             /* Do not put K_IGNORE into the buffer, do return KEYLEN_REMOVED
              * to indicate what happened. */
@@ -3635,8 +3303,7 @@ find_term_bykeys(src)
 
     for (i = 0; i < tc_len; ++i)
     {
-        if (slen == termcodes[i].len
-                        && STRNCMP(termcodes[i].code, src, (size_t)slen) == 0)
+        if (slen == termcodes[i].len && STRNCMP(termcodes[i].code, src, (size_t)slen) == 0)
             return i;
     }
     return -1;
@@ -3988,7 +3655,6 @@ check_for_codes_from_term()
 }
 #endif
 
-#if defined(FEAT_CMDL_COMPL)
 /*
  * Translate an internal mapping/abbreviation representation into the
  * corresponding external one recognized by :map/:abbrev commands;
@@ -4041,8 +3707,7 @@ translate_mapping(str, expmap)
 
                 /* try to find special key in termcodes */
                 for (i = 0; i < tc_len; ++i)
-                    if (termcodes[i].name[0] == str[1]
-                                            && termcodes[i].name[1] == str[2])
+                    if (termcodes[i].name[0] == str[1] && termcodes[i].name[1] == str[2])
                         break;
                 if (i < tc_len)
                 {
@@ -4083,4 +3748,3 @@ translate_mapping(str, expmap)
     ga_append(&ga, NUL);
     return (char_u *)(ga.ga_data);
 }
-#endif
