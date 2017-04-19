@@ -10,13 +10,11 @@ OBJ = vim.o
 
 all: $(VIM)
 
-CCC = $(CC) -c -I. $(CFLAGS)
-
 $(VIM): $(OBJ)
 	$(CC) $(LDFLAGS) -o $(VIM) $(OBJ) $(LIBS)
 
-vim.o: vim.c vim.h ex_cmds.h
-	$(CCC) -o $@ vim.c
+vim.o: vim.c
+	$(CC) -c -I. $(CFLAGS) -o $@ vim.c
 
 clean:
 	-rm -fv $(OBJ) $(VIM)
