@@ -197,8 +197,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     int         keep_dest_enc = FALSE;  /* don't retry when char doesn't fit
                                            in destination encoding */
     int         bad_char_behavior = BAD_REPLACE;
-                                        /* BAD_KEEP, BAD_DROP or character to
-                                         * replace with */
+                                        /* BAD_KEEP, BAD_DROP or character to replace with */
     char_u      *tmpname = NULL;        /* name of 'charconvert' output file */
     int         fio_flags = 0;
     char_u      *fenc;                  /* fileencoding to use */
@@ -368,8 +367,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
             /*
              * Use the protection bits of the original file for the swap file.
              * This makes it possible for others to read the name of the
-             * edited file from the swapfile, but only if they can read the
-             * edited file.
+             * edited file from the swapfile, but only if they can read the edited file.
              * Remove the "write" and "execute" bits for group and others
              * (they must not write the swapfile).
              * Add the "read" and "write" bits for the user, otherwise we may
@@ -441,7 +439,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
                         filemess(curbuf, sfname, (char_u *)"[New File]", 0);
                     else
                         filemess(curbuf, sfname, (char_u *)"[New DIRECTORY]", 0);
-                    /* Set forced 'fileencoding'.  */
+                    /* Set forced 'fileencoding'. */
                     if (eap != NULL)
                         set_forced_fenc(eap);
                     apply_autocmds_exarg(EVENT_BUFNEWFILE, sfname, sfname, FALSE, curbuf, eap);
@@ -489,8 +487,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
         curbuf->b_start_bomb = FALSE;
     }
 
-    /* Create a swap file now, so that other Vims are warned that we are
-     * editing this file.
+    /* Create a swap file now, so that other Vims are warned that we are editing this file.
      * Don't do this for a "nofile" or "nowrite" buffer type. */
     {
         check_need_swap(newfile);
@@ -738,8 +735,7 @@ retry:
     }
 
     /*
-     * When retrying with another "fenc" and the first time "fileformat"
-     * will be reset.
+     * When retrying with another "fenc" and the first time "fileformat" will be reset.
      */
     if (keep_fileformat)
         keep_fileformat = FALSE;
@@ -816,8 +812,7 @@ retry:
     converted = need_conversion(fenc);
     if (converted)
     {
-        /* "ucs-bom" means we need to check the first bytes of the file
-         * for a BOM. */
+        /* "ucs-bom" means we need to check the first bytes of the file for a BOM. */
         if (STRCMP(fenc, ENC_UCSBOM) == 0)
             fio_flags = FIO_UCSBOM;
 
@@ -854,8 +849,7 @@ retry:
 #if defined(USE_ICONV)
             did_iconv = FALSE;
 #endif
-            /* Skip conversion when it's already done (retry for wrong
-             * "fileformat"). */
+            /* Skip conversion when it's already done (retry for wrong "fileformat"). */
             if (tmpname == NULL)
             {
                 tmpname = readfile_charconvert(fname, fenc, &fd);
@@ -983,8 +977,7 @@ retry:
                 if (read_buffer)
                 {
                     /*
-                     * Read bytes from curbuf.  Used for converting text read
-                     * from stdin.
+                     * Read bytes from curbuf.  Used for converting text read from stdin.
                      */
                     if (read_buf_lnum > from)
                         size = 0;
@@ -1220,8 +1213,7 @@ retry:
 
                 if (from_size > 0)
                 {
-                    /* Some remaining characters, keep them for the next
-                     * round. */
+                    /* Some remaining characters, keep them for the next round. */
                     mch_memmove(conv_rest, (char_u *)fromp, from_size);
                     conv_restlen = (int)from_size;
                 }
@@ -1296,8 +1288,7 @@ retry:
                         tail = p;
                 }
 
-                /* If there is a trailing incomplete sequence move it to
-                 * conv_rest[]. */
+                /* If there is a trailing incomplete sequence move it to conv_rest[]. */
                 if (tail != NULL)
                 {
                     conv_restlen = (int)((ptr + size) - tail);
@@ -1924,10 +1915,8 @@ failed:
                     || (msg_scrolled != 0 && !need_wait_return))
                 /* Need to repeat the message after redrawing when:
                  * - When reading from stdin (the screen will be cleared next).
-                 * - When restart_edit is set (otherwise there will be a delay
-                 *   before redrawing).
-                 * - When the screen was scrolled but there is no wait-return
-                 *   prompt. */
+                 * - When restart_edit is set (otherwise there will be a delay before redrawing).
+                 * - When the screen was scrolled but there is no wait-return prompt. */
                 set_keep_msg(p, 0);
             msg_scrolled_ign = FALSE;
         }
@@ -1970,8 +1959,7 @@ failed:
      */
     curbuf->b_no_eol_lnum = read_no_eol_lnum;
 
-    /* When reloading a buffer put the cursor at the first line that is
-     * different. */
+    /* When reloading a buffer put the cursor at the first line that is different. */
     if (flags & READ_KEEP_UNDO)
         u_find_first_changed();
 
@@ -2174,8 +2162,7 @@ next_fenc(pp)
  * Convert a file with the 'charconvert' expression.
  * This closes the file which is to be read, converts it and opens the
  * resulting file for reading.
- * Returns name of the resulting converted file (the caller should delete it
- * after reading it).
+ * Returns name of the resulting converted file (the caller should delete it after reading it).
  * Returns NULL if the conversion failed ("*fdp" is not set) .
  */
     static char_u *
@@ -2324,15 +2311,13 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
         return FAIL;
     if (buf->b_ml.ml_mfp == NULL)
     {
-        /* This can happen during startup when there is a stray "w" in the
-         * vimrc file. */
+        /* This can happen during startup when there is a stray "w" in the vimrc file. */
         EMSG((char *)e_emptybuf);
         return FAIL;
     }
 
     /*
-     * Disallow writing from .exrc and .vimrc in current directory for
-     * security reasons.
+     * Disallow writing from .exrc and .vimrc in current directory for security reasons.
      */
     if (check_secure())
         return FAIL;
@@ -2353,8 +2338,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
     write_info.bw_iconv_fd = (iconv_t)-1;
 #endif
 
-    /* After writing a file changedtick changes but we don't want to display
-     * the line. */
+    /* After writing a file changedtick changes but we don't want to display the line. */
     ex_no_reprint = TRUE;
 
     /*
@@ -2495,8 +2479,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                 EMSG("E676: No matching autocommands for acwrite buffer");
 
             if (nofile_err || aborting())
-                /* An aborting error, interrupt or exception in the
-                 * autocommands. */
+                /* An aborting error, interrupt or exception in the autocommands. */
                 return FAIL;
             if (did_cmd)
             {
@@ -2515,8 +2498,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                 }
                 if (reset_changed && buf->b_changed && !append
                         && (overwriting || vim_strchr(p_cpo, CPO_PLUS) != NULL))
-                    /* Buffer still changed, the autocommands didn't work
-                     * properly. */
+                    /* Buffer still changed, the autocommands didn't work properly. */
                     return FAIL;
                 return OK;
             }
@@ -2574,8 +2556,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
 
     buffer = alloc(BUFSIZE);
     if (buffer == NULL)             /* can't allocate big buffer, use small
-                                     * one (to be able to write when out of
-                                     * memory) */
+                                     * one (to be able to write when out of memory) */
     {
         buffer = smallbuf;
         bufsize = SMBUFSIZE;
@@ -2899,8 +2880,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                     }
                     else
                     {
-                        /* set file protection same as original file, but
-                         * strip s-bit */
+                        /* set file protection same as original file, but strip s-bit */
                         (void)mch_setperm(backup, perm & 0777);
 
                         /*
@@ -3032,8 +3012,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                      * 'backup' option is set, leave it around.
                      */
                     /*
-                     * If the renaming of the original file to the backup file
-                     * works, quit here.
+                     * If the renaming of the original file to the backup file works, quit here.
                      */
                     if (vim_rename(fname, backup) == 0)
                         break;
@@ -3060,7 +3039,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
     }
 
     /* When using ":w!" and writing to the current file, 'readonly' makes no
-     * sense, reset it, unless 'Z' appears in 'cpoptions'.  */
+     * sense, reset it, unless 'Z' appears in 'cpoptions'. */
     if (forceit && overwriting && vim_strchr(p_cpo, CPO_KEEPRO) == NULL)
     {
         buf->b_p_ro = FALSE;
@@ -3076,8 +3055,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
     /*
      * If the original file is being overwritten, there is a small chance that
      * we crash in the middle of writing. Therefore the file is preserved now.
-     * This makes all block numbers positive so that recovery does not need
-     * the original file.
+     * This makes all block numbers positive so that recovery does not need the original file.
      * Don't do this if there is a backup file and we are exiting.
      */
     if (reset_changed && !newfile && overwriting && !(exiting && backup != NULL))
@@ -3134,8 +3112,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
     {
 #if defined(USE_ICONV)
         /*
-         * Use iconv() conversion when conversion is needed and it's not done
-         * internally.
+         * Use iconv() conversion when conversion is needed and it's not done internally.
          */
         write_info.bw_iconv_fd = (iconv_t)my_iconv_open(fenc, enc_utf8 ? (char_u *)"utf-8" : p_enc);
         if (write_info.bw_iconv_fd != (iconv_t)-1)
@@ -3406,8 +3383,7 @@ restore_backup:
      * after writing the file.  That's because only the meta-data is
      * journalled.  Syncing the file slows down the system, but assures it has
      * been written to disk and we don't lose it.
-     * For a device do try the fsync() but don't complain if it does not work
-     * (could be a pipe).
+     * For a device do try the fsync() but don't complain if it does not work (could be a pipe).
      * If the 'fsync' option is FALSE, don't fsync().  Useful for laptops. */
     if (p_fs && fsync(fd) != 0 && !device)
     {
@@ -3490,8 +3466,7 @@ restore_backup:
         /*
          * If we have a backup file, try to put it in place of the new file,
          * because the new file is probably corrupt.  This avoids losing the
-         * original file when trying to make a backup when writing the file a
-         * second time.
+         * original file when trying to make a backup when writing the file a second time.
          * When "backup_copy" is set we need to copy the backup over the new
          * file.  Otherwise rename the backup file.
          * If this is OK, don't give the extra warning message.
@@ -4233,8 +4208,7 @@ ucs2bytes(c, pp, flags)
 }
 
 /*
- * Return TRUE if file encoding "fenc" requires conversion from or to
- * 'encoding'.
+ * Return TRUE if file encoding "fenc" requires conversion from or to 'encoding'.
  */
     static int
 need_conversion(fenc)
@@ -4251,8 +4225,7 @@ need_conversion(fenc)
     }
     else
     {
-        /* Ignore difference between "ansi" and "latin1", "ucs-4" and
-         * "ucs-4be", etc. */
+        /* Ignore difference between "ansi" and "latin1", "ucs-4" and "ucs-4be", etc. */
         enc_flags = get_fio_flags(p_enc);
         fenc_flags = get_fio_flags(fenc);
         same_encoding = (enc_flags != 0 && fenc_flags == enc_flags);
@@ -4399,8 +4372,7 @@ make_bom(buf, name)
 }
 
 /*
- * Try to find a shortname by comparing the fullname with the current
- * directory.
+ * Try to find a shortname by comparing the fullname with the current directory.
  * Returns "full_path" or pointer into "full_path" if shortened.
  */
     char_u *
@@ -4424,10 +4396,8 @@ shorten_fname1(full_path)
 }
 
 /*
- * Try to find a shortname by comparing the fullname with the current
- * directory.
- * Returns NULL if not shorter name possible, pointer into "full_path"
- * otherwise.
+ * Try to find a shortname by comparing the fullname with the current directory.
+ * Returns NULL if not shorter name possible, pointer into "full_path" otherwise.
  */
     char_u *
 shorten_fname(full_path, dir_name)
@@ -4607,8 +4577,7 @@ buf_modname(shortname, fname, ext, prepend_dot)
                 *s++ = '_';
         }
         /*
-         * If the extension starts with '.', truncate the base name at 8
-         * characters
+         * If the extension starts with '.', truncate the base name at 8 characters
          */
         else if (*ext == '.')
         {
@@ -4648,8 +4617,7 @@ buf_modname(shortname, fname, ext, prepend_dot)
     }
 
     /*
-     * Check that, after appending the extension, the file name is really
-     * different.
+     * Check that, after appending the extension, the file name is really different.
      */
     if (fname != NULL && STRCMP(fname, retval) == 0)
     {
@@ -4991,8 +4959,7 @@ buf_check_timestamp(buf, focus)
     char        *reason;
 
     /* If there is no file name, the buffer is not loaded, 'buftype' is
-     * set, we are in the middle of a save or being called recursively: ignore
-     * this buffer. */
+     * set, we are in the middle of a save or being called recursively: ignore this buffer. */
     if (buf->b_ffname == NULL
             || buf->b_ml.ml_mfp == NULL
             || buf->b_saving
@@ -5021,8 +4988,7 @@ buf_check_timestamp(buf, focus)
         else
             buf_store_time(buf, &st, buf->b_ffname);
 
-        /* Don't do anything for a directory.  Might contain the file
-         * explorer. */
+        /* Don't do anything for a directory.  Might contain the file explorer. */
         if (mch_isdir(buf->b_fname))
             ;
 
@@ -5048,8 +5014,7 @@ buf_check_timestamp(buf, focus)
                 reason = "time";
 
             /*
-             * Only give the warning if there are no FileChangedShell
-             * autocommands.
+             * Only give the warning if there are no FileChangedShell autocommands.
              * Avoid being called recursively by setting "busy".
              */
             busy = TRUE;
@@ -5653,7 +5618,7 @@ typedef struct AutoPatCmd
     event_T     event;          /* current event */
     int         arg_bufnr;      /* initially equal to <abuf>, set to zero when
                                    buf is deleted */
-    struct AutoPatCmd   *next;  /* chain of active apc-s for auto-invalidation*/
+    struct AutoPatCmd   *next;  /* chain of active apc-s for auto-invalidation */
 } AutoPatCmd;
 
 static AutoPatCmd *active_apc_list = NULL; /* stack of active autocommands */
@@ -6454,8 +6419,7 @@ do_autocmd_event(event, pat, nested, cmd, forceit, group)
                     /*
                      * Remove existing autocommands.
                      * If adding any new autocmd's for this AutoPat, don't
-                     * delete the pattern from the autopat list, append to
-                     * this list.
+                     * delete the pattern from the autopat list, append to this list.
                      */
                     if (forceit)
                     {
@@ -6651,8 +6615,7 @@ ex_doautoall(eap)
             if (call_do_modelines)
             {
                 /* Execute the modeline settings, but don't set window-local
-                 * options if we are using the current window for another
-                 * buffer. */
+                 * options if we are using the current window for another buffer. */
                 do_modelines(curwin == aucmd_win ? OPT_NOWIN : 0);
             }
 
@@ -6879,8 +6842,7 @@ apply_autocmds(event, fname, fname_io, force, buf)
 }
 
 /*
- * Like apply_autocmds(), but with extra "eap" argument.  This takes care of
- * setting v:filearg.
+ * Like apply_autocmds(), but with extra "eap" argument.  This takes care of setting v:filearg.
  */
     static int
 apply_autocmds_exarg(event, fname, fname_io, force, buf, eap)
@@ -7340,8 +7302,7 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     au_cleanup();       /* may really delete removed patterns/commands now */
 
 BYPASS_AU:
-    /* When wiping out a buffer make sure all its buffer-local autocommands
-     * are deleted. */
+    /* When wiping out a buffer make sure all its buffer-local autocommands are deleted. */
     if (event == EVENT_BUFWIPEOUT && buf != NULL)
         aubuflocal_remove(buf);
 
@@ -7402,8 +7363,7 @@ auto_next_pat(apc, stop_at_last)
         apc->curpat = NULL;
 
         /* Only use a pattern when it has not been removed, has commands and
-         * the group matches. For buffer-local autocommands only check the
-         * buffer number. */
+         * the group matches. For buffer-local autocommands only check the buffer number. */
         if (ap->pat != NULL && ap->cmds != NULL && (apc->group == AUGROUP_ALL || apc->group == ap->group))
         {
             /* execution-condition */
@@ -7823,11 +7783,6 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                 break;
             default:
                 size++;
-                if (enc_dbcs != 0 && (*mb_ptr2len)(p) > 1)
-                {
-                    ++p;
-                    ++size;
-                }
                 break;
         }
     }
@@ -7917,9 +7872,7 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                     reg_pat[i++] = ',';
                 break;
             default:
-                if (enc_dbcs != 0 && (*mb_ptr2len)(p) > 1)
-                    reg_pat[i++] = *p++;
-                else if (allow_dirs != NULL && vim_ispathsep(*p))
+                if (allow_dirs != NULL && vim_ispathsep(*p))
                     *allow_dirs = TRUE;
                 reg_pat[i++] = *p;
                 break;
@@ -7973,8 +7926,7 @@ write_eintr(fd, buf, bufsize)
     long    ret = 0;
     long    wlen;
 
-    /* Repeat the write() so long it didn't fail, other than being interrupted
-     * by a signal. */
+    /* Repeat the write() so long it didn't fail, other than being interrupted by a signal. */
     while (ret < (long)bufsize)
     {
         wlen = vim_write(fd, (char *)buf + ret, bufsize - ret);

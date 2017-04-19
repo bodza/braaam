@@ -55,8 +55,7 @@ do_debug(cmd)
 #define CMD_QUIT        5
 #define CMD_INTERRUPT   6
 
-    /* Make sure we are in raw mode and start termcap mode.  Might have side
-     * effects... */
+    /* Make sure we are in raw mode and start termcap mode.  Might have side effects... */
     settmode(TMODE_RAW);
     starttermcap();
 
@@ -157,8 +156,7 @@ do_debug(cmd)
 
             if (last_cmd != 0)
             {
-                /* Execute debug command: decided where to break next and
-                 * return. */
+                /* Execute debug command: decided where to break next and return. */
                 switch (last_cmd)
                 {
                     case CMD_CONT:
@@ -212,8 +210,7 @@ do_debug(cmd)
     emsg_silent = save_emsg_silent;
     redir_off = save_redir_off;
 
-    /* Only print the message again when typing a command before coming back
-     * here. */
+    /* Only print the message again when typing a command before coming back here. */
     debug_did_msg = TRUE;
 }
 
@@ -351,8 +348,7 @@ static linenr_T debuggy_find(int file,char_u *fname, linenr_T after, garray_T *g
 
 /*
  * Parse the arguments of ":profile", ":breakadd" or ":breakdel" and put them
- * in the entry just after the last one in dbg_breakp.  Note that "dbg_name"
- * is allocated.
+ * in the entry just after the last one in dbg_breakp.  Note that "dbg_name" is allocated.
  * Returns FAIL for failure.
  */
     static int
@@ -420,8 +416,7 @@ dbg_parsearg(arg, gap)
     else
     {
         /* Expand the file name in the same way as do_source().  This means
-         * doing it twice, so that $DIR/file gets expanded when $DIR is
-         * "~/dir". */
+         * doing it twice, so that $DIR/file gets expanded when $DIR is "~/dir". */
         q = expand_env_save(p);
         if (q == NULL)
             return FAIL;
@@ -931,8 +926,7 @@ dialog_changed(buf, checkall)
     else
         ret = vim_dialog_yesnocancel(VIM_QUESTION, NULL, buff, 1);
 
-    /* Init ea pseudo-structure, this is needed for the check_overwrite()
-     * function. */
+    /* Init ea pseudo-structure, this is needed for the check_overwrite() function. */
     ea.append = ea.forceit = FALSE;
 
     if (ret == VIM_YES)
@@ -949,8 +943,7 @@ dialog_changed(buf, checkall)
     {
         /*
          * Write all modified files that can be written.
-         * Skip readonly buffers, these need to be confirmed
-         * individually.
+         * Skip readonly buffers, these need to be confirmed individually.
          */
         for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
         {
@@ -1064,7 +1057,7 @@ check_changed_any(hidden)
         if ((!hidden || buf->b_nwindows == 0) && bufIsChanged(buf))
         {
             /* Try auto-writing the buffer.  If this fails but the buffer no
-            * longer exists it's not changed, that's OK. */
+             * longer exists it's not changed, that's OK. */
             if (check_changed(buf, (p_awa ? CCGD_AW : 0)
                                  | CCGD_MULTWIN
                                  | CCGD_ALLBUF) && buf_valid(buf))
@@ -1216,8 +1209,7 @@ do_one_arg(str)
 }
 
 /*
- * Separate the arguments in "str" and return a list of pointers in the
- * growarray "gap".
+ * Separate the arguments in "str" and return a list of pointers in the growarray "gap".
  */
     int
 get_arglist(gap, str)
@@ -1300,8 +1292,7 @@ do_arglist(str, what, after)
         int             didone;
 
         /*
-         * Delete the items: use each item as a regexp and find a match in the
-         * argument list.
+         * Delete the items: use each item as a regexp and find a match in the argument list.
          */
         regmatch.rm_ic = p_fic; /* ignore case when 'fileignorecase' is set */
         for (i = 0; i < new_ga.ga_len && !got_int; ++i)
@@ -1577,8 +1568,7 @@ do_argfile(eap, argn)
         else
         {
             /*
-             * if 'hidden' set, only check for changed file when re-editing
-             * the same buffer
+             * if 'hidden' set, only check for changed file when re-editing the same buffer
              */
             other = TRUE;
             if (P_HID(curbuf))
@@ -1600,8 +1590,7 @@ do_argfile(eap, argn)
             arg_had_last = TRUE;
 
         /* Edit the file; always use the last known line number.
-         * When it fails (e.g. Abort for already edited file) restore the
-         * argument index. */
+         * When it fails (e.g. Abort for already edited file) restore the argument index. */
         if (do_ecmd(0, alist_name(&ARGLIST[curwin->w_arg_idx]), NULL,
                       eap, ECMD_LAST,
                       (P_HID(curwin->w_buffer) ? ECMD_HIDE : 0)
@@ -1623,8 +1612,7 @@ ex_next(eap)
     int         i;
 
     /*
-     * check for changed buffer now, if this fails the argument list is not
-     * redefined.
+     * check for changed buffer now, if this fails the argument list is not redefined.
      */
     if (       P_HID(curbuf)
             || eap->cmdidx == CMD_snext
@@ -2075,8 +2063,7 @@ do_in_runtimepath(name, all, callback, cookie)
     int         i;
     int         did_one = FALSE;
 
-    /* Make a copy of 'runtimepath'.  Invoking the callback may change the
-     * value. */
+    /* Make a copy of 'runtimepath'.  Invoking the callback may change the value. */
     rtp_copy = vim_strsave(p_rtp);
     buf = alloc(MAXPATHL);
     if (buf != NULL && rtp_copy != NULL)

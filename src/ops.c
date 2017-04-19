@@ -416,7 +416,7 @@ shift_block(oap, amount)
         if (bd.startspaces)
             mb_ptr_adv(non_white);
 
-        /* The character's column is in "bd.start_vcol".  */
+        /* The character's column is in "bd.start_vcol". */
         non_white_col = bd.start_vcol;
 
         while (vim_iswhite(*non_white))
@@ -430,17 +430,16 @@ shift_block(oap, amount)
          */
         shift_amount = (block_space_width < (size_t)total ? block_space_width : (size_t)total);
 
-        /* The column to which we will shift the text.  */
+        /* The column to which we will shift the text. */
         destination_col = (colnr_T)(non_white_col - shift_amount);
 
         /* Now let's find out how much of the beginning of the line we can
-         * reuse without modification.  */
+         * reuse without modification. */
         verbatim_copy_end = bd.textstart;
         verbatim_copy_width = bd.start_vcol;
 
         /* If "bd.startspaces" is set, "bd.textstart" points to the character
-         * preceding the block. We have to subtract its width to obtain its
-         * column number.  */
+         * preceding the block. We have to subtract its width to obtain its column number. */
         if (bd.startspaces)
             verbatim_copy_width -= bd.start_char_vcols;
         while (verbatim_copy_width < destination_col)
@@ -457,13 +456,13 @@ shift_block(oap, amount)
 
         /* If "destination_col" is different from the width of the initial
          * part of the line that will be copied, it means we encountered a tab
-         * character, which we will have to partly replace with spaces.  */
+         * character, which we will have to partly replace with spaces. */
         fill = destination_col - verbatim_copy_width;
 
         /* The replacement line will consist of:
          * - the beginning of the original line up to "verbatim_copy_end",
          * - "fill" number of spaces,
-         * - the rest of the line, pointed to by non_white.  */
+         * - the rest of the line, pointed to by non_white. */
         new_line_len = (unsigned)(verbatim_copy_end - oldp)
                        + fill
                        + (unsigned)STRLEN(non_white) + 1;
@@ -594,7 +593,7 @@ block_insert(oap, s, b_insert, bdp)
         if (lnum == oap->end.lnum)
         {
             /* Set "']" mark to the end of the block instead of the end of
-             * the insert in the first line.  */
+             * the insert in the first line. */
             curbuf->b_op_end.lnum = oap->end.lnum;
             curbuf->b_op_end.col = offset;
         }
@@ -738,8 +737,7 @@ get_expr_line()
     if (expr_line == NULL)
         return NULL;
 
-    /* Make a copy of the expression, because evaluating it may cause it to be
-     * changed. */
+    /* Make a copy of the expression, because evaluating it may cause it to be changed. */
     expr_copy = vim_strsave(expr_line);
     if (expr_copy == NULL)
         return NULL;
@@ -875,8 +873,7 @@ get_register(name, copy)
     struct yankreg      *reg;
     int                 i;
 
-    /* When Visual area changed, may have to update selection.  Obtain the
-     * selection too. */
+    /* When Visual area changed, may have to update selection.  Obtain the selection too. */
     if (name == '*' && clip_star.available)
     {
         if (clip_isautosel_star())
@@ -1225,10 +1222,8 @@ put_reedit_in_typebuf(silent)
 }
 
 /*
- * Insert register contents "s" into the typeahead buffer, so that it will be
- * executed again.
- * When "esc" is TRUE it is to be taken literally: Escape CSI characters and
- * no remapping.
+ * Insert register contents "s" into the typeahead buffer, so that it will be executed again.
+ * When "esc" is TRUE it is to be taken literally: Escape CSI characters and no remapping.
  */
     static int
 put_in_typebuf(s, esc, colon, silent)
@@ -1314,8 +1309,7 @@ insert_reg(regname, literally)
             {
                 stuffescaped(y_current->y_array[i], literally);
                 /*
-                 * Insert a newline between lines and after last line if
-                 * y_type is MLINE.
+                 * Insert a newline between lines and after last line if y_type is MLINE.
                  */
                 if (y_current->y_type == MLINE || i < y_current->y_size - 1)
                     stuffcharReadbuff('\n');
@@ -1341,8 +1335,7 @@ stuffescaped(arg, literally)
     while (*arg != NUL)
     {
         /* Stuff a sequence of normal ASCII characters, that's fast.  Also
-         * stuff K_SPECIAL to get the effect of a special key when "literally"
-         * is TRUE. */
+         * stuff K_SPECIAL to get the effect of a special key when "literally" is TRUE. */
         start = arg;
         while ((*arg >= ' ' && *arg < DEL) || (*arg == K_SPECIAL && !literally))
             ++arg;
@@ -1364,8 +1357,7 @@ stuffescaped(arg, literally)
 }
 
 /*
- * If "regname" is a special register, return TRUE and store a pointer to its
- * value in "argp".
+ * If "regname" is a special register, return TRUE and store a pointer to its value in "argp".
  */
     int
 get_spec_reg(regname, argp, allocated, errmsg)
@@ -1598,8 +1590,7 @@ op_delete(oap)
         /*
          * Put deleted text into register 1 and shift number registers if the
          * delete contains a line break, or when a regname has been specified.
-         * Use the register name from before adjust_clip_reg() may have
-         * changed it.
+         * Use the register name from before adjust_clip_reg() may have changed it.
          */
         if (orig_regname != 0 || oap->motion_type == MLINE || oap->line_count > 1 || oap->use_reg_one)
         {
@@ -1957,8 +1948,7 @@ op_replace(oap, c)
             if (bd.is_short && (!virtual_op || bd.is_MAX))
                 numc -= (oap->end_vcol - bd.end_vcol) + 1;
 
-            /* A double-wide character can be replaced only up to half the
-             * times. */
+            /* A double-wide character can be replaced only up to half the times. */
             if ((*mb_char2cells)(c) > 1)
             {
                 if ((numc & 1) && !bd.is_short)
@@ -2067,8 +2057,7 @@ op_replace(oap, c)
 
                         if (curwin->w_cursor.lnum == oap->end.lnum)
                         {
-                            /* oap->end has to be recalculated when
-                             * the tab breaks */
+                            /* oap->end has to be recalculated when the tab breaks */
                             end_vcol = getviscol2(oap->end.col, oap->end.coladd);
                         }
                         coladvance_force(getviscol());
@@ -2263,8 +2252,6 @@ swapchar(op_type, pos)
         inc(pos);
     }
 
-    if (enc_dbcs != 0 && c >= 0x100)    /* No lower/uppercase letter */
-        return FALSE;
     nc = c;
     if (MB_ISLOWER(c))
     {
@@ -2356,8 +2343,7 @@ op_insert(oap, count1)
                 ++curwin->w_cursor.col;
             if (bd.is_short && !bd.is_MAX)
             {
-                /* First line was too short, make it longer and adjust the
-                 * values in "bd". */
+                /* First line was too short, make it longer and adjust the values in "bd". */
                 if (u_save_cursor() == FAIL)
                     return;
                 for (i = 0; i < bd.endspaces; ++i)
@@ -2385,8 +2371,7 @@ op_insert(oap, count1)
     if (t1.lnum == curbuf->b_op_start_orig.lnum && lt(curbuf->b_op_start_orig, t1))
         oap->start = curbuf->b_op_start_orig;
 
-    /* If user has moved off this line, we don't know what to do, so do
-     * nothing.
+    /* If user has moved off this line, we don't know what to do, so do nothing.
      * Also don't repeat the insert when Insert mode ended with CTRL-C. */
     if (curwin->w_cursor.lnum != oap->start.lnum || got_int)
         return;
@@ -2488,8 +2473,7 @@ op_change(oap)
             can_si = TRUE;      /* It's like opening a new line, do si */
     }
 
-    /* First delete the text in the region.  In an empty buffer only need to
-     * save for undo */
+    /* First delete the text in the region.  In an empty buffer only need to save for undo */
     if (curbuf->b_ml.ml_flags & ML_EMPTY)
     {
         if (u_save_cursor() == FAIL)
@@ -2540,7 +2524,7 @@ op_change(oap)
         if (ins_len > 0)
         {
             /* Subsequent calls to ml_get() flush the firstline data - take a
-             * copy of the inserted text.  */
+             * copy of the inserted text. */
             if ((ins_text = alloc_check((unsigned)(ins_len + 1))) != NULL)
             {
                 vim_strncpy(ins_text, firstline + bd.textcol, (size_t)ins_len);
@@ -2866,7 +2850,7 @@ op_yank(oap, deleting, mess)
     {
         if (yanktype == MCHAR && !oap->block_mode && yanklines == 1)
             yanklines = 0;
-        /* Some versions of Vi use ">=" here, some don't...  */
+        /* Some versions of Vi use ">=" here, some don't... */
         if (yanklines > p_report)
         {
             /* redisplay now, so message is not deleted */
@@ -3057,8 +3041,7 @@ do_put(regname, dir, count, flags)
         y_type = MCHAR;
         if (regname == '=')
         {
-            /* For the = register we need to split the string at NL
-             * characters.
+            /* For the = register we need to split the string at NL characters.
              * Loop twice: count the number of lines and save them. */
             for (;;)
             {
@@ -3111,8 +3094,7 @@ do_put(regname, dir, count, flags)
     {
         if (flags & PUT_LINE_SPLIT)
         {
-            /* "p" or "P" in Visual mode: split the lines to put the text in
-             * between. */
+            /* "p" or "P" in Visual mode: split the lines to put the text in between. */
             if (u_save_cursor() == FAIL)
                 goto end;
             ptr = vim_strsave(ml_get_cursor());
@@ -3284,7 +3266,7 @@ do_put(regname, dir, count, flags)
 
             yanklen = (int)STRLEN(y_array[i]);
 
-            /* calculate number of spaces required to fill right side of block*/
+            /* calculate number of spaces required to fill right side of block */
             spaces = y_width + 1;
             for (j = 0; j < yanklen; j++)
                 spaces -= lbr_chartabsize(NULL, &y_array[i][j], 0);
@@ -3361,8 +3343,7 @@ do_put(regname, dir, count, flags)
          */
         if (y_type == MCHAR)
         {
-            /* if type is MCHAR, FORWARD is the same as BACKWARD on the next
-             * char */
+            /* if type is MCHAR, FORWARD is the same as BACKWARD on the next char */
             if (dir == FORWARD && gchar_cursor() != NUL)
             {
                 if (has_mbyte)
@@ -3442,8 +3423,7 @@ do_put(regname, dir, count, flags)
         else
         {
             /*
-             * Insert at least one line.  When y_type is MCHAR, break the first
-             * line in two.
+             * Insert at least one line.  When y_type is MCHAR, break the first line in two.
              */
             for (cnt = 1; cnt <= count; ++cnt)
             {
@@ -3682,8 +3662,7 @@ ex_display(eap)
             continue;       /* did not ask for this register */
 
         /* Adjust register name for "unnamed" in 'clipboard'.
-         * When it's a clipboard register, fill it with the current contents
-         * of the clipboard.  */
+         * When it's a clipboard register, fill it with the current contents of the clipboard. */
         adjust_clip_reg(&name);
         (void)may_get_selection(name);
 
@@ -3823,14 +3802,11 @@ dis_msg(p, skip_esc)
 /*
  * If "process" is TRUE and the line begins with a comment leader (possibly
  * after some white space), return a pointer to the text after it. Put a boolean
- * value indicating whether the line ends with an unclosed comment in
- * "is_comment".
+ * value indicating whether the line ends with an unclosed comment in "is_comment".
  * line - line to be processed,
- * process - if FALSE, will only check whether the line ends with an unclosed
- *           comment,
+ * process - if FALSE, will only check whether the line ends with an unclosed comment,
  * include_space - whether to also skip space following the comment leader,
- * is_comment - will indicate whether the current line ends with an unclosed
- *              comment.
+ * is_comment - will indicate whether the current line ends with an unclosed comment.
  */
     static char_u *
 skip_comment(line, process, include_space, is_comment)
@@ -4300,8 +4276,7 @@ fex_format(lnum, count, c)
 /*
  * Format "line_count" lines, starting at the cursor position.
  * When "line_count" is negative, format until the end of the paragraph.
- * Lines after the cursor line are saved for undo, caller must have saved the
- * first line.
+ * Lines after the cursor line are saved for undo, caller must have saved the first line.
  */
     void
 format_lines(line_count, avoid_fex)
@@ -4643,8 +4618,7 @@ paragraph_start(lnum)
  * for delete:
  * - textlen includes the first/last char to be (partly) deleted
  * - start/endspaces is the number of columns that are taken by the
- *   first/last deleted char minus the number of columns that have to be
- *   deleted.
+ *   first/last deleted char minus the number of columns that have to be deleted.
  * for yank and tilde:
  * - textlen includes the first/last char to be wholly yanked
  * - start/endspaces is the number of columns of the first/last yanked char
@@ -4707,8 +4681,7 @@ block_prep(oap, bdp, lnum, is_del)
     }
     else
     {
-        /* notice: this converts partly selected Multibyte characters to
-         * spaces, too. */
+        /* notice: this converts partly selected Multibyte characters to spaces, too. */
         bdp->startspaces = bdp->start_vcol - oap->start_vcol;
         if (is_del && bdp->startspaces)
             bdp->startspaces = bdp->start_char_vcols - bdp->startspaces;
@@ -5006,8 +4979,7 @@ do_addsub(command, Prenum1)
 
         /*
          * Prepare the leading characters in buf1[].
-         * When there are many leading zeros it could be very long.  Allocate
-         * a bit too much.
+         * When there are many leading zeros it could be very long.  Allocate a bit too much.
          */
         buf1 = alloc((unsigned)length + NUMBUFLEN);
         if (buf1 == NULL)
@@ -5190,8 +5162,7 @@ clip_yank_selection(type, str, len, cbd)
 }
 
 /*
- * Convert the '*'/'+' register into a GUI selection string returned in *str
- * with length *len.
+ * Convert the '*'/'+' register into a GUI selection string returned in *str with length *len.
  * Returns the motion type, or -1 for failure.
  */
     int
@@ -5429,8 +5400,7 @@ get_reg_contents(regname, flags)
     {
         len += (long)STRLEN(y_current->y_array[i]);
         /*
-         * Insert a newline between lines and after last line if
-         * y_type is MLINE.
+         * Insert a newline between lines and after last line if y_type is MLINE.
          */
         if (y_current->y_type == MLINE || i < y_current->y_size - 1)
             ++len;
@@ -5631,8 +5601,7 @@ write_reg_contents_ex(name, str, maxlen, must_append, yank_type, block_len)
 }
 
 /*
- * Put a string into a register.  When the register is not empty, the string
- * is appended.
+ * Put a string into a register.  When the register is not empty, the string is appended.
  */
     static void
 str_to_reg(y_ptr, yank_type, str, len, blocklen, str_list)

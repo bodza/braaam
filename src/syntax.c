@@ -92,8 +92,7 @@ static char *(spo_name_tab[SPO_COUNT]) = {"ms=", "me=", "hs=", "he=", "rs=", "re
  * The patterns that are being searched for are stored in a syn_pattern.
  * A match item consists of one pattern.
  * A start/end item consists of n start patterns and m end patterns.
- * A start/skip/end item consists of n start patterns, one skip pattern and m
- * end patterns.
+ * A start/skip/end item consists of n start patterns, one skip pattern and m end patterns.
  * For the latter two, the patterns are always consecutive: start-skip-end.
  *
  * A character offset can be given for the matched text (_m_start and _m_end)
@@ -259,8 +258,7 @@ typedef struct state_item
 static int next_seqnr = 1;              /* value to use for si_seqnr */
 
 /*
- * Struct to reduce the number of arguments to get_syn_options(), it's used
- * very often.
+ * Struct to reduce the number of arguments to get_syn_options(), it's used very often.
  */
 typedef struct
 {
@@ -496,8 +494,7 @@ syntax_start(wp, lnum)
     }
 
     /*
-     * If "lnum" is before or far beyond a line with a saved state, need to
-     * re-synchronize.
+     * If "lnum" is before or far beyond a line with a saved state, need to re-synchronize.
      */
     if (INVALID_STATE(&current_state))
     {
@@ -506,8 +503,7 @@ syntax_start(wp, lnum)
             /* First line is always valid, no matter "minlines". */
             first_stored = 1;
         else
-            /* Need to parse "minlines" lines before state can be considered
-             * valid to store. */
+            /* Need to parse "minlines" lines before state can be considered valid to store. */
             first_stored = current_lnum + syn_block->b_syn_sync_minlines;
     }
     else
@@ -851,8 +847,7 @@ syn_sync(wp, start_lnum, last_valid)
             {
                 /*
                  * Put the item that was specified by the sync point on the
-                 * state stack.  If there was no item specified, make the
-                 * state stack empty.
+                 * state stack.  If there was no item specified, make the state stack empty.
                  */
                 clear_current_state();
                 if (found_match_idx >= 0 && push_current_state(found_match_idx) == OK)
@@ -860,8 +855,7 @@ syn_sync(wp, start_lnum, last_valid)
 
                 /*
                  * When using "grouphere", continue from the sync point
-                 * match, until the end of the line.  Parsing starts at
-                 * the next line.
+                 * match, until the end of the line.  Parsing starts at the next line.
                  * For "groupthere" the parsing starts at start_lnum.
                  */
                 if (found_flags & HL_SYNC_HERE)
@@ -1154,10 +1148,8 @@ syn_stack_alloc()
 }
 
 /*
- * Check for changes in a buffer to affect stored syntax states.  Uses the
- * b_mod_* fields.
- * Called from update_screen(), before screen is being updated, once for each
- * displayed buffer.
+ * Check for changes in a buffer to affect stored syntax states.  Uses the b_mod_* fields.
+ * Called from update_screen(), before screen is being updated, once for each displayed buffer.
  */
     void
 syn_stack_apply_changes(buf)
@@ -1387,8 +1379,7 @@ store_current_state()
             sp = NULL;
         else
         {
-            /* Take the first item from the free list and put it in the used
-             * list, after *sp */
+            /* Take the first item from the free list and put it in the used list, after *sp */
             p = syn_block->b_sst_firstfree;
             syn_block->b_sst_firstfree = p->sst_next;
             --syn_block->b_sst_freecount;
@@ -1520,14 +1511,12 @@ syn_stack_equal(sp)
                  * references are equal. */
                 bsx = bp[i].bs_extmatch;
                 six = CUR_STATE(i).si_extmatch;
-                /* If one of the extmatch pointers is NULL the states are
-                 * different. */
+                /* If one of the extmatch pointers is NULL the states are different. */
                 if (bsx == NULL || six == NULL)
                     break;
                 for (j = 0; j < NSUBEXP; ++j)
                 {
-                    /* Check each referenced match string. They must all be
-                     * equal. */
+                    /* Check each referenced match string. They must all be equal. */
                     if (bsx->matches[j] != six->matches[j])
                     {
                         /* If the pointer is different it can still be the
@@ -1673,8 +1662,7 @@ syn_finish_line(syncing)
                     return TRUE;
 
                 /* syn_current_attr() will have skipped the check for an item
-                 * that ends here, need to do that now.  Be careful not to go
-                 * past the NUL. */
+                 * that ends here, need to do that now.  Be careful not to go past the NUL. */
                 prev_current_col = current_col;
                 if (syn_getcurline()[current_col] != NUL)
                     ++current_col;
@@ -1807,8 +1795,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
 
     /*
      * When in the previous column there was a match but it could not be used
-     * (empty match or already matched in this column) need to try again in
-     * the next column.
+     * (empty match or already matched in this column) need to try again in the next column.
      */
     if (try_next_column)
     {
@@ -1952,8 +1939,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                             int r;
 
                             /* If we already tried matching in this line, and
-                             * there isn't a match before next_match_col, skip
-                             * this item. */
+                             * there isn't a match before next_match_col, skip this item. */
                             if (spp->sp_line_id == current_line_id
                                     && spp->sp_startcol >= next_match_col)
                                 continue;
@@ -2117,8 +2103,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                         zero_width_next_list = TRUE;
 
                         /* Add the index to a list, so that we can check
-                         * later that we don't match it again (and cause an
-                         * endless loop). */
+                         * later that we don't match it again (and cause an endless loop). */
                         if (ga_grow(&zero_width_next_ga, 1) == OK)
                         {
                             ((int *)(zero_width_next_ga.ga_data))
@@ -2221,8 +2206,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
             {
                 /* The @Spell cluster is defined: Do spelling in items with
                  * the @Spell cluster.  But not when @NoSpell is also there.
-                 * At the toplevel only spell check when ":syn spell toplevel"
-                 * was used. */
+                 * At the toplevel only spell check when ":syn spell toplevel" was used. */
                 if (current_trans_id == 0)
                     *can_spell = (syn_block->b_syn_spell == SYNSPL_TOP);
                 else
@@ -2442,8 +2426,7 @@ check_state_ends()
             }
             else
             {
-                /* handle next_list, unless at end of line and no "skipnl" or
-                 * "skipempty" */
+                /* handle next_list, unless at end of line and no "skipnl" or "skipempty" */
                 current_next_list = cur_si->si_next_list;
                 current_next_flags = cur_si->si_flags;
                 if (!(current_next_flags & (HL_SKIPNL | HL_SKIPEMPTY))
@@ -3126,8 +3109,7 @@ check_keyword_id(line, startcol, endcolp, flagsp, next_listp, cur_si, ccharp)
     hashtab_T   *ht;
     hashitem_T  *hi;
 
-    /* Find first character after the keyword.  First character was already
-     * checked. */
+    /* Find first character after the keyword.  First character was already checked. */
     kwp = line + startcol;
     kwlen = 0;
     do
@@ -3143,8 +3125,7 @@ check_keyword_id(line, startcol, endcolp, flagsp, next_listp, cur_si, ccharp)
         return 0;
 
     /*
-     * Must make a copy of the keyword, so we can add a NUL and make it
-     * lowercase.
+     * Must make a copy of the keyword, so we can add a NUL and make it lowercase.
      */
     vim_strncpy(keyword, kwp, kwlen);
 
@@ -3162,8 +3143,7 @@ check_keyword_id(line, startcol, endcolp, flagsp, next_listp, cur_si, ccharp)
             (void)str_foldcase(kwp, kwlen, keyword, MAXKEYWLEN + 1);
 
         /*
-         * Find keywords that match.  There can be several with different
-         * attributes.
+         * Find keywords that match.  There can be several with different attributes.
          * When current_next_list is non-zero accept only that group, otherwise:
          *  Accept a not-contained keyword at toplevel.
          *  Accept a keyword at other levels only if it is in the contains list.
@@ -3371,8 +3351,7 @@ syn_remove_pattern(block, idx)
 }
 
 /*
- * Clear and free one syntax pattern.  When clearing all, must be called from
- * last to first!
+ * Clear and free one syntax pattern.  When clearing all, must be called from last to first!
  */
     static void
 syn_clear_pattern(block, i)
@@ -4025,8 +4004,7 @@ syn_list_keywords(id, ht, did_header, attr)
     int         prev_skipempty = 0;
 
     /*
-     * Unfortunately, this list of keywords is not sorted on alphabet but on
-     * hash value...
+     * Unfortunately, this list of keywords is not sorted on alphabet but on hash value...
      */
     todo = (int)ht->ht_used;
     for (hi = ht->ht_array; todo > 0 && !got_int; ++hi)
@@ -5128,8 +5106,7 @@ syn_combine_list(clstr1, clstr2, list_op)
         if (round == 1)
         {
             /*
-             * If the group ended up empty, we don't need to allocate any
-             * space for it.
+             * If the group ended up empty, we don't need to allocate any space for it.
              */
             if (count == 0)
             {
@@ -5832,8 +5809,7 @@ copy_id_list(list)
 /*
  * Check if syntax group "ssp" is in the ID list "list" of "cur_si".
  * "cur_si" can be NULL if not checking the "containedin" list.
- * Used to check if a syntax item is in the "contains" or "nextgroup" list of
- * the current item.
+ * Used to check if a syntax item is in the "contains" or "nextgroup" list of the current item.
  * This function is called very often, keep it fast!!
  */
     static int
@@ -6022,8 +5998,7 @@ ex_ownsyntax(eap)
     if (old_value != NULL)
         old_value = vim_strsave(old_value);
 
-    /* Apply the "syntax" autocommand event, this finds and loads the syntax
-     * file. */
+    /* Apply the "syntax" autocommand event, this finds and loads the syntax file. */
     apply_autocmds(EVENT_SYNTAX, eap->arg, curbuf->b_fname, TRUE, curbuf);
 
     /* move value of b:current_syntax to w:current_syntax */
@@ -6123,8 +6098,7 @@ set_context_in_syntax_cmd(xp, arg)
 static char *(case_args[]) = {"match", "ignore", NULL};
 
 /*
- * Function given to ExpandGeneric() to obtain the list syntax names for
- * expansion.
+ * Function given to ExpandGeneric() to obtain the list syntax names for expansion.
  */
     char_u *
 get_syntax_name(xp, idx)
@@ -6159,8 +6133,7 @@ syn_get_id(wp, lnum, col, trans, spellp, keep_state)
 }
 
 /*
- * Get extra information about the syntax item.  Must be called right after
- * get_syntax_attr().
+ * Get extra information about the syntax item.  Must be called right after get_syntax_attr().
  * Stores the current item sequence nr in "*seqnrp".
  * Returns the current flags.
  */
@@ -6872,7 +6845,7 @@ do_highlight(line, forceit, init)
                                 if (key[5] == 'F')
                                 {
                                     /* set/reset bold attribute to get light foreground
-                                    * colors (on some terminals, e.g. "linux") */
+                                     * colors (on some terminals, e.g. "linux") */
                                     if (color & 8)
                                     {
                                         HL_TABLE()[idx].sg_cterm |= HL_BOLD;
@@ -6911,7 +6884,7 @@ do_highlight(line, forceit, init)
                         }
                     }
                     /* Add one to the argument, to avoid zero.  Zero is used for
-                    * "NONE", then "color" is -1. */
+                     * "NONE", then "color" is -1. */
                     if (key[5] == 'F')
                     {
                         HL_TABLE()[idx].sg_cterm_fg = color + 1;
@@ -7820,8 +7793,7 @@ syn_add_group(name)
         }
         else if (!ASCII_ISALNUM(*p) && *p != '_')
         {
-            /* This is an error, but since there previously was no check only
-             * give a warning. */
+            /* This is an error, but since there previously was no check only give a warning. */
             msg_source(hl_attr(HLF_W));
             MSG("W18: Invalid character in group name");
             break;
@@ -7976,8 +7948,7 @@ highlight_changed()
                 return FAIL;
 
             /*
-             * Allow several hl_flags to be combined, like "bu" for
-             * bold-underlined.
+             * Allow several hl_flags to be combined, like "bu" for bold-underlined.
              */
             attr = 0;
             for ( ; *p && *p != ','; ++p)           /* parse upto comma */

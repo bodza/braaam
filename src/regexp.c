@@ -344,8 +344,7 @@ re_multi_type(c)
 static char_u           *reg_prev_sub = NULL;
 
 /*
- * REGEXP_INRANGE contains all characters which are always special in a []
- * range after '\'.
+ * REGEXP_INRANGE contains all characters which are always special in a [] range after '\'.
  * REGEXP_ABBR contains all characters which act as abbreviations after '\'.
  * These are:
  *  \n  - New line (NL).
@@ -1440,8 +1439,7 @@ reg(paren, flagp)
         /* NOTREACHED */
     }
     /*
-     * Here we set the flag allowing back references to this set of
-     * parentheses.
+     * Here we set the flag allowing back references to this set of parentheses.
      */
     if (paren == REG_PAREN)
         had_endbrace[parno] = TRUE;     /* have seen the close paren */
@@ -1918,11 +1916,9 @@ regatom(flagp)
 
                 refnum = c - Magic('0');
                 /*
-                 * Check if the back reference is legal. We must have seen the
-                 * close brace.
+                 * Check if the back reference is legal. We must have seen the close brace.
                  * TODO: Should also check that we don't refer to something
-                 * that is repeated (+*=): what instance of the repetition
-                 * should we match?
+                 * that is repeated (+*=): what instance of the repetition should we match?
                  */
                 if (!had_endbrace[refnum])
                 {
@@ -2499,8 +2495,7 @@ do_multibyte:
 }
 
 /*
- * Return TRUE if MULTIBYTECODE should be used instead of EXACTLY for
- * character "c".
+ * Return TRUE if MULTIBYTECODE should be used instead of EXACTLY for character "c".
  */
     static int
 use_multibytecode(c)
@@ -2905,8 +2900,7 @@ peekchr()
                      * META contains everything that may be magic sometimes,
                      * except ^ and $ ("\^" and "\$" are only magic after
                      * "\v").  We now fetch the next character and toggle its
-                     * magicness.  Therefore, \ is so meta-magic that it is
-                     * not in META.
+                     * magicness.  Therefore, \ is so meta-magic that it is not in META.
                      */
                     curchr = -1;
                     prev_at_start = at_start;
@@ -3022,8 +3016,7 @@ ungetchr()
     at_start = prev_at_start;
     prev_at_start = FALSE;
 
-    /* Backup regparse, so that it's at the same position as before the
-     * getchr(). */
+    /* Backup regparse, so that it's at the same position as before the getchr(). */
     regparse -= prevchr_len;
 }
 
@@ -3135,8 +3128,7 @@ coll_get_char()
     }
     if (nr < 0)
     {
-        /* If getting the number fails be backwards compatible: the character
-         * is a backslash. */
+        /* If getting the number fails be backwards compatible: the character is a backslash. */
         --regparse;
         nr = '\\';
     }
@@ -3187,8 +3179,7 @@ read_limits(minval, maxval)
     }
 
     /*
-     * Reverse the range if there was a '-', or make sure it is in the right
-     * order otherwise.
+     * Reverse the range if there was a '-', or make sure it is in the right order otherwise.
      */
     if ((!reverse && *minval > *maxval) || (reverse && *minval < *maxval))
     {
@@ -3359,10 +3350,8 @@ typedef enum regstate_E
 } regstate_T;
 
 /*
- * When there are alternatives a regstate_T is put on the regstack to remember
- * what we are doing.
- * Before it may be another type of item, depending on rs_state, to remember
- * more things.
+ * When there are alternatives a regstate_T is put on the regstack to remember what we are doing.
+ * Before it may be another type of item, depending on rs_state, to remember more things.
  */
 typedef struct regitem_S
 {
@@ -3495,8 +3484,7 @@ static long bt_regexec_multi(regmmatch_T *rmp, win_T *win, buf_T *buf, linenr_T 
  * "rmp->regprog" is a compiled regexp as returned by vim_regcomp().
  * Uses curbuf for line count and 'iskeyword'.
  *
- * Return zero if there is no match.  Return number of lines contained in the
- * match otherwise.
+ * Return zero if there is no match.  Return number of lines contained in the match otherwise.
  */
     static long
 bt_regexec_multi(rmp, win, buf, lnum, col, tm)
@@ -3539,7 +3527,7 @@ bt_regexec_both(line, col, tm)
     /* Create "regstack" and "backpos" if they are not allocated yet.
      * We allocate *_INITIAL amount of bytes first and then set the grow size
      * to much bigger value to avoid many malloc calls in case of deep regular
-     * expressions.  */
+     * expressions. */
     if (regstack.ga_data == NULL)
     {
         /* Use an item size of 1 byte, since we push different things
@@ -4350,8 +4338,7 @@ regmatch(scan)
                     status = RA_NOMATCH;
                 else if (*opnd == NUL)
                 {
-                    /* match empty string always works; happens when "~" is
-                     * empty. */
+                    /* match empty string always works; happens when "~" is empty. */
                 }
                 else
                 {
@@ -4625,8 +4612,7 @@ regmatch(scan)
                     }
                     else
                     {
-                        /* Compare current input with back-ref in the same
-                         * line. */
+                        /* Compare current input with back-ref in the same line. */
                         len = (int)(reg_endp[no] - reg_startp[no]);
                         if (cstrncmp(reg_startp[no], reginput, &len) != 0)
                             status = RA_NOMATCH;
@@ -5137,8 +5123,7 @@ regmatch(scan)
                 else
                 {
                     /* But we didn't want a match.  Need to restore the
-                     * subexpr, because what follows matched, so they have
-                     * been set. */
+                     * subexpr, because what follows matched, so they have been set. */
                     status = RA_NOMATCH;
                     restore_subexpr(((regbehind_T *)rp) - 1);
                 }
@@ -5216,8 +5201,7 @@ regmatch(scan)
                     else
                     {
                         /* We do want a proper match.  Need to restore the
-                         * subexpr if we had a match, because they may have
-                         * been set. */
+                         * subexpr if we had a match, because they may have been set. */
                         if (status == RA_MATCH)
                         {
                             status = RA_NOMATCH;
@@ -5263,8 +5247,7 @@ regmatch(scan)
                                 /* backup to last char of previous line */
                                 --reglnum;
                                 regline = reg_getline(reglnum);
-                                /* Just in case regrepeat() didn't count
-                                 * right. */
+                                /* Just in case regrepeat() didn't count right. */
                                 if (regline == NULL)
                                     break;
                                 reginput = regline + STRLEN(regline);
@@ -5757,8 +5740,7 @@ do_class:
 
 /*
  * regnext - dig the "next" pointer out of a node
- * Returns NULL when calculating size, when there is no next item and when
- * there is an error.
+ * Returns NULL when calculating size, when there is no next item and when there is an error.
  */
     static char_u *
 regnext(p)
@@ -5947,8 +5929,7 @@ reg_restore(save, gap)
     {
         if (reglnum != save->rs_u.pos.lnum)
         {
-            /* only call reg_getline() when the line number changed to save
-             * a bit of time */
+            /* only call reg_getline() when the line number changed to save a bit of time */
             reglnum = save->rs_u.pos.lnum;
             regline = reg_getline(reglnum);
         }
@@ -6017,8 +5998,7 @@ re_num_cmp(val, scan)
 /*
  * Check whether a backreference matches.
  * Returns RA_FAIL, RA_NOMATCH or RA_MATCH.
- * If "bytelen" is not NULL, it is set to the byte length of the match in the
- * last line.
+ * If "bytelen" is not NULL, it is set to the byte length of the match in the last line.
  */
     static int
 match_with_backref(start_lnum, start_col, end_lnum, end_col, bytelen)
@@ -6048,7 +6028,7 @@ match_with_backref(start_lnum, start_col, end_lnum, end_col, bytelen)
                 vim_free(reg_tofree);
                 reg_tofree = alloc(len);
                 if (reg_tofree == NULL)
-                    return RA_FAIL; /* out of memory!*/
+                    return RA_FAIL; /* out of memory! */
                 reg_tofreelen = len;
             }
             STRCPY(reg_tofree, regline);
@@ -6410,7 +6390,7 @@ regtilde(source, magic)
     vim_free(reg_prev_sub);
     if (newsub != source)       /* newsub was allocated, just keep it */
         reg_prev_sub = newsub;
-    else                        /* no ~ found, need to save newsub  */
+    else                        /* no ~ found, need to save newsub */
         reg_prev_sub = vim_strsave(newsub);
     return newsub;
 }
@@ -6774,8 +6754,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                             /*
                              * Insert a backslash in front of a CR, otherwise
                              * it will be replaced by a line break.
-                             * Number of backslashes will be halved later,
-                             * double them here.
+                             * Number of backslashes will be halved later, double them here.
                              */
                             if (copy)
                             {
@@ -6804,8 +6783,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                             {
                                 int l;
 
-                                /* Copy composing characters separately, one
-                                 * at a time. */
+                                /* Copy composing characters separately, one at a time. */
                                 if (enc_utf8)
                                     l = utf_ptr2len(s) - 1;
                                 else
@@ -6841,8 +6819,7 @@ static char_u *reg_getline_submatch(linenr_T lnum);
 
 /*
  * Call reg_getline() with the line numbers from the submatch.  If a
- * substitute() was used the reg_maxline and other values have been
- * overwritten.
+ * substitute() was used the reg_maxline and other values have been overwritten.
  */
     static char_u *
 reg_getline_submatch(lnum)
@@ -6863,8 +6840,7 @@ reg_getline_submatch(lnum)
 }
 
 /*
- * Used for the submatch() function: get the string from the n'th submatch in
- * allocated memory.
+ * Used for the submatch() function: get the string from the n'th submatch in allocated memory.
  * Returns NULL when not in a ":s" command and for a non-existing submatch.
  */
     char_u *
@@ -7250,8 +7226,7 @@ vim_regexec_nl(rmp, line, col)
  * Note: "rmp->regprog" may be freed and changed.
  * Uses curbuf for line count and 'iskeyword'.
  *
- * Return zero if there is no match.  Return number of lines contained in the
- * match otherwise.
+ * Return zero if there is no match.  Return number of lines contained in the match otherwise.
  */
     long
 vim_regexec_multi(rmp, win, buf, lnum, col, tm)

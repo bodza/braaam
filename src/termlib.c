@@ -345,8 +345,7 @@ tgetstr(id, buf)
  * Calling conventions: cm is cursor motion string.  line, col, are the
  * desired destination.
  *
- * Returned values: a string pointing to the decoded string, or "OOPS" if it
- * cannot be decoded.
+ * Returned values: a string pointing to the decoded string, or "OOPS" if it cannot be decoded.
  *
  * Notes
  *      The accepted escapes are:

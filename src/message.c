@@ -148,8 +148,7 @@ msg_attr_keep(s, attr, keep)
                 && STRCMP(s, last_msg_hist->msg)))
         add_msg_hist(s, -1, attr);
 
-    /* When displaying keep_msg, don't let msg_start() free it, caller must do
-     * that. */
+    /* When displaying keep_msg, don't let msg_start() free it, caller must do that. */
     if (s == keep_msg)
         keep_msg = NULL;
 
@@ -198,12 +197,8 @@ msg_strtrunc(s, force)
         if (len > room && room > 0)
         {
             if (enc_utf8)
-                /* may have up to 18 bytes per cell (6 per char, up to two
-                 * composing chars) */
+                /* may have up to 18 bytes per cell (6 per char, up to two composing chars) */
                 len = (room + 2) * 18;
-            else if (enc_dbcs == DBCS_JPNU)
-                /* may have up to 2 bytes per cell for euc-jp */
-                len = (room + 2) * 2;
             else
                 len = room + 2;
             buf = alloc(len);
@@ -260,19 +255,7 @@ trunc_string(s, buf, room, buflen)
 
     /* Last part: End of the string. */
     i = e;
-    if (enc_dbcs != 0)
-    {
-        /* For DBCS going backwards in a string is slow, but
-         * computing the cell width isn't too slow: go forward
-         * until the rest fits. */
-        n = vim_strsize(s + i);
-        while (len + n > room)
-        {
-            n -= ptr2cells(s + i);
-            i += (*mb_ptr2len)(s + i);
-        }
-    }
-    else if (enc_utf8)
+    if (enc_utf8)
     {
         /* For UTF-8 we can go backwards easily. */
         half = i = (int)STRLEN(s);
@@ -747,8 +730,7 @@ ex_messages(eap)
 }
 
 /*
- * Call this after prompting the user.  This will avoid a hit-return message
- * and a delay.
+ * Call this after prompting the user.  This will avoid a hit-return message and a delay.
  */
     void
 msg_end_prompt()
@@ -817,8 +799,7 @@ wait_return(redraw)
     }
     else
     {
-        /* Make sure the hit-return prompt is on screen when 'guioptions' was
-         * just changed. */
+        /* Make sure the hit-return prompt is on screen when 'guioptions' was just changed. */
         screenalloc(FALSE);
 
         State = HITRETURN;
@@ -871,8 +852,7 @@ wait_return(redraw)
             /*
              * Allow scrolling back in the messages.
              * Also accept scroll-down commands when messages fill the screen,
-             * to avoid that typing one 'j' too many makes the messages
-             * disappear.
+             * to avoid that typing one 'j' too many makes the messages disappear.
              */
             if (p_more && !p_cp)
             {
@@ -1470,8 +1450,7 @@ msg_prt_line(s, list)
             --trail;
     }
 
-    /* output a space for an empty line, otherwise the line will be
-     * overwritten */
+    /* output a space for an empty line, otherwise the line will be overwritten */
     if (*s == NUL && !(list && lcs_eol != NUL))
         msg_putchar(' ');
 
@@ -1698,8 +1677,7 @@ msg_puts_attr_len(str, maxlen, attr)
     /*
      * When writing something to the screen after it has scrolled, requires a
      * wait-return prompt later.  Needed when scrolling, resetting
-     * need_wait_return after some prompt, and then outputting something
-     * without scrolling
+     * need_wait_return after some prompt, and then outputting something without scrolling
      */
     if (msg_scrolled != 0 && !msg_scrolled_ign)
         need_wait_return = TRUE;
@@ -1709,8 +1687,7 @@ msg_puts_attr_len(str, maxlen, attr)
      * If there is no valid screen, use fprintf so we can see error messages.
      * If termcap is not active, we may be writing in an alternate console
      * window, cursor positioning may not work correctly (window size may be
-     * different, e.g. for Win32 console) or we just don't know where the
-     * cursor is.
+     * different, e.g. for Win32 console) or we just don't know where the cursor is.
      */
     if (msg_use_printf())
         msg_puts_printf(str, maxlen);
@@ -1762,8 +1739,7 @@ msg_puts_display(str, maxlen, attr, recurse)
         {
             /*
              * The screen is scrolled up when at the last row (some terminals
-             * scroll automatically, some don't.  To avoid problems we scroll
-             * ourselves).
+             * scroll automatically, some don't.  To avoid problems we scroll ourselves).
              */
             if (t_col > 0)
                 /* output postponed text */
@@ -1812,8 +1788,7 @@ msg_puts_display(str, maxlen, attr, recurse)
                 --cmdline_row;
 
             /*
-             * If screen is completely filled and 'more' is set then wait
-             * for a character.
+             * If screen is completely filled and 'more' is set then wait for a character.
              */
             if (lines_left > 0)
                 --lines_left;
@@ -1825,8 +1800,7 @@ msg_puts_display(str, maxlen, attr, recurse)
                     return;
             }
 
-            /* When we displayed a char in last column need to check if there
-             * is still more. */
+            /* When we displayed a char in last column need to check if there is still more. */
             if (did_last_char)
                 continue;
         }
@@ -1953,8 +1927,7 @@ inc_msg_scrolled()
         char_u      *tofree = NULL;
         int         len;
 
-        /* v:scrollstart is empty, set it to the script/function name and line
-         * number */
+        /* v:scrollstart is empty, set it to the script/function name and line number */
         if (p == NULL)
             p = (char_u *)"Unknown";
         else
@@ -2501,8 +2474,7 @@ msg_moremsg(full)
 }
 
 /*
- * Repeat the message for the current mode: ASKMORE, EXTERNCMD, CONFIRM or
- * exmode_active.
+ * Repeat the message for the current mode: ASKMORE, EXTERNCMD, CONFIRM or exmode_active.
  */
     void
 repeat_message()
@@ -2569,8 +2541,7 @@ msg_clr_eos()
 
 /*
  * Clear from current message position to end of screen.
- * Note: msg_col is not updated, so we remember the end of the message
- * for msg_check().
+ * Note: msg_col is not updated, so we remember the end of the message for msg_check().
  */
     void
 msg_clr_eos_force()
@@ -2876,8 +2847,7 @@ msg_advance(col)
  * The first button should normally be the default/accept
  * The second button should be the 'Cancel' button
  * Other buttons- use your imagination!
- * A '&' in a button name becomes a shortcut, so each '&' should be before a
- * different letter.
+ * A '&' in a button name becomes a shortcut, so each '&' should be before a different letter.
  */
     int
 do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
@@ -3317,8 +3287,7 @@ tv_float(tvs, idxp)
 
 /*
  * This code was included to provide a portable vsnprintf() and snprintf().
- * Some systems may provide their own, but we always use this one for
- * consistency.
+ * Some systems may provide their own, but we always use this one for consistency.
  *
  * This code is based on snprintf.c - a portable implementation of snprintf
  * by Mark Martinec <mark.martinec@ijs.si>, Version 2.2, 2000-10-06.
@@ -3425,8 +3394,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
             int     zero_padding = 0, precision_specified = 0, justify_left = 0;
             int     alternate_form = 0, force_sign = 0;
 
-            /* If both the ' ' and '+' flags appear, the ' ' flag should be
-             * ignored. */
+            /* If both the ' ' and '+' flags appear, the ' ' flag should be ignored. */
             int     space_for_positive = 1;
 
             /* allowed values: \0, h, l, L */
@@ -3434,8 +3402,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
 
             /* temporary buffer for simple numeric->string conversion */
 #define TMP_LEN 350    /* On my system 1e308 is the biggest number possible.
-                         * That sounds reasonable to use as the maximum
-                         * printable. */
+                         * That sounds reasonable to use as the maximum printable. */
             char    tmp[TMP_LEN];
 
             /* string address in case of string argument */
@@ -3566,8 +3533,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
             /* get parameter value, do initial processing */
             switch (fmt_spec)
             {
-                /* '%' and 'c' behave similar to 's' regarding flags and field
-                 * widths */
+                /* '%' and 'c' behave similar to 's' regarding flags and field widths */
             case '%':
             case 'c':
             case 's':
@@ -3599,8 +3565,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         str_arg = "[NULL]";
                         str_arg_l = 6;
                     }
-                    /* make sure not to address string beyond the specified
-                     * precision !!! */
+                    /* make sure not to address string beyond the specified precision !!! */
                     else if (!precision_specified)
                         str_arg_l = strlen(str_arg);
                     /* truncate string if necessary as requested by precision */
@@ -3608,8 +3573,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         str_arg_l = 0;
                     else
                     {
-                        /* Don't put the #if inside memchr(), it can be a
-                         * macro. */
+                        /* Don't put the #if inside memchr(), it can be a macro. */
                         /* memchr on HP does not like n > 2^31  !!! */
                         char *q = memchr(str_arg, '\0', precision <= (size_t)0x7fffffffL ? precision : (size_t)0x7fffffffL);
                         str_arg_l = (q == NULL) ? precision : (size_t)(q - str_arg);
@@ -3656,8 +3620,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     long int long_arg = 0;
                     unsigned long int ulong_arg = 0;
 
-                    /* pointer argument value -only defined for p
-                     * conversion */
+                    /* pointer argument value -only defined for p conversion */
                     void *ptr_arg = NULL;
 
                     if (fmt_spec == 'p')
@@ -3802,8 +3765,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         }
 
                         /* include the optional minus sign and possible
-                         * "0x" in the region before the zero padding
-                         * insertion point */
+                         * "0x" in the region before the zero padding insertion point */
                         if (zero_padding_insertion_ind < str_arg_l
                                 && tmp[zero_padding_insertion_ind] == '-')
                             zero_padding_insertion_ind++;
@@ -3888,8 +3850,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         {
                             size_t max_prec = TMP_LEN - 10;
 
-                            /* Make sure we don't get more digits than we
-                             * have room for. */
+                            /* Make sure we don't get more digits than we have room for. */
                             if (fmt_spec == 'f' && abs_f > 1.0)
                                 max_prec -= (size_t)log10(abs_f);
                             if (precision > max_prec)
@@ -3964,10 +3925,8 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 }
 
             default:
-                /* unrecognized conversion specifier, keep format string
-                 * as-is */
-                zero_padding = 0;  /* turn zero padding off for non-numeric
-                                      conversion */
+                /* unrecognized conversion specifier, keep format string as-is */
+                zero_padding = 0;  /* turn zero padding off for non-numeric conversion */
                 justify_left = 1;
                 min_field_width = 0;                /* reset flags */
 
@@ -3985,8 +3944,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 p++;     /* step over the just processed conversion specifier */
 
             /* insert padding to the left as requested by min_field_width;
-             * this does not include the zero padding in case of numerical
-             * conversions*/
+             * this does not include the zero padding in case of numerical conversions */
             if (!justify_left)
             {
                 /* left padding with blank or zero */
@@ -4016,8 +3974,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
             }
             else
             {
-                /* insert first part of numerics (sign or '0x') before zero
-                 * padding */
+                /* insert first part of numerics (sign or '0x') before zero padding */
                 int zn = (int)zero_padding_insertion_ind;
 
                 if (zn > 0)
@@ -4031,8 +3988,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     str_l += zn;
                 }
 
-                /* insert zero padding as requested by the precision or min
-                 * field width */
+                /* insert zero padding as requested by the precision or min field width */
                 zn = (int)number_of_zeros_to_pad;
                 if (zn > 0)
                 {

@@ -464,8 +464,7 @@ main
 
 /*
  * Main loop: Execute Normal mode commands until exiting Vim.
- * Also used to handle commands in the command-line window, until the window
- * is closed.
+ * Also used to handle commands in the command-line window, until the window is closed.
  * Also used to handle ":visual" command after ":global": execute Normal mode
  * commands, return when entering Ex mode.  "noexmode" is TRUE then.
  */
@@ -503,8 +502,7 @@ main_loop(cmdwin, noexmode)
         }
 
         /* Reset "got_int" now that we got back to the main loop.  Except when
-         * inside a ":g/pat/cmd" command, then the "got_int" needs to abort
-         * the ":g" command.
+         * inside a ":g/pat/cmd" command, then the "got_int" needs to abort the ":g" command.
          * For ":g/pat/vi" we reset "got_int" when used once.  When used
          * a second time we go back to Ex mode and abort the ":g" command. */
         if (got_int)
@@ -663,8 +661,7 @@ getout(exitval)
     exiting = TRUE;
 
     /* When running in Ex mode an error causes us to exit with a non-zero exit
-     * code.  POSIX requires this, although it's not 100% clear from the
-     * standard. */
+     * code.  POSIX requires this, although it's not 100% clear from the standard. */
     if (exmode_active)
         exitval += ex_exitval;
 
@@ -1137,8 +1134,7 @@ command_line_scan(parmp)
                         char    *a;
 
                         if (argc < 1)
-                            /* "-S" without argument: use default session file
-                             * name. */
+                            /* "-S" without argument: use default session file name. */
                             a = SESSION_FILE;
                         else if (argv[0][0] == '-')
                         {
@@ -1208,8 +1204,7 @@ scripterror:
                 case 'T':       /* "-T {terminal}" terminal name */
                     /*
                      * The -T term argument is always available and when
-                     * HAVE_TERMLIB is supported it overrides the environment
-                     * variable TERM.
+                     * HAVE_TERMLIB is supported it overrides the environment variable TERM.
                      */
                         parmp->term = (char_u *)argv[0];
                     break;
@@ -1279,8 +1274,7 @@ scripterror:
         }
     }
 
-    /* If there is a "+123" or "-c" command, set v:swapcommand to the first
-     * one. */
+    /* If there is a "+123" or "-c" command, set v:swapcommand to the first one. */
     if (parmp->n_commands > 0)
     {
         p = alloc((unsigned)STRLEN(parmp->commands[0]) + 3);
@@ -1712,8 +1706,7 @@ source_startup_scripts(parmp)
          * Because of security reasons we disallow shell and write commands
          * now, except for unix if the file is owned by the user or 'secure'
          * option has been reset in environment of global ".exrc" or ".vimrc".
-         * Only do this if VIMRC_FILE is not the same as USR_VIMRC_FILE or
-         * SYS_VIMRC_FILE.
+         * Only do this if VIMRC_FILE is not the same as USR_VIMRC_FILE or SYS_VIMRC_FILE.
          */
         if (p_exrc)
         {

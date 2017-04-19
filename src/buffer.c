@@ -108,8 +108,7 @@ open_buffer(read_stdin, eap, flags)
         /*
          * First read the text in binary mode into the buffer.
          * Then read from that same buffer and append at the end.  This makes
-         * it possible to retry when 'fileformat' or 'fileencoding' was
-         * guessed wrong.
+         * it possible to retry when 'fileformat' or 'fileencoding' was guessed wrong.
          */
         curbuf->b_p_bin = TRUE;
         retval = readfile(NULL, NULL, (linenr_T)0,
@@ -283,8 +282,7 @@ aucmd_abort:
             /* Autocommands made this the only window. */
             goto aucmd_abort;
 
-        /* When the buffer becomes hidden, but is not unloaded, trigger
-         * BufHidden */
+        /* When the buffer becomes hidden, but is not unloaded, trigger BufHidden */
         if (!unload_buf)
         {
             buf->b_closing = TRUE;
@@ -306,8 +304,7 @@ aucmd_abort:
     if (buf->b_nwindows > 0)
         --buf->b_nwindows;
 
-    /* Return when a window is displaying the buffer or when it's not
-     * unloaded. */
+    /* Return when a window is displaying the buffer or when it's not unloaded. */
     if (buf->b_nwindows > 0 || !unload_buf)
         return;
 
@@ -343,8 +340,7 @@ aucmd_abort:
      * It's possible that autocommands change curbuf to the one being deleted.
      * This might cause the previous curbuf to be deleted unexpectedly.  But
      * in some cases it's OK to delete the curbuf, because a new one is
-     * obtained anyway.  Therefore only return if curbuf changed to the
-     * deleted buffer.
+     * obtained anyway.  Therefore only return if curbuf changed to the deleted buffer.
      */
     if (buf == curbuf && !is_curbuf)
         return;
@@ -1270,8 +1266,7 @@ buflist_new(ffname, sfname, lnum, flags)
     /*
      * If file name already exists in the list, update the entry.
      */
-    /* On Unix we can use inode numbers when the file exists.  Works better
-     * for hard links. */
+    /* On Unix we can use inode numbers when the file exists.  Works better for hard links. */
     if (sfname == NULL || mch_stat((char *)sfname, &st) < 0)
         st.st_dev = (dev_T)-1;
     if (ffname != NULL && !(flags & BLN_DUMMY) && (buf = buflist_findname_stat(ffname, &st)) != NULL)
@@ -1701,8 +1696,7 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode, curtab_only)
      * attempt == 1: with '^' at start (only at position 0)
      * attempt == 2: with '$' at end (only match at end)
      * attempt == 3: with '^' at start and '$' at end (only full match)
-     * Repeat this for finding an unlisted buffer if there was no matching
-     * listed buffer.
+     * Repeat this for finding an unlisted buffer if there was no matching listed buffer.
      */
     else
     {
@@ -2038,8 +2032,7 @@ buflist_setfpos(buf, win, lnum, col, copy_options)
 /*
  * Find info for the current window in buffer "buf".
  * If not found, return the info for the most recently used window.
- * When "skip_diff_buffer" is TRUE avoid windows with 'diff' set that is in
- * another tab page.
+ * When "skip_diff_buffer" is TRUE avoid windows with 'diff' set that is in another tab page.
  * Returns NULL when there isn't any info.
  */
     static wininfo_T *
@@ -2283,8 +2276,7 @@ buf_set_name(fnum, name)
         vim_free(buf->b_ffname);
         buf->b_ffname = vim_strsave(name);
         buf->b_sfname = NULL;
-        /* Allocate ffname and expand into full path.  Also resolves .lnk
-         * files on Win32. */
+        /* Allocate ffname and expand into full path.  Also resolves .lnk files on Win32. */
         fname_expand(buf, &buf->b_ffname, &buf->b_sfname);
         buf->b_fname = buf->b_sfname;
     }
@@ -2557,10 +2549,8 @@ fileinfo(fullname, shorthelp, dont_truncate)
         p = msg_trunc_attr(buffer, FALSE, 0);
         if (restart_edit != 0 || (msg_scrolled && !need_wait_return))
             /* Need to repeat the message after redrawing when:
-             * - When restart_edit is set (otherwise there will be a delay
-             *   before redrawing).
-             * - When the screen was scrolled but there is no wait-return
-             *   prompt. */
+             * - When restart_edit is set (otherwise there will be a delay before redrawing).
+             * - When the screen was scrolled but there is no wait-return prompt. */
             set_keep_msg(p, 0);
     }
 
@@ -2809,8 +2799,7 @@ free_titles()
  * Build a string from the status line items in "fmt".
  * Return length of string in screen cells.
  *
- * Normally works for window "wp", except when working for 'tabline' then it
- * is "curwin".
+ * Normally works for window "wp", except when working for 'tabline' then it is "curwin".
  *
  * Items are drawn interspersed with the text that surrounds it
  * Specials: %-<wid>(xxx%) => group, %= => middle marker, %< => truncation
@@ -3389,8 +3378,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             while (*t && p + 1 < out + outlen)
             {
                 *p++ = *t++;
-                /* Change a space by fillchar, unless fillchar is '-' and a
-                 * digit follows. */
+                /* Change a space by fillchar, unless fillchar is '-' and a digit follows. */
                 if (fillable && p[-1] == ' ' && (!VIM_ISDIGIT(*t) || fillchar != '-'))
                     p[-1] = fillchar;
             }
@@ -3860,7 +3848,7 @@ do_arg_all(count, forceit, keep_tabs)
 
         /* check if autocommands removed the next tab page */
         if (!valid_tabpage(tpnext))
-            tpnext = first_tabpage;     /* start all over...*/
+            tpnext = first_tabpage;     /* start all over... */
         goto_tabpage_tp(tpnext, TRUE, TRUE);
     }
 
@@ -4021,7 +4009,7 @@ ex_buffer_all(eap)
                 win_close(wp, FALSE);
                 wpnext = firstwin;      /* just in case an autocommand does
                                            something strange with windows */
-                tpnext = first_tabpage; /* start all over...*/
+                tpnext = first_tabpage; /* start all over... */
                 open_wins = 0;
             }
             else
@@ -4102,8 +4090,7 @@ ex_buffer_all(eap)
                 swap_exists_did_quit = TRUE;
 
                 /* Restore the error/interrupt/exception state if not
-                 * discarded by a new aborting error, interrupt, or uncaught
-                 * exception. */
+                 * discarded by a new aborting error, interrupt, or uncaught exception. */
                 leave_cleanup(&cs);
             }
             else

@@ -876,8 +876,7 @@ current_func_returned()
 }
 
 /*
- * Set an internal variable to a string value. Creates the variable if it does
- * not already exist.
+ * Set an internal variable to a string value. Creates the variable if it does not already exist.
  */
     void
 set_internal_string_var(name, value)
@@ -954,8 +953,7 @@ var_redir_start(name, append)
         return FAIL;
     }
 
-    /* check if we can write to the variable: set it to or append an empty
-     * string */
+    /* check if we can write to the variable: set it to or append an empty string */
     save_emsg = did_emsg;
     did_emsg = FALSE;
     tv.v_type = VAR_STRING;
@@ -1027,8 +1025,7 @@ var_redir_stop()
             ga_append(&redir_ga, NUL);  /* Append the trailing NUL. */
             tv.v_type = VAR_STRING;
             tv.vval.v_string = redir_ga.ga_data;
-            /* Call get_lval() again, if it's inside a Dict or List it may
-             * have changed. */
+            /* Call get_lval() again, if it's inside a Dict or List it may have changed. */
             redir_endp = get_lval(redir_varname, NULL, redir_lval, FALSE, FALSE, 0, FNE_CHECK_START);
             if (redir_endp != NULL && redir_lval->ll_name != NULL)
                 set_var_lval(redir_lval, redir_endp, &tv, FALSE, (char_u *)".");
@@ -1949,7 +1946,7 @@ ex_let_one(arg, tv, copy, endchars, op)
     typval_T    *tv;            /* value to assign to variable */
     int         copy;           /* copy value from "tv" */
     char_u      *endchars;      /* valid chars after variable name  or NULL */
-    char_u      *op;            /* "+", "-", "."  or NULL*/
+    char_u      *op;            /* "+", "-", "."  or NULL */
 {
     int         c1;
     char_u      *name;
@@ -2461,8 +2458,7 @@ get_lval(name, rettv, lp, unlet, skip, flags, fne_flags)
             }
 
             /*
-             * May need to find the item or absolute index for the second
-             * index of a range.
+             * May need to find the item or absolute index for the second index of a range.
              * When no index given: "lp->ll_empty2" is TRUE.
              * Otherwise "lp->ll_n2" is set to the second index.
              */
@@ -2691,7 +2687,7 @@ tv_op(tv1, tv2, op)
                     break;
                 if (*op == '+' || *op == '-')
                 {
-                    /* nr += nr  or  nr -= nr*/
+                    /* nr += nr  or  nr -= nr */
                     n = get_tv_number(tv1);
                     if (tv2->v_type == VAR_FLOAT)
                     {
@@ -2872,8 +2868,7 @@ eval_for_line(arg, errp, nextcmdp, skip)
 /*
  * Use the first item in a ":for" list.  Advance to the next.
  * Assign the values to the variable (list).  "arg" points to the first one.
- * Return TRUE when a valid item was found, FALSE when at end of list or
- * something wrong.
+ * Return TRUE when a valid item was found, FALSE when at end of list or something wrong.
  */
     int
 next_for_item(fi_void, arg)
@@ -3006,8 +3001,7 @@ set_context_for_expression(xp, arg, cmdidx)
                 xp->xp_context = EXPAND_EXPRESSION;
         }
         else
-            /* Doesn't look like something valid, expand as an expression
-             * anyway. */
+            /* Doesn't look like something valid, expand as an expression anyway. */
             xp->xp_context = EXPAND_EXPRESSION;
         arg = xp->xp_pattern;
         if (*arg != NUL)
@@ -3039,7 +3033,7 @@ ex_call(eap)
     {
         /* trans_function_name() doesn't work well when skipping, use eval0()
          * instead to skip to any following command, e.g. for:
-         *   :if 0 | call dict.foo().bar() | endif  */
+         *   :if 0 | call dict.foo().bar() | endif */
         ++emsg_skip;
         if (eval0(eap->arg, &rettv, &eap->nextcmd, FALSE) != FAIL)
             clear_tv(&rettv);
@@ -3057,8 +3051,7 @@ ex_call(eap)
     if (tofree == NULL)
         return;
 
-    /* Increase refcount on dictionary, it could get deleted when evaluating
-     * the arguments. */
+    /* Increase refcount on dictionary, it could get deleted when evaluating the arguments. */
     if (fudi.fd_dict != NULL)
         ++fudi.fd_dict->dv_refcount;
 
@@ -3078,8 +3071,7 @@ ex_call(eap)
     }
 
     /*
-     * When skipping, evaluate the function once, to find the end of the
-     * arguments.
+     * When skipping, evaluate the function once, to find the end of the arguments.
      * When the function takes a range, this is discovered after the first
      * call, and the loop is broken.
      */
@@ -3654,8 +3646,7 @@ eval0(arg, rettv, nextcmd, evaluate)
             clear_tv(rettv);
         /*
          * Report the invalid expression unless the expression evaluation has
-         * been cancelled due to an aborting error, an interrupt, or an
-         * exception.
+         * been cancelled due to an aborting error, an interrupt, or an exception.
          */
         if (!aborting())
             EMSG2((char *)e_invexpr2, arg);
@@ -4004,8 +3995,7 @@ eval4(arg, rettv, evaluate)
         {
             if (type_is && rettv->v_type != var2.v_type)
             {
-                /* For "is" a different type always means FALSE, for "notis"
-                 * it means TRUE. */
+                /* For "is" a different type always means FALSE, for "notis" it means TRUE. */
                 n1 = (type == TYPE_NEQUAL);
             }
             else if (rettv->v_type == VAR_LIST || var2.v_type == VAR_LIST)
@@ -4739,8 +4729,7 @@ eval7(arg, rettv, evaluate, want_string)
 
     *arg = skipwhite(*arg);
 
-    /* Handle following '[', '(' and '.' for expr[expr], expr.name,
-     * expr(expr). */
+    /* Handle following '[', '(' and '.' for expr[expr], expr.name, expr(expr). */
     if (ret == OK)
         ret = handle_subscript(arg, rettv, evaluate, TRUE);
 
@@ -5180,8 +5169,7 @@ get_string_tv(arg, rettv, evaluate)
     }
 
     /*
-     * Copy the string into allocated memory, handling backslashed
-     * characters.
+     * Copy the string into allocated memory, handling backslashed characters.
      */
     name = alloc((unsigned)(p - *arg + extra));
     if (name == NULL)
@@ -5222,8 +5210,7 @@ get_string_tv(arg, rettv, evaluate)
                                   nr = (nr << 4) + hex2nr(*p);
                               }
                               ++p;
-                              /* For "\u" store the number according to
-                               * 'encoding'. */
+                              /* For "\u" store the number according to 'encoding'. */
                               if (c != 'X')
                                   name += (*mb_char2bytes)(nr, name);
                               else
@@ -5448,8 +5435,7 @@ rettv_list_alloc(rettv)
 }
 
 /*
- * Unreference a list: decrement the reference count and free it when it
- * becomes zero.
+ * Unreference a list: decrement the reference count and free it when it becomes zero.
  */
     void
 list_unref(l)
@@ -6297,8 +6283,7 @@ garbage_collect()
     copyID = current_copyID;
 
     /*
-     * 1. Go through all accessible variables and mark all lists and dicts
-     *    with copyID.
+     * 1. Go through all accessible variables and mark all lists and dicts with copyID.
      */
 
     /* Don't free variables in the previous_funccal list unless they are only
@@ -6451,8 +6436,7 @@ set_ref_in_ht(ht, copyID, list_stack)
         if (!abort)
         {
             /* Mark each item in the hashtab.  If the item contains a hashtab
-             * it is added to ht_stack, if it contains a list it is added to
-             * list_stack. */
+             * it is added to ht_stack, if it contains a list it is added to list_stack. */
             todo = (int)cur_ht->ht_used;
             for (hi = cur_ht->ht_array; todo > 0; ++hi)
                 if (!HASHITEM_EMPTY(hi))
@@ -6498,8 +6482,7 @@ set_ref_in_list(l, copyID, ht_stack)
     {
         if (!abort)
             /* Mark each item in the list.  If the item contains a hashtab
-             * it is added to ht_stack, if it contains a list it is added to
-             * list_stack. */
+             * it is added to ht_stack, if it contains a list it is added to list_stack. */
             for (li = cur_l->lv_first; !abort && li != NULL; li = li->li_next)
                 abort = abort || set_ref_in_item(&li->li_tv, copyID, ht_stack, &list_stack);
         if (list_stack == NULL)
@@ -6637,8 +6620,7 @@ rettv_dict_alloc(rettv)
 }
 
 /*
- * Unreference a Dictionary: decrement the reference count and free it when it
- * becomes zero.
+ * Unreference a Dictionary: decrement the reference count and free it when it becomes zero.
  */
     void
 dict_unref(d)
@@ -7075,8 +7057,7 @@ get_dict_tv(arg, rettv, evaluate)
     /*
      * First check if it's not a curly-braces thing: {expr}.
      * Must do this without evaluating, otherwise a function may be called
-     * twice.  Unfortunately this means we need to call eval1() twice for the
-     * first item.
+     * twice.  Unfortunately this means we need to call eval1() twice for the first item.
      * But {} is an empty Dictionary.
      */
     if (*start != '}')
@@ -7201,8 +7182,7 @@ echo_string(tv, tofree, numbuf, copyID)
         if (!did_echo_string_emsg)
         {
             /* Only give this message once for a recursive call to avoid
-             * flooding the user with errors.  And stop iterating over lists
-             * and dicts. */
+             * flooding the user with errors.  And stop iterating over lists and dicts. */
             did_echo_string_emsg = TRUE;
             EMSG("E724: variable nested too deep for displaying");
         }
@@ -8036,8 +8016,7 @@ call_func(funcname, len, rettv, argcount, argvars, firstline, lastline, doesrang
 
                     /*
                      * Call the user function.
-                     * Save and restore search patterns, script variables and
-                     * redo buffer.
+                     * Save and restore search patterns, script variables and redo buffer.
                      */
                     save_search_patterns();
                     {
@@ -8634,8 +8613,7 @@ f_bufnr(argvars, rettv)
     buf = get_buf_tv(&argvars[0], FALSE);
     --emsg_off;
 
-    /* If the buffer isn't found and the second argument is not zero create a
-     * new buffer. */
+    /* If the buffer isn't found and the second argument is not zero create a new buffer. */
     if (buf == NULL
             && argvars[1].v_type != VAR_UNKNOWN
             && get_tv_number_chk(&argvars[1], &error) != 0
@@ -10192,8 +10170,7 @@ f_function(argvars, rettv)
 
             /* Expand s: and <SID> into <SNR>nr_, so that the function can
              * also be called from another script. Using trans_function_name()
-             * would also work, but some plugins depend on the name being
-             * printable text. */
+             * would also work, but some plugins depend on the name being printable text. */
             sprintf(sid_buf, "<SNR>%ld_", (long)current_SID);
             rettv->vval.v_string = alloc((int)(STRLEN(sid_buf) + STRLEN(s + off) + 1));
             if (rettv->vval.v_string != NULL)
@@ -10486,8 +10463,7 @@ f_getchar(argvars, rettv)
 
             if (row >= 0 && col >= 0)
             {
-                /* Find the window at the mouse coordinates and compute the
-                 * text position. */
+                /* Find the window at the mouse coordinates and compute the text position. */
                 win = mouse_find_win(&row, &col);
                 (void)mouse_comp_pos(win, &row, &col, &lnum);
                 for (wp = firstwin; wp != win; wp = wp->w_next)
@@ -11268,7 +11244,7 @@ f_globpath(argvars, rettv)
     int         i;
 
     /* When the optional second argument is non-zero, don't remove matches
-    * for 'wildignore' and don't put matches for 'suffixes' at the end. */
+     * for 'wildignore' and don't put matches for 'suffixes' at the end. */
     rettv->v_type = VAR_STRING;
     if (argvars[2].v_type != VAR_UNKNOWN)
     {
@@ -11654,8 +11630,8 @@ f_iconv(argvars, rettv)
     rettv->vval.v_string = NULL;
 
     str = get_tv_string(&argvars[0]);
-    from = enc_canonize(enc_skip(get_tv_string_buf(&argvars[1], buf1)));
-    to = enc_canonize(enc_skip(get_tv_string_buf(&argvars[2], buf2)));
+    from = enc_canonize(get_tv_string_buf(&argvars[1], buf1));
+    to = enc_canonize(get_tv_string_buf(&argvars[2], buf2));
     vimconv.vc_type = CONV_NONE;
     convert_setup(&vimconv, from, to);
 
@@ -12550,8 +12526,7 @@ find_some_match(argvars, rettv, type)
             if (start > len)
                 goto theend;
             /* When "count" argument is there ignore matches before "start",
-             * otherwise skip part of the string.  Differs when pattern is "^"
-             * or "\<". */
+             * otherwise skip part of the string.  Differs when pattern is "^" or "\<". */
             if (argvars[3].v_type != VAR_UNKNOWN)
                 startcol = start;
             else
@@ -12938,7 +12913,7 @@ mkdir_recurse(dir, prot)
     if (p <= get_past_head(dir))
         return OK;
 
-    /* If the directory exists we're done.  Otherwise: create it.*/
+    /* If the directory exists we're done.  Otherwise: create it. */
     updir = vim_strnsave(dir, (int)(p - dir));
     if (updir == NULL)
         return FAIL;
@@ -13048,8 +13023,7 @@ f_mode(argvars, rettv)
             buf[1] = 'o';
     }
 
-    /* Clear out the minor mode when the argument is not a non-zero number or
-     * non-empty string.  */
+    /* Clear out the minor mode when the argument is not a non-zero number or non-empty string. */
     if (!non_zero_arg(&argvars[0]))
         buf[1] = NUL;
 
@@ -13349,7 +13323,7 @@ f_readfile(argvars, rettv)
                 {
                     /* Change "prev" buffer to be the right size.  This way
                      * the bytes are only copied once, and very long lines are
-                     * allocated only once.  */
+                     * allocated only once. */
                     if ((s = vim_realloc(prev, prevlen + len + 1)) != NULL)
                     {
                         mch_memmove(s + prevlen, start, len);
@@ -13461,8 +13435,7 @@ f_readfile(argvars, rettv)
     }
 
     /*
-     * For a negative line count use only the lines at the end of the file,
-     * free the rest.
+     * For a negative line count use only the lines at the end of the file, free the rest.
      */
     if (!failed && maxline < 0)
         while (cnt > -maxline)
@@ -15291,8 +15264,7 @@ item_compare(s1, s2)
         res = n1 == n2 ? 0 : n1 > n2 ? 1 : -1;
     }
 
-    /* When the result would be zero, compare the item indexes.  Makes the
-     * sort stable. */
+    /* When the result would be zero, compare the item indexes.  Makes the sort stable. */
     if (res == 0 && !item_compare_keep_zero)
         res = si1->idx > si2->idx ? 1 : -1;
 
@@ -17602,8 +17574,7 @@ get_name_len(arg, alias, evaluate, verbose)
  * If "expr_start" is not NULL then "expr_start" and "expr_end" are set to the
  * start and end of the first magic braces item.
  * "flags" can have FNE_INCL_BR and FNE_CHECK_START.
- * Return a pointer to just after the name.  Equal to "arg" if there is no
- * valid name.
+ * Return a pointer to just after the name.  Equal to "arg" if there is no valid name.
  */
     static char_u *
 find_name_end(arg, expr_start, expr_end, flags)
@@ -18101,8 +18072,7 @@ handle_subscript(arg, rettv, evaluate, verbose)
                 clear_tv(&functv);
 
             /* Stop the expression evaluation when immediately aborting on
-             * error, or when an interrupt occurred or an exception was thrown
-             * but not caught. */
+             * error, or when an interrupt occurred or an exception was thrown but not caught. */
             if (aborting())
             {
                 if (ret == OK)
@@ -18355,8 +18325,7 @@ get_tv_lnum_buf(argvars, buf)
  * get_tv_string_buf() uses a given buffer.
  * If the String variable has never been set, return an empty string.
  * Never returns NULL;
- * get_tv_string_chk() and get_tv_string_buf_chk() are similar, but return
- * NULL on error.
+ * get_tv_string_chk() and get_tv_string_buf_chk() are similar, but return NULL on error.
  */
     static char_u *
 get_tv_string(varp)
@@ -18426,8 +18395,7 @@ get_tv_string_buf_chk(varp, buf)
  * Find variable "name" in the list of variables.
  * Return a pointer to it if found, NULL if not found.
  * Careful: "a:0" variables don't have a name.
- * When "htp" is not NULL we are writing to the variable, set "htp" to the
- * hashtab_T used.
+ * When "htp" is not NULL we are writing to the variable, set "htp" to the hashtab_T used.
  */
     static dictitem_T *
 find_var(name, htp, no_autoload)
@@ -18602,8 +18570,7 @@ new_script_vars(id)
 }
 
 /*
- * Initialize dictionary "dict" as a scope and set variable "dict_var" to
- * point to it.
+ * Initialize dictionary "dict" as a scope and set variable "dict_var" to point to it.
  */
     void
 init_var_dict(dict, dict_var, scope)
@@ -18989,8 +18956,7 @@ tv_check_lock(lock, name)
  * Copy the values from typval_T "from" to typval_T "to".
  * When needed allocates string or increases reference count.
  * Does not make a copy of a list or dict but copies the reference!
- * It is OK for "from" and "to" to point to the same item.  This is used to
- * make a copy later.
+ * It is OK for "from" and "to" to point to the same item.  This is used to make a copy later.
  */
     void
 copy_tv(from, to)
@@ -19144,8 +19110,7 @@ ex_echo(eap)
         {
             /*
              * Report the invalid expression unless the expression evaluation
-             * has been cancelled due to an aborting error, an interrupt, or an
-             * exception.
+             * has been cancelled due to an aborting error, an interrupt, or an exception.
              */
             if (!aborting())
                 EMSG2((char *)e_invexpr2, p);
@@ -19239,8 +19204,7 @@ ex_echohl(eap)
  * ":execute expr1 ..." execute the result of an expression.
  * ":echomsg expr1 ..." Print a message
  * ":echoerr expr1 ..." Print an error
- * Each gets spaces around each argument and a newline at the end for
- * echo commands
+ * Each gets spaces around each argument and a newline at the end for echo commands
  */
     void
 ex_execute(eap)
@@ -19265,8 +19229,7 @@ ex_execute(eap)
         {
             /*
              * Report the invalid expression unless the expression evaluation
-             * has been cancelled due to an aborting error, an interrupt, or an
-             * exception.
+             * has been cancelled due to an aborting error, an interrupt, or an exception.
              */
             if (!aborting())
                 EMSG2((char *)e_invexpr2, p);
@@ -19755,7 +19718,7 @@ ex_function(eap)
         }
         else
         {
-            /* skip ':' and blanks*/
+            /* skip ':' and blanks */
             for (p = theline; vim_iswhite(*p) || *p == ':'; ++p)
                 ;
 
@@ -19767,8 +19730,7 @@ ex_function(eap)
                 break;
             }
 
-            /* Increase indent inside "if", "while", "for" and "try", decrease
-             * at "end". */
+            /* Increase indent inside "if", "while", "for" and "try", decrease at "end". */
             if (indent > 2 && STRNCMP(p, "end", 3) == 0)
                 indent -= 2;
             else if (STRNCMP(p, "if", 2) == 0
@@ -19856,8 +19818,7 @@ ex_function(eap)
             line_arg = NULL;
     }
 
-    /* Don't define the function when skipping commands or when an error was
-     * detected. */
+    /* Don't define the function when skipping commands or when an error was detected. */
     if (eap->skip || did_emsg)
         goto erret;
 
@@ -19913,8 +19874,7 @@ ex_function(eap)
         else if (tv_check_lock(fudi.fd_di->di_tv.v_lock, eap->arg))
             goto erret;
 
-        /* Give the function a sequential number.  Can only be used with a
-         * Funcref! */
+        /* Give the function a sequential number.  Can only be used with a Funcref! */
         vim_free(name);
         sprintf(numbuf, "%d", ++func_nr);
         name = vim_strsave((char_u *)numbuf);
@@ -20037,8 +19997,7 @@ trans_function_name(pp, skip, flags, fdp)
         vim_memset(fdp, 0, sizeof(funcdict_T));
     start = *pp;
 
-    /* Check for hard coded <SNR>: already translated function ID (from a user
-     * command). */
+    /* Check for hard coded <SNR>: already translated function ID (from a user command). */
     if ((*pp)[0] == K_SPECIAL && (*pp)[1] == KS_EXTRA && (*pp)[2] == (int)KE_SNR)
     {
         *pp += 3;
@@ -20314,8 +20273,7 @@ free_all_functions()
 {
     hashitem_T  *hi;
 
-    /* Need to start all over every time, because func_free() may change the
-     * hash table. */
+    /* Need to start all over every time, because func_free() may change the hash table. */
     while (func_hashtab.ht_used > 0)
         for (hi = func_hashtab.ht_array; ; ++hi)
             if (!HASHITEM_EMPTY(hi))
@@ -20464,8 +20422,7 @@ autoload_name(name)
 }
 
 /*
- * Function given to ExpandGeneric() to obtain the list of user defined
- * function names.
+ * Function given to ExpandGeneric() to obtain the list of user defined function names.
  */
     char_u *
 get_user_func_name(xp, idx)
@@ -21124,8 +21081,7 @@ do_return(eap, reanimate, is_cmd, rettv)
             cstack->cs_rettv[idx] = rettv;
         else
         {
-            /* When undoing a return in order to make it pending, get the stored
-             * return rettv. */
+            /* When undoing a return in order to make it pending, get the stored return rettv. */
             if (reanimate)
                 rettv = current_funccal->rettv;
 
@@ -21143,8 +21099,7 @@ do_return(eap, reanimate, is_cmd, rettv)
             if (reanimate)
             {
                 /* The pending return value could be overwritten by a ":return"
-                 * without argument in a finally clause; reset the default
-                 * return value. */
+                 * without argument in a finally clause; reset the default return value. */
                 current_funccal->rettv->v_type = VAR_NUMBER;
                 current_funccal->rettv->vval.v_number = 0;
             }
@@ -21475,7 +21430,7 @@ repeat:
     tail = gettail(*fnamep);
     *fnamelen = (int)STRLEN(*fnamep);
 
-    /* ":h" - head, remove "/file_name", can be repeated  */
+    /* ":h" - head, remove "/file_name", can be repeated */
     /* Don't remove the first "/" or "c:\" */
     while (src[*usedlen] == ':' && src[*usedlen + 1] == 'h')
     {
@@ -21502,7 +21457,7 @@ repeat:
         }
     }
 
-    /* ":8" - shortname  */
+    /* ":8" - shortname */
     if (src[*usedlen] == ':' && src[*usedlen + 1] == '8')
     {
         *usedlen += 2;

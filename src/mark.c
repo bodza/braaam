@@ -70,8 +70,7 @@ setmark_pos(c, pos, fnum)
         return OK;
     }
 
-    /* Allow setting '[ and '] for an autocommand that simulates reading a
-     * file. */
+    /* Allow setting '[ and '] for an autocommand that simulates reading a file. */
     if (c == '[')
     {
         curbuf->b_op_start = *pos;
@@ -257,8 +256,7 @@ movechangelist(count)
 /*
  * Find mark "c" in buffer pointed to by "buf".
  * If "changefile" is TRUE it's allowed to edit another file for '0, 'A, etc.
- * If "fnum" is not NULL store the fnum there for '0, 'A etc., don't edit
- * another file.
+ * If "fnum" is not NULL store the fnum there for '0, 'A etc., don't edit another file.
  * Returns:
  * - pointer to pos_T if found.  lnum is 0 when mark not set, -1 when mark is
  *   in another file which can't be gotten. (caller needs to check lnum!)
@@ -295,8 +293,7 @@ getmark_buf_fnum(buf, c, changefile, fnum)
 
     posp = NULL;
 
-    /* Check for special key, can't be a mark name and might cause islower()
-     * to crash. */
+    /* Check for special key, can't be a mark name and might cause islower() to crash. */
     if (c < 0)
         return posp;
     if (c > '~')                        /* check for islower()/isupper() */

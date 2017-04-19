@@ -487,8 +487,7 @@ set_termname(term)
                             };
 
             /*
-             * If the external termcap does not have a matching entry, try the
-             * builtin ones.
+             * If the external termcap does not have a matching entry, try the builtin ones.
              */
             if ((error_msg = tgetent_error(tbuf, term)) == NULL)
             {
@@ -530,8 +529,7 @@ set_termname(term)
                     if (find_termcode((char_u *)key_names[i]) == NULL)
                     {
                         p = TGETSTR(key_names[i], &tp);
-                        /* if cursor-left == backspace, ignore it (televideo
-                         * 925) */
+                        /* if cursor-left == backspace, ignore it (televideo 925) */
                         if (p != NULL
                                 && (*p != Ctrl_H
                                     || key_names[i][0] != 'k'
@@ -662,8 +660,7 @@ set_termname(term)
 
 /*
  * Any "stty" settings override the default for t_kb from the termcap.
- * This is in os_unix.c, because it depends a lot on the version of unix that
- * is being used.
+ * This is in os_unix.c, because it depends a lot on the version of unix that is being used.
  * Don't do this when the GUI is active, it uses "t_kb" and "t_kD" directly.
  */
         get_stty();
@@ -1181,8 +1178,6 @@ out_flush()
     void
 out_flush_check()
 {
-    if (enc_dbcs != 0 && out_pos >= OUT_SIZE - MB_MAXBYTES)
-        out_flush();
 }
 
 /*
@@ -1799,8 +1794,7 @@ stoptermcap()
                     tcflush(fileno(stdin), TCIFLUSH);
 #endif
             }
-            /* Check for termcodes first, otherwise an external program may
-             * get them. */
+            /* Check for termcodes first, otherwise an external program may get them. */
             check_for_codes_from_term();
         }
 #endif
@@ -1822,8 +1816,7 @@ stoptermcap()
  * while executing "-c !cmd" or even after "-c quit".
  * Only do this after termcap mode has been started, otherwise the codes for
  * the cursor keys may be wrong.
- * Only do this when 'esckeys' is on, otherwise the response causes trouble in
- * Insert mode.
+ * Only do this when 'esckeys' is on, otherwise the response causes trouble in Insert mode.
  * On Unix only do it when both output and input are a tty (avoid writing
  * request to terminal while reading from a file).
  * The result is caught in check_termcode().
@@ -1843,8 +1836,7 @@ may_req_termresponse()
         LOG_TR("Sending CRV");
         out_str(T_CRV);
         crv_status = CRV_SENT;
-        /* check for the characters now, otherwise they might be eaten by
-         * get_keystroke() */
+        /* check for the characters now, otherwise they might be eaten by get_keystroke() */
         out_flush();
         (void)vpeekc_nomap();
     }
@@ -1885,8 +1877,7 @@ may_req_ambiguous_char_width()
         term_windgoto(1, 0);
         out_str((char_u *)"  ");
         term_windgoto(0, 0);
-        /* check for the characters now, otherwise they might be eaten by
-         * get_keystroke() */
+        /* check for the characters now, otherwise they might be eaten by get_keystroke() */
         out_flush();
         (void)vpeekc_nomap();
     }
@@ -2031,8 +2022,7 @@ term_cursor_shape()
     static int showing_mode = NORMAL;
     char_u *p;
 
-    /* Only do something when redrawing the screen and we can restore the
-     * mode. */
+    /* Only do something when redrawing the screen and we can restore the mode. */
     if (!full_screen || *T_CEI == NUL)
         return;
 
@@ -2363,8 +2353,7 @@ static linenr_T orig_topline = 0;
  * contents scrolled (e.g., when 'scrolloff' is non-zero).
  */
 /*
- * Set orig_topline.  Used when jumping to another window, so that a double
- * click still works.
+ * Set orig_topline.  Used when jumping to another window, so that a double click still works.
  */
     void
 set_mouse_topline(wp)
@@ -2375,8 +2364,7 @@ set_mouse_topline(wp)
 
 /*
  * Check if typebuf.tb_buf[] contains a terminal key code.
- * Check from typebuf.tb_buf[typebuf.tb_off] to typebuf.tb_buf[typebuf.tb_off
- * + max_offset].
+ * Check from typebuf.tb_buf[typebuf.tb_off] to typebuf.tb_buf[typebuf.tb_off + max_offset].
  * Return 0 for no match, -1 for partial match, > 0 for full match.
  * Return KEYLEN_REMOVED when a key code was deleted.
  * With a match, the match is removed, the replacement code is inserted in
@@ -2493,8 +2481,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
             for (idx = 0; idx < tc_len; ++idx)
             {
                 /*
-                 * Ignore the entry if we are not at the start of
-                 * typebuf.tb_buf[]
+                 * Ignore the entry if we are not at the start of typebuf.tb_buf[]
                  * and there are not enough characters to make a match.
                  * But only when the 'K' flag is in 'cpoptions'.
                  */
@@ -2552,8 +2539,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                             continue;   /* no match */
                         else
                         {
-                            /* Skip over the digits, the final char must
-                             * follow. */
+                            /* Skip over the digits, the final char must follow. */
                             for (j = slen - 2; j < len && isdigit(tp[j]); ++j)
                                 ;
                             ++j;
@@ -2649,8 +2635,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                         if (aw != NULL && STRCMP(aw, p_ambw) != 0)
                         {
                             /* Setting the option causes a screen redraw. Do
-                             * that right away if possible, keeping any
-                             * messages. */
+                             * that right away if possible, keeping any messages. */
                             set_option_value((char_u *)"ambw", 0L, (char_u *)aw, 0);
                             redraw_asap(CLEAR);
                         }
@@ -2966,8 +2951,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 ins_typebuf(string + slen, REMAP_YES, offset, FALSE, FALSE);
 
             /*
-             * Careful: del_typebuf() and ins_typebuf() may have reallocated
-             * typebuf.tb_buf[]!
+             * Careful: del_typebuf() and ins_typebuf() may have reallocated typebuf.tb_buf[]!
              */
             mch_memmove(typebuf.tb_buf + typebuf.tb_off + offset, string, (size_t)new_slen);
         }
@@ -3482,8 +3466,7 @@ got_code_from_term(code, len)
                 {
                     /* Nr of colors changed, initialize highlighting and
                      * redraw everything.  This causes a redraw, which usually
-                     * clears the message.  Try keeping the message if it
-                     * might work. */
+                     * clears the message.  Try keeping the message if it might work. */
                     set_keep_msg_from_hist();
                     set_color_count(i);
                     init_highlight(TRUE, FALSE);

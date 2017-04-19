@@ -173,7 +173,7 @@ static struct signalinfo
 #endif
 #if defined(SIGPROF) && !defined(WE_ARE_PROFILING)
     /* MzScheme uses SIGPROF for its own needs; On Linux with profiling
-     * this makes Vim exit.  WE_ARE_PROFILING is defined in Makefile.  */
+     * this makes Vim exit.  WE_ARE_PROFILING is defined in Makefile. */
     {SIGPROF,       "PROF",     TRUE},
 #endif
 #if defined(SIGXCPU)
@@ -421,8 +421,7 @@ mch_delay(msec, ignoreinput)
 
         /*
          * Everybody sleeps in a different way...
-         * Prefer nanosleep(), some versions of usleep() can only sleep up to
-         * one second.
+         * Prefer nanosleep(), some versions of usleep() can only sleep up to one second.
          */
         {
             struct timespec ts;
@@ -525,9 +524,7 @@ sig_alarm SIGDEFARG(sigarg)
 /*
  * This function handles deadly signals.
  * It tries to preserve any swap files and exit properly.
- * (partly from Elvis).
- * NOTE: Avoid unsafe functions, such as allocating memory, they can result in
- * a deadlock.
+ * NOTE: Avoid unsafe functions, such as allocating memory, they can result in a deadlock.
  */
     static void
 deathtrap SIGDEFARG(sigarg)
@@ -626,8 +623,7 @@ deathtrap SIGDEFARG(sigarg)
     /* No translation, it may call malloc(). */
     sprintf((char *)IObuff, "Vim: Caught deadly signal %s\n", signal_info[i].name);
 
-    /* Preserve files and exit.  This sets the really_exiting flag to prevent
-     * calling free(). */
+    /* Preserve files and exit.  This sets the really_exiting flag to prevent calling free(). */
     preserve_exit();
 
     return;
@@ -758,8 +754,7 @@ set_signals()
 #endif
 
     /*
-     * Catch SIGPWR (power failure?) to preserve the swap files, so that no
-     * work will be lost.
+     * Catch SIGPWR (power failure?) to preserve the swap files, so that no work will be lost.
      */
 #if defined(SIGPWR)
     signal(SIGPWR, (void (*)())catch_sigpwr);
@@ -1051,7 +1046,7 @@ vim_is_vt300(name)
     char_u  *name;
 {
     if (name == NULL)
-        return FALSE;          /* actually all ANSI comp. terminals should be here  */
+        return FALSE;          /* actually all ANSI comp. terminals should be here */
     /* catch VT100 - VT5xx */
     return ((STRNICMP(name, "vt", 2) == 0
                 && vim_strchr((char_u *)"12345", name[2]) != NULL)
@@ -1608,8 +1603,7 @@ mch_settmode(tmode)
     {
         int     n = 10;
 
-        /* A signal may cause tcsetattr() to fail (e.g., SIGCONT).  Retry a
-         * few times. */
+        /* A signal may cause tcsetattr() to fail (e.g., SIGCONT).  Retry a few times. */
         while (tcsetattr(read_cmd_fd, TCSANOW, &tnew) == -1 && errno == EINTR && n > 0)
             --n;
     }
@@ -2188,8 +2182,7 @@ mch_call_shell(cmd, options)
                  * (WaitForChar detected special condition), or there are no
                  * characters available and the child has exited.
                  * Only check if the child has exited when there is no more
-                 * output. The child may exit before all the output has
-                 * been printed.
+                 * output. The child may exit before all the output has been printed.
                  *
                  * Currently this busy loops!
                  * This can probably dead-lock when the write blocks!
@@ -2272,18 +2265,14 @@ mch_call_shell(cmd, options)
                 for (;;)
                 {
                     /*
-                     * Check if keys have been typed, write them to the child
-                     * if there are any.
-                     * Don't do this if we are expanding wild cards (would eat
-                     * typeahead).
+                     * Check if keys have been typed, write them to the child if there are any.
+                     * Don't do this if we are expanding wild cards (would eat typeahead).
                      * Don't do this when filtering and terminal is in cooked
                      * mode, the shell command will handle the I/O.  Avoids
                      * that a typed password is echoed for ssh or gpg command.
-                     * Don't get characters when the child has already
-                     * finished (wait_pid == 0).
+                     * Don't get characters when the child has already finished (wait_pid == 0).
                      * Don't read characters unless we didn't get output for a
-                     * while (noread_cnt > 4), avoids that ":r !ls" eats
-                     * typeahead.
+                     * while (noread_cnt > 4), avoids that ":r !ls" eats typeahead.
                      */
                     len = 0;
                     if (!(options & SHELL_EXPAND)
@@ -2509,8 +2498,7 @@ mch_call_shell(cmd, options)
                         }
                     }
 
-                    /* If we already detected the child has finished break the
-                     * loop now. */
+                    /* If we already detected the child has finished break the loop now. */
                     if (wait_pid == pid)
                         break;
 
@@ -2567,8 +2555,7 @@ finished:
             if (wait_pid != pid)
                 wait_pid = wait4pid(pid, &status);
 
-            /* Make sure the child that writes to the external program is
-             * dead. */
+            /* Make sure the child that writes to the external program is dead. */
             if (wpid > 0)
             {
                 kill(wpid, SIGKILL);
@@ -2704,8 +2691,7 @@ select_eintr:
 #if defined(EINTR)
         if (ret == -1 && errno == EINTR)
         {
-            /* Check whether window has been resized, EINTR may be caused by
-             * SIGWINCH. */
+            /* Check whether window has been resized, EINTR may be caused by SIGWINCH. */
             if (do_resize)
                 handle_resize();
 
@@ -3242,8 +3228,7 @@ save_patterns(num_pat, pat, num_file, file)
     {
         s = vim_strsave(pat[i]);
         if (s != NULL)
-            /* Be compatible with expand_filename(): halve the number of
-             * backslashes. */
+            /* Be compatible with expand_filename(): halve the number of backslashes. */
             backslash_halve(s);
         (*file)[i] = s;
     }

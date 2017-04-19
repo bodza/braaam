@@ -263,8 +263,7 @@ restore_dbg_stuff(dsp)
 }
 
 /*
- * do_exmode(): Repeatedly get commands for the "Ex" mode, until the ":vi"
- * command is given.
+ * do_exmode(): Repeatedly get commands for the "Ex" mode, until the ":vi" command is given.
  */
     void
 do_exmode(improved)
@@ -770,8 +769,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
                     cstack.cs_lflags |= CSL_HAD_LOOP;
                     line_breakcheck();          /* check if CTRL-C typed */
 
-                    /* Check for the next breakpoint at or after the ":while"
-                     * or ":for". */
+                    /* Check for the next breakpoint at or after the ":while" or ":for". */
                     if (breakpoint != NULL)
                     {
                         *breakpoint = dbg_find_breakpoint(
@@ -1027,8 +1025,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
         if (getline_equal(fgetline, cookie, get_func_line))
             --ex_nesting_level;
         /*
-         * Go to debug mode when returning from a function in which we are
-         * single-stepping.
+         * Go to debug mode when returning from a function in which we are single-stepping.
          */
         if ((getline_equal(fgetline, cookie, getsourceline)
                     || getline_equal(fgetline, cookie, get_func_line))
@@ -1039,8 +1036,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
     }
 
     /*
-     * Restore the exception environment (done after returning from the
-     * debugger).
+     * Restore the exception environment (done after returning from the debugger).
      */
     if (flags & DOCMD_EXCRESET)
         restore_dbg_stuff(&debug_saved);
@@ -1071,8 +1067,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
         {
             /*
              * The msg_start() above clears msg_didout. The wait_return we do
-             * here should not overwrite the command that may be shown before
-             * doing that.
+             * here should not overwrite the command that may be shown before doing that.
              */
             msg_didout |= msg_didout_before_start;
             wait_return(FALSE);
@@ -1190,8 +1185,7 @@ getline_cookie(fgetline, cookie)
     struct loop_cookie *cp;
 
     /* When "fgetline" is "get_loop_line()" use the "cookie" to find the
-     * cookie that's originally used to obtain the lines.  This may be nested
-     * several levels. */
+     * cookie that's originally used to obtain the lines.  This may be nested several levels. */
     gp = fgetline;
     cp = (struct loop_cookie *)cookie;
     while (gp == get_loop_line)
@@ -1203,8 +1197,7 @@ getline_cookie(fgetline, cookie)
 }
 
 /*
- * Helper function to apply an offset for buffer commands, i.e. ":bdelete",
- * ":bwipeout", etc.
+ * Helper function to apply an offset for buffer commands, i.e. ":bdelete", ":bwipeout", etc.
  * Returns the buffer number.
  */
     static int
@@ -1343,8 +1336,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
         --quitmore;
 
     /*
-     * Reset browse, confirm, etc..  They are restored when returning, for
-     * recursive calls.
+     * Reset browse, confirm, etc..  They are restored when returning, for recursive calls.
      */
     save_cmdmod = cmdmod;
     vim_memset(&cmdmod, 0, sizeof(cmdmod));
@@ -2162,8 +2154,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
     /*
      * Skip the command when it's not going to be executed.
      * The commands like :if, :endif, etc. always need to be executed.
-     * Also make an exception for commands that handle a trailing command
-     * themselves.
+     * Also make an exception for commands that handle a trailing command themselves.
      */
     if (ea.skip)
     {
@@ -2983,8 +2974,7 @@ set_one_cmd_context(xp, buff)
         char_u  *bow = NULL;    /* Beginning of word */
 
         /*
-         * Allow spaces within back-quotes to count as part of the argument
-         * being expanded.
+         * Allow spaces within back-quotes to count as part of the argument being expanded.
          */
         xp->xp_pattern = skipwhite(arg);
         p = xp->xp_pattern;
@@ -3038,8 +3028,7 @@ set_one_cmd_context(xp, buff)
         }
 
         /*
-         * If we are still inside the quotes, and we passed a space, just
-         * expand from there.
+         * If we are still inside the quotes, and we passed a space, just expand from there.
          */
         if (bow != NULL && in_quote)
             xp->xp_pattern = bow;
@@ -3611,8 +3600,7 @@ get_address(ptr, addr_type, skip, to_other_file)
                 {
                     pos = curwin->w_cursor; /* save curwin->w_cursor */
                     /*
-                     * When '/' or '?' follows another address, start
-                     * from there.
+                     * When '/' or '?' follows another address, start from there.
                      */
                     if (lnum != MAXLNUM)
                         curwin->w_cursor.lnum = lnum;
@@ -3671,8 +3659,7 @@ get_address(ptr, addr_type, skip, to_other_file)
                         pos.lnum = curwin->w_cursor.lnum;
 
                     /*
-                     * Start the search just like for the above
-                     * do_search().
+                     * Start the search just like for the above do_search().
                      */
                     if (*cmd != '?')
                         pos.col = MAXCOL;
@@ -4004,11 +3991,9 @@ expand_filename(eap, cmdlinep, errormsgp)
             {
                 /*
                  * Only for Unix we check for more than one file name.
-                 * For other systems spaces are considered to be part
-                 * of the file name.
+                 * For other systems spaces are considered to be part of the file name.
                  * Only check here if there is no wildcard, otherwise
-                 * ExpandOne() will check for errors. This allows
-                 * ":e `ls ve*.c`" on Unix.
+                 * ExpandOne() will check for errors. This allows ":e `ls ve*.c`" on Unix.
                  */
                 if (!has_wildcards)
                     for (p = eap->arg; *p; ++p)
@@ -5442,11 +5427,7 @@ uc_check_code(code, len, buf, cmd, eap, split_buf, split_len)
             result = STRLEN(eap->arg) + 2;
             for (p = eap->arg; *p; ++p)
             {
-                if (enc_dbcs != 0 && (*mb_ptr2len)(p) == 2)
-                    /* DBCS can contain \ in a trail byte, skip the
-                     * double-byte character. */
-                    ++p;
-                else if (*p == '\\' || *p == '"')
+                if (*p == '\\' || *p == '"')
                     ++result;
             }
 
@@ -5455,11 +5436,7 @@ uc_check_code(code, len, buf, cmd, eap, split_buf, split_len)
                 *buf++ = '"';
                 for (p = eap->arg; *p; ++p)
                 {
-                    if (enc_dbcs != 0 && (*mb_ptr2len)(p) == 2)
-                        /* DBCS can contain \ in a trail byte, copy the
-                         * double-byte character to avoid escaping. */
-                        *buf++ = *p++;
-                    else if (*p == '\\' || *p == '"')
+                    if (*p == '\\' || *p == '"')
                         *buf++ = '\\';
                     *buf++ = *p;
                 }
@@ -5710,8 +5687,7 @@ get_user_cmd_addr_type(xp, idx)
 }
 
 /*
- * Function given to ExpandGeneric() to obtain the list of user command
- * attributes.
+ * Function given to ExpandGeneric() to obtain the list of user command attributes.
  */
     char_u *
 get_user_cmd_flags(xp, idx)
@@ -6044,8 +6020,7 @@ ex_close(eap)
 }
 
 /*
- * Close window "win" and take care of handling closing the last window for a
- * modified buffer.
+ * Close window "win" and take care of handling closing the last window for a modified buffer.
  */
     static void
 ex_win_close(forceit, win, tp)
@@ -7174,8 +7149,7 @@ post_chdir(local)
     }
     else
     {
-        /* We are now in the global directory, no need to remember its
-         * name. */
+        /* We are now in the global directory, no need to remember its name. */
         vim_free(globaldir);
         globaldir = NULL;
     }

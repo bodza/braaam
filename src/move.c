@@ -2,10 +2,8 @@
  * move.c: Functions for moving the cursor and scrolling text.
  *
  * There are two ways to move the cursor:
- * 1. Move the cursor directly, the text is scrolled to keep the cursor in the
- *    window.
- * 2. Scroll the text, the cursor is moved into the text visible in the
- *    window.
+ * 1. Move the cursor directly, the text is scrolled to keep the cursor in the window.
+ * 2. Scroll the text, the cursor is moved into the text visible in the window.
  * The 'scrolloff' option makes this a bit complicated.
  */
 
@@ -217,8 +215,7 @@ update_topline()
                 lineoff_T       loff;
 
                 /* Cursor is (a few lines) above botline, check if there are
-                 * 'scrolloff' window lines below the cursor.  If not, need to
-                 * scroll. */
+                 * 'scrolloff' window lines below the cursor.  If not, need to scroll. */
                 n = curwin->w_empty_rows;
                 loff.lnum = curwin->w_cursor.lnum;
                 loff.height = 0;
@@ -284,8 +281,7 @@ scrolljump_value()
 }
 
 /*
- * Return TRUE when there are not 'scrolloff' lines above the cursor for the
- * current window.
+ * Return TRUE when there are not 'scrolloff' lines above the cursor for the current window.
  */
     static int
 check_top_offset()
@@ -479,8 +475,7 @@ validate_cursor()
 }
 
 /*
- * Compute wp->w_cline_row and wp->w_cline_height, based on the current value
- * of wp->w_topline.
+ * Compute wp->w_cline_row and wp->w_cline_height, based on the current value of wp->w_topline.
  */
     static void
 curs_rows(wp)
@@ -641,8 +636,7 @@ curwin_col_off()
 
 /*
  * Return the difference in column offset for the second screen line of a
- * wrapped line.  It's 8 if 'number' or 'relativenumber' is on and 'n' is in
- * 'cpoptions'.
+ * wrapped line.  It's 8 if 'number' or 'relativenumber' is on and 'n' is in 'cpoptions'.
  */
     int
 win_col_off2(wp)
@@ -735,8 +729,7 @@ curs_columns(may_scroll)
         }
     }
 
-    /* No line wrapping: compute curwin->w_leftcol if scrolling is on and line
-     * is not folded.
+    /* No line wrapping: compute curwin->w_leftcol if scrolling is on and line is not folded.
      * If scrolling is off, curwin->w_leftcol is assumed to be 0 */
     else if (may_scroll)
     {
@@ -1070,8 +1063,7 @@ scroll_cursor_top(min_scroll, always)
 
     /*
      * If we don't have enough space, put cursor in the middle.
-     * This makes sure we get the same position when using "k" and "j"
-     * in a small window.
+     * This makes sure we get the same position when using "k" and "j" in a small window.
      */
     if (used > curwin->w_height)
         scroll_cursor_halfway(FALSE);
@@ -1160,8 +1152,7 @@ scroll_cursor_bot(min_scroll, set_topbot)
     used = curwin->w_cline_height;
 
     /* If the cursor is below botline, we will at least scroll by the height
-     * of the cursor line.  Correct for empty lines, which are really part of
-     * botline. */
+     * of the cursor line.  Correct for empty lines, which are really part of botline. */
     if (cln >= curwin->w_botline)
     {
         scrolled = used;
@@ -1260,8 +1251,7 @@ scroll_cursor_bot(min_scroll, set_topbot)
         scrollup(line_count, TRUE);
 
     /*
-     * If topline didn't change we need to restore w_botline and w_empty_rows
-     * (we changed them).
+     * If topline didn't change we need to restore w_botline and w_empty_rows (we changed them).
      * If topline did change, update_screen() will set botline.
      */
     if (curwin->w_topline == old_topline && set_topbot)
@@ -1376,8 +1366,7 @@ cursor_correct()
     }
 
     /*
-     * If there are sufficient file-lines above and below the cursor, we can
-     * return now.
+     * If there are sufficient file-lines above and below the cursor, we can return now.
      */
     cln = curwin->w_cursor.lnum;
     if (cln >= curwin->w_topline + above_wanted && cln < curwin->w_botline - below_wanted)
@@ -1453,8 +1442,7 @@ onepage(dir, count)
         /*
          * It's an error to move a page up when the first line is already on
          * the screen.  It's an error to move a page down when the last line
-         * is on the screen and the topline is 'scrolloff' lines from the
-         * last line.
+         * is on the screen and the topline is 'scrolloff' lines from the last line.
          */
         if (dir == FORWARD
                 ? ((curwin->w_topline >= curbuf->b_ml.ml_line_count - p_so)
@@ -1488,8 +1476,7 @@ onepage(dir, count)
             }
             else
             {
-                /* For the overlap, start with the line just below the window
-                 * and go upwards. */
+                /* For the overlap, start with the line just below the window and go upwards. */
                 loff.lnum = curwin->w_botline;
                 get_scroll_overlap(&loff, -1);
                 curwin->w_topline = loff.lnum;

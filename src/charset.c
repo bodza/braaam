@@ -24,7 +24,6 @@ static int    chartab_initialized = FALSE;
  *
  * The index in chartab[] depends on 'encoding':
  * - For non-multi-byte index with the byte (same as the character).
- * - For DBCS index with the first byte.
  * - For UTF-8 index with the character (when first byte is up to 0x80 it is
  *   the same as the character, if the first byte is 0x80 and above it depends
  *   on further bytes).
@@ -33,8 +32,7 @@ static int    chartab_initialized = FALSE;
  * - The lower two bits, masked by CT_CELL_MASK, give the number of display
  *   cells the character occupies (1 or 2).  Not valid for UTF-8 above 0x80.
  * - CT_PRINT_CHAR bit is set when the character is printable (no need to
- *   translate the character before displaying it).  Note that only DBCS
- *   characters can have 2 display cells and still be printable.
+ *   translate the character before displaying it).
  * - CT_FNAME_CHAR bit is set when the character can be in a file name.
  * - CT_ID_CHAR bit is set when the character can be in an identifier.
  *
@@ -76,12 +74,6 @@ buf_init_chartab(buf, global)
             /* UTF-8: bytes 0xa0 - 0xff are printable (latin1) */
             if (enc_utf8 && c >= 0xa0)
                 chartab[c++] = CT_PRINT_CHAR + 1;
-            /* euc-jp characters starting with 0x8e are single width */
-            else if (enc_dbcs == DBCS_JPNU && c == 0x8e)
-                chartab[c++] = CT_PRINT_CHAR + 1;
-            /* other double-byte chars can be printable AND double-width */
-            else if (enc_dbcs != 0 && MB_BYTE2LEN(c) == 2)
-                chartab[c++] = CT_PRINT_CHAR + 2;
             else
                 /* the rest is unprintable by default */
                 chartab[c++] = (dy_flags & DY_UHEX) ? 4 : 2;
@@ -89,9 +81,7 @@ buf_init_chartab(buf, global)
 
         /* Assume that every multi-byte char is a filename character. */
         for (c = 1; c < 256; ++c)
-            if ((enc_dbcs != 0 && MB_BYTE2LEN(c) > 1)
-                    || (enc_dbcs == DBCS_JPNU && c == 0x8e)
-                    || (enc_utf8 && c >= 0xa0))
+            if (enc_utf8 && c >= 0xa0)
                 chartab[c] |= CT_FNAME_CHAR;
     }
 
@@ -99,13 +89,6 @@ buf_init_chartab(buf, global)
      * Init word char flags all to FALSE
      */
     vim_memset(buf->b_chartab, 0, (size_t)32);
-    if (enc_dbcs != 0)
-        for (c = 0; c < 256; ++c)
-        {
-            /* double-byte characters are probably word characters */
-            if (MB_BYTE2LEN(c) == 2)
-                SET_CHARTAB(buf, c);
-        }
 
     /*
      * In lisp mode the '-' character is included in keywords.
@@ -189,11 +172,7 @@ buf_init_chartab(buf, global)
                     }
                     else if (i == 1)            /* (re)set printable */
                     {
-                        if ((c < ' ' || c > '~')
-                                /* For double-byte we keep the cell width, so
-                                 * that we can detect it from the first byte. */
-                                && !(enc_dbcs && MB_BYTE2LEN(c) == 2)
-                           )
+                        if ((c < ' ' || c > '~'))
                         {
                             if (tilde)
                             {
@@ -346,8 +325,7 @@ transstr(s)
 }
 
 /*
- * Convert the string "str[orglen]" to do ignore-case comparing.  Uses the
- * current locale.
+ * Convert the string "str[orglen]" to do ignore-case comparing.  Uses the current locale.
  * When "buf" is NULL returns an allocated string (NULL for out-of-memory).
  * Otherwise puts the result in "buf[buflen]".
  */
@@ -461,8 +439,7 @@ str_foldcase(str, orglen, buf, buflen)
  * initialized, and initializing options may cause transchar() to be called!
  * When chartab_initialized == FALSE don't use chartab[].
  * Does NOT work for multi-byte characters, c must be <= 255.
- * Also doesn't work for the first byte of a multi-byte, "c" must be a
- * character!
+ * Also doesn't work for the first byte of a multi-byte, "c" must be a character!
  */
 static char_u   transchar_buf[7];
 
@@ -572,8 +549,7 @@ transchar_hex(buf, c)
 
 /*
  * Convert the lower 4 bits of byte "c" to its hex character.
- * Lower case letters are used to avoid the confusion of <F1> being 0xf1 or
- * function key 1.
+ * Lower case letters are used to avoid the confusion of <F1> being 0xf1 or function key 1.
  */
     static unsigned
 nr2hex(c)
@@ -617,14 +593,6 @@ char2cells(c)
         /* UTF-8: above 0x80 need to check the value */
         if (enc_utf8)
             return utf_char2cells(c);
-        /* DBCS: double-byte means double-width, except for euc-jp with first
-         * byte 0x8e */
-        if (enc_dbcs != 0 && c >= 0x100)
-        {
-            if (enc_dbcs == DBCS_JPNU && ((unsigned)c >> 8) == 0x8e)
-                return 1;
-            return 2;
-        }
     }
     return (chartab[c & 0xff] & CT_CELL_MASK);
 }
@@ -790,8 +758,6 @@ vim_iswordc_buf(c, buf)
 {
     if (c >= 0x100)
     {
-        if (enc_dbcs != 0)
-            return dbcs_class((unsigned)c >> 8, (unsigned)(c & 0xff)) >= 2;
         if (enc_utf8)
             return utf_class(c) >= 2;
     }
@@ -834,8 +800,7 @@ vim_isfilec(c)
 /*
  * return TRUE if 'c' is a valid file-name character or a wildcard character
  * Assume characters above 0x100 are valid (multi-byte).
- * Explicitly interpret ']' as a wildcard character as mch_has_wildcard("]")
- * returns false.
+ * Explicitly interpret ']' as a wildcard character as mch_has_wildcard("]") returns false.
  */
     int
 vim_isfilec_or_wc(c)
@@ -869,8 +834,6 @@ vim_isprintc(c)
 vim_isprintc_strict(c)
     int c;
 {
-    if (enc_dbcs != 0 && c < 0x100 && MB_BYTE2LEN(c) > 1)
-        return FALSE;
     if (enc_utf8 && c >= 0x100)
         return utf_printable(c);
     return (c >= 0x100 || (c > 0 && (chartab[c] & CT_PRINT_CHAR)));
@@ -956,8 +919,7 @@ win_lbr_chartabsize(wp, line, s, col, headp)
         col_adj = size - 1;
 
     /*
-     * If 'linebreak' set check at a blank before a non-blank if the line
-     * needs a break here
+     * If 'linebreak' set check at a blank before a non-blank if the line needs a break here
      */
     if (wp->w_p_lbr && vim_isbreak(c) && !vim_isbreak(s[1]) && wp->w_p_wrap && wp->w_width != 0)
     {
@@ -1157,8 +1119,7 @@ getvcol(wp, pos, start, cursor, end)
 
     /*
      * This function is used very often, do some speed optimizations.
-     * When 'list', 'linebreak', 'showbreak' and 'breakindent' are not set
-     * use a simple loop.
+     * When 'list', 'linebreak', 'showbreak' and 'breakindent' are not set use a simple loop.
      * Also use this when 'list' is set but tabs take their normal size.
      */
     if ((!wp->w_p_list || lcs_tab1 != NUL) && !wp->w_p_lbr && *p_sbr == NUL && !wp->w_p_bri)
@@ -1188,8 +1149,7 @@ getvcol(wp, pos, start, cursor, end)
                         incr = CHARSIZE(c);
 
                     /* If a double-cell char doesn't fit at the end of a line
-                     * it wraps to the next line, it's like this char is three
-                     * cells wide. */
+                     * it wraps to the next line, it's like this char is three cells wide. */
                     if (incr == 2 && wp->w_p_wrap && MB_BYTE2LEN(*ptr) > 1
                             && in_win_border(wp, vcol))
                     {
@@ -1622,10 +1582,8 @@ vim_isblankline(lbuf)
  * If "len" is not NULL, the length of the number in characters is returned.
  * If "nptr" is not NULL, the signed result is returned in it.
  * If "unptr" is not NULL, the unsigned result is returned in it.
- * If "dooct" is non-zero recognize octal numbers, when > 1 always assume
- * octal number.
- * If "dohex" is non-zero recognize hex numbers, when > 1 always assume
- * hex number.
+ * If "dooct" is non-zero recognize octal numbers, when > 1 always assume octal number.
+ * If "dohex" is non-zero recognize hex numbers, when > 1 always assume hex number.
  */
     void
 vim_str2nr(start, hexp, len, dooct, dohex, nptr, unptr)
@@ -1762,8 +1720,7 @@ hexhex2nr(p)
  * Although "\ name" is valid, the backslash in "Program\ files" must be
  * removed.  Assume a file name doesn't start with a space.
  * For multi-byte names, never remove a backslash before a non-ascii
- * character, assume that all multi-byte characters are valid file name
- * characters.
+ * character, assume that all multi-byte characters are valid file name characters.
  */
     int
 rem_backslash(str)

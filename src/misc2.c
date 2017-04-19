@@ -16,8 +16,7 @@ static int coladvance2(pos_T *pos, int addspaces, int finetune, colnr_T wcol);
 virtual_active()
 {
     /* While an operator is being executed we return "virtual_op", because
-     * VIsual_active has already been reset, thus we can't check for "block"
-     * being used. */
+     * VIsual_active has already been reset, thus we can't check for "block" being used. */
     if (virtual_op != MAYBE)
         return virtual_op;
     return (ve_flags == VE_ALL
@@ -543,8 +542,7 @@ leftcol_changed()
     validate_virtcol();
 
     /*
-     * If the cursor is right or left of the screen, move it to last or first
-     * character.
+     * If the cursor is right or left of the screen, move it to last or first character.
      */
     if (curwin->w_virtcol > (colnr_T)(lastcol - p_siso))
     {
@@ -897,8 +895,7 @@ vim_strnsave(string, len)
 }
 
 /*
- * Same as vim_strsave(), but any characters found in esc_chars are preceded
- * by a backslash.
+ * Same as vim_strsave(), but any characters found in esc_chars are preceded by a backslash.
  */
     char_u *
 vim_strsave_escaped(string, esc_chars)
@@ -953,7 +950,7 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
             {
                 mch_memmove(p2, p, (size_t)l);
                 p2 += l;
-                p += l - 1;             /* skip multibyte char  */
+                p += l - 1;             /* skip multibyte char */
                 continue;
             }
             if (vim_strchr(esc_chars, *p) != NULL || (bsl && rem_backslash(p)))
@@ -1260,8 +1257,7 @@ vim_strcat(to, from, tosize)
 }
 
 /*
- * Isolate one part of a string option where parts are separated with
- * "sep_chars".
+ * Isolate one part of a string option where parts are separated with "sep_chars".
  * The part is copied into "buf[maxlen]".
  * "*option" is advanced to the next part.
  * The length is returned.
@@ -1358,19 +1354,6 @@ vim_strchr(string, c)
         while (*p != NUL)
         {
             if (utf_ptr2char(p) == c)
-                return p;
-            p += (*mb_ptr2len)(p);
-        }
-        return NULL;
-    }
-    if (enc_dbcs != 0 && c > 255)
-    {
-        int     n2 = c & 0xff;
-
-        c = ((unsigned)c >> 8) & 0xff;
-        while ((b = *p) != NUL)
-        {
-            if (b == c && p[1] == n2)
                 return p;
             p += (*mb_ptr2len)(p);
         }
@@ -1737,7 +1720,7 @@ static char_u modifier_keys_table[] =
     MOD_MASK_SHIFT, KS_EXTRA, (int)KE_S_F36,    'F', 'Q',
     MOD_MASK_SHIFT, KS_EXTRA, (int)KE_S_F37,    'F', 'R',
 
-                                                            /* TAB pseudo code*/
+                                                            /* TAB pseudo code */
     MOD_MASK_SHIFT, 'k', 'B',                   KS_EXTRA, (int)KE_TAB,
 
     NUL
@@ -2049,8 +2032,7 @@ get_special_key_name(c, modifiers)
     table_idx = find_special_key_in_table(c);
 
     /*
-     * When not a known special key, and not a printable character, try to
-     * extract modifiers.
+     * When not a known special key, and not a printable character, try to extract modifiers.
      */
     if (c > 0 && (*mb_char2len)(c) == 1)
     {
@@ -2257,8 +2239,7 @@ find_special_key(srcp, modp, keycode, keep_x_key)
             }
 
             /*
-             * get_special_key_code() may return NUL for invalid
-             * special key name.
+             * get_special_key_code() may return NUL for invalid special key name.
              */
             if (key != NUL)
             {
@@ -2316,7 +2297,7 @@ extract_modifiers(key, modp)
         if (key == 0)
             key = K_ZERO;
     }
-    if ((modifiers & MOD_MASK_ALT) && key < 0x80 && !enc_dbcs)    /* avoid creating a lead byte */
+    if ((modifiers & MOD_MASK_ALT) && key < 0x80)    /* avoid creating a lead byte */
     {
         key |= 0x80;
         modifiers &= ~MOD_MASK_ALT;     /* remove the META modifier */
@@ -2347,8 +2328,7 @@ find_special_key_in_table(c)
 /*
  * Find the special key with the given name (the given string does not have to
  * end with NUL, the name is assumed to end before the first non-idchar).
- * If the name starts with "t_" the next two characters are interpreted as a
- * termcap name.
+ * If the name starts with "t_" the next two characters are interpreted as a termcap name.
  * Return the key code, or 0 if not found.
  */
     int
@@ -2589,8 +2569,7 @@ call_shell(cmd, opt)
                 vim_free(ecmd);
         }
         /*
-         * Check the window size, in case it changed while executing the
-         * external command.
+         * Check the window size, in case it changed while executing the external command.
          */
         shell_resized_check();
     }
@@ -2927,13 +2906,11 @@ typedef struct ff_stack
 {
     struct ff_stack     *ffs_prev;
 
-    /* the fix part (no wildcards) and the part containing the wildcards
-     * of the search path
+    /* the fix part (no wildcards) and the part containing the wildcards of the search path
      */
     char_u              *ffs_fix_path;
 
-    /* files/dirs found in the above directory, matched by the first wildcard
-     * of wc_part
+    /* files/dirs found in the above directory, matched by the first wildcard of wc_part
      */
     char_u              **ffs_filearray;
     int                 ffs_filearray_size;
@@ -2961,14 +2938,12 @@ typedef struct ff_visited
 {
     struct ff_visited   *ffv_next;
 
-    /* for unix use inode etc for comparison (needed because of links), else
-     * use filename.
+    /* for unix use inode etc for comparison (needed because of links), else use filename.
      */
     int                 ffv_dev_valid;  /* ffv_dev and ffv_ino were set */
     dev_t               ffv_dev;        /* device number */
     ino_t               ffv_ino;        /* inode number */
-    /* The memory for this struct is allocated according to the length of
-     * ffv_fname.
+    /* The memory for this struct is allocated according to the length of ffv_fname.
      */
     char_u              ffv_fname[1];   /* actually longer */
 } ff_visited_T;
@@ -3150,8 +3125,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what, sear
     ff_stack_T          *sptr;
     ff_search_ctx_T     *search_ctx;
 
-    /* If a search context is given by the caller, reuse it, else allocate a
-     * new one.
+    /* If a search context is given by the caller, reuse it, else allocate a new one.
      */
     if (search_ctx_arg != NULL)
         search_ctx = search_ctx_arg;
@@ -3193,7 +3167,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what, sear
     }
 
     /* Store information on starting dir now if path is relative.
-     * If path is absolute, we do that later.  */
+     * If path is absolute, we do that later. */
     if (path[0] == '.'
             && (vim_ispathsep(path[1]) || path[1] == NUL)
             && (!tagfile || vim_strchr(p_cpo, CPO_DOTTAG) == NULL)
@@ -3335,7 +3309,7 @@ vim_findfile(search_ctx_arg)
         /* downward search loop */
         for (;;)
         {
-            /* check if user user wants to stop the search*/
+            /* check if user user wants to stop the search */
             ui_breakcheck();
             if (got_int)
                 break;
@@ -3392,8 +3366,7 @@ vim_findfile(search_ctx_arg)
             {
                 char_u *dirptrs[2];
 
-                /* we use filepath to build the path expand_wildcards() should
-                 * expand.
+                /* we use filepath to build the path expand_wildcards() should expand.
                  */
                 dirptrs[0] = file_path;
                 dirptrs[1] = NULL;
@@ -3449,8 +3422,7 @@ vim_findfile(search_ctx_arg)
                                       && !mch_isdir(stackp->ffs_filearray[i]))
                             continue;   /* not a directory */
 
-                        /* prepare the filename to be checked for existence
-                         * below */
+                        /* prepare the filename to be checked for existence below */
                         STRCPY(file_path, stackp->ffs_filearray[i]);
                         add_pathsep(file_path);
                         STRCAT(file_path, search_ctx->ffsc_file_to_search);
@@ -3603,8 +3575,7 @@ ff_get_visited_list(filename, list_headp)
  * returns OK if it is newly added
  *
  * TODO: What to do on memory allocation problems?
- *       -> return TRUE - Better the file is found several times instead of
- *          never.
+ *       -> return TRUE - Better the file is found several times instead of never.
  */
     static int
 ff_check_visited(visited_list, fname
@@ -3793,8 +3764,7 @@ vim_chdir(new_dir)
 /*
  * Get user name from machine-specific function.
  * Returns the user name in "buf[len]".
- * Some systems are quite slow in obtaining the user name (Windows NT), thus
- * cache the result.
+ * Some systems are quite slow in obtaining the user name (Windows NT), thus cache the result.
  * Returns OK or FAIL.
  */
     int

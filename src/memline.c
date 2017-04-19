@@ -167,8 +167,7 @@ struct block0
 #define b0_seed         b0_fname[B0_FNAME_SIZE_ORG - 2 - MF_SEED_LEN]
 
 /* The lowest two bits contain the fileformat.  Zero means it's not set
- * (compatible with Vim 6.x), otherwise it's EOL_UNIX + 1, EOL_DOS + 1 or
- * EOL_MAC + 1. */
+ * (compatible with Vim 6.x), otherwise it's EOL_UNIX + 1, EOL_DOS + 1 or EOL_MAC + 1. */
 #define B0_FF_MASK      3
 
 /* Swap file is in directory of edited file.  Used to find the file from
@@ -313,10 +312,8 @@ ml_open(buf)
 
     /*
      * Always sync block number 0 to disk, so we can check the file name in
-     * the swap file in findswapname(). Don't do this for a help files or
-     * a spell buffer though.
-     * Only works when there's a swapfile, otherwise it's done when the file
-     * is created.
+     * the swap file in findswapname(). Don't do this for a help files or a spell buffer though.
+     * Only works when there's a swapfile, otherwise it's done when the file is created.
      */
     mf_put(mfp, hp, TRUE, FALSE);
     if (!buf->b_help && !B_SPELL(buf))
@@ -458,8 +455,7 @@ ml_setname(buf)
 }
 
 /*
- * Open a file for the memfile for all buffers that are not readonly or have
- * been modified.
+ * Open a file for the memfile for all buffers that are not readonly or have been modified.
  * Used when 'updatecount' changes from zero to non-zero.
  */
     void
@@ -1850,8 +1846,7 @@ ml_preserve(buf, message)
         return;
     }
 
-    /* We only want to stop when interrupted here, not when interrupted
-     * before. */
+    /* We only want to stop when interrupted here, not when interrupted before. */
     got_int = FALSE;
 
     ml_flush_line(buf);                             /* flush buffered line */
@@ -2045,8 +2040,7 @@ ml_line_alloced()
  *
  *   newfile: TRUE when starting to edit a new file, meaning that pe_old_lnum
  *              will be set for recovery
- * Check: The caller of this function should probably also call
- * appended_lines().
+ * Check: The caller of this function should probably also call appended_lines().
  *
  * return FAIL for failure, OK otherwise
  */
@@ -2200,13 +2194,11 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
     else            /* not enough space in data block */
     {
 /*
- * If there is not enough room we have to create a new data block and copy some
- * lines into it.
+ * If there is not enough room we have to create a new data block and copy some lines into it.
  * Then we have to insert an entry in the pointer block.
  * If this pointer block also is full, we go up another block, and so on, up
  * to the root if necessary.
- * The line counts in the pointer blocks have already been adjusted by
- * ml_find_line().
+ * The line counts in the pointer blocks have already been adjusted by ml_find_line().
  */
         long        line_count_left, line_count_right;
         int         page_count_left, page_count_right;
@@ -2667,8 +2659,7 @@ ml_delete_int(buf, lnum, message)
  * Then we have to remove the entry, pointing to this data block, from the
  * pointer block. If this pointer block also becomes empty, we go up another
  * block, and so on, up to the root if necessary.
- * The line counts in the pointer blocks have already been adjusted by
- * ml_find_line().
+ * The line counts in the pointer blocks have already been adjusted by ml_find_line().
  */
     if (count == 1)
     {
@@ -3342,8 +3333,7 @@ resolve_symlink(fname, buf)
         /*
          * Check whether the symlink is relative or absolute.
          * If it's relative, build a new path based on the directory
-         * portion of the filename (if any) and the path the symlink
-         * points to.
+         * portion of the filename (if any) and the path the symlink points to.
          */
         if (mch_isFullName(buf))
             STRCPY(tmp, buf);

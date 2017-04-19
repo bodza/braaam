@@ -21,8 +21,6 @@
  * cells the next byte in ScreenLines[] is 0.
  * ScreenLinesC[][] contain up to 'maxcombine' composing characters
  * (drawn on top of the first character).  There is 0 after the last one used.
- * ScreenLines2[] is only used for euc-jp to store the second byte if the
- * first byte is 0x8e (single-width character).
  *
  * The screen_*() functions write to the screen and handle updating
  * ScreenLines[].
@@ -230,7 +228,6 @@ redraw_asap(type)
     int         i;
     u8char_T    *screenlineUC = NULL;   /* copy from ScreenLinesUC[] */
     u8char_T    *screenlineC[MAX_MCO];  /* copy from ScreenLinesC[][] */
-    schar_T     *screenline2 = NULL;    /* copy from ScreenLines2[] */
 
     redraw_later(type);
     if (msg_scrolled || (State != NORMAL && State != NORMAL_BUSY))
@@ -258,13 +255,6 @@ redraw_asap(type)
                 ret = 2;
         }
     }
-    if (enc_dbcs == DBCS_JPNU)
-    {
-        screenline2 = (schar_T *)lalloc(
-                           (long_u)(rows * Columns * sizeof(schar_T)), FALSE);
-        if (screenline2 == NULL)
-            ret = 2;
-    }
 
     if (ret != 2)
     {
@@ -287,10 +277,6 @@ redraw_asap(type)
                                 ScreenLinesC[r] + LineOffset[cmdline_row + r],
                                 (size_t)Columns * sizeof(u8char_T));
             }
-            if (enc_dbcs == DBCS_JPNU)
-                mch_memmove(screenline2 + r * Columns,
-                            ScreenLines2 + LineOffset[cmdline_row + r],
-                            (size_t)Columns * sizeof(schar_T));
         }
 
         update_screen(0);
@@ -319,10 +305,6 @@ redraw_asap(type)
                                     screenlineC[i] + r * Columns,
                                     (size_t)Columns * sizeof(u8char_T));
                 }
-                if (enc_dbcs == DBCS_JPNU)
-                    mch_memmove(ScreenLines2 + off,
-                                screenline2 + r * Columns,
-                                (size_t)Columns * sizeof(schar_T));
                 SCREEN_LINE(cmdline_row + r, 0, Columns, Columns, FALSE);
             }
             ret = 4;
@@ -337,8 +319,6 @@ redraw_asap(type)
         for (i = 0; i < p_mco; ++i)
             vim_free(screenlineC[i]);
     }
-    if (enc_dbcs == DBCS_JPNU)
-        vim_free(screenline2);
 
     /* Show the intro message when appropriate. */
     maybe_intro_message();
@@ -413,8 +393,7 @@ update_screen(type)
     if (curwin->w_lines_valid == 0 && type < NOT_VALID)
         type = NOT_VALID;
 
-    /* Postpone the redrawing when it's not needed and when being called
-     * recursively. */
+    /* Postpone the redrawing when it's not needed and when being called recursively. */
     if (!redrawing() || updating_screen)
     {
         redraw_later(type);             /* remember type for next time */
@@ -484,8 +463,7 @@ update_screen(type)
     if (clear_cmdline)          /* going to clear cmdline (done below) */
         check_for_delay(FALSE);
 
-    /* Force redraw when width of 'number' or 'relativenumber' column
-     * changes. */
+    /* Force redraw when width of 'number' or 'relativenumber' column changes. */
     if (curwin->w_redr_type < NOT_VALID
            && curwin->w_nrwidth != ((curwin->w_p_nu || curwin->w_p_rnu) ? number_width(curwin) : 0))
         curwin->w_redr_type = NOT_VALID;
@@ -744,8 +722,7 @@ win_update(wp)
 
     init_search_hl(wp);
 
-    /* Force redraw when width of 'number' or 'relativenumber' column
-     * changes. */
+    /* Force redraw when width of 'number' or 'relativenumber' column changes. */
     i = (wp->w_p_nu || wp->w_p_rnu) ? number_width(wp) : 0;
     if (wp->w_nrwidth != i)
     {
@@ -860,8 +837,7 @@ win_update(wp)
 
     /* Trick: we want to avoid clearing the screen twice.  screenclear() will
      * set "screen_cleared" to TRUE.  The special value MAYBE (which is still
-     * non-zero and thus not FALSE) will indicate that screenclear() was not
-     * called. */
+     * non-zero and thus not FALSE) will indicate that screenclear() was not called. */
     if (screen_cleared)
         screen_cleared = MAYBE;
 
@@ -878,8 +854,7 @@ win_update(wp)
         if (mod_top != 0 && wp->w_topline == mod_top)
         {
             /*
-             * w_topline is the first changed line, the scrolling will be done
-             * further down.
+             * w_topline is the first changed line, the scrolling will be done further down.
              */
         }
         else if (wp->w_lines[0].wl_valid && (wp->w_topline < wp->w_lines[0].wl_lnum))
@@ -932,8 +907,7 @@ win_update(wp)
         {
             /*
              * New topline is at or below old topline: May scroll up.
-             * When topline didn't change, find first entry in w_lines[] that
-             * needs updating.
+             * When topline didn't change, find first entry in w_lines[] that needs updating.
              */
 
             /* try to find wp->w_topline in wp->w_lines[].wl_lnum */
@@ -950,8 +924,7 @@ win_update(wp)
             }
             if (j == -1)
             {
-                /* if wp->w_topline is not in wp->w_lines[].wl_lnum redraw all
-                 * lines */
+                /* if wp->w_topline is not in wp->w_lines[].wl_lnum redraw all lines */
                 mid_start = 0;
             }
             else
@@ -1051,8 +1024,7 @@ win_update(wp)
             {
                 /*
                  * If the type of Visual selection changed, redraw the whole
-                 * selection.  Also when the ownership of the X selection is
-                 * gained or lost.
+                 * selection.  Also when the ownership of the X selection is gained or lost.
                  */
                 if (curwin->w_cursor.lnum < VIsual.lnum)
                 {
@@ -1376,8 +1348,7 @@ win_update(wp)
                         }
                     }
 
-                    /* When not updating the rest, may need to move w_lines[]
-                     * entries. */
+                    /* When not updating the rest, may need to move w_lines[] entries. */
                     if (mod_bot != MAXLNUM && i != j)
                     {
                         if (j < i)
@@ -1760,8 +1731,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
     int         prev_syntax_id  = 0;
     int         conceal_attr    = hl_attr(HLF_CONCEAL);
     int         is_concealing   = FALSE;
-    int         boguscols       = 0;    /* nonexistent columns added to force
-                                           wrapping */
+    int         boguscols       = 0;    /* nonexistent columns added to force wrapping */
     int         vcol_off        = 0;    /* offset for concealed characters */
     int         did_wcol        = FALSE;
     int         old_boguscols   = 0;
@@ -1998,8 +1968,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
         {
             if ((colnr_T)fromcol == wp->w_virtcol)
             {
-                /* highlighting starts at cursor, let it start just after the
-                 * cursor */
+                /* highlighting starts at cursor, let it start just after the cursor */
                 fromcol_prev = fromcol;
                 fromcol = -1;
             }
@@ -2034,8 +2003,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
             cur->pos.cur = 0;
         next_search_hl(wp, shl, lnum, (colnr_T)v, cur);
 
-        /* Need to get the line again, a multi-line regexp may have made it
-         * invalid. */
+        /* Need to get the line again, a multi-line regexp may have made it invalid. */
         line = ml_get_buf(wp->w_buffer, lnum, FALSE);
         ptr = line + v;
 
@@ -2255,8 +2223,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  * After end, check for start/end of next match.
                  * When another match, have to check for start again.
                  * Watch out for matching an empty string!
-                 * Do this for 'search_hl' and the match list (ordered by
-                 * priority).
+                 * Do this for 'search_hl' and the match list (ordered by priority).
                  */
                 v = (long)(ptr - line);
                 cur = wp->w_match_head;
@@ -2307,8 +2274,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
                                 if (shl->startcol == shl->endcol)
                                 {
-                                    /* highlight empty match, try again after
-                                     * it */
+                                    /* highlight empty match, try again after it */
                                     if (has_mbyte)
                                         shl->endcol += (*mb_ptr2len)(line + shl->endcol);
                                     else
@@ -2436,8 +2402,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     if (mb_l == 0)  /* at the NUL at end-of-line */
                         mb_l = 1;
 
-                    /* If a double-width char doesn't fit display a '>' in the
-                     * last column. */
+                    /* If a double-width char doesn't fit display a '>' in the last column. */
                     if ((wp->w_p_rl ? (col <= 0) : (col >= W_WIDTH(wp) - 1)) && (*mb_char2cells)(mb_c) == 2)
                     {
                         c = '>';
@@ -2476,8 +2441,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 mb_c = c;
                 if (enc_utf8)
                 {
-                    /* If the UTF-8 character is more than one byte: Decode it
-                     * into "mb_c". */
+                    /* If the UTF-8 character is more than one byte: Decode it into "mb_c". */
                     mb_l = (*mb_ptr2len)(ptr);
                     mb_utf8 = FALSE;
                     if (mb_l > 1)
@@ -2587,8 +2551,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     }
                 }
                 /* If a double-width char doesn't fit display a '>' in the
-                 * last column; the character is displayed at the start of the
-                 * next line. */
+                 * last column; the character is displayed at the start of the next line. */
                 if ((wp->w_p_rl ? (col <= 0) : (col >= W_WIDTH(wp) - 1)) && (*mb_char2cells)(mb_c) == 2)
                 {
                     c = '>';
@@ -2604,8 +2567,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     ptr += mb_l - 1;
 
                 /* If a double-width char doesn't fit at the left side display
-                 * a '<' in the first column.  Don't do this for unprintable
-                 * characters. */
+                 * a '<' in the first column.  Don't do this for unprintable characters. */
                 if (n_skip > 0 && mb_l > 1 && n_extra == 0)
                 {
                     n_extra = 1;
@@ -2690,9 +2652,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 if (wp->w_p_lbr && vim_isbreak(c) && !vim_isbreak(*ptr))
                 {
                     int mb_off = has_mbyte ? (*mb_head_off)(line, ptr - 1) : 0;
-                    char_u *p = ptr - (
-                                mb_off +
-                                1);
+                    char_u *p = ptr - (mb_off + 1);
 
                     /* TODO: is passing p for start of the line OK? */
                     n_extra = win_lbr_chartabsize(wp, line, p, (colnr_T)vcol, NULL) - 1;
@@ -2771,8 +2731,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                             tab_len += n_extra - tab_len;
 
                         /* if n_extra > 0, it gives the number of chars, to
-                         * use for a tab, else we need to calculate the width
-                         * for a tab */
+                         * use for a tab, else we need to calculate the width for a tab */
                         len = (tab_len * mb_char2len(lcs_tab2));
                         if (n_extra > 0)
                             len += n_extra - tab_len;
@@ -2851,8 +2810,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     /* Display a '$' after the line or highlight an extra
                      * character if the line break is included. */
 #if defined(LINE_ATTR)
-                    /* For a diff line the highlighting continues after the
-                     * "$". */
+                    /* For a diff line the highlighting continues after the "$". */
                     if (
 #if defined(LINE_ATTR)
                             line_attr == 0
@@ -2961,8 +2919,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         && (syn_get_sub_char() != NUL || wp->w_p_cole == 1)
                         && wp->w_p_cole != 3)
                 {
-                    /* First time at this concealed item: display one
-                     * character. */
+                    /* First time at this concealed item: display one character. */
                     if (syn_get_sub_char() != NUL)
                         c = syn_get_sub_char();
                     else if (lcs_conceal != NUL)
@@ -3304,8 +3261,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
         /* Highlight the cursor column if 'cursorcolumn' is set.  But don't
          * highlight the cursor position itself.
-         * Also highlight the 'colorcolumn' if it is different than
-         * 'cursorcolumn' */
+         * Also highlight the 'colorcolumn' if it is different than 'cursorcolumn' */
         vcol_save_attr = -1;
         if (draw_state == WL_LINE && !lnum_in_visual_area)
         {
@@ -3338,13 +3294,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 --col;
             }
             ScreenLines[off] = c;
-            if (enc_dbcs == DBCS_JPNU)
-            {
-                if ((mb_c & 0xff00) == 0x8e00)
-                    ScreenLines[off] = 0x8e;
-                ScreenLines2[off] = mb_c & 0xff;
-            }
-            else if (enc_utf8)
+            if (enc_utf8)
             {
                 if (mb_utf8)
                 {
@@ -3482,8 +3432,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
         else
             --n_skip;
 
-        /* Only advance the "vcol" when after the 'number' or 'relativenumber'
-         * column. */
+        /* Only advance the "vcol" when after the 'number' or 'relativenumber' column. */
         if (draw_state > WL_NR)
             ++vcol;
 
@@ -3639,11 +3588,6 @@ char_needs_redraw(off_from, off_to, cols)
     if (cols > 0
             && ((ScreenLines[off_from] != ScreenLines[off_to]
                     || ScreenAttrs[off_from] != ScreenAttrs[off_to])
-                || (enc_dbcs != 0
-                    && MB_BYTE2LEN(ScreenLines[off_from]) > 1
-                    && (enc_dbcs == DBCS_JPNU && ScreenLines[off_from] == 0x8e
-                        ? ScreenLines2[off_from] != ScreenLines2[off_to]
-                        : (cols > 1 && ScreenLines[off_from + 1] != ScreenLines[off_to + 1])))
                 || (enc_utf8
                     && (ScreenLinesUC[off_from] != ScreenLinesUC[off_to]
                         || (ScreenLinesUC[off_from] != 0
@@ -3744,11 +3688,9 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
              * cursor is when writing the highlighting code.  The
              * start-highlighting code must be written with the cursor on the
              * first highlighted character.  The stop-highlighting code must
-             * be written with the cursor just after the last highlighted
-             * character.
+             * be written with the cursor just after the last highlighted character.
              * Overwriting a character doesn't remove it's highlighting.  Need
-             * to clear the rest of the line, and force redrawing it
-             * completely.
+             * to clear the rest of the line, and force redrawing it completely.
              */
             if (       p_wiv
                     && !force
@@ -3776,35 +3718,6 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
                 }
                 else
                     screen_attr = 0;        /* highlighting has stopped */
-            }
-            if (enc_dbcs != 0)
-            {
-                /* Check if overwriting a double-byte with a single-byte or
-                 * the other way around requires another character to be
-                 * redrawn.  For UTF-8 this isn't needed, because comparing
-                 * ScreenLinesUC[] is sufficient. */
-                if (char_cells == 1
-                        && col + 1 < endcol
-                        && (*mb_off2cells)(off_to, max_off_to) > 1)
-                {
-                    /* Writing a single-cell character over a double-cell
-                     * character: need to redraw the next cell. */
-                    ScreenLines[off_to + 1] = 0;
-                    redraw_next = TRUE;
-                }
-                else if (char_cells == 2
-                        && col + 2 < endcol
-                        && (*mb_off2cells)(off_to, max_off_to) == 1
-                        && (*mb_off2cells)(off_to + 1, max_off_to) > 1)
-                {
-                    /* Writing the second half of a double-cell character over
-                     * a double-cell character: need to redraw the second cell. */
-                    ScreenLines[off_to + 2] = 0;
-                    redraw_next = TRUE;
-                }
-
-                if (enc_dbcs == DBCS_JPNU)
-                    ScreenLines2[off_to] = ScreenLines2[off_from];
             }
             /* When writing a single-width character over a double-width
              * character and at the end of the redrawn text, need to clear out
@@ -3852,10 +3765,7 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
             if (char_cells == 2)
                 ScreenAttrs[off_to + 1] = ScreenAttrs[off_from];
 
-            if (enc_dbcs != 0 && char_cells == 2)
-                screen_char_2(off_to, row, col + coloff);
-            else
-                screen_char(off_to, row, col + coloff);
+            screen_char(off_to, row, col + coloff);
         }
         else if (p_wiv && col + coloff > 0)
         {
@@ -4105,7 +4015,7 @@ win_redr_status(wp)
             clen = mb_string2cells(p, -1);
 
             /* Find first character that will fit.
-                * Going from start to end is much faster for DBCS. */
+             * Going from start to end is much faster for DBCS. */
             for (i = 0; p[i] != NUL && clen >= this_ru_col - 1; i += (*mb_ptr2len)(p + i))
                 clen -= (*mb_ptr2cells)(p + i);
             len = clen;
@@ -4467,17 +4377,6 @@ screen_getbytes(row, col, bytes, attrp)
 
         if (enc_utf8 && ScreenLinesUC[off] != 0)
             bytes[utfc_char2bytes(off, bytes)] = NUL;
-        else if (enc_dbcs == DBCS_JPNU && ScreenLines[off] == 0x8e)
-        {
-            bytes[0] = ScreenLines[off];
-            bytes[1] = ScreenLines2[off];
-            bytes[2] = NUL;
-        }
-        else if (enc_dbcs && MB_BYTE2LEN(bytes[0]) > 1)
-        {
-            bytes[1] = ScreenLines[off + 1];
-            bytes[2] = NUL;
-        }
     }
 }
 
@@ -4578,33 +4477,27 @@ screen_puts_len(text, textlen, row, col, attr)
                 mbyte_blen = utfc_ptr2len_len(ptr, (int)((text + len) - ptr));
             else
                 mbyte_blen = (*mb_ptr2len)(ptr);
-            if (enc_dbcs == DBCS_JPNU && c == 0x8e)
-                mbyte_cells = 1;
-            else if (enc_dbcs != 0)
-                mbyte_cells = mbyte_blen;
-            else        /* enc_utf8 */
-            {
-                if (len >= 0)
-                    u8c = utfc_ptr2char_len(ptr, u8cc, (int)((text + len) - ptr));
-                else
-                    u8c = utfc_ptr2char(ptr, u8cc);
-                mbyte_cells = utf_char2cells(u8c);
+
+            if (len >= 0)
+                u8c = utfc_ptr2char_len(ptr, u8cc, (int)((text + len) - ptr));
+            else
+                u8c = utfc_ptr2char(ptr, u8cc);
+            mbyte_cells = utf_char2cells(u8c);
 #if defined(UNICODE16)
-                /* Non-BMP character: display as ? or fullwidth ?. */
-                if (u8c >= 0x10000)
-                {
-                    u8c = (mbyte_cells == 2) ? 0xff1f : (int)'?';
-                    if (attr == 0)
-                        attr = hl_attr(HLF_8);
-                }
+            /* Non-BMP character: display as ? or fullwidth ?. */
+            if (u8c >= 0x10000)
+            {
+                u8c = (mbyte_cells == 2) ? 0xff1f : (int)'?';
+                if (attr == 0)
+                    attr = hl_attr(HLF_8);
+            }
 #endif
-                if (col + mbyte_cells > screen_Columns)
-                {
-                    /* Only 1 cell left, but character requires 2 cells:
-                     * display a '>' in the last column to avoid wrapping. */
-                    c = '>';
-                    mbyte_cells = 1;
-                }
+            if (col + mbyte_cells > screen_Columns)
+            {
+                /* Only 1 cell left, but character requires 2 cells:
+                 * display a '>' in the last column to avoid wrapping. */
+                c = '>';
+                mbyte_cells = 1;
             }
         }
 
@@ -4612,11 +4505,7 @@ screen_puts_len(text, textlen, row, col, attr)
         force_redraw_next = FALSE;
 
         need_redraw = ScreenLines[off] != c
-                || (mbyte_cells == 2
-                    && ScreenLines[off + 1] != (enc_dbcs ? ptr[1] : 0))
-                || (enc_dbcs == DBCS_JPNU
-                    && c == 0x8e
-                    && ScreenLines2[off] != ptr[1])
+                || (mbyte_cells == 2 && ScreenLines[off + 1] != 0)
                 || (enc_utf8
                     && (ScreenLinesUC[off] != (u8char_T)(c < 0x80 && u8cc[0] == 0 ? 0 : u8c)
                         || (ScreenLinesUC[off] != 0 && screen_comp_differs(off, u8cc))))
@@ -4653,14 +4542,6 @@ screen_puts_len(text, textlen, row, col, attr)
                             && (*mb_off2cells)(off + 1, max_off) > 1)))
                 clear_next_cell = TRUE;
 
-            /* Make sure we never leave a second byte of a double-byte behind,
-             * it confuses mb_off2cells(). */
-            if (enc_dbcs
-                    && ((mbyte_cells == 1 && (*mb_off2cells)(off, max_off) > 1)
-                        || (mbyte_cells == 2
-                            && (*mb_off2cells)(off, max_off) == 1
-                            && (*mb_off2cells)(off + 1, max_off) > 1)))
-                ScreenLines[off + mbyte_blen] = 0;
             ScreenLines[off] = c;
             ScreenAttrs[off] = attr;
             if (enc_utf8)
@@ -4692,11 +4573,6 @@ screen_puts_len(text, textlen, row, col, attr)
                 ScreenAttrs[off + 1] = attr;
                 screen_char_2(off, row, col);
             }
-            else if (enc_dbcs == DBCS_JPNU && c == 0x8e)
-            {
-                ScreenLines2[off] = ptr[1];
-                screen_char(off, row, col);
-            }
             else
                 screen_char(off, row, col);
         }
@@ -4724,10 +4600,7 @@ screen_puts_len(text, textlen, row, col, attr)
      * doesn't extend up to there, update the character here. */
     if (force_redraw_next && col < screen_Columns)
     {
-        if (enc_dbcs != 0 && dbcs_off2cells(off, max_off) > 1)
-            screen_char_2(off, row, col);
-        else
-            screen_char(off, row, col);
+        screen_char(off, row, col);
     }
 }
 
@@ -4768,8 +4641,7 @@ init_search_hl(wp)
 {
     matchitem_T *cur;
 
-    /* Setup for match and 'hlsearch' highlighting.  Disable any previous
-     * match */
+    /* Setup for match and 'hlsearch' highlighting.  Disable any previous match */
     cur = wp->w_match_head;
     while (cur != NULL)
     {
@@ -4860,8 +4732,7 @@ prepare_search_hl(wp, lnum)
  * Search for a next 'hlsearch' or match.
  * Uses shl->buf.
  * Sets shl->lnum and shl->rm contents.
- * Note: Assumes a previous match is always before "lnum", unless
- * shl->lnum is zero.
+ * Note: Assumes a previous match is always before "lnum", unless shl->lnum is zero.
  * Careful: Any pointers for buffer lines will become invalid.
  */
     static void
@@ -4936,8 +4807,7 @@ next_search_hl(win, shl, lnum, mincol, cur)
         shl->lnum = lnum;
         if (shl->rm.regprog != NULL)
         {
-            /* Remember whether shl->rm is using a copy of the regprog in
-             * cur->match. */
+            /* Remember whether shl->rm is using a copy of the regprog in cur->match. */
             int regprog_is_copy = (shl != &search_hl && cur != NULL
                                 && shl == &cur->hl
                                 && cur->match.regprog == cur->hl.rm.regprog);
@@ -5216,8 +5086,7 @@ screen_char(off, row, col)
 {
     int         attr;
 
-    /* Check for illegal values, just in case (could happen just after
-     * resizing). */
+    /* Check for illegal values, just in case (could happen just after resizing). */
     if (row >= screen_Rows || col >= screen_Columns)
         return;
 
@@ -5265,9 +5134,6 @@ screen_char(off, row, col)
     {
         out_flush_check();
         out_char(ScreenLines[off]);
-        /* double-byte character in single-width cell */
-        if (enc_dbcs == DBCS_JPNU && ScreenLines[off] == 0x8e)
-            out_char(ScreenLines2[off]);
     }
 
     screen_cur_col++;
@@ -5332,17 +5198,9 @@ screen_draw_rectangle(row, col, height, width, invert)
         max_off = off + screen_Columns;
         for (c = col; c < col + width; ++c)
         {
-            if (enc_dbcs != 0 && dbcs_off2cells(off + c, max_off) > 1)
-            {
-                screen_char_2(off + c, r, c);
+            screen_char(off + c, r, c);
+            if (utf_off2cells(off + c, max_off) > 1)
                 ++c;
-            }
-            else
-            {
-                screen_char(off + c, r, c);
-                if (utf_off2cells(off + c, max_off) > 1)
-                    ++c;
-            }
         }
     }
     screen_char_attr = 0;
@@ -5414,8 +5272,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
         {
             /* When drawing over the right halve of a double-wide char clear
              * out the left halve.  When drawing over the left halve of a
-             * double wide-char clear out the right halve.  Only needed in a
-             * terminal. */
+             * double wide-char clear out the right halve.  Only needed in a terminal. */
             if (start_col > 0 && mb_fix_col(start_col, row) != start_col)
                 screen_puts_len((char_u *)" ", 1, row, start_col - 1, 0);
             if (end_col < screen_Columns && mb_fix_col(end_col, row) != end_col)
@@ -5485,7 +5342,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
                 /* The bold trick may make a single row of pixels appear in
                  * the next character.  When a bold character is removed, the
                  * next character should be redrawn too.  This happens for our
-                 * own GUI and for some xterms.  */
+                 * own GUI and for some xterms. */
                 if (term_is_xterm)
                 {
                     if (ScreenLines[off] != ' ' && (ScreenAttrs[off] > HL_ALL || ScreenAttrs[off] & HL_BOLD))
@@ -5584,7 +5441,6 @@ screenalloc(doclear)
     schar_T         *new_ScreenLines;
     u8char_T        *new_ScreenLinesUC = NULL;
     u8char_T        *new_ScreenLinesC[MAX_MCO];
-    schar_T         *new_ScreenLines2 = NULL;
     int             i;
     sattr_T         *new_ScreenAttrs;
     unsigned        *new_LineOffset;
@@ -5598,14 +5454,12 @@ screenalloc(doclear)
 retry:
     /*
      * Allocation of the screen buffers is done only when the size changes and
-     * when Rows and Columns have been set and we have started doing full
-     * screen stuff.
+     * when Rows and Columns have been set and we have started doing full screen stuff.
      */
     if ((ScreenLines != NULL
                 && Rows == screen_Rows
                 && Columns == screen_Columns
                 && enc_utf8 == (ScreenLinesUC != NULL)
-                && (enc_dbcs == DBCS_JPNU) == (ScreenLines2 != NULL)
                 && p_mco == Screen_mco
                 )
             || Rows == 0
@@ -5615,8 +5469,7 @@ retry:
 
     /*
      * It's possible that we produce an out-of-memory message below, which
-     * will cause this function to be called again.  To break the loop, just
-     * return here.
+     * will cause this function to be called again.  To break the loop, just return here.
      */
     if (entered)
         return;
@@ -5640,8 +5493,7 @@ retry:
      * - Free the old arrays.
      *
      * If anything fails, make ScreenLines NULL, so we don't do anything!
-     * Continuing with the old ScreenLines may result in a crash, because the
-     * size is wrong.
+     * Continuing with the old ScreenLines may result in a crash, because the size is wrong.
      */
     FOR_ALL_TAB_WINDOWS(tp, wp)
         win_free_lsize(wp);
@@ -5659,13 +5511,8 @@ retry:
             new_ScreenLinesC[i] = (u8char_T *)lalloc_clear((long_u)(
                              (Rows + 1) * Columns * sizeof(u8char_T)), FALSE);
     }
-    if (enc_dbcs == DBCS_JPNU)
-        new_ScreenLines2 = (schar_T *)lalloc((long_u)(
-                             (Rows + 1) * Columns * sizeof(schar_T)), FALSE);
-    new_ScreenAttrs = (sattr_T *)lalloc((long_u)(
-                              (Rows + 1) * Columns * sizeof(sattr_T)), FALSE);
-    new_LineOffset = (unsigned *)lalloc((long_u)(
-                                         Rows * sizeof(unsigned)), FALSE);
+    new_ScreenAttrs = (sattr_T *)lalloc((long_u)((Rows + 1) * Columns * sizeof(sattr_T)), FALSE);
+    new_LineOffset = (unsigned *)lalloc((long_u)(Rows * sizeof(unsigned)), FALSE);
     new_LineWraps = (char_u *)lalloc((long_u)(Rows * sizeof(char_u)), FALSE);
     new_TabPageIdxs = (short *)lalloc((long_u)(Columns * sizeof(short)), FALSE);
 
@@ -5686,7 +5533,6 @@ give_up:
             break;
     if (new_ScreenLines == NULL
             || (enc_utf8 && (new_ScreenLinesUC == NULL || i != p_mco))
-            || (enc_dbcs == DBCS_JPNU && new_ScreenLines2 == NULL)
             || new_ScreenAttrs == NULL
             || new_LineOffset == NULL
             || new_LineWraps == NULL
@@ -5698,8 +5544,7 @@ give_up:
             /* guess the size */
             do_outofmem_msg((long_u)((Rows + 1) * Columns));
 
-            /* Remember we did this to avoid getting outofmem messages over
-             * and over again. */
+            /* Remember we did this to avoid getting outofmem messages over and over again. */
             done_outofmem_msg = TRUE;
         }
         vim_free(new_ScreenLines);
@@ -5711,8 +5556,6 @@ give_up:
             vim_free(new_ScreenLinesC[i]);
             new_ScreenLinesC[i] = NULL;
         }
-        vim_free(new_ScreenLines2);
-        new_ScreenLines2 = NULL;
         vim_free(new_ScreenAttrs);
         new_ScreenAttrs = NULL;
         vim_free(new_LineOffset);
@@ -5749,9 +5592,6 @@ give_up:
                         (void)vim_memset(new_ScreenLinesC[i] + new_row * Columns,
                                        0, (size_t)Columns * sizeof(u8char_T));
                 }
-                if (enc_dbcs == DBCS_JPNU)
-                    (void)vim_memset(new_ScreenLines2 + new_row * Columns,
-                                       0, (size_t)Columns * sizeof(schar_T));
                 (void)vim_memset(new_ScreenAttrs + new_row * Columns,
                                         0, (size_t)Columns * sizeof(sattr_T));
                 old_row = new_row + (screen_Rows - Rows);
@@ -5777,10 +5617,6 @@ give_up:
                                 ScreenLinesC[i] + LineOffset[old_row],
                                 (size_t)len * sizeof(u8char_T));
                     }
-                    if (enc_dbcs == DBCS_JPNU && ScreenLines2 != NULL)
-                        mch_memmove(new_ScreenLines2 + new_LineOffset[new_row],
-                                ScreenLines2 + LineOffset[old_row],
-                                (size_t)len * sizeof(schar_T));
                     mch_memmove(new_ScreenAttrs + new_LineOffset[new_row],
                             ScreenAttrs + LineOffset[old_row],
                             (size_t)len * sizeof(sattr_T));
@@ -5798,7 +5634,6 @@ give_up:
     for (i = 0; i < p_mco; ++i)
         ScreenLinesC[i] = new_ScreenLinesC[i];
     Screen_mco = p_mco;
-    ScreenLines2 = new_ScreenLines2;
     ScreenAttrs = new_ScreenAttrs;
     LineOffset = new_LineOffset;
     LineWraps = new_LineWraps;
@@ -5837,7 +5672,6 @@ free_screenlines()
     vim_free(ScreenLinesUC);
     for (i = 0; i < Screen_mco; ++i)
         vim_free(ScreenLinesC[i]);
-    vim_free(ScreenLines2);
     vim_free(ScreenLines);
     vim_free(ScreenAttrs);
     vim_free(LineOffset);
@@ -5919,8 +5753,7 @@ lineclear(off, width)
 }
 
 /*
- * Mark one line in ScreenLines invalid by setting the attributes to an
- * invalid value.
+ * Mark one line in ScreenLines invalid by setting the attributes to an invalid value.
  */
     static void
 lineinvalid(off, width)
@@ -5951,8 +5784,6 @@ linecopy(to, from, wp)
         for (i = 0; i < p_mco; ++i)
             mch_memmove(ScreenLinesC[i] + off_to, ScreenLinesC[i] + off_from, wp->w_width * sizeof(u8char_T));
     }
-    if (enc_dbcs == DBCS_JPNU)
-        mch_memmove(ScreenLines2 + off_to, ScreenLines2 + off_from, wp->w_width * sizeof(schar_T));
     mch_memmove(ScreenAttrs + off_to, ScreenAttrs + off_from, wp->w_width * sizeof(sattr_T));
 }
 
@@ -6199,8 +6030,6 @@ windgoto(row, col)
                                 screen_stop_highlight();
                             out_flush_check();
                             out_char(ScreenLines[off]);
-                            if (enc_dbcs == DBCS_JPNU && ScreenLines[off] == 0x8e)
-                                out_char(ScreenLines2[off]);
                             ++off;
                         }
                     }
@@ -6249,8 +6078,7 @@ setcursor()
 /*
  * insert 'line_count' lines at 'row' in window 'wp'
  * if 'invalid' is TRUE the wp->w_lines[].wl_lnum is invalidated.
- * if 'mayclear' is TRUE the screen will be cleared if it is faster than
- * scrolling.
+ * if 'mayclear' is TRUE the screen will be cleared if it is faster than scrolling.
  * Returns FAIL if the lines are not inserted, OK for success.
  */
     int
@@ -6420,8 +6248,7 @@ win_do_lines(wp, row, line_count, mayclear, del)
     /*
      * If the terminal can set a scroll region, use that.
      * Always do this in a vertically split window.  This will redraw from
-     * ScreenLines[] when t_CV isn't defined.  That's faster than using
-     * win_line().
+     * ScreenLines[] when t_CV isn't defined.  That's faster than using win_line().
      * Don't use a scroll region when we are going to redraw the text, writing
      * a character in the lower right corner of the scroll region causes a
      * scroll-up in the DJGPP version.
@@ -6525,8 +6352,7 @@ screen_ins_lines(off, row, line_count, end, wp)
      * 1. Use T_CD (clear to end of display) if it exists and the result of
      *    the insert is just empty lines
      * 2. Use T_CAL (insert multiple lines) if it exists and T_AL is not
-     *    present or line_count > 1. It looks better if we do all the inserts
-     *    at once.
+     *    present or line_count > 1. It looks better if we do all the inserts at once.
      * 3. Use T_CDL (delete multiple lines) if it exists and the result of the
      *    insert is just empty lines and T_CE is not present or line_count > 1.
      * 4. Use T_AL (insert line) if it exists.
@@ -6539,8 +6365,7 @@ screen_ins_lines(off, row, line_count, end, wp)
      * 8. redraw the characters from ScreenLines[].
      *
      * Careful: In a hpterm scroll reverse doesn't work as expected, it moves
-     * the scrollbar for the window. It does have insert line, use that if it
-     * exists.
+     * the scrollbar for the window. It does have insert line, use that if it exists.
      */
     result_empty = (row + line_count >= end);
     if (wp != NULL && wp->w_width != Columns && *T_CSV == NUL)
@@ -6714,8 +6539,7 @@ screen_del_lines(off, row, line_count, end, force, wp)
     result_empty = row + line_count >= end;
 
     /*
-     * We can delete lines only when 'db' flag not set or when 'ce' option
-     * available.
+     * We can delete lines only when 'db' flag not set or when 'ce' option available.
      */
     can_delete = (*T_DB == NUL || can_clear(T_CE));
 
@@ -6825,8 +6649,7 @@ screen_del_lines(off, row, line_count, end, force, wp)
     }
     /*
      * Deleting lines at top of the screen or scroll region: Just scroll
-     * the whole screen (scroll region) up by outputting newlines on the
-     * last line.
+     * the whole screen (scroll region) up by outputting newlines on the last line.
      */
     else if (type == USE_NL)
     {
@@ -7181,8 +7004,7 @@ draw_tabline()
         }
     }
 
-    /* Reset the flag here again, in case evaluating 'tabline' causes it to be
-     * set. */
+    /* Reset the flag here again, in case evaluating 'tabline' causes it to be set. */
     redraw_tabline = FALSE;
 }
 
@@ -7221,8 +7043,7 @@ fillchar_status(attr, is_curwin)
         fill = fill_stlnc;
     }
     /* Use fill when there is highlighting, and highlighting of current
-     * window differs, or the fillchars differ, or this is not the
-     * current window */
+     * window differs, or the fillchars differ, or this is not the current window */
     if (*attr != 0 && ((hl_attr(HLF_S) != hl_attr(HLF_SNC)
                         || !is_curwin || firstwin == lastwin)
                     || (fill_stl != fill_stlnc)))

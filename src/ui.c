@@ -41,7 +41,7 @@ ui_write(s, len)
  */
 static char_u *ta_str = NULL;
 static int ta_off;      /* offset for next char to use when ta_str != NULL */
-static int ta_len;      /* length of ta_str when it's not NULL*/
+static int ta_len;      /* length of ta_str when it's not NULL */
 
     void
 ui_inchar_undo(s, len)
@@ -81,8 +81,7 @@ ui_inchar_undo(s, len)
  *
  * "tb_change_cnt" is the value of typebuf.tb_change_cnt if "buf" points into
  * it.  When typebuf.tb_change_cnt changes (e.g., when a message is received
- * from a remote client) "buf" can no longer be used.  "tb_change_cnt" is NULL
- * otherwise.
+ * from a remote client) "buf" can no longer be used.  "tb_change_cnt" is NULL otherwise.
  */
     int
 ui_inchar(buf, maxlen, wtime, tb_change_cnt)
@@ -241,8 +240,7 @@ static void clip_copy_selection(VimClipboard *clip);
 /*
  * Call this to initialise the clipboard.  Pass it FALSE if the clipboard code
  * is included, but the clipboard can not be used, or TRUE if the clipboard can
- * be used.  Eg unix may call this with FALSE, then call it again with TRUE if
- * the GUI starts.
+ * be used.  Eg unix may call this with FALSE, then call it again with TRUE if the GUI starts.
  */
     void
 clip_init(can_use)
@@ -354,8 +352,7 @@ clip_copy_selection(clip)
 
 /*
  * Save and restore clip_unnamed before doing possibly many changes. This
- * prevents accessing the clipboard very often which might slow down Vim
- * considerably.
+ * prevents accessing the clipboard very often which might slow down Vim considerably.
  */
 static int global_change_count = 0; /* if set, inside a start_global_changes */
 static int clipboard_needs_update; /* clipboard needs to be updated */
@@ -892,16 +889,12 @@ clip_copy_modeless_selection(both)
     }
     /* correct starting point for being on right halve of double-wide char */
     p = ScreenLines + LineOffset[row1];
-    if (enc_dbcs != 0)
-        col1 -= (*mb_head_off)(p, p + col1);
-    else if (enc_utf8 && p[col1] == 0)
+    if (enc_utf8 && p[col1] == 0)
         --col1;
 
     /* Create a temporary buffer for storing the text */
     len = (row2 - row1 + 1) * Columns + 1;
-    if (enc_dbcs != 0)
-        len *= 2;       /* max. 2 bytes per display cell */
-    else if (enc_utf8)
+    if (enc_utf8)
         len *= MB_MAXBYTES;
     buffer = lalloc((long_u)len, TRUE);
     if (buffer == NULL)     /* out of memory */
@@ -941,26 +934,7 @@ clip_copy_modeless_selection(both)
 
         if (row < screen_Rows && end_col <= screen_Columns)
         {
-            if (enc_dbcs != 0)
-            {
-                int     i;
-
-                p = ScreenLines + LineOffset[row];
-                for (i = start_col; i < end_col; ++i)
-                    if (enc_dbcs == DBCS_JPNU && p[i] == 0x8e)
-                    {
-                        /* single-width double-byte char */
-                        *bufp++ = 0x8e;
-                        *bufp++ = ScreenLines2[LineOffset[row] + i];
-                    }
-                    else
-                    {
-                        *bufp++ = p[i];
-                        if (MB_BYTE2LEN(p[i]) == 2)
-                            *bufp++ = p[++i];
-                    }
-            }
-            else if (enc_utf8)
+            if (enc_utf8)
             {
                 int     off;
                 int     i;
@@ -969,8 +943,7 @@ clip_copy_modeless_selection(both)
                 off = LineOffset[row];
                 for (i = start_col; i < end_col; ++i)
                 {
-                    /* The base character is either in ScreenLinesUC[] or
-                     * ScreenLines[]. */
+                    /* The base character is either in ScreenLinesUC[] or ScreenLines[]. */
                     if (ScreenLinesUC[off + i] == 0)
                         *bufp++ = ScreenLines[off + i];
                     else
@@ -1029,32 +1002,25 @@ clip_get_word_boundaries(cb, row, col)
     int         start_class;
     int         temp_col;
     char_u      *p;
-    int         mboff;
 
     if (row >= screen_Rows || col >= screen_Columns || ScreenLines == NULL)
         return;
 
     p = ScreenLines + LineOffset[row];
     /* Correct for starting in the right halve of a double-wide char */
-    if (enc_dbcs != 0)
-        col -= dbcs_screen_head_off(p, p + col);
-    else if (enc_utf8 && p[col] == 0)
+    if (enc_utf8 && p[col] == 0)
         --col;
     start_class = CHAR_CLASS(p[col]);
 
     temp_col = col;
     for ( ; temp_col > 0; temp_col--)
-        if (enc_dbcs != 0 && (mboff = dbcs_screen_head_off(p, p + temp_col - 1)) > 0)
-            temp_col -= mboff;
-        else if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
+        if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
             break;
     cb->word_start_col = temp_col;
 
     temp_col = col;
     for ( ; temp_col < screen_Columns; temp_col++)
-        if (enc_dbcs != 0 && dbcs_ptr2cells(p + temp_col) == 2)
-            ++temp_col;
-        else if (CHAR_CLASS(p[temp_col]) != start_class && !(enc_utf8 && p[temp_col] == 0))
+        if (CHAR_CLASS(p[temp_col]) != start_class && !(enc_utf8 && p[temp_col] == 0))
             break;
     cb->word_end_col = temp_col;
 }
@@ -1180,8 +1146,7 @@ clip_gen_owner_exists(cbd)
  * CTRL-C.  This should be done with signals, but I don't know how to do that
  * in a portable way for a tty in RAW mode.
  *
- * For the client-server code in the console the received keys are put in the
- * input buffer.
+ * For the client-server code in the console the received keys are put in the input buffer.
  */
 
 /*
@@ -1265,8 +1230,7 @@ trash_input_buf()
 }
 
 /*
- * Read as much data from the input buffer as possible up to maxlen, and store
- * it in buf.
+ * Read as much data from the input buffer as possible up to maxlen, and store it in buf.
  * Note: this function used to be Read() in unix.c
  */
     int
@@ -1344,8 +1308,7 @@ fill_input_buf(exit_on_error)
             int m = cur_tmode;
 
             /* We probably set the wrong file descriptor to raw mode.  Switch
-             * back to cooked mode, use another descriptor and set the mode to
-             * what it was. */
+             * back to cooked mode, use another descriptor and set the mode to what it was. */
             settmode(TMODE_COOK);
             /* Use stderr for stdin, also works for shell commands. */
             close(0);
@@ -1751,8 +1714,7 @@ retnomove:
 }
 
 /*
- * Compute the position in the buffer line from the posn on the screen in
- * window "win".
+ * Compute the position in the buffer line from the posn on the screen in window "win".
  * Returns TRUE if the position is below the last line.
  */
     int

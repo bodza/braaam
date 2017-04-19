@@ -6,8 +6,7 @@
 
 /*
  * Variables shared between getcmdline(), redrawcmdline() and others.
- * These need to be saved when using CTRL-R |, that's why they are in a
- * structure.
+ * These need to be saved when using CTRL-R |, that's why they are in a structure.
  */
 struct cmdline_info
 {
@@ -101,13 +100,11 @@ sort_func_compare(const void *s1, const void *s2);
  * firstc == NUL            get text for :insert command
  * firstc == -1             like NUL, and break on CTRL-C
  *
- * The line is collected in ccline.cmdbuff, which is reallocated to fit the
- * command line.
+ * The line is collected in ccline.cmdbuff, which is reallocated to fit the command line.
  *
  * Careful: getcmdline() can be called recursively!
  *
- * Return pointer to allocated string if there is a commandline, NULL
- * otherwise.
+ * Return pointer to allocated string if there is a commandline, NULL otherwise.
  */
     char_u *
 getcmdline(firstc, count, indent)
@@ -284,8 +281,7 @@ getcmdline(firstc, count, indent)
             if (cmdmsg_rl && !KeyStuffed)
             {
                 /* Invert horizontal movements and operations.  Only when
-                 * typed by the user directly, not when the result of a
-                 * mapping. */
+                 * typed by the user directly, not when the result of a mapping. */
                 switch (c)
                 {
                     case K_RIGHT:   c = K_LEFT; break;
@@ -310,8 +306,7 @@ getcmdline(firstc, count, indent)
                 && !global_busy)
             got_int = FALSE;
 
-        /* free old command line when finished moving around in the history
-         * list */
+        /* free old command line when finished moving around in the history list */
         if (lookfor != NULL
                 && c != K_S_DOWN && c != K_S_UP
                 && c != K_DOWN && c != K_UP
@@ -499,8 +494,7 @@ getcmdline(firstc, count, indent)
             {
                 wim_index = 0;
                 j = ccline.cmdpos;
-                /* if 'wildmode' first contains "longest", get longest
-                 * common part */
+                /* if 'wildmode' first contains "longest", get longest common part */
                 if (wim_flags[0] & WIM_LONGEST)
                     res = nextwild(&xpc, WILD_LONGEST, WILD_NO_BEEP, firstc != '@');
                 else
@@ -520,8 +514,7 @@ getcmdline(firstc, count, indent)
                  * list all matches */
                 if (res == OK && xpc.xp_numfiles > 1)
                 {
-                    /* a "longest" that didn't do anything is skipped (but not
-                     * "list:longest") */
+                    /* a "longest" that didn't do anything is skipped (but not "list:longest") */
                     if (wim_flags[0] == WIM_LONGEST && ccline.cmdpos == j)
                         wim_index = 1;
                     if ((wim_flags[wim_index] & WIM_LIST))
@@ -726,8 +719,7 @@ getcmdline(firstc, count, indent)
                 --no_mapping;
                 /*
                  * Insert the result of an expression.
-                 * Need to save the current command line, to be able to enter
-                 * a new one...
+                 * Need to save the current command line, to be able to enter a new one...
                  */
                 new_cmdpos = -1;
                 if (c == '=')
@@ -748,8 +740,7 @@ getcmdline(firstc, count, indent)
                 {
                     cmdline_paste(c, i == Ctrl_R, FALSE);
 
-                    /* When there was a serious error abort getting the
-                     * command line. */
+                    /* When there was a serious error abort getting the command line. */
                     if (aborting())
                     {
                         gotesc = TRUE;  /* will free ccline.cmdbuff after
@@ -845,8 +836,7 @@ getcmdline(firstc, count, indent)
         case K_LEFTRELEASE:
         case K_RIGHTDRAG:
         case K_RIGHTRELEASE:
-                /* Ignore drag and release events when the button-down wasn't
-                 * seen before. */
+                /* Ignore drag and release events when the button-down wasn't seen before. */
                 if (ignore_drag_release)
                     goto cmdline_not_changed;
                 /* FALLTHROUGH */
@@ -941,8 +931,8 @@ getcmdline(firstc, count, indent)
                     {
                         c = gchar_cursor();
                         /* If 'ignorecase' and 'smartcase' are set and the
-                        * command line has no uppercase characters, convert
-                        * the character to lowercase */
+                         * command line has no uppercase characters, convert
+                         * the character to lowercase */
                         if (p_ic && p_scs && !pat_has_uppercase(ccline.cmdbuff))
                             c = MB_TOLOWER(c);
                         if (c != NUL)
@@ -1066,8 +1056,7 @@ getcmdline(firstc, count, indent)
                             len = 0;
                             for (j = 0; p[j] != NUL; ++j)
                             {
-                                /* Replace old sep with new sep, unless it is
-                                 * escaped. */
+                                /* Replace old sep with new sep, unless it is escaped. */
                                 if (p[j] == old_firstc && (j == 0 || p[j - 1] != '\\'))
                                 {
                                     if (i > 0)
@@ -1075,8 +1064,7 @@ getcmdline(firstc, count, indent)
                                 }
                                 else
                                 {
-                                    /* Escape new sep, unless it is already
-                                     * escaped. */
+                                    /* Escape new sep, unless it is already escaped. */
                                     if (p[j] == firstc && (j == 0 || p[j - 1] != '\\'))
                                     {
                                         if (i > 0)
@@ -1809,8 +1797,7 @@ redraw:
 
             if (bcount > 0)
             {
-                /* Halve the number of backslashes: "\NL" -> "NUL", "\\NL" ->
-                 * "\NL", etc. */
+                /* Halve the number of backslashes: "\NL" -> "NUL", "\\NL" -> "\NL", etc. */
                 line_ga.ga_len -= (bcount + 1) / 2;
                 pend -= (bcount + 1) / 2;
                 pend[-1] = '\n';
@@ -2011,8 +1998,7 @@ put_on_cmdline(str, len, redraw)
                 m = 0;
                 for (i = 0; i < len; i += (*mb_ptr2len)(str + i))
                     ++m;
-                /* Count nr of bytes in cmdline that are overwritten by these
-                 * characters. */
+                /* Count nr of bytes in cmdline that are overwritten by these characters. */
                 for (i = ccline.cmdpos; i < ccline.cmdlen && m > 0; i += (*mb_ptr2len)(ccline.cmdbuff + i))
                     --m;
                 if (i < ccline.cmdlen)
@@ -2361,8 +2347,7 @@ redrawcmd()
      */
     msg_scroll = FALSE;         /* next message overwrites cmdline */
 
-    /* Typing ':' at the more prompt may set skip_redraw.  We don't want this
-     * in cmdline mode */
+    /* Typing ':' at the more prompt may set skip_redraw.  We don't want this in cmdline mode */
     skip_redraw = FALSE;
 }
 
@@ -3279,8 +3264,7 @@ addstar(fname, len, context)
                 j = 1;
                 for (i = 0; i < len; i++, j++)
                 {
-                    /* Skip backslash.  But why?  At least keep it for custom
-                     * expansion. */
+                    /* Skip backslash.  But why?  At least keep it for custom expansion. */
                     if (context != EXPAND_USER_DEFINED
                             && context != EXPAND_USER_LIST
                             && fname[i] == '\\'
@@ -3414,8 +3398,7 @@ set_cmd_context(xp, str, len, col)
     char_u      *nextcomm;
 
     /*
-     * Avoid a UMR warning from Purify, only save the character if it has been
-     * written before.
+     * Avoid a UMR warning from Purify, only save the character if it has been written before.
      */
     if (col < len)
         old_char = str[col];
@@ -3437,8 +3420,7 @@ set_cmd_context(xp, str, len, col)
         while (nextcomm != NULL)
             nextcomm = set_one_cmd_context(xp, nextcomm);
 
-    /* Store the string here so that call_user_expand_func() can get to them
-     * easily. */
+    /* Store the string here so that call_user_expand_func() can get to them easily. */
     xp->xp_line = str;
     xp->xp_col = col;
 
@@ -3533,8 +3515,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
         int     free_pat = FALSE;
         int     i;
 
-        /* for ":set path=" and ":set tags=" halve backslashes for escaped
-         * space */
+        /* for ":set path=" and ":set tags=" halve backslashes for escaped space */
         if (xp->xp_backslash != XP_BS_NONE)
         {
             free_pat = TRUE;
@@ -3788,8 +3769,7 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
     if (buf == NULL)
         return FAIL;
 
-    /* for ":set path=" and ":set tags=" halve backslashes for escaped
-     * space */
+    /* for ":set path=" and ":set tags=" halve backslashes for escaped space */
     pat = vim_strsave(filepat);
     for (i = 0; pat[i]; ++i)
         if (pat[i] == '\\' && pat[i + 1] == ' ')
@@ -4320,8 +4300,7 @@ in_history(type, str, move_to_front, sep, writing)
         if (history[type][i].hisstr == NULL)
             return FALSE;
 
-        /* For search history, check that the separator character matches as
-         * well. */
+        /* For search history, check that the separator character matches as well. */
         p = history[type][i].hisstr;
         if (STRCMP(str, p) == 0
                 && !(writing && history[type][i].viminfo)
@@ -4958,8 +4937,7 @@ ex_window()
         }
     }
 
-    /* Replace the empty last line with the current command-line and put the
-     * cursor there. */
+    /* Replace the empty last line with the current command-line and put the cursor there. */
     ml_replace(curbuf->b_ml.ml_line_count, ccline.cmdbuff, TRUE);
     curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
     curwin->w_cursor.col = ccline.cmdpos;
@@ -5005,8 +4983,7 @@ ex_window()
 
     exmode_active = save_exmode;
 
-    /* Safety check: The old window or buffer was deleted: It's a bug when
-     * this happens! */
+    /* Safety check: The old window or buffer was deleted: It's a bug when this happens! */
     if (!win_valid(old_curwin) || !buf_valid(old_curbuf))
     {
         cmdwin_result = Ctrl_C;
@@ -5074,8 +5051,7 @@ ex_window()
         win_goto(old_curwin);
         win_close(wp, TRUE);
 
-        /* win_close() may have already wiped the buffer when 'bh' is
-         * set to 'wipe' */
+        /* win_close() may have already wiped the buffer when 'bh' is set to 'wipe' */
         if (buf_valid(bp))
             close_buffer(NULL, bp, DOBUF_WIPE, FALSE);
 

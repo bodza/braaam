@@ -19,8 +19,8 @@ enum
     NFA_END_NEG_COLL,               /* [^abc] end (postfix only) */
     NFA_RANGE,                      /* range of the two previous items
                                      * (postfix only) */
-    NFA_RANGE_MIN,                  /* low end of a range  */
-    NFA_RANGE_MAX,                  /* high end of a range  */
+    NFA_RANGE_MIN,                  /* low end of a range */
+    NFA_RANGE_MAX,                  /* high end of a range */
 
     NFA_CONCAT,                     /* concatenate two previous items (postfix
                                      * only) */
@@ -243,8 +243,7 @@ static int istate;      /* Index in the state vector, used in alloc_state() */
 static save_se_T *nfa_endp = NULL;
 
 /* listid is global, so that it increases on recursive calls to
- * nfa_regmatch(), which means we don't have to clear the lastlist field of
- * all the states. */
+ * nfa_regmatch(), which means we don't have to clear the lastlist field of all the states. */
 static int nfa_listid;
 static int nfa_alt_listid;
 
@@ -328,8 +327,7 @@ nfa_regcomp_start(expr, re_flags)
 }
 
 /*
- * Figure out if the NFA state list starts with an anchor, must match at start
- * of the line.
+ * Figure out if the NFA state list starts with an anchor, must match at start of the line.
  */
     static int
 nfa_get_reganch(start, depth)
@@ -1290,7 +1288,7 @@ nfa_regatom()
                     re_has_z = REX_USE;
                     break;
                 case '(':
-                    /* \z(  */
+                    /* \z( */
                     if (reg_do_extmatch != REX_SET)
                         EMSG_RET_FAIL((char *)e_z_not_allowed);
                     if (nfa_reg(REG_ZPAREN) == FAIL)
@@ -1407,15 +1405,15 @@ nfa_regatom()
                         if (c == 'l' || c == 'c' || c == 'v')
                         {
                             if (c == 'l')
-                                /* \%{n}l  \%{n}<l  \%{n}>l  */
+                                /* \%{n}l  \%{n}<l  \%{n}>l */
                                 EMIT(cmp == '<' ? NFA_LNUM_LT :
                                      cmp == '>' ? NFA_LNUM_GT : NFA_LNUM);
                             else if (c == 'c')
-                                /* \%{n}c  \%{n}<c  \%{n}>c  */
+                                /* \%{n}c  \%{n}<c  \%{n}>c */
                                 EMIT(cmp == '<' ? NFA_COL_LT :
                                      cmp == '>' ? NFA_COL_GT : NFA_COL);
                             else
-                                /* \%{n}v  \%{n}<v  \%{n}>v  */
+                                /* \%{n}v  \%{n}<v  \%{n}>v */
                                 EMIT(cmp == '<' ? NFA_VCOL_LT :
                                      cmp == '>' ? NFA_VCOL_GT : NFA_VCOL);
                             EMIT(n);
@@ -1423,7 +1421,7 @@ nfa_regatom()
                         }
                         else if (c == '\'' && n == 0)
                         {
-                            /* \%'m  \%<'m  \%>'m  */
+                            /* \%'m  \%<'m  \%>'m */
                             EMIT(cmp == '<' ? NFA_MARK_LT :
                                  cmp == '>' ? NFA_MARK_GT : NFA_MARK);
                             EMIT(getchr());
@@ -1511,7 +1509,7 @@ collection:
                                 collclass = get_coll_element(&regparse);
                         }
 
-                        /* Character class like [:alpha:]  */
+                        /* Character class like [:alpha:] */
                         if (charclass != CLASS_NONE)
                         {
                             switch (charclass)
@@ -1579,12 +1577,11 @@ collection:
                             }
                             continue;
                         }
-                        /* Try collating class like [. .]  */
+                        /* Try collating class like [. .] */
                         if (collclass != 0)
                         {
                             startc = collclass;  /* allow [.a.]-x as a range */
-                            /* Will emit the proper atom at the end of the
-                             * while loop. */
+                            /* Will emit the proper atom at the end of the while loop. */
                         }
                     }
                     /* Try a range like 'a-x' or '\t-z'. Also allows '-' as a
@@ -1672,8 +1669,7 @@ collection:
                         }
                         else
                         {
-                            /* Emit the range. "startc" was already emitted, so
-                             * skip it. */
+                            /* Emit the range. "startc" was already emitted, so skip it. */
                             for (c = startc + 1; c <= endc; c++)
                             {
                                 EMIT(c);
@@ -1809,8 +1805,7 @@ nfa_regpiece()
     int         my_post_start;
     int         quest;
 
-    /* Save the current parse state, so that we can use it if <atom>{m,n} is
-     * next. */
+    /* Save the current parse state, so that we can use it if <atom>{m,n} is next. */
     save_parse_state(&old_state);
 
     /* store current pos in the postfix form, for \{m,n} involving 0s */
@@ -1848,7 +1843,7 @@ nfa_regpiece()
                 return FAIL;
             EMIT(NFA_STAR);
             EMIT(NFA_CONCAT);
-            skipchr();          /* skip the \+  */
+            skipchr();          /* skip the \+ */
             break;
 
         case Magic('@'):
@@ -1875,7 +1870,7 @@ nfa_regpiece()
                         i = NFA_PREV_ATOM_JUST_BEFORE_NEG;
                     break;
                 case '>':
-                    /* \@>  */
+                    /* \@> */
                     i = NFA_PREV_ATOM_LIKE_PATTERN;
                     break;
             }
@@ -2169,8 +2164,7 @@ nfa_reg(paren)
             EMSG_RET_FAIL("E873: (NFA regexp) proper termination error");
     }
     /*
-     * Here we set the flag allowing back references to this set of
-     * parentheses.
+     * Here we set the flag allowing back references to this set of parentheses.
      */
     if (paren == REG_PAREN)
     {
@@ -3154,8 +3148,7 @@ nfa_postprocess(prog)
         {
             int directly;
 
-            /* Do it directly when what follows is possibly the end of the
-             * match. */
+            /* Do it directly when what follows is possibly the end of the match. */
             if (match_follows(prog->state[i].out1->out, 0))
                 directly = TRUE;
             else
@@ -3677,7 +3670,7 @@ addstate(l, state, subs_arg, pim, off)
         case NFA_SPLIT:
         case NFA_EMPTY:
             /* These nodes are not added themselves but their "out" and/or
-             * "out1" may be added below.  */
+             * "out1" may be added below. */
             break;
 
         case NFA_BOL:
@@ -3729,8 +3722,7 @@ skip_add:
                     return subs;
                 }
 
-                /* Do not add the state again when it exists with the same
-                 * positions. */
+                /* Do not add the state again when it exists with the same positions. */
                 if (has_state_with_pos(l, state, subs, pim))
                     goto skip_add;
             }
@@ -3948,8 +3940,7 @@ skip_add:
                 sub = &subs->norm;
             }
 
-            /* We don't fill in gaps here, there must have been an MOPEN that
-             * has done that. */
+            /* We don't fill in gaps here, there must have been an MOPEN that has done that. */
             save_in_use = sub->in_use;
             if (sub->in_use <= subidx)
                 sub->in_use = subidx + 1;
@@ -4377,8 +4368,7 @@ recursive_regmatch(state, pim, prog, submatch, m, listids)
         {
             if (REG_MULTI && (int)(reginput - regline) < state->val)
             {
-                /* Not enough bytes in this line, go to end of
-                 * previous line. */
+                /* Not enough bytes in this line, go to end of previous line. */
                 regline = reg_getline(--reglnum);
                 if (regline == NULL)
                 {
@@ -4875,8 +4865,7 @@ nfa_regmatch(prog, start, submatch, m)
                  * in the position in "nfa_endp".
                  * Submatches are stored in *m, and used in the parent call.
                  */
-                /* If "nfa_endp" is set it's only a match if it ends at
-                 * "nfa_endp" */
+                /* If "nfa_endp" is set it's only a match if it ends at "nfa_endp" */
                 if (nfa_endp != NULL && (REG_MULTI
                         ? (reglnum != nfa_endp->se_u.pos.lnum
                             || (int)(reginput - regline) != nfa_endp->se_u.pos.col)
@@ -4931,8 +4920,7 @@ nfa_regmatch(prog, start, submatch, m)
                             goto theend;
                         }
 
-                        /* for \@! and \@<! it is a match when the result is
-                         * FALSE */
+                        /* for \@! and \@<! it is a match when the result is FALSE */
                         if (result != (t->state->c == NFA_START_INVISIBLE_NEG
                                || t->state->c == NFA_START_INVISIBLE_NEG_FIRST
                                || t->state->c == NFA_START_INVISIBLE_BEFORE_NEG
@@ -4977,8 +4965,7 @@ nfa_regmatch(prog, start, submatch, m)
                             pim.end.ptr = reginput;
 
                         /* t->state->out1 is the corresponding END_INVISIBLE
-                         * node; Add its out to the current list (zero-width
-                         * match). */
+                         * node; Add its out to the current list (zero-width match). */
                         addstate_here(thislist, t->state->out1->out, &t->subs, &pim, &listidx);
                     }
                 }
@@ -5038,8 +5025,7 @@ nfa_regmatch(prog, start, submatch, m)
                     if (bytelen == 0)
                     {
                         /* empty match, output of corresponding
-                         * NFA_END_PATTERN/NFA_SKIP to be used at current
-                         * position */
+                         * NFA_END_PATTERN/NFA_SKIP to be used at current position */
                         add_here = TRUE;
                         add_state = t->state->out1->out->out;
                     }
@@ -5457,7 +5443,7 @@ nfa_regmatch(prog, start, submatch, m)
                 ADD_STATE_IF_MATCH(t->state);
                 break;
 
-            case NFA_NUPPER:    /* \U   */
+            case NFA_NUPPER:    /*  \U  */
                 result = curc != NUL && !ri_upper(curc);
                 ADD_STATE_IF_MATCH(t->state);
                 break;
@@ -5520,15 +5506,13 @@ nfa_regmatch(prog, start, submatch, m)
                 {
                     if (bytelen == 0)
                     {
-                        /* empty match always works, output of NFA_SKIP to be
-                         * used next */
+                        /* empty match always works, output of NFA_SKIP to be used next */
                         add_here = TRUE;
                         add_state = t->state->out->out;
                     }
                     else if (bytelen <= clen)
                     {
-                        /* match current character, jump ahead to out of
-                         * NFA_SKIP */
+                        /* match current character, jump ahead to out of NFA_SKIP */
                         add_state = t->state->out->out;
                         add_off = clen;
                     }
@@ -5725,8 +5709,7 @@ nfa_regmatch(prog, start, submatch, m)
                     {
                         result = recursive_regmatch(pim->state, pim, prog, submatch, m, &listids);
                         pim->result = result ? NFA_PIM_MATCH : NFA_PIM_NOMATCH;
-                        /* for \@! and \@<! it is a match when the result is
-                         * FALSE */
+                        /* for \@! and \@<! it is a match when the result is FALSE */
                         if (result != (pim->state->c == NFA_START_INVISIBLE_NEG
                              || pim->state->c == NFA_START_INVISIBLE_NEG_FIRST
                              || pim->state->c == NFA_START_INVISIBLE_BEFORE_NEG
@@ -5847,8 +5830,7 @@ nfa_regmatch(prog, start, submatch, m)
         }
 
 nextchar:
-        /* Advance to the next character, or advance to the next line, or
-         * finish. */
+        /* Advance to the next character, or advance to the next line, or finish. */
         if (clen != 0)
             reginput += clen;
         else if (go_to_nextline || (nfa_endp != NULL && REG_MULTI && reglnum < nfa_endp->se_u.pos.lnum))

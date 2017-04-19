@@ -1151,8 +1151,7 @@ ex_continue(eap)
             rewind_conditionals(cstack, idx, CSF_TRY, &cstack->cs_trylevel);
 
             /*
-             * Set CSL_HAD_CONT, so do_cmdline() will jump back to the
-             * matching ":while".
+             * Set CSL_HAD_CONT, so do_cmdline() will jump back to the matching ":while".
              */
             cstack->cs_lflags |= CSL_HAD_CONT;  /* let do_cmdline() handle it */
         }
@@ -1297,8 +1296,7 @@ ex_throw(eap)
         value = NULL;
     }
 
-    /* On error or when an exception is thrown during argument evaluation, do
-     * not throw. */
+    /* On error or when an exception is thrown during argument evaluation, do not throw. */
     if (!eap->skip && value != NULL)
     {
         if (throw_exception(value, ET_USER, NULL) == FAIL)
@@ -1365,8 +1363,7 @@ do_throw(cstack)
                 cstack->cs_flags[idx] |= CSF_THROWN;
             else
                 /* THROWN may have already been set for a catchable exception
-                 * that has been discarded.  Ensure it is reset for the new
-                 * exception. */
+                 * that has been discarded.  Ensure it is reset for the new exception. */
                 cstack->cs_flags[idx] &= ~CSF_THROWN;
         }
         cstack->cs_flags[idx] &= ~CSF_ACTIVE;
@@ -1489,8 +1486,7 @@ ex_catch(eap)
     {
         if (!(cstack->cs_flags[cstack->cs_idx] & CSF_TRY))
         {
-            /* Report what's missing if the matching ":try" is not in its
-             * finally clause. */
+            /* Report what's missing if the matching ":try" is not in its finally clause. */
             eap->errmsg = get_end_emsg(cstack);
             skip = TRUE;
         }
@@ -1832,8 +1828,7 @@ ex_endtry(eap)
             {
                 skip = TRUE;
                 (void)do_intthrow(cstack);
-                /* The do_intthrow() call may have reset did_throw or
-                 * cstack->cs_pending[idx].*/
+                /* The do_intthrow() call may have reset did_throw or cstack->cs_pending[idx]. */
                 rethrow = FALSE;
                 if (did_throw && !(cstack->cs_flags[idx] & CSF_FINALLY))
                     rethrow = TRUE;
@@ -1886,8 +1881,7 @@ ex_endtry(eap)
                  * conditional.  This is skipped, if there was an error in an
                  * (unskipped) conditional command or an interrupt afterwards
                  * or if the finally clause is present and executed a new error,
-                 * interrupt, throw, ":continue", ":break", ":return", or
-                 * ":finish". */
+                 * interrupt, throw, ":continue", ":break", ":return", or ":finish". */
                 case CSTP_CONTINUE:
                     ex_continue(eap);
                     break;
@@ -1942,8 +1936,7 @@ ex_endtry(eap)
  * actually an extra try block around the part that failed and an error or
  * interrupt has not (yet) been converted to an exception.  This function
  * saves the error/interrupt/ exception state and prepares for the call to
- * do_cmdline() that is going to be made for the cleanup autocommand
- * execution.
+ * do_cmdline() that is going to be made for the cleanup autocommand execution.
  */
     void
 enter_cleanup(csp)
@@ -1983,7 +1976,7 @@ enter_cleanup(csp)
         }
         did_emsg = got_int = did_throw = need_rethrow = FALSE;
 
-        /* Report if required by the 'verbose' option or when debugging.  */
+        /* Report if required by the 'verbose' option or when debugging. */
         report_make_pending(pending, csp->exception);
     }
     else
@@ -2044,8 +2037,7 @@ leave_cleanup(csp)
     {
         /*
          * If there was an exception being thrown when enter_cleanup() was
-         * called, we need to rethrow it.  Make it the exception currently
-         * being thrown.
+         * called, we need to rethrow it.  Make it the exception currently being thrown.
          */
         if (pending & CSTP_THROW)
             current_exception = csp->exception;
@@ -2154,8 +2146,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
 
             /*
              * Stop at a try conditional not in its finally clause.  If this try
-             * conditional is in an active catch clause, finish the caught
-             * exception.
+             * conditional is in an active catch clause, finish the caught exception.
              */
             if (!(cstack->cs_flags[idx] & CSF_FINALLY))
             {
@@ -2163,8 +2154,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
                     finish_exception((except_T *)cstack->cs_exception[idx]);
                 /* Stop at this try conditional - except the try block never
                  * got active (because of an inactive surrounding conditional
-                 * or when the ":try" appeared after an error or interrupt or
-                 * throw). */
+                 * or when the ":try" appeared after an error or interrupt or throw). */
                 if (cstack->cs_flags[idx] & CSF_TRUE)
                 {
                     if (searched_cond == 0 && !inclusive)

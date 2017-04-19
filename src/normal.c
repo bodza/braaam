@@ -405,7 +405,7 @@ init_normal_cmds()
     for (i = 0; i < (int)NV_CMDS_SIZE; ++i)
         nv_cmd_idx[i] = i;
 
-    /* Sort the commands by the command character.  */
+    /* Sort the commands by the command character. */
     qsort((void *)&nv_cmd_idx, (size_t)NV_CMDS_SIZE, sizeof(short), nv_compare);
 
     /* Find the first entry that can't be indexed by the command character. */
@@ -437,8 +437,7 @@ find_command(cmdchar)
     if (cmdchar < 0)
         cmdchar = -cmdchar;
 
-    /* If the character is in the first part: The character is the index into
-     * nv_cmd_idx[]. */
+    /* If the character is in the first part: The character is the index into nv_cmd_idx[]. */
     if (cmdchar <= nv_max_linear)
         return nv_cmd_idx[cmdchar];
 
@@ -504,8 +503,7 @@ normal_cmd(oap, toplevel)
         ui_cursor_shape();              /* may show different cursor shape */
     }
 
-    /* When not finishing an operator and no register name typed, reset the
-     * count. */
+    /* When not finishing an operator and no register name typed, reset the count. */
     if (!finish_op && !oap->regname)
     {
         ca.opcount = 0;
@@ -513,8 +511,7 @@ normal_cmd(oap, toplevel)
     }
 
     /* Restore counts from before receiving K_CURSORHOLD.  This means after
-     * typing "3", handling K_CURSORHOLD and then typing "2" we get "32", not
-     * "3 * 2". */
+     * typing "3", handling K_CURSORHOLD and then typing "2" we get "32", not "3 * 2". */
     if (oap->prev_opcount > 0 || oap->prev_count0 > 0)
     {
         ca.opcount = oap->prev_opcount;
@@ -653,8 +650,7 @@ getcount:
          * that count overrides the current value of ca.count0.
          * What this means effectively, is that commands like "3dw" get turned
          * into "d3w" which makes things fall into place pretty neatly.
-         * If you give a count before AND after the operator, they are
-         * multiplied.
+         * If you give a count before AND after the operator, they are multiplied.
          */
         if (ca.count0)
             ca.count0 *= ca.opcount;
@@ -744,8 +740,7 @@ getcount:
     if (curwin->w_p_rl && KeyTyped && !KeyStuffed && (nv_cmds[idx].cmd_flags & NV_RL))
     {
         /* Invert horizontal movements and operations.  Only when typed by the
-         * user directly, not when the result of a mapping or "x" translated
-         * to "dl". */
+         * user directly, not when the result of a mapping or "x" translated to "dl". */
         switch (ca.cmdchar)
         {
             case 'l':       ca.cmdchar = 'h'; break;
@@ -967,8 +962,7 @@ getcount:
 
     old_pos = curwin->w_cursor;         /* remember where cursor was */
 
-    /* When 'keymodel' contains "startsel" some keys start Select/Visual
-     * mode. */
+    /* When 'keymodel' contains "startsel" some keys start Select/Visual mode. */
     if (!VIsual_active && km_startsel)
     {
         if (nv_cmds[idx].cmd_flags & NV_SS)
@@ -992,8 +986,7 @@ getcount:
     (nv_cmds[idx].cmd_func)(&ca);
 
     /*
-     * If we didn't start or finish an operator, reset oap->regname, unless we
-     * need it later.
+     * If we didn't start or finish an operator, reset oap->regname, unless we need it later.
      */
     if (!finish_op
             && !oap->op_type
@@ -1062,8 +1055,7 @@ getcount:
         if (restart_edit != 0)
             State = INSERT;
 
-        /* If need to redraw, and there is a "keep_msg", redraw before the
-         * delay */
+        /* If need to redraw, and there is a "keep_msg", redraw before the delay */
         if (must_redraw && keep_msg != NULL && !emsg_on_display)
         {
             char_u      *kmsg;
@@ -1370,8 +1362,7 @@ do_pending_operator(cap, old_col, gui_yank)
             curwin->w_cursor = oap->start;
 
             /* w_virtcol may have been updated; if the cursor goes back to its
-             * previous position w_virtcol becomes invalid and isn't updated
-             * automatically. */
+             * previous position w_virtcol becomes invalid and isn't updated automatically. */
             curwin->w_valid &= ~VALID_VIRTCOL;
         }
         else
@@ -1429,8 +1420,7 @@ do_pending_operator(cap, old_col, gui_yank)
                  * Correct oap->end.col and oap->start.col to be the
                  * upper-left and lower-right corner of the block area.
                  *
-                 * (Actually, this does convert column positions into character
-                 * positions)
+                 * (Actually, this does convert column positions into character positions)
                  */
                 curwin->w_cursor.lnum = oap->end.lnum;
                 coladvance(oap->end_vcol);
@@ -1523,8 +1513,7 @@ do_pending_operator(cap, old_col, gui_yank)
                         else
                         {
                             /* Cannot move below the last line, make the op
-                             * inclusive to tell the operation to include the
-                             * line break. */
+                             * inclusive to tell the operation to include the line break. */
                             oap->inclusive = TRUE;
                         }
                     }
@@ -1702,8 +1691,7 @@ do_pending_operator(cap, old_col, gui_yank)
                 else
                     restart_edit_save = 0;
                 restart_edit = 0;
-                /* Restore linebreak, so that when the user edits it looks as
-                 * before. */
+                /* Restore linebreak, so that when the user edits it looks as before. */
                 curwin->w_p_lbr = lbr_saved;
                 /* Reset finish_op now, don't want it set inside edit(). */
                 finish_op = FALSE;
@@ -1788,15 +1776,13 @@ do_pending_operator(cap, old_col, gui_yank)
                  * Visual mode.  But do this only once. */
                 restart_edit_save = restart_edit;
                 restart_edit = 0;
-                /* Restore linebreak, so that when the user edits it looks as
-                 * before. */
+                /* Restore linebreak, so that when the user edits it looks as before. */
                 curwin->w_p_lbr = lbr_saved;
                 op_insert(oap, cap->count1);
                 /* Reset linebreak, so that formatting works correctly. */
                 curwin->w_p_lbr = FALSE;
 
-                /* TODO: when inserting in several lines, should format all
-                 * the lines. */
+                /* TODO: when inserting in several lines, should format all the lines. */
                 auto_format(FALSE, TRUE);
 
                 if (restart_edit == 0)
@@ -1813,8 +1799,7 @@ do_pending_operator(cap, old_col, gui_yank)
             }
             else
             {
-                /* Restore linebreak, so that when the user edits it looks as
-                 * before. */
+                /* Restore linebreak, so that when the user edits it looks as before. */
                 curwin->w_p_lbr = lbr_saved;
                 op_replace(oap, cap->nchar);
             }
@@ -1931,8 +1916,7 @@ op_function(oap)
         else
             argv[0] = (char_u *)"char";
 
-        /* Reset virtual_op so that 'virtualedit' can be changed in the
-         * function. */
+        /* Reset virtual_op so that 'virtualedit' can be changed in the function. */
         virtual_op = MAYBE;
 
         (void)call_func_retnr(p_opfunc, 1, argv, FALSE);
@@ -2011,8 +1995,7 @@ do_mouse(oap, c, dir, count, fixindent)
      * When GUI is active, always recognize mouse events, otherwise:
      * - Ignore mouse event in normal mode if 'mouse' doesn't include 'n'.
      * - Ignore mouse event in visual mode if 'mouse' doesn't include 'v'.
-     * - For command line and insert mode 'mouse' is checked before calling
-     *   do_mouse().
+     * - For command line and insert mode 'mouse' is checked before calling do_mouse().
      */
     if (do_always)
         do_always = FALSE;
@@ -2040,8 +2023,7 @@ do_mouse(oap, c, dir, count, fixindent)
                 int save_mouse_row = mouse_row;
                 int save_mouse_col = mouse_col;
 
-                /* Need to get the character, peeking doesn't get the actual
-                 * one. */
+                /* Need to get the character, peeking doesn't get the actual one. */
                 nc = safe_vgetc();
                 if (c == nc)
                     continue;
@@ -2172,10 +2154,8 @@ do_mouse(oap, c, dir, count, fixindent)
 
         /*
          * Middle click in insert mode doesn't move the mouse, just insert the
-         * contents of a register.  '.' register is special, can't insert that
-         * with do_put().
-         * Also paste at the cursor if the current mode isn't in 'mouse' (only
-         * happens for the GUI).
+         * contents of a register.  '.' register is special, can't insert that with do_put().
+         * Also paste at the cursor if the current mode isn't in 'mouse'.
          */
         if ((State & INSERT) || !mouse_has(MOUSE_NORMAL))
         {
@@ -2238,8 +2218,7 @@ do_mouse(oap, c, dir, count, fixindent)
                 }
                 else
                 {
-                    /* Go to specified tab page, or next one if not clicking
-                     * on a label. */
+                    /* Go to specified tab page, or next one if not clicking on a label. */
                     goto_tabpage(c1);
 
                     /* It's like clicking on the status line of a window. */
@@ -2336,8 +2315,7 @@ do_mouse(oap, c, dir, count, fixindent)
     }
 
     /*
-     * If an operator is pending, ignore all drags and releases until the
-     * next mouse click.
+     * If an operator is pending, ignore all drags and releases until the next mouse click.
      */
     if (!is_drag && oap != NULL && oap->op_type != OP_NOP)
     {
@@ -2493,8 +2471,7 @@ do_mouse(oap, c, dir, count, fixindent)
         prep_redo(regname, count, NUL, c1, NUL, c2, NUL);
 
         /*
-         * Remember where the paste started, so in edit() Insstart can be set
-         * to this position
+         * Remember where the paste started, so in edit() Insstart can be set to this position
          */
         if (restart_edit != 0)
             where_paste_started = curwin->w_cursor;
@@ -2515,8 +2492,7 @@ do_mouse(oap, c, dir, count, fixindent)
     }
 
     /*
-     * Shift-Mouse click searches for the next occurrence of the word under
-     * the mouse pointer
+     * Shift-Mouse click searches for the next occurrence of the word under the mouse pointer
      */
     else if ((mod_mask & MOD_MASK_SHIFT))
     {
@@ -2607,8 +2583,7 @@ do_mouse(oap, c, dir, count, fixindent)
 
             if (pos == NULL && (is_click || is_drag))
             {
-                /* When not found a match or when dragging: extend to include
-                 * a word. */
+                /* When not found a match or when dragging: extend to include a word. */
                 if (lt(curwin->w_cursor, orig_cursor))
                 {
                     find_start_of_word(&curwin->w_cursor);
@@ -3327,8 +3302,7 @@ do_check_scrollbind(check)
 
     if (check && curwin->w_p_scb)
     {
-        /* If a ":syncbind" command was just used, don't scroll, only reset
-         * the values. */
+        /* If a ":syncbind" command was just used, don't scroll, only reset the values. */
         if (did_syncbind)
             did_syncbind = FALSE;
         else if (curwin == old_curwin)
@@ -6420,8 +6394,7 @@ nv_g_cmd(cap)
         break;
 
     case '_':
-        /* "g_": to the last non-blank character in the line or <count> lines
-         * downward. */
+        /* "g_": to the last non-blank character in the line or <count> lines downward. */
         cap->oap->motion_type = MCHAR;
         cap->oap->inclusive = TRUE;
         curwin->w_curswant = MAXCOL;
@@ -6629,8 +6602,7 @@ nv_g_cmd(cap)
         break;
 
     /*
-     * "gd": Find first occurrence of pattern under the cursor in the
-     *   current function
+     * "gd": Find first occurrence of pattern under the cursor in the current function
      * "gD": idem, but in the current file.
      */
     case 'd':
@@ -6803,8 +6775,7 @@ nv_Undo(cap)
 }
 
 /*
- * '~' command: If tilde is not an operator and Visual is off: swap case of a
- * single character.
+ * '~' command: If tilde is not an operator and Visual is off: swap case of a single character.
  */
     static void
 nv_tilde(cap)
@@ -7461,8 +7432,7 @@ nv_record(cap)
             stuffcharReadbuff(K_CMDWIN);
         }
         else
-            /* (stop) recording into a named register, unless executing a
-             * register */
+            /* (stop) recording into a named register, unless executing a register */
             if (!Exec_reg && do_record(cap->nchar) == FAIL)
                 clearopbeep(cap->oap);
     }
@@ -7631,8 +7601,7 @@ nv_put(cap)
         {
             ml_delete(curbuf->b_ml.ml_line_count, TRUE);
 
-            /* If the cursor was in that line, move it to the end of the last
-             * line. */
+            /* If the cursor was in that line, move it to the end of the last line. */
             if (curwin->w_cursor.lnum > curbuf->b_ml.ml_line_count)
             {
                 curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;

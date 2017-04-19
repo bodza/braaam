@@ -520,8 +520,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
         }
 
         /*
-         * Start searching in current line, unless searching backwards and
-         * we're in column 0.
+         * Start searching in current line, unless searching backwards and we're in column 0.
          * If we are searching backwards, in column 0, and not including the
          * current position, gain some efficiency by skipping back a line.
          * Otherwise begin the search in the current line.
@@ -598,8 +597,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                             {
                                 if (nmatched > 1)
                                 {
-                                    /* end is in next line, thus no match in
-                                     * this line */
+                                    /* end is in next line, thus no match in this line */
                                     match_ok = FALSE;
                                     break;
                                 }
@@ -730,8 +728,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                         }
 
                         /*
-                         * If there is only a match after the cursor, skip
-                         * this match.
+                         * If there is only a match after the cursor, skip this match.
                          */
                         if (!match_ok)
                             continue;
@@ -1137,8 +1134,7 @@ do_search(oap, dirc, pat, count, options, tm)
          * If there is a character offset, subtract it from the current
          * position, so we don't get stuck at "?pat?e+2" or "/pat/s-2".
          * Skip this if pos.col is near MAXCOL (closed fold).
-         * This is not done for a line offset, because then we would not be vi
-         * compatible.
+         * This is not done for a line offset, because then we would not be vi compatible.
          */
         if (!spats[0].off.line && spats[0].off.off && pos.col < MAXCOL - 2)
         {
@@ -1606,8 +1602,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
                 {
                     int col, bslcnt = 0;
 
-                    /* Set "match_escaped" if there are an odd number of
-                     * backslashes. */
+                    /* Set "match_escaped" if there are an odd number of backslashes. */
                     for (col = pos.col; check_prevcol(linep, col, '\\', &col);)
                         bslcnt++;
                     match_escaped = (bslcnt & 1);
@@ -1920,8 +1915,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
             break;
 
         case '"':
-            /* a quote that is preceded with an odd number of backslashes is
-             * ignored */
+            /* a quote that is preceded with an odd number of backslashes is ignored */
             if (do_quotes)
             {
                 int col;
@@ -2156,8 +2150,7 @@ showmatch(c)
             dollar_vcol = save_dollar_vcol;
 
             /*
-             * brief pause, unless 'm' is present in 'cpo' and a character is
-             * available.
+             * brief pause, unless 'm' is present in 'cpo' and a character is available.
              */
             if (vim_strchr(p_cpo, CPO_SHOWMATCH) != NULL)
                 ui_delay(p_mat * 100L, TRUE);
@@ -2444,15 +2437,6 @@ cls()
     c = gchar_cursor();
     if (c == ' ' || c == '\t' || c == NUL)
         return 0;
-    if (enc_dbcs != 0 && c > 0xFF)
-    {
-        /* If cls_bigword, report multi-byte chars as class 1. */
-        if (enc_dbcs == DBCS_KOR && cls_bigword)
-            return 1;
-
-        /* process code leading/trailing bytes */
-        return dbcs_class(((unsigned)c >> 8), (c & 0xFF));
-    }
     if (enc_utf8)
     {
         c = utf_class(c);
@@ -3177,8 +3161,7 @@ current_block(oap, count, include, what, other)
     /*
      * Search backwards for unclosed '(', '{', etc..
      * Put this position in start_pos.
-     * Ignore quotes here.  Keep the "M" flag in 'cpo', as that is what the
-     * user wants.
+     * Ignore quotes here.  Keep the "M" flag in 'cpo', as that is what the user wants.
      */
     save_cpo = p_cpo;
     p_cpo = (char_u *)(vim_strchr(p_cpo, CPO_MATCHBSL) != NULL ? "%M" : "%");
@@ -3292,38 +3275,16 @@ in_html_tag(end_tag)
     int         lc = NUL;
     pos_T       pos;
 
-    if (enc_dbcs)
+    for (p = line + curwin->w_cursor.col; p > line; )
     {
-        char_u  *lp = NULL;
-
-        /* We search forward until the cursor, because searching backwards is
-         * very slow for DBCS encodings. */
-        for (p = line; p < line + curwin->w_cursor.col; mb_ptr_adv(p))
-            if (*p == '>' || *p == '<')
-            {
-                lc = *p;
-                lp = p;
-            }
-        if (*p != '<')      /* check for '<' under cursor */
-        {
-            if (lc != '<')
-                return FALSE;
-            p = lp;
-        }
+        if (*p == '<')      /* find '<' under/before cursor */
+            break;
+        mb_ptr_back(line, p);
+        if (*p == '>')      /* find '>' before cursor */
+            break;
     }
-    else
-    {
-        for (p = line + curwin->w_cursor.col; p > line; )
-        {
-            if (*p == '<')      /* find '<' under/before cursor */
-                break;
-            mb_ptr_back(line, p);
-            if (*p == '>')      /* find '>' before cursor */
-                break;
-        }
-        if (*p != '<')
-            return FALSE;
-    }
+    if (*p != '<')
+        return FALSE;
 
     pos.lnum = curwin->w_cursor.lnum;
     pos.col = (colnr_T)(p - line);
@@ -3512,8 +3473,7 @@ again:
             }
         curwin->w_cursor = end_pos;
 
-        /* If we now have the same text as before reset "do_include" and try
-         * again. */
+        /* If we now have the same text as before reset "do_include" and try again. */
         if (equalpos(start_pos, old_start) && equalpos(end_pos, old_end))
         {
             do_include = TRUE;
@@ -3726,8 +3686,7 @@ static int find_prev_quote(char_u *line, int col_start, int quotechar, char_u *e
 
 /*
  * Search quote char from string line[col].
- * Quote character escaped by one of the characters in "escape" is not counted
- * as a quote.
+ * Quote character escaped by one of the characters in "escape" is not counted as a quote.
  * Returns column number of "quotechar" or -1 when not found.
  */
     static int
@@ -3758,8 +3717,7 @@ find_next_quote(line, col, quotechar, escape)
 
 /*
  * Search backwards in "line" from column "col_start" to find "quotechar".
- * Quote character escaped by one of the characters in "escape" is not counted
- * as a quote.
+ * Quote character escaped by one of the characters in "escape" is not counted as a quote.
  * Return the found column or zero.
  */
     static int
@@ -3819,8 +3777,7 @@ current_quote(oap, count, include, quotechar)
 
     if (!vis_empty)
     {
-        /* Check if the existing selection exactly spans the text inside
-         * quotes. */
+        /* Check if the existing selection exactly spans the text inside quotes. */
         if (vis_bef_curs)
         {
             inside_quotes = VIsual.col > 0
@@ -3855,8 +3812,7 @@ current_quote(oap, count, include, quotechar)
          * next quoted string. */
         if (vis_bef_curs)
         {
-            /* Assume we are on a closing quote: move to after the next
-             * opening quote. */
+            /* Assume we are on a closing quote: move to after the next opening quote. */
             col_start = find_next_quote(line, col_start + 1, quotechar, NULL);
             if (col_start < 0)
                 return FALSE;

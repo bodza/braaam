@@ -125,8 +125,7 @@ edit(cmdchar, startln, count)
     /* Remember whether editing was restarted after CTRL-O. */
     did_restart_edit = restart_edit;
 
-    /* sleep before redrawing, needed for "CTRL-O :" that results in an
-     * error message */
+    /* sleep before redrawing, needed for "CTRL-O :" that results in an error message */
     check_for_delay(TRUE);
 
     /* set Insstart_orig to Insstart */
@@ -390,8 +389,7 @@ edit(cmdchar, startln, count)
         /*
          * If we inserted a character at the last position of the last line in
          * the window, scroll the window one line up. This avoids an extra redraw.
-         * This is detected when the cursor column is smaller after inserting
-         * something.
+         * This is detected when the cursor column is smaller after inserting something.
          * Don't do this when the topline changed already, it has
          * already been adjusted (by insertchar() calling open_line())).
          */
@@ -456,7 +454,7 @@ edit(cmdchar, startln, count)
 
         /* CTRL-\ CTRL-N goes to Normal mode,
          * CTRL-\ CTRL-G goes to mode selected with 'insertmode',
-         * CTRL-\ CTRL-O is like CTRL-O but without moving the cursor.  */
+         * CTRL-\ CTRL-O is like CTRL-O but without moving the cursor. */
         if (c == Ctrl_BSL)
         {
             /* may need to redraw when no more chars available now */
@@ -522,8 +520,7 @@ edit(cmdchar, startln, count)
 
         /*
          * If 'keymodel' contains "startsel", may start selection.  If it
-         * does, a CTRL-O and c will be stuffed, we need to get these
-         * characters.
+         * does, a CTRL-O and c will be stuffed, we need to get these characters.
          */
         if (ins_start_select(c))
             continue;
@@ -549,8 +546,7 @@ edit(cmdchar, startln, count)
             }
 
 do_intr:
-            /* when 'insertmode' set, and not halfway a mapping, don't leave
-             * Insert mode */
+            /* when 'insertmode' set, and not halfway a mapping, don't leave Insert mode */
             if (goto_im())
             {
                 if (got_int)
@@ -620,8 +616,7 @@ doESCkey:
         case K_ZERO:    /* Insert the previously inserted text. */
         case NUL:
         case Ctrl_A:
-            /* For ^@ the trailing ESC will end the insert, unless there is an
-             * error.  */
+            /* For ^@ the trailing ESC will end the insert, unless there is an error. */
             if (stuff_inserted(NUL, 1L, (c == Ctrl_A)) == FAIL && c != Ctrl_A && !p_im)
                 goto doESCkey;          /* quit insert mode */
             inserted_space = FALSE;
@@ -893,8 +888,7 @@ normalchar:
             }
 
             /* Insert a normal character and check for abbreviations on a
-             * special character.  Let CTRL-] expand abbreviations without
-             * inserting it. */
+             * special character.  Let CTRL-] expand abbreviations without inserting it. */
             if (vim_iswordc(c) || (!echeck_abbr(
                 /* Add ABBR_OFF for characters above 0x100, this is what check_abbr() expects. */
                 (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) : c) && c != Ctrl_RSB))
@@ -1153,8 +1147,7 @@ display_dollar(col)
 }
 
 /*
- * Call this function before moving the cursor from the normal insert position
- * in insert mode.
+ * Call this function before moving the cursor from the normal insert position in insert mode.
  */
     static void
 undisplay_dollar()
@@ -1260,8 +1253,7 @@ change_indent(type, amount, round, replaced, call_changed_bytes)
     if (new_cursor_col >= 0)
     {
         /*
-         * When changing the indent while the cursor is touching it, reset
-         * Insstart_col to 0.
+         * When changing the indent while the cursor is touching it, reset Insstart_col to 0.
          */
         if (new_cursor_col == 0)
             insstart_less = MAXCOL;
@@ -1315,8 +1307,7 @@ change_indent(type, amount, round, replaced, call_changed_bytes)
         }
 
         /*
-         * When changing the indent while the cursor is in it, reset
-         * Insstart_col to 0.
+         * When changing the indent while the cursor is in it, reset Insstart_col to 0.
          */
         insstart_less = MAXCOL;
     }
@@ -1430,8 +1421,7 @@ truncate_spaces(line)
 /*
  * Backspace the cursor until the given column.  Handles REPLACE and VREPLACE
  * modes correctly.  May also be used when not in insert mode at all.
- * Will attempt not to go before "col" even when there is a composing
- * character.
+ * Will attempt not to go before "col" even when there is a composing character.
  */
     void
 backspace_until_column(col)
@@ -1574,9 +1564,6 @@ get_literal()
 
     if (cc == 0)        /* NUL is stored as NL */
         cc = '\n';
-    if (enc_dbcs && (cc & 0xff) == 0)
-        cc = '?';       /* don't accept an illegal DBCS char, the NUL in the
-                           second byte will cause trouble! */
 
     --no_mapping;
     if (nc)
@@ -1696,8 +1683,7 @@ insertchar(c, flags, second_indent)
                 && (force_format || virtcol > (colnr_T)textwidth))
         {
             do_internal = (fex_format(curwin->w_cursor.lnum, 1L, c) != 0);
-            /* It may be required to save for undo again, e.g. when setline()
-             * was called. */
+            /* It may be required to save for undo again, e.g. when setline() was called. */
             ins_need_undo = TRUE;
         }
         if (do_internal)
@@ -1769,8 +1755,7 @@ insertchar(c, flags, second_indent)
      * If there's any pending input, grab up to INPUT_BUFLEN at once.
      * This speeds up normal text input considerably.
      * Don't do this when 'cindent' or 'indentexpr' is set, because we might
-     * need to re-indent at a ':', or any other character (but not what
-     * 'paste' is set)..
+     * need to re-indent at a ':', or any other character (but not what 'paste' is set)..
      * Don't do this when there an InsertCharPre autocommand is defined,
      * because we need to fire the event for every character.
      */
@@ -2144,7 +2129,7 @@ internal_format(textwidth, second_indent, flags, format_only, c)
                          * inserted the proper comment leader and positioned
                          * the cursor at the end of the split line.  Now we
                          * add the additional whitespace needed after the
-                         * comment leader for the numbered list.  */
+                         * comment leader for the numbered list. */
                         for (i = 0; i < padding; i++)
                             ins_str((char_u *)" ");
                         changed_bytes(curwin->w_cursor.lnum, leader_len);
@@ -2204,8 +2189,7 @@ internal_format(textwidth, second_indent, flags, format_only, c)
  * Called after inserting or deleting text: When 'formatoptions' includes the
  * 'a' flag format from the current line until the end of the paragraph.
  * Keep the cursor at the same position relative to the text.
- * The caller must have saved the cursor line for undo, following ones will be
- * saved here.
+ * The caller must have saved the cursor line for undo, following ones will be saved here.
  */
     void
 auto_format(trailblank, prev_line)
@@ -2249,8 +2233,7 @@ auto_format(trailblank, prev_line)
         curwin->w_cursor = pos;
     }
 
-    /* With the 'c' flag in 'formatoptions' and 't' missing: only format
-     * comments. */
+    /* With the 'c' flag in 'formatoptions' and 't' missing: only format comments. */
     if (has_format_option(FO_WRAP_COMS) && !has_format_option(FO_WRAP)
                                      && get_leader_len(old, NULL, FALSE, TRUE) == 0)
         return;
@@ -2287,8 +2270,7 @@ auto_format(trailblank, prev_line)
 
     /* Insert mode: If the cursor is now after the end of the line while it
      * previously wasn't, the line was broken.  Because of the rule above we
-     * need to add a space when 'w' is in 'formatoptions' to keep a paragraph
-     * formatted. */
+     * need to add a space when 'w' is in 'formatoptions' to keep a paragraph formatted. */
     if (!wasatend && has_format_option(FO_WHITE_PAR))
     {
         new = ml_get_curline();
@@ -2389,8 +2371,7 @@ redo_literal(c)
 {
     char_u      buf[10];
 
-    /* Only digits need special treatment.  Translate them into a string of
-     * three digits. */
+    /* Only digits need special treatment.  Translate them into a string of three digits. */
     if (VIM_ISDIGIT(c))
     {
         vim_snprintf((char *)buf, sizeof(buf), "%03d", c);
@@ -2518,8 +2499,7 @@ stop_insert(end_insert_pos, esc, nomove)
             {
                 if (gchar_cursor() != NUL)
                     inc_cursor();
-                /* If the cursor is still at the same character, also keep
-                 * the "coladd". */
+                /* If the cursor is still at the same character, also keep the "coladd". */
                 if (gchar_cursor() == NUL
                         && curwin->w_cursor.lnum == tpos.lnum
                         && curwin->w_cursor.col == tpos.col)
@@ -2750,8 +2730,7 @@ oneleft()
         {
             coladvance(v - width);
             /* getviscol() is slow, skip it when 'showbreak' is empty,
-             * 'breakindent' is not set and there are no multi-byte
-             * characters */
+             * 'breakindent' is not set and there are no multi-byte characters */
             if ((*p_sbr == NUL && !curwin->w_p_bri && !has_mbyte) || getviscol() < v)
                 break;
             ++width;
@@ -3047,8 +3026,7 @@ replace_pop()
 }
 
 /*
- * Join the top two items on the replace stack.  This removes to "off"'th NUL
- * encountered.
+ * Join the top two items on the replace stack.  This removes to "off"'th NUL encountered.
  */
     static void
 replace_join(off)
@@ -3211,8 +3189,7 @@ replace_do_bs(limit_col)
             }
             vcol -= start_vcol;
 
-            /* Delete spaces that were inserted after the cursor to keep the
-             * text aligned. */
+            /* Delete spaces that were inserted after the cursor to keep the text aligned. */
             curwin->w_cursor.col += ins_len;
             while (vcol > orig_vcols && gchar_cursor() == ' ')
             {
@@ -3457,8 +3434,7 @@ in_cinkeys(keytyped, when, line_is_empty)
                 }
                 if (match && try_match_word && !try_match)
                 {
-                    /* "0=word": Check if there are only blanks before the
-                     * word. */
+                    /* "0=word": Check if there are only blanks before the word. */
                     line = ml_get_curline();
                     if ((int)(skipwhite(line) - line) != (int)(curwin->w_cursor.col - (p - look)))
                         match = FALSE;
@@ -3781,8 +3757,7 @@ ins_esc(count, cmdchar, nomove)
         undisplay_dollar();
     }
 
-    /* When an autoindent was removed, curswant stays after the
-     * indent */
+    /* When an autoindent was removed, curswant stays after the indent */
     if (restart_edit == NUL && (colnr_T)temp == curwin->w_cursor.col)
         curwin->w_set_curswant = TRUE;
 
@@ -4026,8 +4001,7 @@ ins_bs_one(vcolp)
     getvcol(curwin, &curwin->w_cursor, vcolp, NULL, NULL);
     if (State & REPLACE_FLAG)
     {
-        /* Don't delete characters before the insert point when in
-         * Replace mode */
+        /* Don't delete characters before the insert point when in Replace mode */
         if (curwin->w_cursor.lnum != Insstart.lnum
                 || curwin->w_cursor.col >= Insstart.col)
             replace_do_bs(-1);
@@ -4320,8 +4294,7 @@ ins_bs(c, mode, inserted_space_p)
                     (void)del_char(FALSE);
                     /*
                      * If there are combining characters and 'delcombine' is set
-                     * move the cursor back.  Don't back up before the base
-                     * character.
+                     * move the cursor back.  Don't back up before the base character.
                      */
                     if (enc_utf8 && p_deco && cpc[0] != NUL)
                         inc_cursor();
@@ -4470,8 +4443,7 @@ ins_left()
     }
 
     /*
-     * if 'whichwrap' set for cursor in insert mode may go to
-     * previous line
+     * if 'whichwrap' set for cursor in insert mode may go to previous line
      */
     else if (vim_strchr(p_ww, '[') != NULL && curwin->w_cursor.lnum > 1)
     {
@@ -4870,8 +4842,7 @@ ins_tab()
                 /* Backspace from real cursor to change_col */
                 backspace_until_column(change_col);
 
-                /* Insert each char in saved_line from changed_col to
-                 * ptr-cursor */
+                /* Insert each char in saved_line from changed_col to ptr-cursor */
                 ins_bytes_len(saved_line + change_col, cursor->col - change_col);
             }
         }
@@ -4911,17 +4882,14 @@ ins_eol(c)
     /*
      * In VREPLACE mode, a NL replaces the rest of the line, and starts
      * replacing the next line, so we push all of the characters left on the
-     * line onto the replace stack.  This is not done here though, it is done
-     * in open_line().
+     * line onto the replace stack.  This is not done here though, it is done in open_line().
      */
 
-    /* Put cursor on NUL if on the last char and coladd is 1 (happens after
-     * CTRL-O). */
+    /* Put cursor on NUL if on the last char and coladd is 1 (happens after CTRL-O). */
     if (virtual_active() && curwin->w_cursor.coladd > 0)
         coladvance(getviscol());
 
-    /* NL in reverse insert will always start in the end of
-     * current line. */
+    /* NL in reverse insert will always start in the end of current line. */
     if (revins_on)
         curwin->w_cursor.col += (colnr_T)STRLEN(ml_get_cursor());
 

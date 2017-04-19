@@ -5,12 +5,6 @@
  * changed, the following four variables are set (for speed).
  * Currently these types of character encodings are supported:
  *
- * "enc_dbcs"       When non-zero it tells the type of double byte character
- *                  encoding (Chinese, Korean, Japanese, etc.).
- *                  The cell width on the display is equal to the number of
- *                  bytes.  (exception: DBCS_JPNU with first byte 0x8e)
- *                  Recognizing the first or second byte is difficult, it
- *                  requires checking a byte sequence from the start.
  * "enc_utf8"       When TRUE use Unicode characters in UTF-8 encoding.
  *                  The cell width on the display needs to be determined from
  *                  the character value.
@@ -27,7 +21,7 @@
  *                  avoid NUL bytes.  Conversion happens when doing I/O.
  *                  "enc_utf8" will also be TRUE.
  *
- * "has_mbyte" is set when "enc_dbcs" or "enc_utf8" is non-zero.
+ * "has_mbyte" is set when "enc_utf8" is non-zero.
  *
  * If none of these is TRUE, 8-bit bytes are used for a character.  The
  * encoding isn't currently specified (TODO).
@@ -75,14 +69,7 @@
 #include <wchar.h>
 
 static int enc_canon_search(char_u *name);
-static int dbcs_char2len(int c);
-static int dbcs_char2bytes(int c, char_u *buf);
-static int dbcs_ptr2len(char_u *p);
-static int dbcs_ptr2len_len(char_u *p, int size);
 static int utf_ptr2cells_len(char_u *p, int size);
-static int dbcs_char2cells(int c);
-static int dbcs_ptr2cells_len(char_u *p, int size);
-static int dbcs_ptr2char(char_u *p);
 static int utf_safe_read_char_adv(char_u **s, size_t *n);
 
 /*
@@ -128,133 +115,9 @@ enc_canon_table[] =
 {
 #define IDX_LATIN_1     0
     {"latin1",          ENC_8BIT + ENC_LATIN1,  1252},
-#define IDX_ISO_2       1
-    {"iso-8859-2",      ENC_8BIT,               0},
-#define IDX_ISO_3       2
-    {"iso-8859-3",      ENC_8BIT,               0},
-#define IDX_ISO_4       3
-    {"iso-8859-4",      ENC_8BIT,               0},
-#define IDX_ISO_5       4
-    {"iso-8859-5",      ENC_8BIT,               0},
-#define IDX_ISO_6       5
-    {"iso-8859-6",      ENC_8BIT,               0},
-#define IDX_ISO_7       6
-    {"iso-8859-7",      ENC_8BIT,               0},
-#define IDX_ISO_8       7
-    {"iso-8859-8",      ENC_8BIT,               0},
-#define IDX_ISO_9       8
-    {"iso-8859-9",      ENC_8BIT,               0},
-#define IDX_ISO_10      9
-    {"iso-8859-10",     ENC_8BIT,               0},
-#define IDX_ISO_11      10
-    {"iso-8859-11",     ENC_8BIT,               0},
-#define IDX_ISO_13      11
-    {"iso-8859-13",     ENC_8BIT,               0},
-#define IDX_ISO_14      12
-    {"iso-8859-14",     ENC_8BIT,               0},
-#define IDX_ISO_15      13
-    {"iso-8859-15",     ENC_8BIT + ENC_LATIN9,  0},
-#define IDX_KOI8_R      14
-    {"koi8-r",          ENC_8BIT,               0},
-#define IDX_KOI8_U      15
-    {"koi8-u",          ENC_8BIT,               0},
-#define IDX_UTF8        16
+#define IDX_UTF8        1
     {"utf-8",           ENC_UNICODE,            0},
-#define IDX_UCS2        17
-    {"ucs-2",           ENC_UNICODE + ENC_ENDIAN_B + ENC_2BYTE, 0},
-#define IDX_UCS2LE      18
-    {"ucs-2le",         ENC_UNICODE + ENC_ENDIAN_L + ENC_2BYTE, 0},
-#define IDX_UTF16       19
-    {"utf-16",          ENC_UNICODE + ENC_ENDIAN_B + ENC_2WORD, 0},
-#define IDX_UTF16LE     20
-    {"utf-16le",        ENC_UNICODE + ENC_ENDIAN_L + ENC_2WORD, 0},
-#define IDX_UCS4        21
-    {"ucs-4",           ENC_UNICODE + ENC_ENDIAN_B + ENC_4BYTE, 0},
-#define IDX_UCS4LE      22
-    {"ucs-4le",         ENC_UNICODE + ENC_ENDIAN_L + ENC_4BYTE, 0},
-
-    /* For debugging DBCS encoding on Unix. */
-#define IDX_DEBUG       23
-    {"debug",           ENC_DBCS,               DBCS_DEBUG},
-#define IDX_EUC_JP      24
-    {"euc-jp",          ENC_DBCS,               DBCS_JPNU},
-#define IDX_SJIS        25
-    {"sjis",            ENC_DBCS,               DBCS_JPN},
-#define IDX_EUC_KR      26
-    {"euc-kr",          ENC_DBCS,               DBCS_KORU},
-#define IDX_EUC_CN      27
-    {"euc-cn",          ENC_DBCS,               DBCS_CHSU},
-#define IDX_EUC_TW      28
-    {"euc-tw",          ENC_DBCS,               DBCS_CHTU},
-#define IDX_BIG5        29
-    {"big5",            ENC_DBCS,               DBCS_CHT},
-
-    /* MS-DOS and MS-Windows codepages are included here, so that they can be
-     * used on Unix too.  Most of them are similar to ISO-8859 encodings, but
-     * not exactly the same. */
-#define IDX_CP437       30
-    {"cp437",           ENC_8BIT,               437}, /* like iso-8859-1 */
-#define IDX_CP737       31
-    {"cp737",           ENC_8BIT,               737}, /* like iso-8859-7 */
-#define IDX_CP775       32
-    {"cp775",           ENC_8BIT,               775}, /* Baltic */
-#define IDX_CP850       33
-    {"cp850",           ENC_8BIT,               850}, /* like iso-8859-4 */
-#define IDX_CP852       34
-    {"cp852",           ENC_8BIT,               852}, /* like iso-8859-1 */
-#define IDX_CP855       35
-    {"cp855",           ENC_8BIT,               855}, /* like iso-8859-2 */
-#define IDX_CP857       36
-    {"cp857",           ENC_8BIT,               857}, /* like iso-8859-5 */
-#define IDX_CP860       37
-    {"cp860",           ENC_8BIT,               860}, /* like iso-8859-9 */
-#define IDX_CP861       38
-    {"cp861",           ENC_8BIT,               861}, /* like iso-8859-1 */
-#define IDX_CP862       39
-    {"cp862",           ENC_8BIT,               862}, /* like iso-8859-1 */
-#define IDX_CP863       40
-    {"cp863",           ENC_8BIT,               863}, /* like iso-8859-8 */
-#define IDX_CP865       41
-    {"cp865",           ENC_8BIT,               865}, /* like iso-8859-1 */
-#define IDX_CP866       42
-    {"cp866",           ENC_8BIT,               866}, /* like iso-8859-5 */
-#define IDX_CP869       43
-    {"cp869",           ENC_8BIT,               869}, /* like iso-8859-7 */
-#define IDX_CP874       44
-    {"cp874",           ENC_8BIT,               874}, /* Thai */
-#define IDX_CP932       45
-    {"cp932",           ENC_DBCS,               DBCS_JPN},
-#define IDX_CP936       46
-    {"cp936",           ENC_DBCS,               DBCS_CHS},
-#define IDX_CP949       47
-    {"cp949",           ENC_DBCS,               DBCS_KOR},
-#define IDX_CP950       48
-    {"cp950",           ENC_DBCS,               DBCS_CHT},
-#define IDX_CP1250      49
-    {"cp1250",          ENC_8BIT,               1250}, /* Czech, Polish, etc. */
-#define IDX_CP1251      50
-    {"cp1251",          ENC_8BIT,               1251}, /* Cyrillic */
-    /* cp1252 is considered to be equal to latin1 */
-#define IDX_CP1253      51
-    {"cp1253",          ENC_8BIT,               1253}, /* Greek */
-#define IDX_CP1254      52
-    {"cp1254",          ENC_8BIT,               1254}, /* Turkish */
-#define IDX_CP1255      53
-    {"cp1255",          ENC_8BIT,               1255}, /* Hebrew */
-#define IDX_CP1256      54
-    {"cp1256",          ENC_8BIT,               1256}, /* Arabic */
-#define IDX_CP1257      55
-    {"cp1257",          ENC_8BIT,               1257}, /* Baltic */
-#define IDX_CP1258      56
-    {"cp1258",          ENC_8BIT,               1258}, /* Vietnamese */
-
-#define IDX_MACROMAN    57
-    {"macroman",        ENC_8BIT + ENC_MACROMAN, 0},    /* Mac OS */
-#define IDX_DECMCS      58
-    {"dec-mcs",         ENC_8BIT,               0},     /* DEC MCS */
-#define IDX_HPROMAN8    59
-    {"hp-roman8",       ENC_8BIT,               0},     /* HP Roman8 */
-#define IDX_COUNT       60
+#define IDX_COUNT       2
 };
 
 /*
@@ -266,71 +129,9 @@ enc_alias_table[] =
 {
     {"ansi",            IDX_LATIN_1},
     {"iso-8859-1",      IDX_LATIN_1},
-    {"latin2",          IDX_ISO_2},
-    {"latin3",          IDX_ISO_3},
-    {"latin4",          IDX_ISO_4},
-    {"cyrillic",        IDX_ISO_5},
-    {"arabic",          IDX_ISO_6},
-    {"greek",           IDX_ISO_7},
-    {"hebrew",          IDX_ISO_8},
-    {"latin5",          IDX_ISO_9},
-    {"turkish",         IDX_ISO_9}, /* ? */
-    {"latin6",          IDX_ISO_10},
-    {"nordic",          IDX_ISO_10}, /* ? */
-    {"thai",            IDX_ISO_11}, /* ? */
-    {"latin7",          IDX_ISO_13},
-    {"latin8",          IDX_ISO_14},
-    {"latin9",          IDX_ISO_15},
     {"utf8",            IDX_UTF8},
-    {"unicode",         IDX_UCS2},
-    {"ucs2",            IDX_UCS2},
-    {"ucs2be",          IDX_UCS2},
-    {"ucs-2be",         IDX_UCS2},
-    {"ucs2le",          IDX_UCS2LE},
-    {"utf16",           IDX_UTF16},
-    {"utf16be",         IDX_UTF16},
-    {"utf-16be",        IDX_UTF16},
-    {"utf16le",         IDX_UTF16LE},
-    {"ucs4",            IDX_UCS4},
-    {"ucs4be",          IDX_UCS4},
-    {"ucs-4be",         IDX_UCS4},
-    {"ucs4le",          IDX_UCS4LE},
-    {"utf32",           IDX_UCS4},
-    {"utf-32",          IDX_UCS4},
-    {"utf32be",         IDX_UCS4},
-    {"utf-32be",        IDX_UCS4},
-    {"utf32le",         IDX_UCS4LE},
-    {"utf-32le",        IDX_UCS4LE},
-    {"932",             IDX_CP932},
-    {"949",             IDX_CP949},
-    {"936",             IDX_CP936},
-    {"gbk",             IDX_CP936},
-    {"950",             IDX_CP950},
-    {"eucjp",           IDX_EUC_JP},
-    {"unix-jis",        IDX_EUC_JP},
-    {"ujis",            IDX_EUC_JP},
-    {"shift-jis",       IDX_SJIS},
-    {"pck",             IDX_SJIS},      /* Sun: PCK */
-    {"euckr",           IDX_EUC_KR},
-    {"5601",            IDX_EUC_KR},    /* Sun: KS C 5601 */
-    {"euccn",           IDX_EUC_CN},
-    {"gb2312",          IDX_EUC_CN},
-    {"euctw",           IDX_EUC_TW},
-    {"japan",           IDX_EUC_JP},
-    {"korea",           IDX_EUC_KR},
-    {"prc",             IDX_EUC_CN},
-    {"chinese",         IDX_EUC_CN},
-    {"taiwan",          IDX_EUC_TW},
-    {"cp950",           IDX_BIG5},
-    {"950",             IDX_BIG5},
-    {"mac",             IDX_MACROMAN},
-    {"mac-roman",       IDX_MACROMAN},
     {NULL,              0}
 };
-
-#if !defined(CP_UTF8)
-#define CP_UTF8 65001  /* magic number from winnls.h */
-#endif
 
 /*
  * Find encoding "name" in the list of canonical encoding names.
@@ -361,9 +162,7 @@ enc_canon_props(name)
     i = enc_canon_search(name);
     if (i >= 0)
         return enc_canon_table[i].prop;
-    if (STRNCMP(name, "2byte-", 6) == 0)
-        return ENC_DBCS;
-    if (STRNCMP(name, "8bit-", 5) == 0 || STRNCMP(name, "iso-8859-", 9) == 0)
+    if (STRNCMP(name, "iso-8859-", 9) == 0)
         return ENC_8BIT;
     return 0;
 }
@@ -375,7 +174,7 @@ enc_canon_props(name)
  * - by set_init_1() after 'encoding' was set to its default.
  * - by do_set() when 'encoding' has been set.
  * p_enc must have been passed through enc_canonize() already.
- * Sets the "enc_unicode", "enc_utf8", "enc_dbcs" and "has_mbyte" flags.
+ * Sets the "enc_unicode", "enc_utf8" and "has_mbyte" flags.
  * Fills mb_bytelen_tab[] and returns NULL when there are no problems.
  * When there is something wrong: Returns an error message and doesn't change anything.
  */
@@ -385,11 +184,9 @@ mb_init()
     int         i;
     int         idx;
     int         n;
-    int         enc_dbcs_new = 0;
 #if defined(USE_ICONV)
 #define LEN_FROM_CONV
     vimconv_T   vimconv;
-    char_u      *p;
 #endif
 
     if (p_enc == NULL)
@@ -402,16 +199,11 @@ mb_init()
         output_conv.vc_type = CONV_NONE;
         return NULL;
     }
-    else if (STRNCMP(p_enc, "8bit-", 5) == 0 || STRNCMP(p_enc, "iso-8859-", 9) == 0)
+    else if (STRNCMP(p_enc, "iso-8859-", 9) == 0)
     {
-        /* Accept any "8bit-" or "iso-8859-" name. */
+        /* Accept any "iso-8859-" name. */
         enc_unicode = 0;
         enc_utf8 = FALSE;
-    }
-    else if (STRNCMP(p_enc, "2byte-", 6) == 0)
-    {
-        /* Unix: accept any "2byte-" name, assume current locale. */
-        enc_dbcs_new = DBCS_2BYTE;
     }
     else if ((idx = enc_canon_search(p_enc)) >= 0)
     {
@@ -427,11 +219,6 @@ mb_init()
             else
                 enc_unicode = 0;
         }
-        else if (i & ENC_DBCS)
-        {
-            /* 2byte, handle below */
-            enc_dbcs_new = enc_canon_table[idx].codepage;
-        }
         else
         {
             /* Must be 8-bit. */
@@ -442,13 +229,7 @@ mb_init()
     else    /* Don't know what encoding this is, reject it. */
         return e_invarg;
 
-    if (enc_dbcs_new != 0)
-    {
-        enc_unicode = 0;
-        enc_utf8 = FALSE;
-    }
-    enc_dbcs = enc_dbcs_new;
-    has_mbyte = (enc_dbcs != 0 || enc_utf8);
+    has_mbyte = enc_utf8;
 
     /* Detect an encoding that uses latin1 characters. */
     enc_latin1like = (enc_utf8 || STRCMP(p_enc, "latin1") == 0 || STRCMP(p_enc, "iso-8859-15") == 0);
@@ -468,19 +249,6 @@ mb_init()
         mb_off2cells = utf_off2cells;
         mb_ptr2char = utf_ptr2char;
         mb_head_off = utf_head_off;
-    }
-    else if (enc_dbcs != 0)
-    {
-        mb_ptr2len = dbcs_ptr2len;
-        mb_ptr2len_len = dbcs_ptr2len_len;
-        mb_char2len = dbcs_char2len;
-        mb_char2bytes = dbcs_char2bytes;
-        mb_ptr2cells = dbcs_ptr2cells;
-        mb_ptr2cells_len = dbcs_ptr2cells_len;
-        mb_char2cells = dbcs_char2cells;
-        mb_off2cells = dbcs_off2cells;
-        mb_ptr2char = dbcs_ptr2char;
-        mb_head_off = dbcs_head_off;
     }
     else
     {
@@ -503,16 +271,6 @@ mb_init()
     /* When 'encoding' is different from the current locale mblen() won't
      * work.  Use conversion to "utf-8" instead. */
     vimconv.vc_type = CONV_NONE;
-    if (enc_dbcs)
-    {
-        p = enc_locale();
-        if (p == NULL || STRCMP(p, p_enc) != 0)
-        {
-            convert_setup(&vimconv, p_enc, (char_u *)"utf-8");
-            vimconv.vc_fail = TRUE;
-        }
-        vim_free(p);
-    }
 #endif
 
     for (i = 0; i < 256; ++i)
@@ -521,50 +279,8 @@ mb_init()
          * independent of mblen(). */
         if (enc_utf8)
             n = utf8len_tab[i];
-        else if (enc_dbcs == 0)
-            n = 1;
         else
-        {
-            char buf[MB_MAXBYTES + 1];
-            if (i == NUL)       /* just in case mblen() can't handle "" */
-                n = 1;
-            else
-            {
-                buf[0] = i;
-                buf[1] = 0;
-#if defined(LEN_FROM_CONV)
-                if (vimconv.vc_type != CONV_NONE)
-                {
-                    /*
-                     * string_convert() should fail when converting the first
-                     * byte of a double-byte character.
-                     */
-                    p = string_convert(&vimconv, (char_u *)buf, NULL);
-                    if (p != NULL)
-                    {
-                        vim_free(p);
-                        n = 1;
-                    }
-                    else
-                        n = 2;
-                }
-                else
-#endif
-                {
-                    /*
-                     * mblen() should return -1 for invalid (means the leading
-                     * multibyte) character.  However there are some platforms
-                     * where mblen() returns 0 for invalid character.
-                     * Therefore, following condition includes 0.
-                     */
-                    ignored = mblen(NULL, 0);   /* First reset the state. */
-                    if (mblen(buf, (size_t)1) <= 0)
-                        n = 2;
-                    else
-                        n = 1;
-                }
-            }
-        }
+            n = 1;
 
         mb_bytelen_tab[i] = n;
     }
@@ -674,161 +390,9 @@ mb_get_class_buf(p, buf)
             return 2;
         return 1;
     }
-    if (enc_dbcs != 0 && p[0] != NUL && p[1] != NUL)
-        return dbcs_class(p[0], p[1]);
     if (enc_utf8)
         return utf_class(utf_ptr2char(p));
     return 0;
-}
-
-/*
- * Get class of a double-byte character.  This always returns 3 or bigger.
- * TODO: Should return 1 for punctuation.
- */
-    int
-dbcs_class(lead, trail)
-    unsigned    lead;
-    unsigned    trail;
-{
-    switch (enc_dbcs)
-    {
-        /* please add classify routine for your language in here */
-
-        case DBCS_JPNU: /* ? */
-        case DBCS_JPN:
-            {
-                /* JIS code classification */
-                unsigned char lb = lead;
-                unsigned char tb = trail;
-
-                /* convert process code to JIS */
-                /*
-                 * XXX: Code page identification can not use with all
-                 *          system! So, some other encoding information
-                 *          will be needed.
-                 *          In japanese: SJIS,EUC,UNICODE,(JIS)
-                 *          Note that JIS-code system don't use as
-                 *          process code in most system because it uses
-                 *          escape sequences(JIS is context depend encoding).
-                 */
-                /* assume process code is JAPANESE-EUC */
-                lb &= 0x7f;
-                tb &= 0x7f;
-                /* exceptions */
-                switch (lb << 8 | tb)
-                {
-                    case 0x2121: /* ZENKAKU space */
-                        return 0;
-                    case 0x2122: /* TOU-TEN (Japanese comma) */
-                    case 0x2123: /* KU-TEN (Japanese period) */
-                    case 0x2124: /* ZENKAKU comma */
-                    case 0x2125: /* ZENKAKU period */
-                        return 1;
-                    case 0x213c: /* prolongedsound handled as KATAKANA */
-                        return 13;
-                }
-                /* sieved by KU code */
-                switch (lb)
-                {
-                    case 0x21:
-                    case 0x22:
-                        /* special symbols */
-                        return 10;
-                    case 0x23:
-                        /* alpha-numeric */
-                        return 11;
-                    case 0x24:
-                        /* hiragana */
-                        return 12;
-                    case 0x25:
-                        /* katakana */
-                        return 13;
-                    case 0x26:
-                        /* greek */
-                        return 14;
-                    case 0x27:
-                        /* russian */
-                        return 15;
-                    case 0x28:
-                        /* lines */
-                        return 16;
-                    default:
-                        /* kanji */
-                        return 17;
-                }
-            }
-
-        case DBCS_KORU: /* ? */
-        case DBCS_KOR:
-            {
-                /* KS code classification */
-                unsigned char c1 = lead;
-                unsigned char c2 = trail;
-
-                /*
-                 * 20 : Hangul
-                 * 21 : Hanja
-                 * 22 : Symbols
-                 * 23 : Alpha-numeric/Roman Letter (Full width)
-                 * 24 : Hangul Letter(Alphabet)
-                 * 25 : Roman Numeral/Greek Letter
-                 * 26 : Box Drawings
-                 * 27 : Unit Symbols
-                 * 28 : Circled/Parenthesized Letter
-                 * 29 : Hiragana/Katakana
-                 * 30 : Cyrillic Letter
-                 */
-
-                if (c1 >= 0xB0 && c1 <= 0xC8)
-                    /* Hangul */
-                    return 20;
-
-                else if (c1 >= 0xCA && c1 <= 0xFD)
-                    /* Hanja */
-                    return 21;
-                else switch (c1)
-                {
-                    case 0xA1:
-                    case 0xA2:
-                        /* Symbols */
-                        return 22;
-                    case 0xA3:
-                        /* Alpha-numeric */
-                        return 23;
-                    case 0xA4:
-                        /* Hangul Letter(Alphabet) */
-                        return 24;
-                    case 0xA5:
-                        /* Roman Numeral/Greek Letter */
-                        return 25;
-                    case 0xA6:
-                        /* Box Drawings */
-                        return 26;
-                    case 0xA7:
-                        /* Unit Symbols */
-                        return 27;
-                    case 0xA8:
-                    case 0xA9:
-                        if (c2 <= 0xAF)
-                            return 25;  /* Roman Letter */
-                        else if (c2 >= 0xF6)
-                            return 22;  /* Symbols */
-                        else
-                            /* Circled/Parenthesized Letter */
-                            return 28;
-                    case 0xAA:
-                    case 0xAB:
-                        /* Hiragana/Katakana */
-                        return 29;
-                    case 0xAC:
-                        /* Cyrillic Letter */
-                        return 30;
-                }
-            }
-        default:
-            break;
-    }
-    return 3;
 }
 
 /*
@@ -840,15 +404,6 @@ dbcs_class(lead, trail)
 latin_char2len(c)
     int         c UNUSED;
 {
-    return 1;
-}
-
-    static int
-dbcs_char2len(c)
-    int         c;
-{
-    if (c >= 0x100)
-        return 2;
     return 1;
 }
 
@@ -866,25 +421,6 @@ latin_char2bytes(c, buf)
     return 1;
 }
 
-    static int
-dbcs_char2bytes(c, buf)
-    int         c;
-    char_u      *buf;
-{
-    if (c >= 0x100)
-    {
-        buf[0] = (unsigned)c >> 8;
-        buf[1] = c;
-        /* Never use a NUL byte, it causes lots of trouble.  It's an invalid
-         * character anyway. */
-        if (buf[1] == NUL)
-            buf[1] = '\n';
-        return 2;
-    }
-    buf[0] = c;
-    return 1;
-}
-
 /*
  * mb_ptr2len() function pointer.
  * Get byte length of character at "*p" but stop at a NUL.
@@ -896,19 +432,6 @@ latin_ptr2len(p)
     char_u      *p;
 {
     return MB_BYTE2LEN(*p);
-}
-
-    static int
-dbcs_ptr2len(p)
-    char_u      *p;
-{
-    int         len;
-
-    /* Check if second byte is not missing. */
-    len = MB_BYTE2LEN(*p);
-    if (len == 2 && p[1] == NUL)
-        len = 1;
-    return len;
 }
 
 /*
@@ -925,24 +448,6 @@ latin_ptr2len_len(p, size)
     if (size < 1 || *p == NUL)
         return 0;
     return 1;
-}
-
-    static int
-dbcs_ptr2len_len(p, size)
-    char_u      *p;
-    int         size;
-{
-    int         len;
-
-    if (size < 1 || *p == NUL)
-        return 0;
-    if (size == 1)
-        return 1;
-    /* Check that second byte is not missing. */
-    len = MB_BYTE2LEN(*p);
-    if (len == 2 && p[1] == NUL)
-        len = 1;
-    return len;
 }
 
 struct interval
@@ -1265,17 +770,6 @@ utf_ptr2cells(p)
     return 1;
 }
 
-    int
-dbcs_ptr2cells(p)
-    char_u      *p;
-{
-    /* Number of cells is equal to number of bytes, except for euc-jp when
-     * the first byte is 0x8e. */
-    if (enc_dbcs == DBCS_JPNU && *p == 0x8e)
-        return 1;
-    return MB_BYTE2LEN(*p);
-}
-
 /*
  * mb_ptr2cells_len() function pointer.
  * Like mb_ptr2cells(), but limit string length to "size".
@@ -1313,18 +807,6 @@ utf_ptr2cells_len(p, size)
     return 1;
 }
 
-    static int
-dbcs_ptr2cells_len(p, size)
-    char_u      *p;
-    int         size;
-{
-    /* Number of cells is equal to number of bytes, except for euc-jp when
-     * the first byte is 0x8e. */
-    if (size <= 1 || (enc_dbcs == DBCS_JPNU && *p == 0x8e))
-        return 1;
-    return MB_BYTE2LEN(*p);
-}
-
 /*
  * mb_char2cells() function pointer.
  * Return the number of display cells character "c" occupies.
@@ -1335,18 +817,6 @@ latin_char2cells(c)
     int         c UNUSED;
 {
     return 1;
-}
-
-    static int
-dbcs_char2cells(c)
-    int         c;
-{
-    /* Number of cells is equal to number of bytes, except for euc-jp when
-     * the first byte is 0x8e. */
-    if (enc_dbcs == DBCS_JPNU && ((unsigned)c >> 8) == 0x8e)
-        return 1;
-    /* use the first byte */
-    return MB_BYTE2LEN((unsigned)c >> 8);
 }
 
 /*
@@ -1380,22 +850,6 @@ latin_off2cells(off, max_off)
 }
 
     int
-dbcs_off2cells(off, max_off)
-    unsigned    off;
-    unsigned    max_off;
-{
-    /* never check beyond end of the line */
-    if (off >= max_off)
-        return 1;
-
-    /* Number of cells is equal to number of bytes, except for euc-jp when
-     * the first byte is 0x8e. */
-    if (enc_dbcs == DBCS_JPNU && ScreenLines[off] == 0x8e)
-        return 1;
-    return MB_BYTE2LEN(ScreenLines[off]);
-}
-
-    int
 utf_off2cells(off, max_off)
     unsigned    off;
     unsigned    max_off;
@@ -1411,15 +865,6 @@ utf_off2cells(off, max_off)
 latin_ptr2char(p)
     char_u      *p;
 {
-    return *p;
-}
-
-    static int
-dbcs_ptr2char(p)
-    char_u      *p;
-{
-    if (MB_BYTE2LEN(*p) > 1 && p[1] != NUL)
-        return (p[0] << 8) + p[1];
     return *p;
 }
 
@@ -1471,8 +916,7 @@ utf_ptr2char(p)
 
 /*
  * Convert a UTF-8 byte sequence to a wide character.
- * String is assumed to be terminated by NUL or after "n" bytes, whichever
- * comes first.
+ * String is assumed to be terminated by NUL or after "n" bytes, whichever comes first.
  * The function is safe in the sense that it never accesses memory beyond the
  * first "n" bytes of "s".
  *
@@ -2989,9 +2433,7 @@ utf_strnicmp(s1, s2, n1, n2)
 
 /*
  * Version of strnicmp() that handles multi-byte characters.
- * Needed for Big5, Shift-JIS and UTF-8 encoding.  Other DBCS encodings can
- * probably use strnicmp(), because there are no ASCII characters in the
- * second byte.
+ * Needed for Big5, Shift-JIS and UTF-8 encoding.
  * Returns zero if s1 and s2 are equal (ignoring case), the difference between
  * two characters otherwise.
  */
@@ -3053,8 +2495,7 @@ show_utf8()
     int         clen;
     int         i;
 
-    /* Get the byte length of the char under the cursor, including composing
-     * characters. */
+    /* Get the byte length of the char under the cursor, including composing characters. */
     line = ml_get_cursor();
     len = utfc_ptr2len(line);
     if (len == 0)
@@ -3102,62 +2543,6 @@ latin_head_off(base, p)
 }
 
     int
-dbcs_head_off(base, p)
-    char_u      *base;
-    char_u      *p;
-{
-    char_u      *q;
-
-    /* It can't be a trailing byte when not using DBCS, at the start of the
-     * string or the previous byte can't start a double-byte. */
-    if (p <= base || MB_BYTE2LEN(p[-1]) == 1 || *p == NUL)
-        return 0;
-
-    /* This is slow: need to start at the base and go forward until the
-     * byte we are looking for.  Return 1 when we went past it, 0 otherwise. */
-    q = base;
-    while (q < p)
-        q += dbcs_ptr2len(q);
-    return (q == p) ? 0 : 1;
-}
-
-/*
- * Special version of dbcs_head_off() that works for ScreenLines[], where
- * single-width DBCS_JPNU characters are stored separately.
- */
-    int
-dbcs_screen_head_off(base, p)
-    char_u      *base;
-    char_u      *p;
-{
-    char_u      *q;
-
-    /* It can't be a trailing byte when not using DBCS, at the start of the
-     * string or the previous byte can't start a double-byte.
-     * For euc-jp an 0x8e byte in the previous cell always means we have a
-     * lead byte in the current cell. */
-    if (p <= base
-            || (enc_dbcs == DBCS_JPNU && p[-1] == 0x8e)
-            || MB_BYTE2LEN(p[-1]) == 1
-            || *p == NUL)
-        return 0;
-
-    /* This is slow: need to start at the base and go forward until the
-     * byte we are looking for.  Return 1 when we went past it, 0 otherwise.
-     * For DBCS_JPNU look out for 0x8e, which means the second byte is not
-     * stored as the next byte. */
-    q = base;
-    while (q < p)
-    {
-        if (enc_dbcs == DBCS_JPNU && *q == 0x8e)
-            ++q;
-        else
-            q += dbcs_ptr2len(q);
-    }
-    return (q == p) ? 0 : 1;
-}
-
-    int
 utf_head_off(base, p)
     char_u      *base;
     char_u      *p;
@@ -3180,8 +2565,7 @@ utf_head_off(base, p)
         /* Move q to the first byte of this char. */
         while (q > base && (*q & 0xc0) == 0x80)
             --q;
-        /* Check for illegal sequence. Do allow an illegal byte after where we
-         * started. */
+        /* Check for illegal sequence. Do allow an illegal byte after where we started. */
         len = utf8len_tab[*q];
         if (len != (int)(s - q + 1) && len != (int)(p - q + 1))
             return 0;
@@ -3283,11 +2667,7 @@ mb_tail_off(base, p)
 
     /* It can't be the first byte if a double-byte when not using DBCS, at the
      * end of the string or the byte can't start a double-byte. */
-    if (enc_dbcs == 0 || p[1] == NUL || MB_BYTE2LEN(*p) == 1)
-        return 0;
-
-    /* Return 1 when on the lead byte, 0 when on the tail byte. */
-    return 1 - dbcs_head_off(base, p);
+    return 0;
 }
 
 /*
@@ -3513,30 +2893,12 @@ mb_fix_col(col, row)
     col = check_col(col);
     row = check_row(row);
     if (has_mbyte && ScreenLines != NULL && col > 0
-            && ((enc_dbcs
-                    && ScreenLines[LineOffset[row] + col] != NUL
-                    && dbcs_screen_head_off(ScreenLines + LineOffset[row],
-                                         ScreenLines + LineOffset[row] + col))
-                || (enc_utf8 && ScreenLines[LineOffset[row] + col] == 0)))
+            && (enc_utf8 && ScreenLines[LineOffset[row] + col] == 0))
         return col - 1;
     return col;
 }
 
 static int enc_alias_search(char_u *name);
-
-/*
- * Skip the Vim specific head of a 'encoding' name.
- */
-    char_u *
-enc_skip(p)
-    char_u      *p;
-{
-    if (STRNCMP(p, "2byte-", 6) == 0)
-        return p + 6;
-    if (STRNCMP(p, "8bit-", 5) == 0)
-        return p + 5;
-    return p;
-}
 
 /*
  * Find the canonical name for encoding "enc".
@@ -3576,12 +2938,7 @@ enc_canonize(enc)
         }
         *p = NUL;
 
-        /* Skip "2byte-" and "8bit-". */
-        p = enc_skip(r);
-
-        /* Change "microsoft-cp" to "cp".  Used in some spell files. */
-        if (STRNCMP(p, "microsoft-cp", 12) == 0)
-            STRMOVE(p, p + 10);
+        p = r;
 
         /* "iso8859" -> "iso-8859" */
         if (STRNCMP(p, "iso8859", 7) == 0)
@@ -3711,7 +3068,7 @@ my_iconv_open(to, from)
     if (iconv_ok == FALSE)
         return (void *)-1;      /* detected a broken iconv() previously */
 
-    fd = iconv_open((char *)enc_skip(to), (char *)enc_skip(from));
+    fd = iconv_open((char *)to, (char *)from);
 
     if (fd != (iconv_t)-1 && iconv_ok == -1)
     {

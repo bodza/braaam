@@ -197,8 +197,7 @@ u_inssub(lnum)
 
 /*
  * Save the lines "lnum" - "lnum" + nlines (used by delete command).
- * The lines are deleted, so the new bottom line is lnum, unless the buffer
- * becomes empty.
+ * The lines are deleted, so the new bottom line is lnum, unless the buffer becomes empty.
  * Careful: may trigger autocommands that reload the buffer.
  * Returns FAIL when lines could not be saved, OK otherwise.
  */
@@ -593,8 +592,7 @@ u_compute_hash(hash)
 
 /*
  * Return an allocated string of the full path of the target undofile.
- * When "reading" is TRUE find the file to read, go over all directories in
- * 'undodir'.
+ * When "reading" is TRUE find the file to read, go over all directories in 'undodir'.
  * When "reading" is FALSE use the first name where the directory exists.
  * Returns NULL when there is no place to write or no file to read.
  */
@@ -1152,8 +1150,7 @@ unserialize_visualinfo(bi, info)
  * Write the undo tree in an undo file.
  * When "name" is not NULL, use it as the name of the undo file.
  * Otherwise use buf->b_ffname to generate the undo file name.
- * "buf" must never be null, buf->b_ffname is used to obtain the original file
- * permissions.
+ * "buf" must never be null, buf->b_ffname is used to obtain the original file permissions.
  * "forceit" is TRUE for ":wundo!", FALSE otherwise.
  * "hash[UNDO_HASH_SIZE]" must be the hash value of the buffer text.
  */
@@ -1668,8 +1665,7 @@ u_undo(count)
 {
     /*
      * If we get an undo command while executing a macro, we behave like the
-     * original vi. If this happens twice in one macro the result will not
-     * be compatible.
+     * original vi. If this happens twice in one macro the result will not be compatible.
      */
     if (curbuf->b_u_synced == FALSE)
     {
@@ -2173,8 +2169,7 @@ u_undoredo(undo)
         if (top < newlnum)
         {
             /* If the saved cursor is somewhere in this undo block, move it to
-             * the remembered position.  Makes "gwap" put the cursor back
-             * where it was. */
+             * the remembered position.  Makes "gwap" put the cursor back where it was. */
             lnum = curhead->uh_cursor.lnum;
             if (lnum >= top && lnum <= top + newsize + 1)
             {
@@ -2669,8 +2664,7 @@ u_find_first_changed()
 }
 
 /*
- * Increase the write count, store it in the last undo header, what would be
- * used for "u".
+ * Increase the write count, store it in the last undo header, what would be used for "u".
  */
     void
 u_update_save_nr(buf)

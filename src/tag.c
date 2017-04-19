@@ -583,8 +583,7 @@ do_tag(tag, type, count, forceit, verbose)
                             break;
                         msg_advance(15);
 
-                        /* skip backslash used for escaping a command char or
-                         * a backslash */
+                        /* skip backslash used for escaping a command char or a backslash */
                         if (*p == '\\' && (*(p + 1) == *tagp.command || *(p + 1) == '\\'))
                             ++p;
 
@@ -899,8 +898,7 @@ prepare_pats(pats, has_re)
  *  6.  A static or global tag with a full matching tag for the current file.
  *  5.  A global tag with a full matching tag for another file.
  *  4.  A static tag with a full matching tag for another file.
- *  3.  A static or global tag with an ignore-case matching tag for the
- *      current file.
+ *  3.  A static or global tag with an ignore-case matching tag for the current file.
  *  2.  A global tag with an ignore-case matching tag for another file.
  *  1.  A static tag with an ignore-case matching tag for another file.
  *
@@ -1032,17 +1030,14 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     if (has_re && orgpat.regmatch.regprog == NULL)
         goto findtag_end;
 
-    /* This is only to avoid a compiler warning for using search_info
-     * uninitialised. */
+    /* This is only to avoid a compiler warning for using search_info uninitialised. */
     vim_memset(&search_info, 0, (size_t)1);
 
     /*
      * When finding a specified number of matches, first try with matching
-     * case, so binary search can be used, and try ignore-case matches in a
-     * second loop.
+     * case, so binary search can be used, and try ignore-case matches in a second loop.
      * When finding all matches, 'tagbsearch' is off, or there is no fixed
-     * string to look for, ignore case right away to avoid going though the
-     * tags files twice.
+     * string to look for, ignore case right away to avoid going though the tags files twice.
      * When the tag file is case-fold sorted, it is either one or the other.
      * Only ignore case when TAG_NOIC not used or 'ignorecase' set.
      */
@@ -1188,8 +1183,7 @@ line_read_in:
                 int     len;
 
                 /* Convert every line.  Converting the pattern from 'enc' to
-                 * the tags file encoding doesn't work, because characters are
-                 * not recognized. */
+                 * the tags file encoding doesn't work, because characters are not recognized. */
                 conv_line = string_convert(&vimconv, lbuf, NULL);
                 if (conv_line != NULL)
                 {
@@ -1246,8 +1240,7 @@ line_read_in:
                 /* Headers ends. */
 
                 /*
-                 * When there is no tag head, or ignoring case, need to do a
-                 * linear search.
+                 * When there is no tag head, or ignoring case, need to do a linear search.
                  * When no "!_TAG_" is found, default to binary search.  If
                  * the tag file isn't sorted, the second loop will find it.
                  * When "!_TAG_FILE_SORTED" found: start binary search if flag set.
@@ -1270,8 +1263,7 @@ line_read_in:
 
                 if (state == TS_BINARY && orgpat.regmatch.rm_ic && !sortic)
                 {
-                    /* Binary search won't work for ignoring case, use linear
-                     * search. */
+                    /* Binary search won't work for ignoring case, use linear search. */
                     linear = TRUE;
                     state = TS_LINEAR;
                 }
@@ -1282,8 +1274,7 @@ line_read_in:
                  */
                 if (state == TS_BINARY)
                 {
-                    /* Get the tag file size (don't use mch_fstat(), it's not
-                     * portable). */
+                    /* Get the tag file size (don't use mch_fstat(), it's not portable). */
                     if ((filesize = lseek(fileno(fp), (off_t)0L, SEEK_END)) <= 0)
                         state = TS_LINEAR;
                     else
@@ -1462,8 +1453,7 @@ parse_line:
             }
 
             /*
-             * First try matching with the pattern literally (also when it is
-             * a regexp).
+             * First try matching with the pattern literally (also when it is a regexp).
              */
             cmplen = (int)(tagp.tagname_end - tagp.tagname);
             if (p_tl != 0 && cmplen > p_tl)         /* adjust for 'taglength' */
@@ -1520,8 +1510,7 @@ parse_line:
                         is_static = test_for_static(&tagp);
                     }
 
-                    /* decide in which of the sixteen tables to store this
-                     * match */
+                    /* decide in which of the sixteen tables to store this match */
                     if (is_static)
                     {
                         if (is_current)
@@ -1820,8 +1809,7 @@ get_tagfname(tnp, first, buf)
     {
         /*
          * For help files it's done in a completely different way:
-         * Find "doc/tags" and "doc/tags-??" in all directories in
-         * 'runtimepath'.
+         * Find "doc/tags" and "doc/tags-??" in all directories in 'runtimepath'.
          */
         if (first)
         {
@@ -2030,7 +2018,7 @@ parse_match(lbuf, tagp)
 
     if (retval == OK)
     {
-        /* Try to find a kind field: "kind:<kind>" or just "<kind>"*/
+        /* Try to find a kind field: "kind:<kind>" or just "<kind>" */
         p = tagp->command;
         if (find_extra(&p) == OK)
         {
@@ -2201,8 +2189,7 @@ jumpto_tag(lbuf, forceit, keep_help)
 
         /*
          * If 'cpoptions' contains 't', store the search pattern for the "n"
-         * command.  If 'cpoptions' does not contain 't', the search pattern
-         * is not stored.
+         * command.  If 'cpoptions' does not contain 't', the search pattern is not stored.
          */
         if (vim_strchr(p_cpo, CPO_TAGPAT) != NULL)
             search_options = 0;
@@ -2529,8 +2516,7 @@ simplify_filename(filename)
                             {
                                 do_strip = FALSE;
                                 /* We don't disable stripping of later
-                                 * components since the unstripped path name is
-                                 * still valid. */
+                                 * components since the unstripped path name is still valid. */
                             }
                         }
                     }
@@ -2756,8 +2742,7 @@ add_tag_field(dict, field_name, start, end)
 }
 
 /*
- * Add the tags matching the specified pattern to the list "list"
- * as a dictionary
+ * Add the tags matching the specified pattern to the list "list" as a dictionary
  */
     int
 get_tags(list, pat)

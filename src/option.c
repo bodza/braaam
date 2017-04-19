@@ -1595,7 +1595,7 @@ set_init_1()
 
     save_file_ff(curbuf);       /* Buffer is unchanged */
 
-    /* Parse default for 'wildmode'  */
+    /* Parse default for 'wildmode' */
     check_opt_wim();
 
     /* Parse default for 'fillchars'. */
@@ -1614,14 +1614,6 @@ set_init_1()
          * If not, go back to the default "latin1". */
         save_enc = p_enc;
         p_enc = p;
-        if (STRCMP(p_enc, "gb18030") == 0)
-        {
-            /* We don't support "gb18030", but "cp936" is a good substitute
-             * for practical purposes, thus use that.  It's not an alias to
-             * still support conversion between gb18030 and utf-8. */
-            p_enc = vim_strsave((char_u *)"cp936");
-            vim_free(p);
-        }
         if (mb_init() == NULL)
         {
             opt_idx = findoption((char_u *)"encoding");
@@ -1796,8 +1788,7 @@ free_all_options()
 #endif
 
 /*
- * Initialize the options, part two: After getting Rows and Columns and
- * setting 'term'.
+ * Initialize the options, part two: After getting Rows and Columns and setting 'term'.
  */
     void
 set_init_2()
@@ -1832,8 +1823,7 @@ set_init_2()
     if (idx >= 0 && !(options[idx].flags & P_WAS_SET) && *term_bg_default() == 'd')
     {
         set_string_option_direct(NULL, idx, (char_u *)"dark", OPT_FREE, 0);
-        /* don't mark it as set, when starting the GUI it may be
-         * changed again */
+        /* don't mark it as set, when starting the GUI it may be changed again */
         options[idx].flags &= ~P_WAS_SET;
     }
 
@@ -2595,8 +2585,7 @@ do_set(arg, opt_flags)
                                 }
                             }
 
-                            /* concatenate the two strings; add a ',' if
-                             * needed */
+                            /* concatenate the two strings; add a ',' if needed */
                             if (adding || prepending)
                             {
                                 comma = ((flags & P_COMMA) && *origval != NUL && *newval != NUL);
@@ -2958,8 +2947,7 @@ option_expand(opt_idx, val)
 }
 
 /*
- * After setting various option values: recompute variables that depend on
- * option values.
+ * After setting various option values: recompute variables that depend on option values.
  */
     static void
 didset_options()
@@ -3026,8 +3014,7 @@ check_buf_options(buf)
 /*
  * Free the string allocated for an option.
  * Checks for the string being empty_option. This may happen if we're out of
- * memory, vim_strsave() returned NULL, which was replaced by empty_option by
- * check_options().
+ * memory, vim_strsave() returned NULL, which was replaced by empty_option by check_options().
  * Does NOT check for P_ALLOCED flag!
  */
     void
@@ -4035,8 +4022,7 @@ skip:
         wp->w_p_cc_cols = (int *)alloc((unsigned)sizeof(int) * (count + 1));
         if (wp->w_p_cc_cols != NULL)
         {
-            /* sort the columns for faster usage on screen redraw inside
-             * win_line() */
+            /* sort the columns for faster usage on screen redraw inside win_line() */
             qsort(color_cols, count, sizeof(int), int_cmp);
 
             for (i = 0; i < count; ++i)
@@ -4446,8 +4432,7 @@ set_bool_option(opt_idx, varp, value, opt_flags)
         if (curbuf->b_p_swf && p_uc)
             ml_open_file(curbuf);               /* create the swap file */
         else
-            /* no need to reset curbuf->b_may_swap, ml_open_file() will check
-             * buf->b_p_swf */
+            /* no need to reset curbuf->b_may_swap, ml_open_file() will check buf->b_p_swf */
             mf_close_file(curbuf, TRUE);        /* remove the swap file */
     }
 
@@ -4916,8 +4901,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
             set_shellsize((int)Columns, (int)Rows, TRUE);
         else
         {
-            /* Postpone the resizing; check the size and cmdline position for
-             * messages. */
+            /* Postpone the resizing; check the size and cmdline position for messages. */
             check_shellsize();
             if (cmdline_row > Rows - p_ch && Rows > p_ch)
                 cmdline_row = Rows - p_ch;
@@ -4945,8 +4929,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
                 errmsg = e_scroll;
             win_comp_scroll(curwin);
         }
-        /* If 'scroll' became invalid because of a side effect silently adjust
-         * it. */
+        /* If 'scroll' became invalid because of a side effect silently adjust it. */
         else if (curwin->w_p_scr <= 0)
             curwin->w_p_scr = 1;
         else /* curwin->w_p_scr > curwin->w_height */
@@ -5205,8 +5188,7 @@ set_option_value(name, number, string, opt_flags)
                 {
                     int idx;
 
-                    /* Either we are given a string or we are setting option
-                     * to zero. */
+                    /* Either we are given a string or we are setting option to zero. */
                     for (idx = 0; string[idx] == '0'; ++idx)
                         ;
                     if (string[idx] != NUL || idx == 0)
@@ -5425,8 +5407,7 @@ optval_default(p, varp)
     if (p->flags & P_NUM)
         return (*(long *)varp == (long)(long_i)p->def_val[dvi]);
     if (p->flags & P_BOOL)
-                        /* the cast to long is required for Manx C, long_i is
-                         * needed for MSVC */
+                        /* the cast to long is required for Manx C, long_i is needed for MSVC */
         return (*(int *)varp == (int)(long)(long_i)p->def_val[dvi]);
     /* P_STRING */
     return (STRCMP(*(char_u **)varp, p->def_val[dvi]) == 0);
@@ -6474,8 +6455,7 @@ set_context_in_set_cmd(xp, arg, opt_flags)
         }
     }
 
-    /* For an option that is a list of file names, find the start of the
-     * last file name. */
+    /* For an option that is a list of file names, find the start of the last file name. */
     for (p = arg + STRLEN(arg) - 1; p > xp->xp_pattern; --p)
     {
         /* count number of backslashes before ' ' or ',' */
@@ -6830,8 +6810,7 @@ paste_option_changed()
         }
 
         /*
-         * Always set the option values, also when 'paste' is set when it is
-         * already on.
+         * Always set the option values, also when 'paste' is set when it is already on.
          */
         /* set options for each buffer */
         for (buf = firstbuf; buf != NULL; buf = buf->b_next)
@@ -7320,8 +7299,7 @@ find_mps_values(initc, findc, backwards, switchit)
 }
 
 /*
- * This is called when 'breakindentopt' is changed and when a window is
- * initialized.
+ * This is called when 'breakindentopt' is changed and when a window is initialized.
  */
     static int
 briopt_check(wp)

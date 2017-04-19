@@ -94,8 +94,7 @@ hash_clear_all(ht, off)
 /*
  * Find "key" in hashtable "ht".  "key" must not be NULL.
  * Always returns a pointer to a hashitem.  If the item was not found then
- * HASHITEM_EMPTY() is TRUE.  The pointer is then the place where the key
- * would be added.
+ * HASHITEM_EMPTY() is TRUE.  The pointer is then the place where the key would be added.
  * WARNING: The returned pointer becomes invalid when the hashtable is changed
  * (adding, setting or removing an item)!
  */
@@ -239,8 +238,7 @@ hash_set(hi, key)
 #endif
 
 /*
- * Remove item "hi" from  hashtable "ht".  "hi" must have been obtained with
- * hash_lookup().
+ * Remove item "hi" from  hashtable "ht".  "hi" must have been obtained with hash_lookup().
  * The caller must take care of freeing the item itself.
  */
     void
@@ -363,8 +361,7 @@ hash_may_resize(ht, minitems)
         if (ht->ht_array == newarray)
         {
             /* Moving from ht_smallarray to ht_smallarray!  Happens when there
-             * are many removed items.  Copy the items to be able to clean up
-             * removed items. */
+             * are many removed items.  Copy the items to be able to clean up removed items. */
             mch_memmove(temparray, newarray, sizeof(temparray));
             oldarray = temparray;
         }

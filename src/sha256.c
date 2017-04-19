@@ -3,8 +3,7 @@
  * GPL by Christophe Devine, applies to older version.
  * Modified for md5deep, in public domain.
  * Modified For Vim, Mohsin Ahmed, http://www.cs.albany.edu/~mosh
- * Mohsin Ahmed states this work is distributed under the VIM License or GPL,
- * at your choice.
+ * Mohsin Ahmed states this work is distributed under the VIM License or GPL, at your choice.
  *
  * Vim specific notes:
  * Functions exported by this file:

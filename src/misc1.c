@@ -33,8 +33,7 @@ get_indent_lnum(lnum)
 }
 
 /*
- * count the size (in window cells) of the indent in line "ptr", with
- * 'tabstop' at "ts"
+ * count the size (in window cells) of the indent in line "ptr", with 'tabstop' at "ts"
  */
     int
 get_indent_str(ptr, ts, list)
@@ -198,7 +197,7 @@ set_indent(size, flags)
         todo = size - ind_done;
         ind_len = orig_char_len + todo;    /* Set total length of indent in
                                             * characters, which may have been
-                                            * undercounted until now  */
+                                            * undercounted until now */
         p = oldline;
         s = newline;
         while (orig_char_len > 0)
@@ -207,8 +206,7 @@ set_indent(size, flags)
             orig_char_len--;
         }
 
-        /* Skip over any additional white space (useful when newindent is less
-         * than old) */
+        /* Skip over any additional white space (useful when newindent is less than old) */
         while (vim_iswhite(*p))
             ++p;
     }
@@ -424,7 +422,7 @@ get_number_indent(lnum)
         return -1;
     pos.lnum = 0;
 
-    /* In format_lines() (i.e. not insert mode), fo+=q is needed too...  */
+    /* In format_lines() (i.e. not insert mode), fo+=q is needed too... */
     if ((State & INSERT) || has_format_option(FO_Q_COMS))
         lead_len = get_leader_len(ml_get(lnum), NULL, FALSE, TRUE);
     regmatch.regprog = vim_regcomp(curbuf->b_p_flp, RE_MAGIC);
@@ -433,7 +431,7 @@ get_number_indent(lnum)
         regmatch.rm_ic = FALSE;
 
         /* vim_regexec() expects a pointer to a line.  This lets us
-         * start matching for the flp beyond any comment leader...  */
+         * start matching for the flp beyond any comment leader... */
         if (vim_regexec(&regmatch, ml_get(lnum) + lead_len, (colnr_T)0))
         {
             pos.lnum = lnum;
@@ -966,8 +964,7 @@ open_line(dir, flags, second_line_indent)
                     ;
                 lead_repl_len = (int)(p - lead_repl);
 
-                /* We can probably always add an extra space when doing "O" on
-                 * the comment-end */
+                /* We can probably always add an extra space when doing "O" on the comment-end */
                 extra_space = TRUE;
 
                 /* Check whether we allow automatic ending of comments */
@@ -1128,8 +1125,7 @@ open_line(dir, flags, second_line_indent)
                                     {
                                         if (ptr2cells(p) > 1)
                                         {
-                                            /* Replace a double-wide char with
-                                             * two spaces */
+                                            /* Replace a double-wide char with two spaces */
                                             --l;
                                             *p++ = ' ';
                                         }
@@ -1166,8 +1162,7 @@ open_line(dir, flags, second_line_indent)
                         --off;
                     }
 
-                    /* If the leader ends in white space, don't add an
-                     * extra space */
+                    /* If the leader ends in white space, don't add an extra space */
                     if (lead_len > 0 && vim_iswhite(leader[lead_len - 1]))
                         extra_space = FALSE;
                     leader[lead_len] = NUL;
@@ -1224,8 +1219,7 @@ open_line(dir, flags, second_line_indent)
         *p_extra = saved_char;          /* restore char that NUL replaced */
 
         /*
-         * When 'ai' set or "flags" has OPENLINE_DELSPACES, skip to the first
-         * non-blank.
+         * When 'ai' set or "flags" has OPENLINE_DELSPACES, skip to the first non-blank.
          *
          * When in REPLACE mode, put the deleted blanks on the replace stack,
          * preceded by a NUL, so they can be put back when a BS is entered.
@@ -1286,8 +1280,7 @@ open_line(dir, flags, second_line_indent)
     {
         if (ml_append(curwin->w_cursor.lnum, p_extra, (colnr_T)0, FALSE) == FAIL)
             goto theend;
-        /* Postpone calling changed_lines(), because it would mess up folding
-         * with markers. */
+        /* Postpone calling changed_lines(), because it would mess up folding with markers. */
         mark_adjust(curwin->w_cursor.lnum + 1, (linenr_T)MAXLNUM, 1L, 0L);
         did_append = TRUE;
     }
@@ -1514,7 +1507,7 @@ get_leader_len(line, flags, backward, include_space)
         for (list = curbuf->b_p_com; *list; )
         {
             /* Get one option part into part_buf[].  Advance "list" to next
-             * one.  Put "string" at start of string.  */
+             * one.  Put "string" at start of string. */
             if (!got_com && flags != NULL)
                 *flags = list;      /* remember where flags started */
             prev_list = list;
@@ -1670,8 +1663,7 @@ get_last_leader_offset(line, flags)
             /*
              * Line contents and string must match.
              * When string starts with white space, must have some white space
-             * (but the amount does not need to match, there might be a mix of
-             * TABs and spaces).
+             * (but the amount does not need to match, there might be a mix of TABs and spaces).
              */
             if (vim_iswhite(string[0]))
             {
@@ -1812,8 +1804,7 @@ plines_win_nofold(wp, lnum)
     col = win_linetabsize(wp, s, (colnr_T)MAXCOL);
 
     /*
-     * If list mode is on, then the '$' at the end of the line may take up one
-     * extra column.
+     * If list mode is on, then the '$' at the end of the line may take up one extra column.
      */
     if (wp->w_p_list && lcs_eol != NUL)
         col += 1;
@@ -2018,8 +2009,7 @@ ins_char_bytes(buf, charlen)
             while (oldp[col + oldlen] != NUL && vcol < new_vcol)
             {
                 vcol += chartabsize(oldp + col + oldlen, vcol);
-                /* Don't need to remove a TAB that takes us to the right
-                 * position. */
+                /* Don't need to remove a TAB that takes us to the right position. */
                 if (vcol > new_vcol && oldp[col + oldlen] == TAB)
                     break;
                 oldlen += (*mb_ptr2len)(oldp + col + oldlen);
@@ -2693,8 +2683,7 @@ changed_common(lnum, col, lnume, xtra)
                                           sizeof(pos_T) * (JUMPLISTSIZE - 1));
                     FOR_ALL_TAB_WINDOWS(tp, wp)
                     {
-                        /* Correct position in changelist for other windows on
-                         * this buffer. */
+                        /* Correct position in changelist for other windows on this buffer. */
                         if (wp->w_buffer == curbuf && wp->w_changelistidx > 0)
                             --wp->w_changelistidx;
                     }
@@ -3131,8 +3120,7 @@ get_number(colon, mouse_used)
 
 /*
  * Ask the user to enter a number.
- * When "mouse_used" is not NULL allow using the mouse and in that case return
- * the line number.
+ * When "mouse_used" is not NULL allow using the mouse and in that case return the line number.
  */
     int
 prompt_for_number(mouse_used)
@@ -3317,8 +3305,7 @@ free_users()
 
 /*
  * Call expand_env() and store the result in an allocated string.
- * This is not very memory efficient, this expects the result to be freed
- * again soon.
+ * This is not very memory efficient, this expects the result to be freed again soon.
  */
     char_u *
 expand_env_save(src)
@@ -3509,8 +3496,7 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
         {
             /*
              * Recognize the start of a new name, for '~'.
-             * Don't do this when "one" is TRUE, to avoid expanding "~" in
-             * ":edit foo ~ foo".
+             * Don't do this when "one" is TRUE, to avoid expanding "~" in ":edit foo ~ foo".
              */
             at_start = FALSE;
             if (src[0] == '\\' && src[1] != NUL)
@@ -4211,8 +4197,7 @@ concat_str(str1, str2)
 }
 
 /*
- * Add a path separator to a file name, unless it already ends in a path
- * separator.
+ * Add a path separator to a file name, unless it already ends in a path separator.
  */
     void
 add_pathsep(p)
@@ -5230,8 +5215,7 @@ cin_iswhileofdo(p, lnum)            /* XXX */
 /*
  * Check whether in "p" there is an "if", "for" or "while" before "*poffset".
  * Return 0 if there is none.
- * Otherwise return !0 and update "*poffset" to point to the place where the
- * string was found.
+ * Otherwise return !0 and update "*poffset" to point to the place where the string was found.
  */
     static int
 cin_is_if_for_while_before_offset(line, poffset)
@@ -5691,8 +5675,7 @@ retry:
 }
 
 /*
- * Find the matching '(', ignoring it if it is in a comment or before an
- * unmatched {.
+ * Find the matching '(', ignoring it if it is in a comment or before an unmatched {.
  * Return NULL if no match found.
  */
     static pos_T *
@@ -5802,8 +5785,7 @@ parse_cino(buf)
     /* Column where the first { of a function should be located }. */
     buf->b_ind_first_open = 0;
 
-    /* Spaces from the prevailing indent a leftmost open brace should be
-     * located. */
+    /* Spaces from the prevailing indent a leftmost open brace should be located. */
     buf->b_ind_open_extra = 0;
 
     /* Spaces from the matching open brace (real location for one at the left
@@ -5904,8 +5886,7 @@ parse_cino(buf)
     /* Handle C++ namespace. */
     buf->b_ind_cpp_namespace = 0;
 
-    /* Handle continuation lines containing conditions of if(), for() and
-     * while(). */
+    /* Handle continuation lines containing conditions of if(), for() and while(). */
     buf->b_ind_if_for_while = 0;
 
     for (p = buf->b_p_cino; *p; )
@@ -6482,8 +6463,7 @@ get_c_indent()
                     }
                 }
 
-                /* Use b_ind_unclosed once, when the first '(' is not inside
-                 * braces */
+                /* Use b_ind_unclosed once, when the first '(' is not inside braces */
                 if (col == MAXCOL)
                     amount += curbuf->b_ind_unclosed;
                 else
@@ -6596,10 +6576,8 @@ get_c_indent()
         else
         {
             /*
-             * If we're looking at an "else", try to find an "if"
-             * to match it with.
-             * If we're looking at a "while", try to find a "do"
-             * to match it with.
+             * If we're looking at an "else", try to find an "if" to match it with.
+             * If we're looking at a "while", try to find a "do" to match it with.
              */
             lookfor = LOOKFOR_INITIAL;
             if (cin_iselse(theline))
@@ -6683,8 +6661,7 @@ get_c_indent()
             whilelevel = 0;
 
             /*
-             * Search backwards.  If we find something we recognize, line up
-             * with that.
+             * Search backwards.  If we find something we recognize, line up with that.
              *
              * If we're looking at an open brace, indent
              * the usual amount relative to the conditional
@@ -6697,8 +6674,7 @@ get_c_indent()
                 curwin->w_cursor.col = 0;
 
                 /*
-                 * If we went all the way back to the start of our scope, line
-                 * up with it.
+                 * If we went all the way back to the start of our scope, line up with it.
                  */
                 if (curwin->w_cursor.lnum <= ourscope)
                 {
@@ -6717,8 +6693,7 @@ get_c_indent()
                                 || curwin->w_cursor.lnum < ourscope - curbuf->b_ind_maxparen)
                         {
                             /* nothing found (abuse curbuf->b_ind_maxparen as
-                             * limit) assume terminated line (i.e. a variable
-                             * initialization) */
+                             * limit) assume terminated line (i.e. a variable initialization) */
                             if (cont_amount > 0)
                                 amount = cont_amount;
                             else if (!curbuf->b_ind_js)
@@ -6768,8 +6743,7 @@ get_c_indent()
                             if (terminated == ',')
                                 break;
 
-                            /* if it es a enum declaration or an assignment,
-                             * we are done.
+                            /* if it es a enum declaration or an assignment, we are done.
                              */
                             if (terminated != ';' && cin_isinit())
                                 break;
@@ -6846,8 +6820,7 @@ get_c_indent()
 
                             l = ml_get_curline();
 
-                            /* If we're in a comment now, skip to the start of
-                             * the comment. */
+                            /* If we're in a comment now, skip to the start of the comment. */
                             trypos = ind_find_start_comment();
                             if (trypos != NULL)
                             {
@@ -6898,8 +6871,7 @@ get_c_indent()
                     if (lookfor == LOOKFOR_CPP_BASECLASS)
                         break;
 
-                    /* When looking for a "do" we are not interested in
-                     * labels. */
+                    /* When looking for a "do" we are not interested in labels. */
                     if (whilelevel > 0)
                         continue;
 
@@ -7022,8 +6994,7 @@ get_c_indent()
                 /*
                  * Ignore #defines, #if, etc.
                  * Ignore comment and empty lines.
-                 * (need to get the line again, cin_islabel() may have
-                 * unlocked it)
+                 * (need to get the line again, cin_islabel() may have unlocked it)
                  */
                 l = ml_get_curline();
                 if (cin_ispreproc_cont(&l, &curwin->w_cursor.lnum) || cin_nocode(l))
@@ -7346,8 +7317,7 @@ get_c_indent()
                                 continue;
                             }
 
-                            /* Ignore unterminated lines in between, but
-                             * reduce indent. */
+                            /* Ignore unterminated lines in between, but reduce indent. */
                             if (amount > cur_amount)
                                 amount = cur_amount;
                         }
@@ -7609,8 +7579,7 @@ term_again:
                         }
 
                         /*
-                         * If we're at the end of a block, skip to the start of
-                         * that block.
+                         * If we're at the end of a block, skip to the start of that block.
                          */
                         l = ml_get_curline();
                         if (find_last_paren(l, '{', '}') /* XXX */
@@ -7831,8 +7800,7 @@ term_again:
 
                 /*
                  * If the PREVIOUS line is a function declaration, the current
-                 * line (and the ones that follow) needs to be indented as
-                 * parameters.
+                 * line (and the ones that follow) needs to be indented as parameters.
                  */
                 if (cin_isfuncdecl(&l, curwin->w_cursor.lnum, 0))
                 {
@@ -7995,8 +7963,7 @@ find_match(lookfor, ourscope)
             {
                 elselevel--;
                 /*
-                 * When looking for an "if" ignore "while"s that
-                 * get in the way.
+                 * When looking for an "if" ignore "while"s that get in the way.
                  */
                 if (elselevel == 0 && lookfor == LOOKFOR_IF)
                     whilelevel = 0;
@@ -8048,8 +8015,7 @@ get_expr_indent()
     --textlock;
 
     /* Restore the cursor position so that 'indentexpr' doesn't need to.
-     * Pretend to be in Insert mode, allow cursor past end of line for "o"
-     * command. */
+     * Pretend to be in Insert mode, allow cursor past end of line for "o" command. */
     save_State = State;
     State = INSERT;
     curwin->w_cursor = save_pos;
@@ -8436,8 +8402,7 @@ expand_wildcards_eval(pat, num_file, file, flags)
 }
 
 /*
- * Expand wildcards.  Calls gen_expand_wildcards() and removes files matching
- * 'wildignore'.
+ * Expand wildcards.  Calls gen_expand_wildcards() and removes files matching 'wildignore'.
  * Returns OK or FAIL.  When FAIL then "num_file" won't be set.
  */
     int
@@ -8470,8 +8435,7 @@ expand_wildcards(num_pat, pat, num_file, file, flags)
             if (!match_suffix((*file)[i]))
             {
                 /*
-                 * Move the name without matching suffix to the front
-                 * of the list.
+                 * Move the name without matching suffix to the front of the list.
                  */
                 p = (*file)[i];
                 for (j = i; j > non_suf_match; --j)
@@ -8623,8 +8587,7 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
     *e = NUL;
 
     /* Now we have one wildcard component between "s" and "e". */
-    /* Remove backslashes between "wildoff" and the start of the wildcard
-     * component. */
+    /* Remove backslashes between "wildoff" and the start of the wildcard component. */
     for (p = buf + wildoff; p < s; ++p)
         if (rem_backslash(p))
         {
@@ -8898,8 +8861,7 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
 
             /*
              * If there are wildcards: Expand file names and add each match to
-             * the list.  If there is no match, and EW_NOTFOUND is given, add
-             * the pattern.
+             * the list.  If there is no match, and EW_NOTFOUND is given, add the pattern.
              * If there are no wildcards: Add the file name if it exists or
              * when EW_NOTFOUND is given.
              */
@@ -8913,8 +8875,7 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
         {
             char_u      *t = backslash_halve_save(p);
 
-            /* When EW_NOTFOUND is used, always add files and dirs.  Makes
-             * "vim c:/" work. */
+            /* When EW_NOTFOUND is used, always add files and dirs.  Makes "vim c:/" work. */
             if (flags & EW_NOTFOUND)
                 addfile(&ga, t, flags | EW_DIR | EW_FILE);
             else if (mch_getperm(t) >= 0)
@@ -9152,8 +9113,7 @@ done:
 }
 
 /*
- * Free the list of files returned by expand_wildcards() or other expansion
- * functions.
+ * Free the list of files returned by expand_wildcards() or other expansion functions.
  */
     void
 FreeWild(count, files)

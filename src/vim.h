@@ -392,8 +392,7 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define K_NUL                   (0xce)  /* for MSDOS: special key follows */
 
 /*
- * K_SPECIAL is the first byte of a special key code and is always followed by
- * two bytes.
+ * K_SPECIAL is the first byte of a special key code and is always followed by two bytes.
  * The second byte can have any value. ASCII is used for normal termcap
  * entries, 0x80 and higher for special keys, see below.
  * The third byte is guaranteed to be between 0x02 and 0x7f.
@@ -404,8 +403,7 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 /*
  * Positive characters are "normal" characters.
  * Negative characters are special key codes.  Only characters below -0x200
- * are used to so that the absolute value can't be mistaken for a single-byte
- * character.
+ * are used to so that the absolute value can't be mistaken for a single-byte character.
  */
 #define IS_SPECIAL(c)           ((c) < 0)
 
@@ -764,7 +762,7 @@ enum key_extra
 #define K_KDIVIDE       TERMCAP2KEY('K', '8')   /* keypad / */
 #define K_KMULTIPLY     TERMCAP2KEY('K', '9')   /* keypad * */
 #define K_KENTER        TERMCAP2KEY('K', 'A')   /* keypad Enter */
-#define K_KPOINT        TERMCAP2KEY('K', 'B')   /* keypad . or ,*/
+#define K_KPOINT        TERMCAP2KEY('K', 'B')   /* keypad . or , */
 
 #define K_K0            TERMCAP2KEY('K', 'C')   /* keypad 0 */
 #define K_K1            TERMCAP2KEY('K', 'D')   /* keypad 1 */
@@ -929,7 +927,7 @@ enum SpecialKey
     KS_ND,      /* cursor right */
     KS_CIS,     /* set icon text start */
     KS_CIE,     /* set icon text end */
-    KS_TS,      /* set window title start (to status line)*/
+    KS_TS,      /* set window title start (to status line) */
     KS_FS,      /* set window title end (from status line) */
     KS_CWP,     /* set window position in pixels */
     KS_CWS,     /* set window size in characters */
@@ -1089,7 +1087,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 
 /* Use our own isdigit() replacement, because on MS-Windows isdigit() returns
  * non-zero for superscript 1.  Also avoids that isdigit() crashes for numbers
- * below 0 and above 255.  */
+ * below 0 and above 255. */
 #define VIM_ISDIGIT(c) ((unsigned)(c) - '0' < 10)
 
 /* Like isalpha() but reject non-ASCII characters.  Can't be used with a
@@ -1107,8 +1105,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define LANGMAP_ADJUST(c, condition) /* nop */
 
 /*
- * vim_isbreak() is used very often if 'linebreak' is set, use a macro to make
- * it work fast.
+ * vim_isbreak() is used very often if 'linebreak' is set, use a macro to make it work fast.
  */
 #define vim_isbreak(c) (breakat_flags[(char_u)(c)])
 
@@ -1191,8 +1188,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 /*
  * Flags for w_valid.
  * These are set when something in a window structure becomes invalid, except
- * when the cursor is moved.  Call check_cursor_moved() before testing one of
- * the flags.
+ * when the cursor is moved.  Call check_cursor_moved() before testing one of the flags.
  * These are reset when that thing has been updated and is valid again.
  *
  * Every function that invalidates one of these must call one of the
@@ -1421,7 +1417,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define SST_INVALID    (synstate_T *)-1        /* invalid syn_state pointer */
 
 #define HL_CONTAINED   0x01    /* not used on toplevel */
-#define HL_TRANSP      0x02    /* has no highlighting  */
+#define HL_TRANSP      0x02    /* has no highlighting */
 #define HL_ONELINE     0x04    /* match within one line only */
 #define HL_HAS_EOL     0x08    /* end pattern that matches with $ */
 #define HL_SYNC_HERE   0x10    /* sync point after this item (syncing only) */
@@ -1500,7 +1496,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define SHELL_WRITE     64      /* write lines from buffer */
 
 /* Values returned by mch_nodetype() */
-#define NODE_NORMAL     0       /* file or directory, check with mch_isdir()*/
+#define NODE_NORMAL     0       /* file or directory, check with mch_isdir() */
 #define NODE_WRITABLE   1       /* something we can write to (character
                                    device, fifo, socket, ..) */
 #define NODE_OTHER      2       /* non-writable thing (e.g., block device) */
@@ -1511,7 +1507,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define READ_STDIN      0x04    /* read from stdin */
 #define READ_BUFFER     0x08    /* read from curbuf (converting stdin) */
 #define READ_DUMMY      0x10    /* reading into a dummy buffer */
-#define READ_KEEP_UNDO  0x20    /* keep undo info*/
+#define READ_KEEP_UNDO  0x20    /* keep undo info */
 
 /* Values for change_indent() */
 #define INDENT_SET      1       /* set indent */
@@ -1580,7 +1576,7 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define DOCMD_NOWAIT    0x02    /* don't call wait_return() and friends */
 #define DOCMD_REPEAT    0x04    /* repeat exec. until getline() returns NULL */
 #define DOCMD_KEYTYPED  0x08    /* don't reset KeyTyped */
-#define DOCMD_EXCRESET  0x10    /* reset exception environment (for debugging)*/
+#define DOCMD_EXCRESET  0x10    /* reset exception environment (for debugging) */
 #define DOCMD_KEEPLINE  0x20    /* keep typed line for repeating with "." */
 
 /* flags for beginline() */
@@ -1851,7 +1847,7 @@ enum auto_event
     EVENT_SHELLCMDPOST,         /* after ":!cmd" */
     EVENT_SHELLFILTERPOST,      /* after ":1,2!cmd", ":w !cmd", ":r !cmd". */
     EVENT_TEXTCHANGED,          /* text was modified */
-    EVENT_TEXTCHANGEDI,         /* text was modified in Insert mode*/
+    EVENT_TEXTCHANGEDI,         /* text was modified in Insert mode */
     EVENT_CMDUNDEFINED,         /* command undefined */
     NUM_EVENTS                  /* MUST be the last one */
 };
@@ -2187,8 +2183,7 @@ typedef struct timeval proftime_T;
 
 /*
  * Default values for 'errorformat'.
- * The "%f|%l| %m" one is used for when the contents of the quickfix window is
- * written to a file.
+ * The "%f|%l| %m" one is used for when the contents of the quickfix window is written to a file.
  */
 #define DFLT_EFM        "%*[^\"]\"%f\"%*\\D%l: %m,\"%f\"%*\\D%l: %m,%-G%f:%l: (Each undeclared identifier is reported only once,%-G%f:%l: for each function it appears in.),%-GIn file included from %f:%l:%c:,%-GIn file included from %f:%l:%c\\,,%-GIn file included from %f:%l:%c,%-GIn file included from %f:%l,%-G%*[ ]from %f:%l:%c,%-G%*[ ]from %f:%l:,%-G%*[ ]from %f:%l\\,,%-G%*[ ]from %f:%l,%f:%l:%c:%m,%f(%l):%m,%f:%l:%m,\"%f\"\\, line %l%*\\D%c%*[^ ] %m,%D%*\\a[%*\\d]: Entering directory %*[`']%f',%X%*\\a[%*\\d]: Leaving directory %*[`']%f',%D%*\\a: Entering directory %*[`']%f',%X%*\\a: Leaving directory %*[`']%f',%DMaking %*\\a in %f,%f|%l| %m"
 
@@ -2386,14 +2381,14 @@ typedef struct timeval proftime_T;
 #define STL_FILEPATH    'f'             /* path of file in buffer */
 #define STL_FULLPATH    'F'             /* full path of file in buffer */
 #define STL_FILENAME    't'             /* last part (tail) of file path */
-#define STL_COLUMN      'c'             /* column og cursor*/
+#define STL_COLUMN      'c'             /* column og cursor */
 #define STL_VIRTCOL     'v'             /* virtual column */
 #define STL_VIRTCOL_ALT 'V'             /* - with 'if different' display */
 #define STL_LINE        'l'             /* line number of cursor */
 #define STL_NUMLINES    'L'             /* number of lines in buffer */
 #define STL_BUFNO       'n'             /* current buffer number */
 #define STL_KEYMAP      'k'             /* 'keymap' when active */
-#define STL_OFFSET      'o'             /* offset of character under cursor*/
+#define STL_OFFSET      'o'             /* offset of character under cursor */
 #define STL_OFFSET_X    'O'             /* - in hexadecimal */
 #define STL_BYTEVAL     'b'             /* byte value of character */
 #define STL_BYTEVAL_X   'B'             /* - in hexadecimal */
@@ -2411,10 +2406,10 @@ typedef struct timeval proftime_T;
 #define STL_PERCENTAGE  'p'             /* percentage through file */
 #define STL_ALTPERCENT  'P'             /* percentage as TOP BOT ALL or NN% */
 #define STL_ARGLISTSTAT 'a'             /* argument list status as (x of y) */
-#define STL_PAGENUM     'N'             /* page number (when printing)*/
+#define STL_PAGENUM     'N'             /* page number (when printing) */
 #define STL_VIM_EXPR    '{'             /* start of expression to substitute */
 #define STL_MIDDLEMARK  '='             /* separation between left and right */
-#define STL_TRUNCMARK   '<'             /* truncation mark if line is too long*/
+#define STL_TRUNCMARK   '<'             /* truncation mark if line is too long */
 #define STL_USER_HL     '*'             /* highlight from (User)1..9 or 0 */
 #define STL_HIGHLIGHT   '#'             /* highlight name */
 #define STL_TABPAGENR   'T'             /* tab page label nr */
@@ -3060,7 +3055,7 @@ typedef struct
 #define w_p_scb w_onebuf_opt.wo_scb    /* 'scrollbind' */
     int         wo_diff_saved; /* options were saved for starting diff mode */
 #define w_p_diff_saved w_onebuf_opt.wo_diff_saved
-    int         wo_scb_save;    /* 'scrollbind' saved for diff mode*/
+    int         wo_scb_save;    /* 'scrollbind' saved for diff mode */
 #define w_p_scb_save w_onebuf_opt.wo_scb_save
     int         wo_wrap;
 #define w_p_wrap w_onebuf_opt.wo_wrap   /* 'wrap' */
@@ -3070,7 +3065,7 @@ typedef struct
 #define w_p_cole w_onebuf_opt.wo_cole
     int         wo_crb;
 #define w_p_crb w_onebuf_opt.wo_crb    /* 'cursorbind' */
-    int         wo_crb_save;    /* 'cursorbind' state saved for diff mode*/
+    int         wo_crb_save;    /* 'cursorbind' state saved for diff mode */
 #define w_p_crb_save w_onebuf_opt.wo_crb_save
 
     int         wo_scriptID[WV_COUNT];  /* SIDs for window-local options */
@@ -3080,8 +3075,7 @@ typedef struct
 /*
  * Window info stored with a buffer.
  *
- * Two types of info are kept for a buffer which are associated with a
- * specific window:
+ * Two types of info are kept for a buffer which are associated with a specific window:
  * 1. Each window can have a different line number associated with a buffer.
  * 2. The window-local options for a buffer work in a similar way.
  * The window-info is kept in a list at b_wininfo.  It is kept in
@@ -3316,8 +3310,7 @@ typedef struct expand
 
 /*
  * Command modifiers ":vertical", ":browse", ":confirm" and ":hide" set a flag.
- * This needs to be saved for recursive commands, put them in a structure for
- * easy manipulation.
+ * This needs to be saved for recursive commands, put them in a structure for easy manipulation.
  */
 typedef struct
 {
@@ -3348,7 +3341,7 @@ struct memfile
     unsigned    mf_used_count_max;      /* maximum number of pages in memory */
     mf_hashtab_T mf_hash;               /* hash lists */
     mf_hashtab_T mf_trans;              /* trans lists */
-    blocknr_T   mf_blocknr_max;         /* highest positive block number + 1*/
+    blocknr_T   mf_blocknr_max;         /* highest positive block number + 1 */
     blocknr_T   mf_blocknr_min;         /* lowest negative block number - 1 */
     blocknr_T   mf_neg_count;           /* number of negative blocks numbers */
     blocknr_T   mf_infile_count;        /* number of pages in the file */
@@ -3447,8 +3440,7 @@ typedef struct argentry
 
 /*
  * A list used for saving values of "emsg_silent".  Used by ex_try() to save the
- * value of "emsg_silent" if it was non-zero.  When this is done, the CSF_SILENT
- * flag below is set.
+ * value of "emsg_silent" if it was non-zero.  When this is done, the CSF_SILENT flag below is set.
  */
 
 typedef struct eslist_elem eslist_T;
@@ -3467,7 +3459,7 @@ struct eslist_elem
 struct condstack
 {
     short       cs_flags[CSTACK_LEN];   /* CSF_ flags */
-    char        cs_pending[CSTACK_LEN]; /* CSTP_: what's pending in ":finally"*/
+    char        cs_pending[CSTACK_LEN]; /* CSTP_: what's pending in ":finally" */
     union {
         void    *csp_rv[CSTACK_LEN];    /* return typeval for pending return */
         void    *csp_ex[CSTACK_LEN];    /* exception for pending throw */
@@ -4593,8 +4585,7 @@ struct window_S
     /*
      * w_fraction is the fractional row of the cursor within the window, from
      * 0 at the top row to FRACTION_MULT at the last row.
-     * w_prev_fraction_row was the actual cursor row when w_fraction was last
-     * calculated.
+     * w_prev_fraction_row was the actual cursor row when w_fraction was last calculated.
      */
     int         w_fraction;
     int         w_prev_fraction_row;
@@ -5035,10 +5026,6 @@ EXTERN u8char_T *ScreenLinesC[MAX_MCO];         /* composing characters */
 EXTERN int      Screen_mco INIT(= 0);           /* value of p_mco used when
                                                    allocating ScreenLinesC[] */
 
-/* Only used for euc-jp: Second byte of a character that starts with 0x8e.
- * These are single-width. */
-EXTERN schar_T  *ScreenLines2 INIT(= NULL);
-
 /*
  * Indexes for tab page line:
  *      N > 0 for label of tab page N
@@ -5058,13 +5045,11 @@ EXTERN int      screen_Columns INIT(= 0);   /* actual size of ScreenLines[] */
 EXTERN int      mod_mask INIT(= 0x0);           /* current key modifiers */
 
 /*
- * Cmdline_row is the row where the command line starts, just below the
- * last window.
+ * Cmdline_row is the row where the command line starts, just below the last window.
  * When the cmdline gets longer than the available space the screen gets
  * scrolled up. After a CTRL-D (show matches), after hitting ':' after
  * "hit return", and for the :global command, the command line is
- * temporarily moved.  The old position is restored with the next call to
- * update_screen().
+ * temporarily moved.  The old position is restored with the next call to update_screen().
  */
 EXTERN int      cmdline_row;
 
@@ -5187,8 +5172,7 @@ EXTERN int need_rethrow INIT(= FALSE);
 EXTERN int check_cstack INIT(= FALSE);
 
 /*
- * Number of nested try conditionals (across function calls and ":source"
- * commands).
+ * Number of nested try conditionals (across function calls and ":source" commands).
  */
 EXTERN int trylevel INIT(= 0);
 
@@ -5352,8 +5336,7 @@ EXTERN win_T    *aucmd_win;     /* window used in aucmd_prepbuf() */
 EXTERN int      aucmd_win_used INIT(= FALSE);   /* aucmd_win is being used */
 
 /*
- * The window layout is kept in a tree of frames.  topframe points to the top
- * of the tree.
+ * The window layout is kept in a tree of frames.  topframe points to the top of the tree.
  */
 EXTERN frame_T  *topframe;      /* top of the window frame tree */
 
@@ -5394,19 +5377,16 @@ EXTERN char_u   *vim_tempdir INIT(= NULL); /* Name of Vim's own temp dir.
                                               Ends in a slash. */
 
 /*
- * When starting or exiting some things are done differently (e.g. screen
- * updating).
+ * When starting or exiting some things are done differently (e.g. screen updating).
  */
 EXTERN int      starting INIT(= NO_SCREEN);
                                 /* first NO_SCREEN, then NO_BUFFERS and then
                                  * set to 0 when starting up finished */
 EXTERN int      exiting INIT(= FALSE);
                                 /* TRUE when planning to exit Vim.  Might
-                                 * still keep on running if there is a changed
-                                 * buffer. */
+                                 * still keep on running if there is a changed buffer. */
 EXTERN int      really_exiting INIT(= FALSE);
-                                /* TRUE when we are sure to exit, e.g., after
-                                 * a deadly signal */
+                                /* TRUE when we are sure to exit, e.g., after a deadly signal */
 /* volatile because it is used in signal handler deathtrap(). */
 EXTERN volatile int full_screen INIT(= FALSE);
                                 /* TRUE when doing full-screen output
@@ -5436,8 +5416,7 @@ EXTERN int      sandbox INIT(= 0);
                                  * "sandbox".  Several things are not allowed then. */
 
 EXTERN int      silent_mode INIT(= FALSE);
-                                /* set to TRUE when "-s" commandline argument
-                                 * used for ex */
+                                /* set to TRUE when "-s" commandline argument used for ex */
 
 EXTERN pos_T    VIsual;         /* start position of active Visual selection */
 EXTERN int      VIsual_active INIT(= FALSE);
@@ -5539,32 +5518,13 @@ EXTERN JMP_BUF lc_jump_env;     /* argument to SETJMP() */
 /* volatile because it is used in signal handler deathtrap(). */
 EXTERN volatile int lc_active INIT(= FALSE); /* TRUE when lc_jump_env is valid. */
 
-/*
- * These flags are set based upon 'fileencoding'.
- * Note that "enc_utf8" is also set for "unicode", because the characters are
- * internally stored as UTF-8 (to avoid trouble with NUL bytes).
- */
-#define DBCS_JPN       932     /* japan */
-#define DBCS_JPNU      9932    /* euc-jp */
-#define DBCS_KOR       949     /* korea */
-#define DBCS_KORU      9949    /* euc-kr */
-#define DBCS_CHS       936     /* chinese */
-#define DBCS_CHSU      9936    /* euc-cn */
-#define DBCS_CHT       950     /* taiwan */
-#define DBCS_CHTU      9950    /* euc-tw */
-#define DBCS_2BYTE     1       /* 2byte- */
-#define DBCS_DEBUG     -1
-
-EXTERN int      enc_dbcs INIT(= 0);             /* One of DBCS_xxx values if
-                                                   DBCS encoding */
-EXTERN int      enc_unicode INIT(= 0);  /* 2: UCS-2 or UTF-16, 4: UCS-4 */
+EXTERN int      enc_unicode INIT(= 0);          /* 2: UCS-2 or UTF-16, 4: UCS-4 */
 EXTERN int      enc_utf8 INIT(= FALSE);         /* UTF-8 encoded Unicode */
 EXTERN int      enc_latin1like INIT(= TRUE);    /* 'encoding' is latin1 comp. */
 EXTERN int      has_mbyte INIT(= 0);            /* any multi-byte encoding */
 
 /*
- * To speed up BYTELEN() we fill a table with the byte lengths whenever
- * enc_utf8 or enc_dbcs changes.
+ * To speed up BYTELEN() we fill a table with the byte lengths whenever enc_utf8 changes.
  */
 EXTERN char     mb_bytelen_tab[256];
 
@@ -5575,7 +5535,7 @@ EXTERN vimconv_T output_conv;                   /* type of output conversion */
 
 /*
  * Function pointers, used to quickly get to the right function.  Each has
- * three possible values: latin_ (8-bit), utfc_ or utf_ (utf-8) and dbcs_ (DBCS).
+ * two possible values: latin_ (8-bit), utfc_ or utf_ (utf-8).
  * The value is set in mb_init();
  */
 /* length of char in bytes, including following composing chars */
@@ -5935,8 +5895,7 @@ EXTERN time_t starttime;
 
 /*
  * Some compilers warn for not using a return value, but in some situations we
- * can't do anything useful with the value.  Assign to this variable to avoid
- * the warning.
+ * can't do anything useful with the value.  Assign to this variable to avoid the warning.
  */
 EXTERN int ignored;
 EXTERN char *ignoredp;
@@ -5965,7 +5924,6 @@ EXTERN char *ignoredp;
 
 /* properties used in enc_canon_table[] (first three mutually exclusive) */
 #define ENC_8BIT       0x01
-#define ENC_DBCS       0x02
 #define ENC_UNICODE    0x04
 
 #define ENC_ENDIAN_B   0x10        /* Unicode: Big endian */

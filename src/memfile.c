@@ -171,8 +171,7 @@ mf_open(fname, flags)
 }
 
 /*
- * Open a file for an existing memfile.  Used when updatecount set from 0 to
- * some value.
+ * Open a file for an existing memfile.  Used when updatecount set from 0 to some value.
  * If the file already exists, this fails.
  * "fname" is the name of file to use (NULL means no file at all)
  * Note: "fname" must have been allocated, it is not copied!  If opening the
@@ -307,8 +306,7 @@ mf_new(mfp, negative, page_count)
 /*
  * Decide on the number to use:
  * If there is a free block, use its number.
- * Otherwise use mf_block_min for a negative number, mf_block_max for
- * a positive number.
+ * Otherwise use mf_block_min for a negative number, mf_block_max for a positive number.
  */
     freep = mfp->mf_free_first;
     if (!negative && freep != NULL && freep->bh_page_count >= page_count)
@@ -516,8 +514,7 @@ mf_sync(mfp, flags)
         return FAIL;
     }
 
-    /* Only a CTRL-C while writing will break us here, not one typed
-     * previously. */
+    /* Only a CTRL-C while writing will break us here, not one typed previously. */
     got_int = FALSE;
 
     /*
@@ -595,8 +592,7 @@ mf_sync(mfp, flags)
 
 /*
  * For all blocks in memory file *mfp that have a positive block number set
- * the dirty flag.  These are blocks that need to be written to a newly
- * created swapfile.
+ * the dirty flag.  These are blocks that need to be written to a newly created swapfile.
  */
     void
 mf_set_dirty(mfp)
@@ -1140,8 +1136,7 @@ mf_need_trans(mfp)
 
 /*
  * Open a swap file for a memfile.
- * The "fname" must be in allocated memory, and is consumed (also when an
- * error occurs).
+ * The "fname" must be in allocated memory, and is consumed (also when an error occurs).
  */
     static void
 mf_do_open(mfp, fname, flags)
@@ -1325,13 +1320,11 @@ mf_hash_rem_item(mht, mhi)
 
     mht->mht_count--;
 
-    /* We could shrink the table here, but it typically takes little memory,
-     * so why bother?  */
+    /* We could shrink the table here, but it typically takes little memory, so why bother? */
 }
 
 /*
- * Increase number of buckets in the hashtable by MHT_GROWTH_FACTOR and
- * rehash items.
+ * Increase number of buckets in the hashtable by MHT_GROWTH_FACTOR and rehash items.
  * Returns FAIL when out of memory.
  */
     static int
@@ -1360,11 +1353,9 @@ mf_hash_grow(mht)
          * Traverse the items in the i-th original bucket and move them into
          * MHT_GROWTH_FACTOR new buckets, preserving their relative order
          * within each new bucket.  Preserving the order is important because
-         * mf_get() tries to keep most recently used items at the front of
-         * each bucket.
+         * mf_get() tries to keep most recently used items at the front of each bucket.
          *
-         * Here we strongly rely on the fact the hashes are computed modulo
-         * a power of two.
+         * Here we strongly rely on the fact the hashes are computed modulo a power of two.
          */
 
         vim_memset(tails, 0, sizeof(tails));

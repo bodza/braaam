@@ -23,8 +23,7 @@
  *   A literal CSI is stored as CSI KS_EXTRA KE_CSI.
  * These translations are also done on multi-byte characters!
  *
- * Escaping CSI bytes is done by the system-specific input functions, called
- * by ui_inchar().
+ * Escaping CSI bytes is done by the system-specific input functions, called by ui_inchar().
  * Escaping K_SPECIAL is done by inchar().
  * Un-escaping is done by vgetc().
  */
@@ -564,14 +563,12 @@ AppendToRedobuffLit(str, len)
 
     while (len < 0 ? *s != NUL : s - str < len)
     {
-        /* Put a string of normal characters in the redo buffer (that's
-         * faster). */
+        /* Put a string of normal characters in the redo buffer (that's faster). */
         start = s;
         while (*s >= ' ' && *s < DEL && (len < 0 || s - str < len))
             ++s;
 
-        /* Don't put '0' or '^' as last character, just in case a CTRL-D is
-         * typed next. */
+        /* Don't put '0' or '^' as last character, just in case a CTRL-D is typed next. */
         if (*s == NUL && (s[-1] == '0' || s[-1] == '^'))
             --s;
         if (s > start)
@@ -704,8 +701,7 @@ stuffnumReadbuff(n)
  * Read a character from the redo buffer.  Translates K_SPECIAL, CSI and
  * multibyte characters.
  * The redo buffer is left as it is.
- * If init is TRUE, prepare for redo, return FAIL if nothing to redo, OK
- * otherwise.
+ * If init is TRUE, prepare for redo, return FAIL if nothing to redo, OK otherwise.
  * If old is TRUE, use old_redobuff instead of redobuff.
  */
     static int
@@ -978,8 +974,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
         mch_memmove(s1 + newoff, typebuf.tb_buf + typebuf.tb_off, (size_t)offset);
         /* copy the new chars */
         mch_memmove(s1 + newoff + offset, str, (size_t)addlen);
-        /* copy the old chars, after the insertion point, including the NUL at
-         * the end */
+        /* copy the old chars, after the insertion point, including the NUL at the end */
         mch_memmove(s1 + newoff + offset + addlen,
                                      typebuf.tb_buf + typebuf.tb_off + offset,
                                        (size_t)(typebuf.tb_len - offset + 1));
@@ -1066,8 +1061,7 @@ ins_char_typebuf(c)
 
 /*
  * Return TRUE if the typeahead buffer was changed (while waiting for a
- * character to arrive).  Happens when a message was received from a client or
- * from feedkeys().
+ * character to arrive).  Happens when a message was received from a client or from feedkeys().
  * But check in a more generic way to avoid trouble: When "typebuf.tb_buf"
  * changed it was reallocated and the old pointer can no longer be used.
  * Or "typebuf.tb_off" may have been changed and we would overwrite characters
@@ -1614,8 +1608,7 @@ vgetc()
                 {
                     /* Must be a K_SPECIAL - KS_SPECIAL - KE_FILLER sequence,
                      * which represents a K_SPECIAL (0x80),
-                     * or a CSI - KS_EXTRA - KE_CSI sequence, which represents
-                     * a CSI (0x9B),
+                     * or a CSI - KS_EXTRA - KE_CSI sequence, which represents a CSI (0x9B),
                      * of a K_SPECIAL - KS_EXTRA - KE_CSI, which is CSI too. */
                     c = vgetorpeek(TRUE);
                     if (vgetorpeek(TRUE) == (int)KE_CSI && c == KS_EXTRA)
@@ -1796,8 +1789,7 @@ vgetorpeek(advance)
      * 1. The call to add_to_showcmd(). char_avail() is then used to check if
      * there is a character available, which calls this function.  In that
      * case we must return NUL, to indicate no character is available.
-     * 2. A GUI callback function writes to the screen, causing a
-     * wait_return().
+     * 2. A GUI callback function writes to the screen, causing a wait_return().
      * Using ":normal" can also do this, but it saves the typeahead buffer,
      * thus it should be OK.  But don't get a key from the user then.
      */
@@ -1845,15 +1837,13 @@ vgetorpeek(advance)
             /*
              * Loop until we either find a matching mapped key, or we
              * are sure that it is not a mapped key.
-             * If a mapped key sequence is found we go back to the start to
-             * try re-mapping.
+             * If a mapped key sequence is found we go back to the start to try re-mapping.
              */
             for (;;)
             {
                 /*
                  * ui_breakcheck() is slow, don't use it too often when
-                 * inside a mapping.  But call it each time for typed
-                 * characters.
+                 * inside a mapping.  But call it each time for typed characters.
                  */
                 if (typebuf.tb_maplen)
                     line_breakcheck();
@@ -1980,8 +1970,7 @@ vgetorpeek(advance)
                                 {
                                     /*
                                      * If only script-local mappings are
-                                     * allowed, check if the mapping starts
-                                     * with K_SNR.
+                                     * allowed, check if the mapping starts with K_SNR.
                                      */
                                     s = typebuf.tb_noremap + typebuf.tb_off;
                                     if (*s == RM_SCRIPT
@@ -2023,8 +2012,7 @@ vgetorpeek(advance)
                             }
                         }
 
-                        /* If no partly match found, use the longest full
-                         * match. */
+                        /* If no partly match found, use the longest full match. */
                         if (keylen != KEYLEN_PART_MAP)
                         {
                             mp = mp_match;
@@ -2064,8 +2052,7 @@ vgetorpeek(advance)
                         if (mlen == typebuf.tb_len)
                             keylen = KEYLEN_PART_KEY;
                         else if (max_mlen < mlen)
-                            /* no match, may have to check for termcode at
-                             * next character */
+                            /* no match, may have to check for termcode at next character */
                             max_mlen = mlen + 1;
                     }
 
@@ -2092,8 +2079,7 @@ vgetorpeek(advance)
                             keylen = check_termcode(max_mlen + 1, NULL, 0, NULL);
 
                             /* If no termcode matched but 'pastetoggle'
-                             * matched partially it's like an incomplete key
-                             * sequence. */
+                             * matched partially it's like an incomplete key sequence. */
                             if (keylen == 0 && save_keylen == KEYLEN_PART_KEY)
                                 keylen = KEYLEN_PART_KEY;
 
@@ -2200,8 +2186,7 @@ vgetorpeek(advance)
 
                         /* Copy the values from *mp that are used, because
                          * evaluating the expression may invoke a function
-                         * that redefines the mapping, thereby making *mp
-                         * invalid. */
+                         * that redefines the mapping, thereby making *mp invalid. */
                         save_m_expr = mp->m_expr;
                         save_m_noremap = mp->m_noremap;
                         save_m_silent = mp->m_silent;
@@ -2210,8 +2195,7 @@ vgetorpeek(advance)
 
                         /*
                          * Handle ":map <expr>": evaluate the {rhs} as an
-                         * expression.  Also save and restore the command line
-                         * for "normal :".
+                         * expression.  Also save and restore the command line for "normal :".
                          */
                         if (mp->m_expr)
                         {
@@ -2649,14 +2633,12 @@ inchar(buf, maxlen, wait_time, tb_change_cnt)
         }
 
         /*
-         * Always flush the output characters when getting input characters
-         * from the user.
+         * Always flush the output characters when getting input characters from the user.
          */
         out_flush();
 
         /*
-         * Fill up to a third of the buffer, because each character may be
-         * tripled below.
+         * Fill up to a third of the buffer, because each character may be tripled below.
          */
         len = ui_inchar(buf, maxlen / 3, wait_time, tb_change_cnt);
     }
@@ -2803,8 +2785,7 @@ do_map(maptype, arg, mode, abbrev)
     else
         noremap = REMAP_YES;
 
-    /* Accept <buffer>, <nowait>, <silent>, <expr> <script> and <unique> in
-     * any order. */
+    /* Accept <buffer>, <nowait>, <silent>, <expr> <script> and <unique> in any order. */
     for (;;)
     {
         /*
@@ -3121,8 +3102,7 @@ do_map(maptype, arg, mode, abbrev)
                         {
                             /* Only accept a full match.  For abbreviations we
                              * ignore trailing space when matching with the
-                             * "lhs", since an abbreviation can't have
-                             * trailing space. */
+                             * "lhs", since an abbreviation can't have trailing space. */
                             if (n != len && (!abbrev || round || n > len
                                                || *skipwhite(keys + n) != NUL))
                             {
@@ -3560,8 +3540,7 @@ showmap(mp, local)
         msg_puts_attr((char_u *)"<Nop>", hl_attr(HLF_8));
     else
     {
-        /* Remove escaping of CSI, because "m_str" is in a format to be used
-         * as typeahead. */
+        /* Remove escaping of CSI, because "m_str" is in a format to be used as typeahead. */
         char_u *s = vim_strsave(mp->m_str);
         if (s != NULL)
         {
@@ -3879,8 +3858,7 @@ ExpandMappings(regmatch, num_file, file)
  *
  * Historic vi practice: The last character of an abbreviation must be an id
  * character ([a-zA-Z0-9_]). The characters in front of it must be all id
- * characters or all non-id characters. This allows for abbr. "#i" to
- * "#include".
+ * characters or all non-id characters. This allows for abbr. "#i" to "#include".
  *
  * Vim addition: Allow for abbreviations that end in a non-keyword character.
  * Then there must be white space before the abbr.
@@ -4089,8 +4067,7 @@ eval_map_expr(str, c)
     int         save_msg_col;
     int         save_msg_row;
 
-    /* Remove escaping of CSI, because "str" is in a format to be used as
-     * typeahead. */
+    /* Remove escaping of CSI, because "str" is in a format to be used as typeahead. */
     expr = vim_strsave(str);
     if (expr == NULL)
         return NULL;
@@ -4499,8 +4476,7 @@ put_escstr(fd, strstart, what)
          * prevent them from misinterpreted in DoOneCmd().
          * A space, Tab and '"' has to be escaped with a backslash to
          * prevent it to be misinterpreted in do_set().
-         * A space has to be escaped with a CTRL-V when it's at the start of a
-         * ":map" rhs.
+         * A space has to be escaped with a CTRL-V when it's at the start of a ":map" rhs.
          * A '<' has to be escaped with a CTRL-V to prevent it being
          * interpreted as the start of a special key name.
          * A space in the lhs of a :map needs a CTRL-V.
@@ -4647,8 +4623,7 @@ check_map(keys, mode, exact, ign_mod, abbr, mp_ptr, local_ptr)
                 mp = maphash[hash];
             for ( ; mp != NULL; mp = mp->m_next)
             {
-                /* skip entries with wrong mode, wrong length and not matching
-                 * ones */
+                /* skip entries with wrong mode, wrong length and not matching ones */
                 if ((mp->m_mode & mode) && (!exact || mp->m_keylen == len))
                 {
                     if (len > mp->m_keylen)
