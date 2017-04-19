@@ -106,10 +106,8 @@ static struct builtin_term builtin_termcaps[] =
     {(int)KS_CRI,       "\033[%p1%dC"},
     {(int)KS_KS,        "\033[?1h\033="},
     {(int)KS_KE,        "\033[?1l\033>"},
-#if defined(FEAT_XTERM_SAVE)
     {(int)KS_TI,        "\0337\033[?47h"},
     {(int)KS_TE,        "\033[2J\033[?47l\0338"},
-#endif
     {(int)KS_CIS,       "\033]1;"},
     {(int)KS_CIE,       "\007"},
     {(int)KS_TS,        "\033]2;"},

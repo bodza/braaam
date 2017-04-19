@@ -432,10 +432,6 @@ edit(cmdchar, startln, count)
         update_curswant();
         old_topline = curwin->w_topline;
 
-#if defined(USE_ON_FLY_SCROLL)
-        dont_scroll = FALSE;            /* allow scrolling here */
-#endif
-
         /*
          * Get a character for Insert mode.  Ignore K_IGNORE.
          */
@@ -924,7 +920,7 @@ force_cindent:
                     do_c_expr_indent();
             }
         }
-    }   /* for (;;) */
+    }
     /* NOTREACHED */
 }
 
@@ -970,9 +966,7 @@ ins_redraw(ready)
     }
 
     /* Trigger TextChangedI if b_changedtick differs. */
-    if (ready && has_textchangedI()
-            && last_changedtick != curbuf->b_changedtick
-            )
+    if (ready && has_textchangedI() && last_changedtick != curbuf->b_changedtick)
     {
         if (last_changedtick_buf == curbuf)
             apply_autocmds(EVENT_TEXTCHANGEDI, NULL, NULL, FALSE, curbuf);
@@ -1491,9 +1485,6 @@ get_literal()
     if (got_int)
         return Ctrl_C;
 
-#if defined(USE_ON_FLY_SCROLL)
-    dont_scroll = TRUE;         /* disallow scrolling here */
-#endif
     ++no_mapping;               /* don't map the next key hits */
     cc = 0;
     i = 0;
@@ -1760,10 +1751,6 @@ insertchar(c, flags, second_indent)
      * Don't do this when there an InsertCharPre autocommand is defined,
      * because we need to fire the event for every character.
      */
-#if defined(USE_ON_FLY_SCROLL)
-    dont_scroll = FALSE;                /* allow scrolling here */
-#endif
-
     if (       !ISSPECIAL(c)
             && utf_char2len(c) == 1
             && vpeekc() != NUL
@@ -3537,10 +3524,6 @@ ins_reg()
         add_to_showcmd_c(Ctrl_R);
     }
 
-#if defined(USE_ON_FLY_SCROLL)
-    dont_scroll = TRUE;         /* disallow scrolling here */
-#endif
-
     /*
      * Don't map the register name. This also prevents the mode message to be
      * deleted when ESC is hit.
@@ -4889,10 +4872,6 @@ ins_digraph()
         did_putchar = TRUE;
         add_to_showcmd_c(Ctrl_K);
     }
-
-#if defined(USE_ON_FLY_SCROLL)
-    dont_scroll = TRUE;         /* disallow scrolling here */
-#endif
 
     /* don't map the digraph chars. This also prevents the
      * mode message to be deleted when ESC is hit */

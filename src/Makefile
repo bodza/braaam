@@ -18,12 +18,12 @@ ALL_CFLAGS = $(CFLAGS)
 ALL_LIBS = $(LIBS)
 
 BASIC_SRC = buffer.c charset.c digraph.c \
-	edit.c eval.c ex_cmds.c ex_cmds2.c ex_docmd.c ex_eval.c ex_getln.c \
+	edit.c eval.c ex_cmds.c ex_docmd.c ex_eval.c ex_getln.c \
 	fileio.c getchar.c hashtab.c \
-	main.c mark.c memfile.c memline.c message.c misc1.c misc2.c \
+	main.c mark.c memfile.c memline.c message.c misc.c \
 	move.c mbyte.c normal.c ops.c option.c os_unix.c \
 	regexp.c screen.c search.c sha256.c syntax.c \
-	term.c ui.c undo.c version.c window.c
+	term.c ui.c undo.c window.c
 
 SRC = $(BASIC_SRC)
 
@@ -34,7 +34,6 @@ OBJ_COMMON = \
 	objects/edit.o \
 	objects/eval.o \
 	objects/ex_cmds.o \
-	objects/ex_cmds2.o \
 	objects/ex_docmd.o \
 	objects/ex_eval.o \
 	objects/ex_getln.o \
@@ -44,8 +43,7 @@ OBJ_COMMON = \
 	objects/mark.o \
         objects/memline.o \
 	objects/message.o \
-	objects/misc1.o \
-	objects/misc2.o \
+	objects/misc.o \
 	objects/move.o \
 	objects/mbyte.o \
 	objects/normal.o \
@@ -60,7 +58,6 @@ OBJ_COMMON = \
 	objects/term.o \
 	objects/ui.o \
 	objects/undo.o \
-	objects/version.o \
 	objects/window.o
 
 OBJ = $(OBJ_COMMON) \
@@ -74,8 +71,7 @@ CCC = $(CC) -c -I. $(ALL_CFLAGS)
 
 # Link the target for normal use or debugging.
 # A shell script is used to try linking without unnecessary libraries.
-$(VIM): objects $(OBJ) version.c version.h
-	$(CCC) version.c -o objects/version.o
+$(VIM): objects $(OBJ)
 	$(CC) $(LDFLAGS) -o $(VIM) $(OBJ) $(ALL_LIBS)
 
 clean:
@@ -106,9 +102,6 @@ objects/eval.o: eval.c
 
 objects/ex_cmds.o: ex_cmds.c
 	$(CCC) -o $@ ex_cmds.c
-
-objects/ex_cmds2.o: ex_cmds2.c
-	$(CCC) -o $@ ex_cmds2.c
 
 objects/ex_docmd.o: ex_docmd.c
 	$(CCC) -o $@ ex_docmd.c
@@ -143,11 +136,8 @@ objects/memline.o: memline.c
 objects/message.o: message.c
 	$(CCC) -o $@ message.c
 
-objects/misc1.o: misc1.c
-	$(CCC) -o $@ misc1.c
-
-objects/misc2.o: misc2.c
-	$(CCC) -o $@ misc2.c
+objects/misc.o: misc.c
+	$(CCC) -o $@ misc.c
 
 objects/move.o: move.c
 	$(CCC) -o $@ move.c
@@ -196,13 +186,12 @@ objects/window.o: window.c
 
 ###############################################################################
 
-objects/buffer.o: buffer.c vim.h ex_cmds.h proto.h version.h
+objects/buffer.o: buffer.c vim.h ex_cmds.h proto.h
 objects/charset.o: charset.c vim.h ex_cmds.h proto.h
 objects/digraph.o: digraph.c vim.h ex_cmds.h proto.h
 objects/edit.o: edit.c vim.h ex_cmds.h proto.h
-objects/eval.o: eval.c vim.h ex_cmds.h proto.h version.h
+objects/eval.o: eval.c vim.h ex_cmds.h proto.h
 objects/ex_cmds.o: ex_cmds.c vim.h ex_cmds.h proto.h
-objects/ex_cmds2.o: ex_cmds2.c vim.h ex_cmds.h proto.h
 objects/ex_docmd.o: ex_docmd.c vim.h ex_cmds.h proto.h
 objects/ex_eval.o: ex_eval.c vim.h ex_cmds.h proto.h
 objects/ex_getln.o: ex_getln.c vim.h ex_cmds.h proto.h
@@ -214,8 +203,7 @@ objects/mark.o: mark.c vim.h ex_cmds.h proto.h
 objects/memfile.o: memfile.c vim.h ex_cmds.h proto.h
 objects/memline.o: memline.c vim.h ex_cmds.h proto.h
 objects/message.o: message.c vim.h ex_cmds.h proto.h
-objects/misc1.o: misc1.c vim.h ex_cmds.h proto.h version.h
-objects/misc2.o: misc2.c vim.h ex_cmds.h proto.h
+objects/misc.o: misc.c vim.h ex_cmds.h proto.h
 objects/move.o: move.c vim.h ex_cmds.h proto.h
 objects/mbyte.o: mbyte.c vim.h ex_cmds.h proto.h
 objects/normal.o: normal.c vim.h ex_cmds.h proto.h
@@ -230,5 +218,4 @@ objects/syntax.o: syntax.c vim.h ex_cmds.h proto.h
 objects/term.o: term.c vim.h ex_cmds.h proto.h
 objects/ui.o: ui.c vim.h ex_cmds.h proto.h
 objects/undo.o: undo.c vim.h ex_cmds.h proto.h
-objects/version.o: version.c vim.h ex_cmds.h proto.h version.h
 objects/window.o: window.c vim.h ex_cmds.h proto.h

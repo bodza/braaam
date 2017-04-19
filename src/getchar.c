@@ -2473,8 +2473,8 @@ vgetorpeek(advance)
                     while (typebuf.tb_buf[typebuf.tb_off + typebuf.tb_len] != NUL)
                         typebuf.tb_noremap[typebuf.tb_off + typebuf.tb_len++] = RM_YES;
                 }
-            }       /* for (;;) */
-        }       /* if (!character from stuffbuf) */
+            }
+        }
 
                         /* if advance is FALSE don't loop on NULs */
     } while (c < 0 || (advance && c == NUL));

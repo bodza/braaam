@@ -9,7 +9,6 @@
  * Functions exported by this file:
  *  1. sha256_key() hashes the password to 64 bytes char string.
  *  2. sha2_seed() generates a random header.
- *  sha256_self_test() is implicitly called once.
  */
 
 #include "vim.h"

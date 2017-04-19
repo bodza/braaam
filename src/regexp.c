@@ -8872,7 +8872,7 @@ nfa_regpiece()
 
         default:
             break;
-    }   /* end switch */
+    }
 
     if (re_multi_type(peekchr()) != NOT_MULTI)
         /* Can't have a multi follow a multi. */
@@ -9814,13 +9814,10 @@ post2nfa(postfix, end, nfa_calc_size)
           }
 
         case NFA_COMPOSING:     /* char with composing char */
-#if 0
-            /* TODO */
             if (regflags & RF_ICOMBINE)
             {
-                /* use the base character only */
+                /* TODO: use the base character only */
             }
-#endif
             /* FALLTHROUGH */
 
         case NFA_MOPEN: /* \( \) Submatch */

@@ -1,6 +1,23 @@
 #if !defined(VIM__H)
 #define VIM__H
 
+/*
+ * Define the version number, name, etc.
+ * The patchlevel is in included_patches[], in main.c.
+ */
+#define VIM_VERSION_MAJOR                7
+#define VIM_VERSION_MAJOR_STR           "7"
+#define VIM_VERSION_MINOR                4
+#define VIM_VERSION_MINOR_STR           "4"
+#define VIM_VERSION_100     (VIM_VERSION_MAJOR * 100 + VIM_VERSION_MINOR)
+
+/*
+ * VIM_VERSION_SHORT is copied into the swap file (max. length is 6 chars).
+ * VIM_VERSION_LONG is used for the ":version" command and "Vim -h".
+ */
+#define VIM_VERSION_SHORT       "7.4"
+#define VIM_VERSION_LONG        "VIM - Vi IMproved 7.4.692"
+
 /* ============ the header file puzzle (ca. 50-100 pieces) ========= */
 
 /* Define when terminfo support found */
@@ -28,18 +45,6 @@
  * Message history is fixed at 200 message, 20 for the tiny version.
  */
 #define MAX_MSG_HIST_LEN 200
-
-/*
- * +xterm_save          The t_ti and t_te entries for the builtin xterm will
- *                      be set to save the screen when starting Vim and
- *                      restoring it when exiting.
- */
-/* #define FEAT_XTERM_SAVE */
-
-/*
- * SYS_OPTWIN_FILE      Name of the default optwin.vim file.
- */
-#define SYS_OPTWIN_FILE        "$VIMRUNTIME/optwin.vim"
 
 /*
  * RUNTIME_DIRNAME      Generic name for the directory of the runtime files.
@@ -121,9 +126,6 @@
 
 #define DFLT_RUNTIMEPATH     "~/.vim,$VIMRUNTIME"
 
-/* Special wildcards that need to be handled by the shell */
-#define SPECIAL_WILDCHAR    "`'{"
-
 /*
  * Unix has plenty of memory, use large buffers
  */
@@ -136,7 +138,6 @@
 #define MAXPATHL       1024
 #endif
 
-#define CHECK_INODE             /* used when checking if a swap file already exists for a file */
 #if !defined(DFLT_MAXMEM)
 #define DFLT_MAXMEM   (5*1024)         /* use up to 5 Mbyte for a buffer */
 #endif
@@ -5163,9 +5164,6 @@ EXTERN int      ins_at_eol INIT(= FALSE); /* put cursor after eol when
 
 EXTERN int      no_abbr INIT(= TRUE);   /* TRUE when no abbreviations loaded */
 
-#if defined(USE_ON_FLY_SCROLL)
-EXTERN int      dont_scroll INIT(= FALSE);/* don't use scrollbars when TRUE */
-#endif
 EXTERN int      mapped_ctrl_c INIT(= FALSE); /* modes where CTRL-C is mapped */
 EXTERN int      ctrl_c_interrupts INIT(= TRUE); /* CTRL-C sets got_int */
 
@@ -5279,7 +5277,7 @@ EXTERN int  redir_vname INIT(= 0);      /* message redirection variable */
 
 EXTERN char     breakat_flags[256];     /* which characters are in 'breakat' */
 
-/* these are in version.c */
+/* these are in main.c */
 extern char *shortVersion;
 extern char *longVersion;
 
@@ -5333,7 +5331,7 @@ EXTERN int      stl_syntax INIT(= 0);
 /* don't use 'hlsearch' temporarily */
 EXTERN int      no_hlsearch INIT(= FALSE);
 
-/* the table is in misc2.c, because of initializations */
+/* the table is in misc.c, because of initializations */
 extern cursorentry_T shape_table[SHAPE_IDX_COUNT];
 
 EXTERN int      typebuf_was_filled INIT(= FALSE); /* received text from client

@@ -3416,7 +3416,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
             lcs_prec_todo = lcs_prec;
                 need_showbreak = TRUE;
         }
-    }   /* for every character in the line */
+    }
 
     return row;
 }

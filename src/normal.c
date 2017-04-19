@@ -518,9 +518,6 @@ normal_cmd(oap, toplevel)
     mapped_len = typebuf_maplen();
 
     State = NORMAL_BUSY;
-#if defined(USE_ON_FLY_SCROLL)
-    dont_scroll = FALSE;        /* allow scrolling here */
-#endif
 
     /* Set v:count here, when called from main() and not a stuffed
      * command, so that v:count can be used in an expression mapping
@@ -3869,9 +3866,6 @@ nv_zet(cap)
         n = nchar - '0';
         for (;;)
         {
-#if defined(USE_ON_FLY_SCROLL)
-            dont_scroll = TRUE;         /* disallow scrolling here */
-#endif
             ++no_mapping;
             ++allow_keys;   /* no mapping for nchar, but allow key codes */
             nchar = plain_vgetc();
@@ -6356,9 +6350,7 @@ nv_g_cmd(cap)
      */
     case '*':
     case '#':
-#if POUND != '#'
     case POUND:         /* pound sign (sometimes equal to '#') */
-#endif
     case Ctrl_RSB:              /* :tag or :tselect for current identifier */
     case ']':                   /* :tselect for current identifier */
         nv_ident(cap);
@@ -7267,11 +7259,6 @@ nv_object(cap)
         case '`': /* "a`" = a backtick quoted string */
                 flag = current_quote(cap->oap, cap->count1, include, cap->nchar);
                 break;
-#if 0 /* TODO */
-        case 'S': /* "aS" = a section */
-        case 'f': /* "af" = a filename */
-        case 'u': /* "au" = a URL */
-#endif
         default:
                 flag = FAIL;
                 break;

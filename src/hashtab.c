@@ -24,23 +24,6 @@
 
 static int hash_may_resize(hashtab_T *ht, int minitems);
 
-#if 0 /* currently not used */
-/*
- * Create an empty hash table.
- * Returns NULL when out of memory.
- */
-    hashtab_T *
-hash_create()
-{
-    hashtab_T *ht;
-
-    ht = (hashtab_T *)alloc(sizeof(hashtab_T));
-    if (ht != NULL)
-        hash_init(ht);
-    return ht;
-}
-#endif
-
 /*
  * Initialize an empty hash table.
  */
@@ -219,24 +202,6 @@ hash_add_item(ht, hi, key, hash)
     return hash_may_resize(ht, 0);
 }
 
-#if 0 /* not used */
-/*
- * Overwrite hashtable item "hi" with "key".  "hi" must point to the item that
- * is to be overwritten.  Thus the number of items in the hashtable doesn't change.
- * Although the key must be identical, the pointer may be different, thus it's
- * set anyway (the key is part of an item with that key).
- * The caller must take care of freeing the old item.
- * "hi" is invalid after this!
- */
-    void
-hash_set(hi, key)
-    hashitem_T  *hi;
-    char_u      *key;
-{
-    hi->hi_key = key;
-}
-#endif
-
 /*
  * Remove item "hi" from  hashtable "ht".  "hi" must have been obtained with hash_lookup().
  * The caller must take care of freeing the item itself.
@@ -262,22 +227,6 @@ hash_lock(ht)
 {
     ++ht->ht_locked;
 }
-
-#if 0 /* currently not used */
-/*
- * Lock a hashtable at the specified number of entries.
- * Caller must make sure no more than "size" entries will be added.
- * Must call hash_unlock() later.
- */
-    void
-hash_lock_size(ht, size)
-    hashtab_T   *ht;
-    int         size;
-{
-    (void)hash_may_resize(ht, size);
-    ++ht->ht_locked;
-}
-#endif
 
 /*
  * Unlock a hashtable: allow ht_array changes again.

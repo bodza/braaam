@@ -2722,13 +2722,6 @@ mch_expandpath(gap, path, flags)
  * file is pointer to array of pointers to matched file names
  */
 
-#if !defined(SEEK_SET)
-#define SEEK_SET 0
-#endif
-#if !defined(SEEK_END)
-#define SEEK_END 2
-#endif
-
 #define SHELL_SPECIAL (char_u *)"\t \"&'$;<>()\\|"
 
     int

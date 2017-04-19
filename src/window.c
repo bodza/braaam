@@ -360,9 +360,6 @@ do_window(nchar, Prenum, xchar)
     case 'g':
     case Ctrl_G:
                 CHECK_CMDWIN
-#if defined(USE_ON_FLY_SCROLL)
-                dont_scroll = TRUE;             /* disallow scrolling here */
-#endif
                 ++no_mapping;
                 ++allow_keys;   /* no mapping for xchar, but allow key codes */
                 if (xchar == NUL)
@@ -4049,12 +4046,6 @@ shell_new_rows()
     (void)win_comp_pos();               /* recompute w_winrow and w_wincol */
     compute_cmdrow();
     curtab->tp_ch_used = p_ch;
-
-#if 0
-    /* Disabled: don't want making the screen smaller make a window larger. */
-    if (p_ea)
-        win_equal(curwin, FALSE, 'v');
-#endif
 }
 
 /*
@@ -4073,11 +4064,6 @@ shell_new_columns()
         frame_new_width(topframe, (int)Columns, FALSE, FALSE);
 
     (void)win_comp_pos();               /* recompute w_winrow and w_wincol */
-#if 0
-    /* Disabled: don't want making the screen smaller make a window larger. */
-    if (p_ea)
-        win_equal(curwin, FALSE, 'h');
-#endif
 }
 
 /*

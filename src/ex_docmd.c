@@ -6729,7 +6729,7 @@ ex_resize(eap)
 ex_find(eap)
     exarg_T     *eap;
 {
-        do_exedit(eap, NULL);
+    do_exedit(eap, NULL);
 }
 
 /*
@@ -7394,10 +7394,6 @@ ex_at(eap)
     int         prev_len = typebuf.tb_len;
 
     curwin->w_cursor.lnum = eap->line2;
-
-#if defined(USE_ON_FLY_SCROLL)
-    dont_scroll = TRUE;         /* disallow scrolling here */
-#endif
 
     /* get the register name.  No name means to use the previous one */
     c = *eap->arg;

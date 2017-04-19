@@ -4143,8 +4143,6 @@ do_modelines(flags)
     --entered;
 }
 
-#include "version.h"            /* for version number */
-
 /*
  * chk_modeline() - check a single line for a mode string
  * Return FAIL if an error encountered.

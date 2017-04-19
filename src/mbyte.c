@@ -2033,8 +2033,7 @@ static convertStruct toUpper[] =
         {0x118c0,0x118df,1,-32}
 };
 /*
- * Return the upper-case equivalent of "a", which is a UCS-4 character.  Use
- * simple case folding.
+ * Return the upper-case equivalent of "a", which is a UCS-4 character.  Use simple case folding.
  */
     int
 utf_toupper(a)

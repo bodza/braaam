@@ -562,7 +562,7 @@ emsg2(s, a1)
     return emsg3(s, a1, NULL);
 }
 
-/* emsg3() and emsgn() are in misc2.c to avoid warnings for the prototypes. */
+/* emsg3() and emsgn() are in misc.c to avoid warnings for the prototypes. */
 
     void
 emsg_invreg(name)
@@ -796,9 +796,6 @@ wait_return(redraw)
 
         State = HITRETURN;
         setmouse();
-#if defined(USE_ON_FLY_SCROLL)
-        dont_scroll = TRUE;             /* disallow scrolling here */
-#endif
         /* Avoid the sequence that the user types ":" at the hit-return prompt
          * to start an Ex command, but the file-changed dialog gets in the way. */
         if (need_check_timestamps)

@@ -221,9 +221,7 @@ static bhdr_T *ml_find_line(buf_T *, linenr_T, int);
 static int ml_add_stack(buf_T *);
 static void ml_lineadd(buf_T *, int);
 static int b0_magic_wrong(ZERO_BL *);
-#if defined(CHECK_INODE)
 static int fnamecmp_ino(char_u *, char_u *, long);
-#endif
 static void long_to_char(long, char_u *);
 static long char_to_long(char_u *);
 static char_u *make_percent_swname(char_u *dir, char_u *name);
@@ -706,18 +704,14 @@ set_b0_fname(b0p, buf)
         if (mch_stat((char *)buf->b_ffname, &st) >= 0)
         {
             long_to_char((long)st.st_mtime, b0p->b0_mtime);
-#if defined(CHECK_INODE)
             long_to_char((long)st.st_ino, b0p->b0_ino);
-#endif
             buf_store_time(buf, &st, buf->b_ffname);
             buf->b_mtime_read = buf->b_mtime;
         }
         else
         {
             long_to_char(0L, b0p->b0_mtime);
-#if defined(CHECK_INODE)
             long_to_char(0L, b0p->b0_ino);
-#endif
             buf->b_mtime = 0;
             buf->b_mtime_read = 0;
             buf->b_orig_size = 0;
@@ -3754,13 +3748,10 @@ findswapname(buf, dirp, old_fname)
                             if (fnamecmp(gettail(buf->b_ffname), gettail(b0.b0_fname)) != 0
                                     || !same_directory(fname, buf->b_ffname))
                             {
-#if defined(CHECK_INODE)
                                 /* Symlinks may point to the same file even
-                                 * when the name differs, need to check the
-                                 * inode too. */
+                                 * when the name differs, need to check the inode too. */
                                 expand_env(b0.b0_fname, NameBuff, MAXPATHL);
                                 if (fnamecmp_ino(buf->b_ffname, NameBuff, char_to_long(b0.b0_ino)))
-#endif
                                     differ = TRUE;
                             }
                         }
@@ -3771,13 +3762,8 @@ findswapname(buf, dirp, old_fname)
                              * "~user/path/file".  Expand it first.
                              */
                             expand_env(b0.b0_fname, NameBuff, MAXPATHL);
-#if defined(CHECK_INODE)
                             if (fnamecmp_ino(buf->b_ffname, NameBuff, char_to_long(b0.b0_ino)))
                                 differ = TRUE;
-#else
-                            if (fnamecmp(NameBuff, buf->b_ffname) != 0)
-                                differ = TRUE;
-#endif
                         }
                     }
                     close(fd);
@@ -3915,7 +3901,6 @@ b0_magic_wrong(b0p)
             || b0p->b0_magic_char != B0_MAGIC_CHAR);
 }
 
-#if defined(CHECK_INODE)
 /*
  * Compare current file name with file name from swap file.
  * Try to use inode numbers when possible.
@@ -4011,7 +3996,6 @@ fnamecmp_ino(fname_c, fname_s, ino_block0)
 
     return TRUE;
 }
-#endif
 
 /*
  * Move a long integer into a four byte character array.

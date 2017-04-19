@@ -41,18 +41,6 @@ static char_u   *get_end_emsg(struct condstack *cstack);
  * is an error exception.)  -  The macros can be defined as expressions checking
  * for a variable that is allowed to be changed during execution of a script.
  */
-#if 0
-/* Expressions used for testing during the development phase. */
-#define THROW_ON_ERROR         (!eval_to_number("$VIMNOERRTHROW"))
-#define THROW_ON_INTERRUPT     (!eval_to_number("$VIMNOINTTHROW"))
-#define THROW_TEST
-#else
-/* Values used for the Vim release. */
-#define THROW_ON_ERROR         TRUE
-#define THROW_ON_ERROR_TRUE
-#define THROW_ON_INTERRUPT     TRUE
-#define THROW_ON_INTERRUPT_TRUE
-#endif
 
 static void     catch_exception(except_T *excp);
 static void     finish_exception(except_T *excp);
@@ -218,76 +206,63 @@ cause_errthrow(mesg, severe, ignore)
         discard_current_exception();
     }
 
-#if defined(THROW_TEST)
-    if (!THROW_ON_ERROR)
+    /*
+     * Prepare the throw of an error exception, so that everything will
+     * be aborted (except for executing finally clauses), until the error
+     * exception is caught; if still uncaught at the top level, the error
+     * message will be displayed and the script processing terminated
+     * then.  -  This function has no access to the conditional stack.
+     * Thus, the actual throw is made after the failing command has
+     * returned.  -  Throw only the first of several errors in a row, except
+     * a severe error is following.
+     */
+    if (msg_list != NULL)
     {
-        /*
-         * Print error message immediately without searching for a matching
-         * catch clause; just finally clauses are executed before the script
-         * is terminated.
-         */
-        return FALSE;
-    }
-    else
-#endif
-    {
-        /*
-         * Prepare the throw of an error exception, so that everything will
-         * be aborted (except for executing finally clauses), until the error
-         * exception is caught; if still uncaught at the top level, the error
-         * message will be displayed and the script processing terminated
-         * then.  -  This function has no access to the conditional stack.
-         * Thus, the actual throw is made after the failing command has
-         * returned.  -  Throw only the first of several errors in a row, except
-         * a severe error is following.
-         */
-        if (msg_list != NULL)
-        {
-            plist = msg_list;
-            while (*plist != NULL)
-                plist = &(*plist)->next;
+        plist = msg_list;
+        while (*plist != NULL)
+            plist = &(*plist)->next;
 
-            elem = (struct msglist *)alloc((unsigned)sizeof(struct msglist));
-            if (elem == NULL)
+        elem = (struct msglist *)alloc((unsigned)sizeof(struct msglist));
+        if (elem == NULL)
+        {
+            suppress_errthrow = TRUE;
+            EMSG((char *)e_outofmem);
+        }
+        else
+        {
+            elem->msg = vim_strsave(mesg);
+            if (elem->msg == NULL)
             {
+                vim_free(elem);
                 suppress_errthrow = TRUE;
                 EMSG((char *)e_outofmem);
             }
             else
             {
-                elem->msg = vim_strsave(mesg);
-                if (elem->msg == NULL)
+                elem->next = NULL;
+                elem->throw_msg = NULL;
+                *plist = elem;
+                if (plist == msg_list || severe)
                 {
-                    vim_free(elem);
-                    suppress_errthrow = TRUE;
-                    EMSG((char *)e_outofmem);
-                }
-                else
-                {
-                    elem->next = NULL;
-                    elem->throw_msg = NULL;
-                    *plist = elem;
-                    if (plist == msg_list || severe)
-                    {
-                        char_u      *tmsg;
+                    char_u      *tmsg;
 
-                        /* Skip the extra "Vim " prefix for message "E458". */
-                        tmsg = elem->msg;
-                        if (STRNCMP(tmsg, "Vim E", 5) == 0
-                                && VIM_ISDIGIT(tmsg[5])
-                                && VIM_ISDIGIT(tmsg[6])
-                                && VIM_ISDIGIT(tmsg[7])
-                                && tmsg[8] == ':'
-                                && tmsg[9] == ' ')
-                            (*msg_list)->throw_msg = &tmsg[4];
-                        else
-                            (*msg_list)->throw_msg = tmsg;
-                    }
+                    /* Skip the extra "Vim " prefix for message "E458". */
+                    tmsg = elem->msg;
+                    if (STRNCMP(tmsg, "Vim E", 5) == 0
+                            && VIM_ISDIGIT(tmsg[5])
+                            && VIM_ISDIGIT(tmsg[6])
+                            && VIM_ISDIGIT(tmsg[7])
+                            && tmsg[8] == ':'
+                            && tmsg[9] == ' ')
+                        (*msg_list)->throw_msg = &tmsg[4];
+                    else
+                        (*msg_list)->throw_msg = tmsg;
                 }
             }
         }
-        return TRUE;
     }
+
+    return TRUE;
 }
 
 /*
@@ -372,38 +347,24 @@ do_intthrow(cstack)
     if (!got_int || (trylevel == 0 && !did_throw))
         return FALSE;
 
-#if defined(THROW_TEST) /* avoid warning for condition always true */
-    if (!THROW_ON_INTERRUPT)
+    /*
+     * Throw an interrupt exception, so that everything will be aborted
+     * (except for executing finally clauses), until the interrupt exception
+     * is caught; if still uncaught at the top level, the script processing
+     * will be terminated then.  -  If an interrupt exception is already
+     * being thrown, do nothing.
+     *
+     */
+    if (did_throw)
     {
-        /*
-         * The interrupt aborts everything except for executing finally clauses.
-         * Discard any user or error or interrupt exception currently being thrown.
-         */
-        if (did_throw)
-            discard_current_exception();
-    }
-    else
-#endif
-    {
-        /*
-         * Throw an interrupt exception, so that everything will be aborted
-         * (except for executing finally clauses), until the interrupt exception
-         * is caught; if still uncaught at the top level, the script processing
-         * will be terminated then.  -  If an interrupt exception is already
-         * being thrown, do nothing.
-         *
-         */
-        if (did_throw)
-        {
-            if (current_exception->type == ET_INTERRUPT)
-                return FALSE;
+        if (current_exception->type == ET_INTERRUPT)
+            return FALSE;
 
-            /* An interrupt exception replaces any user or error exception. */
-            discard_current_exception();
-        }
-        if (throw_exception("Vim:Interrupt", ET_INTERRUPT, NULL) != FAIL)
-            do_throw(cstack);
+        /* An interrupt exception replaces any user or error exception. */
+        discard_current_exception();
     }
+    if (throw_exception("Vim:Interrupt", ET_INTERRUPT, NULL) != FAIL)
+        do_throw(cstack);
 
     return TRUE;
 }
@@ -1327,20 +1288,6 @@ do_throw(cstack)
      * and reset the did_emsg or got_int flag, so this won't happen again at
      * the next surrounding try conditional.
      */
-#if !defined(THROW_ON_ERROR_TRUE)
-    if (did_emsg && !THROW_ON_ERROR)
-    {
-        inactivate_try = TRUE;
-        did_emsg = FALSE;
-    }
-#endif
-#if !defined(THROW_ON_INTERRUPT_TRUE)
-    if (got_int && !THROW_ON_INTERRUPT)
-    {
-        inactivate_try = TRUE;
-        got_int = FALSE;
-    }
-#endif
     idx = cleanup_conditionals(cstack, 0, inactivate_try);
     if (idx >= 0)
     {
@@ -1369,22 +1316,6 @@ do_throw(cstack)
         cstack->cs_flags[idx] &= ~CSF_ACTIVE;
         cstack->cs_exception[idx] = current_exception;
     }
-#if 0
-    /* TODO: Add optimization below.  Not yet done because of interface
-     * problems to eval.c and ex_cmds2.c. (Servatius) */
-    else
-    {
-        /*
-         * There are no catch clauses to check or finally clauses to execute.
-         * End the current script or function.  The exception will be rethrown
-         * in the caller.
-         */
-        if (getline_equal(eap->getline, eap->cookie, get_func_line))
-            current_funccal->returned = TRUE;
-        elseif (eap->get_func_line == getsourceline)
-            ((struct source_cookie *)eap->cookie)->finished = TRUE;
-    }
-#endif
 
     did_throw = TRUE;
 }
@@ -1711,7 +1642,7 @@ ex_finally(eap)
                     discard_pending_return(cstack->cs_rettv[cstack->cs_idx]);
                 }
                 if (pending == CSTP_ERROR && !did_emsg)
-                    pending |= (THROW_ON_ERROR) ? CSTP_THROW : 0;
+                    pending |= CSTP_THROW;
                 else
                     pending |= did_throw ? CSTP_THROW : 0;
                 pending |= did_emsg  ? CSTP_ERROR     : 0;
