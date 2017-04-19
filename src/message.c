@@ -163,8 +163,7 @@ msg_attr_keep(s, attr, keep)
     msg_clr_eos();
     retval = msg_end();
 
-    if (keep && retval && vim_strsize(s) < (int)(Rows - cmdline_row - 1)
-                                                           * Columns + sc_col)
+    if (keep && retval && vim_strsize(s) < (int)(Rows - cmdline_row - 1) * Columns + sc_col)
         set_keep_msg(s, 0);
 
     vim_free(buf);
@@ -593,7 +592,7 @@ emsg2(s, a1)
 emsg_invreg(name)
     int     name;
 {
-    EMSG2((char *)"E354: Invalid register name: '%s'", transchar(name));
+    EMSG2("E354: Invalid register name: '%s'", transchar(name));
 }
 
 /*
@@ -790,8 +789,7 @@ wait_return(redraw)
     /*
      * When inside vgetc(), we can't wait for a typed character at all.
      * With the global command (and some others) we only need one return at
-     * the end. Adjust cmdline_row to avoid the next message overwriting the
-     * last one.
+     * the end. Adjust cmdline_row to avoid the next message overwriting the last one.
      */
     if (vgetc_busy > 0)
         return;
@@ -829,8 +827,7 @@ wait_return(redraw)
         dont_scroll = TRUE;             /* disallow scrolling here */
 #endif
         /* Avoid the sequence that the user types ":" at the hit-return prompt
-         * to start an Ex command, but the file-changed dialog gets in the
-         * way. */
+         * to start an Ex command, but the file-changed dialog gets in the way. */
         if (need_check_timestamps)
             check_timestamps(FALSE);
 
@@ -928,8 +925,7 @@ wait_return(redraw)
         if (c == K_LEFTMOUSE || c == K_MIDDLEMOUSE || c == K_RIGHTMOUSE
                                           || c == K_X1MOUSE || c == K_X2MOUSE)
             (void)jump_to_mouse(MOUSE_SETPOS, NULL, 0);
-        else
-            if (vim_strchr((char_u *)"\r\n ", c) == NULL && c != Ctrl_C)
+        else if (vim_strchr((char_u *)"\r\n ", c) == NULL && c != Ctrl_C)
         {
             /* Put the character back in the typeahead buffer.  Don't use the
              * stuff buffer, because lmaps wouldn't work. */
@@ -941,8 +937,7 @@ wait_return(redraw)
     redir_off = FALSE;
 
     /*
-     * If the user hits ':', '?' or '/' we get a command line from the next
-     * line.
+     * If the user hits ':', '?' or '/' we get a command line from the next line.
      */
     if (c == ':' || c == '?' || c == '/')
     {
@@ -954,8 +949,7 @@ wait_return(redraw)
 
     /*
      * If the window size changed set_shellsize() will redraw the screen.
-     * Otherwise the screen is only redrawn if 'redraw' is set and no ':'
-     * typed.
+     * Otherwise the screen is only redrawn if 'redraw' is set and no ':' typed.
      */
     tmpState = State;
     State = oldState;               /* restore State before set_shellsize */
@@ -1003,9 +997,9 @@ hit_return_msg()
     if (msg_didout)     /* start on a new line */
         msg_putchar('\n');
     if (got_int)
-        MSG_PUTS((char *)"Interrupt: ");
+        MSG_PUTS("Interrupt: ");
 
-    MSG_PUTS_ATTR((char *)"Press ENTER or type command to continue", hl_attr(HLF_R));
+    MSG_PUTS_ATTR("Press ENTER or type command to continue", hl_attr(HLF_R));
     if (!msg_use_printf())
         msg_clr_eos();
     p_more = save_p_more;
@@ -1582,9 +1576,7 @@ screen_puts_mbyte(s, l, attr)
 
     msg_didout = TRUE;          /* remember that line is not empty */
     cw = (*mb_ptr2cells)(s);
-    if (cw > 1 && (
-                cmdmsg_rl ? msg_col <= 1 :
-                msg_col == Columns - 1))
+    if (cw > 1 && (cmdmsg_rl ? msg_col <= 1 : msg_col == Columns - 1))
     {
         /* Doesn't fit, print a highlighted '>' to fill it up. */
         msg_screen_putchar('>', hl_attr(HLF_AT));
@@ -1971,7 +1963,7 @@ inc_msg_scrolled()
             tofree = alloc(len);
             if (tofree != NULL)
             {
-                vim_snprintf((char *)tofree, len, (char *)"%s line %ld", p, (long)sourcing_lnum);
+                vim_snprintf((char *)tofree, len, "%s line %ld", p, (long)sourcing_lnum);
                 p = tofree;
             }
         }
@@ -2687,8 +2679,7 @@ redir_write(str, maxlen)
                     write_reg_contents(redir_reg, (char_u *)" ", -1, TRUE);
                 else if (redir_vname)
                     var_redir_str((char_u *)" ", -1);
-                else
-                    if (redir_fd != NULL)
+                else if (redir_fd != NULL)
                     fputs(" ", redir_fd);
                 if (verbose_fd != NULL)
                     fputs(" ", verbose_fd);
@@ -2958,9 +2949,8 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
                             break;
                         i += (*mb_ptr2len)(hotkeys + i) - 1;
                     }
-                    else
-                        if (hotkeys[i] == c)
-                            break;
+                    else if (hotkeys[i] == c)
+                        break;
                     ++retval;
                 }
                 if (hotkeys[i])
@@ -3320,7 +3310,7 @@ tv_float(tvs, idxp)
         else if (tvs[idx].v_type == VAR_NUMBER)
             f = tvs[idx].vval.v_number;
         else
-            EMSG((char *)"E807: Expected Float argument for printf()");
+            EMSG("E807: Expected Float argument for printf()");
     }
     return f;
 }
@@ -3649,8 +3639,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
             case 'd': case 'u': case 'o': case 'x': case 'X': case 'p':
                 {
                     /* NOTE: the u, o, x, X and p conversion specifiers
-                     * imply the value is unsigned;  d implies a signed
-                     * value */
+                     * imply the value is unsigned;  d implies a signed value */
 
                     /* 0 if numeric argument is zero (or if pointer is
                      * NULL for 'p'), +1 if greater than zero (or nonzero
@@ -3829,13 +3818,11 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         size_t num_of_digits = str_arg_l - zero_padding_insertion_ind;
 
                         if (alternate_form && fmt_spec == 'o'
-                                /* unless zero is already the first
-                                 * character */
+                                /* unless zero is already the first character */
                                 && !(zero_padding_insertion_ind < str_arg_l
                                     && tmp[zero_padding_insertion_ind] == '0'))
                         {
-                            /* assure leading zero for alternate-form
-                             * octal numbers */
+                            /* assure leading zero for alternate-form octal numbers */
                             if (!precision_specified || precision < num_of_digits + 1)
                             {
                                 /* precision is increased to force the
@@ -3960,8 +3947,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             char *tp;
 
                             /* Be consistent: some printf("%e") use 1.0e+12
-                             * and some 1.0e+012.  Remove one zero in the last
-                             * case. */
+                             * and some 1.0e+012.  Remove one zero in the last case. */
                             tp = (char *)vim_strchr((char_u *)tmp, fmt_spec == 'e' ? 'e' : 'E');
                             if (tp != NULL && (tp[1] == '+' || tp[1] == '-')
                                           && tp[2] == '0'
@@ -4105,12 +4091,12 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
     {
         /* make sure the string is nul-terminated even at the expense of
          * overwriting the last character (shouldn't happen, but just in case)
-         * */
+         */
         str[str_l <= str_m - 1 ? str_l : str_m - 1] = '\0';
     }
 
     if (tvs != NULL && tvs[arg_idx - 1].v_type != VAR_UNKNOWN)
-        EMSG((char *)"E767: Too many arguments to printf()");
+        EMSG("E767: Too many arguments to printf()");
 
     /* Return the number of characters formatted (excluding trailing nul
      * character), that is, the number of characters that would have been

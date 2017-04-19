@@ -305,8 +305,7 @@ mch_inchar(buf, maxlen, wtime, tb_change_cnt)
          * For some terminals we only get one character at a time.
          * We want the get all available characters, so we could keep on
          * trying until none is available
-         * For some other terminals this is quite slow, that's why we don't do
-         * it.
+         * For some other terminals this is quite slow, that's why we don't do it.
          */
         len = read_from_input_buf(buf, (long)maxlen);
         if (len > 0)
@@ -1199,8 +1198,7 @@ mch_FullName(fname, buf, len, force)
             /* Only change directory when we are sure we can return to where
              * we are now.  After doing "su" chdir(".") might not work. */
             if (fd < 0 &&
-                        (mch_dirname(olddir, MAXPATHL) == FAIL
-                                           || mch_chdir((char *)olddir) != 0))
+                        (mch_dirname(olddir, MAXPATHL) == FAIL || mch_chdir((char *)olddir) != 0))
             {
                 p = NULL;       /* can't get current dir: don't chdir */
                 retval = FAIL;
@@ -2026,7 +2024,7 @@ mch_call_shell(cmd, options)
             }
             if (pipe_error)
             {
-                MSG_PUTS((char *)"\nCannot create pipes\n");
+                MSG_PUTS("\nCannot create pipes\n");
                 out_flush();
             }
         }
@@ -2036,7 +2034,7 @@ mch_call_shell(cmd, options)
     {
         if ((pid = fork()) == -1)       /* maybe we should use vfork() */
         {
-            MSG_PUTS((char *)"\nCannot fork\n");
+            MSG_PUTS("\nCannot fork\n");
             if ((options & (SHELL_READ|SHELL_WRITE)))
             {
                 {
@@ -2154,8 +2152,7 @@ mch_call_shell(cmd, options)
 
             /*
              * For the GUI we redirect stdin, stdout and stderr to our window.
-             * This is also used to pipe stdin/stdout to/from the external
-             * command.
+             * This is also used to pipe stdin/stdout to/from the external command.
              */
             if ((options & (SHELL_READ|SHELL_WRITE)))
             {
@@ -2208,7 +2205,7 @@ mch_call_shell(cmd, options)
                      * external program. */
                     if ((wpid = fork()) == -1)
                     {
-                        MSG_PUTS((char *)"\nCannot fork\n");
+                        MSG_PUTS("\nCannot fork\n");
                     }
                     else if (wpid == 0) /* child */
                     {
@@ -2450,8 +2447,7 @@ mch_call_shell(cmd, options)
                             buffer[len] = NUL;
 
                             /* Check if the last character in buffer[] is
-                             * incomplete, keep these bytes for the next
-                             * round. */
+                             * incomplete, keep these bytes for the next round. */
                             for (p = buffer; p < buffer + len; p += l)
                             {
                                 l = mb_cptr2len(p);
@@ -2596,20 +2592,20 @@ finished:
                 {
                     if (retval == EXEC_FAILED)
                     {
-                        MSG_PUTS((char *)"\nCannot execute shell ");
+                        MSG_PUTS("\nCannot execute shell ");
                         msg_outtrans(p_sh);
                         msg_putchar('\n');
                     }
                     else if (!(options & SHELL_SILENT))
                     {
-                        MSG_PUTS((char *)"\nshell returned ");
+                        MSG_PUTS("\nshell returned ");
                         msg_outnum((long)retval);
                         msg_putchar('\n');
                     }
                 }
             }
             else
-                MSG_PUTS((char *)"\nCommand terminated\n");
+                MSG_PUTS("\nCommand terminated\n");
         }
     }
     vim_free(argv);
@@ -2755,8 +2751,7 @@ mch_expandpath(gap, path, flags)
 }
 
 /*
- * mch_expand_wildcards() - this code does wild-card pattern matching using
- * the shell
+ * mch_expand_wildcards() - this code does wild-card pattern matching using the shell
  *
  * return OK for success, FAIL for error (you may lose some memory) and put
  * an error message in *file.
@@ -2841,8 +2836,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
     }
 
     /*
-     * Let the shell expand the patterns and write the result into the temp
-     * file.
+     * Let the shell expand the patterns and write the result into the temp file.
      * STYLE_BT:        NL separated
      *      If expanding `cmd` execute it directly.
      * STYLE_GLOB:      NUL separated
@@ -2964,8 +2958,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
                          && ((flags & EW_KEEPDOLLAR) == 0 || pat[i][j] != '$')
                               && vim_strchr(SHELL_SPECIAL, pat[i][j]) != NULL)
                     /* Put a backslash before a special character, but not
-                     * when inside ``. And not for $var when EW_KEEPDOLLAR is
-                     * set. */
+                     * when inside ``. And not for $var when EW_KEEPDOLLAR is set. */
                     *p++ = '\\';
 
                 /* Copy one character. */
@@ -3259,8 +3252,7 @@ save_patterns(num_pat, pat, num_file, file)
 }
 
 /*
- * Return TRUE if the string "p" contains a wildcard that mch_expandpath() can
- * expand.
+ * Return TRUE if the string "p" contains a wildcard that mch_expandpath() can expand.
  */
     int
 mch_has_exp_wildcard(p)

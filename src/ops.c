@@ -231,16 +231,16 @@ op_shift(oap, curs_top, amount)
         if (oap->line_count == 1)
         {
             if (amount == 1)
-                sprintf((char *)IObuff, (char *)"1 line %sed 1 time", s);
+                sprintf((char *)IObuff, "1 line %sed 1 time", s);
             else
-                sprintf((char *)IObuff, (char *)"1 line %sed %d times", s, amount);
+                sprintf((char *)IObuff, "1 line %sed %d times", s, amount);
         }
         else
         {
             if (amount == 1)
-                sprintf((char *)IObuff, (char *)"%ld lines %sed 1 time", oap->line_count, s);
+                sprintf((char *)IObuff, "%ld lines %sed 1 time", oap->line_count, s);
             else
-                sprintf((char *)IObuff, (char *)"%ld lines %sed %d times", oap->line_count, s, amount);
+                sprintf((char *)IObuff, "%ld lines %sed %d times", oap->line_count, s, amount);
         }
         msg(IObuff);
     }
@@ -679,7 +679,7 @@ op_reindent(oap, how)
     {
         i = oap->line_count - (i + 1);
         if (i == 1)
-            MSG((char *)"1 line indented ");
+            MSG("1 line indented ");
         else
             smsg((char_u *)"%ld lines indented ", i);
     }
@@ -1098,7 +1098,7 @@ do_execreg(regname, colon, addcr, silent)
     {
         if (execreg_lastc == NUL)
         {
-            EMSG((char *)"E748: No previously used register");
+            EMSG("E748: No previously used register");
             return FAIL;
         }
         regname = execreg_lastc;
@@ -1630,8 +1630,7 @@ op_delete(oap)
         /*
          * If there's too much stuff to fit in the yank register, then get a
          * confirmation before doing the delete. This is crude, but simple.
-         * And it avoids doing a delete of something we can't put back if we
-         * want.
+         * And it avoids doing a delete of something we can't put back if we want.
          */
         if (!did_yank)
         {
@@ -2191,7 +2190,7 @@ op_tilde(oap)
     if (oap->line_count > p_report)
     {
         if (oap->line_count == 1)
-            MSG((char *)"1 line changed");
+            MSG("1 line changed");
         else
             smsg((char_u *)"%ld lines changed", oap->line_count);
     }
@@ -2521,8 +2520,7 @@ op_change(oap)
     retval = edit(NUL, FALSE, (linenr_T)1);
 
     /*
-     * In Visual block mode, handle copying the new text to all lines of the
-     * block.
+     * In Visual block mode, handle copying the new text to all lines of the block.
      * Don't repeat the insert when Insert mode ended with CTRL-C.
      */
     if (oap->block_mode && oap->start.lnum != oap->end.lnum && !got_int)
@@ -2876,9 +2874,9 @@ op_yank(oap, deleting, mess)
             if (yanklines == 1)
             {
                 if (oap->block_mode)
-                    MSG((char *)"block of 1 line yanked");
+                    MSG("block of 1 line yanked");
                 else
-                    MSG((char *)"1 line yanked");
+                    MSG("1 line yanked");
             }
             else if (oap->block_mode)
                 smsg((char_u *)"block of %ld lines yanked", yanklines);
@@ -3145,7 +3143,7 @@ do_put(regname, dir, count, flags)
 
     if (y_size == 0 || y_array == NULL)
     {
-        EMSG2((char *)"E353: Nothing in register %s",
+        EMSG2("E353: Nothing in register %s",
                   regname == 0 ? (char_u *)"\"" : transchar(regname));
         goto end;
     }
@@ -3210,8 +3208,7 @@ do_put(regname, dir, count, flags)
             if (has_mbyte)
                 /* move to start of next multi-byte character */
                 curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
-            else
-            if (c != TAB || ve_flags != VE_ALL)
+            else if (c != TAB || ve_flags != VE_ALL)
                 ++curwin->w_cursor.col;
             ++col;
         }
@@ -3500,8 +3497,7 @@ do_put(regname, dir, count, flags)
                             lendiff = (int)STRLEN(ptr);
                         if (*ptr == '#' && preprocs_left())
                             indent = 0;     /* Leave # lines at start */
-                        else
-                             if (*ptr == NUL)
+                        else if (*ptr == NUL)
                             indent = 0;     /* Ignore empty lines */
                         else if (first_indent)
                         {
@@ -3673,7 +3669,7 @@ ex_display(eap)
     attr = hl_attr(HLF_8);
 
     /* Highlight title */
-    MSG_PUTS_TITLE((char *)"\n--- Registers ---");
+    MSG_PUTS_TITLE("\n--- Registers ---");
     for (i = -1; i < NUM_REGISTERS && !got_int; ++i)
     {
         name = get_register_name(i);
@@ -4513,8 +4509,8 @@ format_lines(line_count, avoid_fex)
                 {
                     (void)del_bytes((long)next_leader_len, FALSE, FALSE);
                     mark_col_adjust(curwin->w_cursor.lnum, (colnr_T)0, 0L, (long)-next_leader_len);
-                } else
-                    if (second_indent > 0)  /* the "leader" for FO_Q_SECOND */
+                }
+                else if (second_indent > 0)  /* the "leader" for FO_Q_SECOND */
                 {
                     char_u *p = ml_get_curline();
                     int indent = (int)(skipwhite(p) - p);
@@ -4623,14 +4619,10 @@ paragraph_start(lnum)
         return TRUE;            /* after empty line */
 
     do_comments = has_format_option(FO_Q_COMS);
-    if (fmt_check_par(lnum - 1
-                                , &leader_len, &leader_flags, do_comments
-                ))
+    if (fmt_check_par(lnum - 1, &leader_len, &leader_flags, do_comments))
         return TRUE;            /* after non-paragraph line */
 
-    if (fmt_check_par(lnum
-                           , &next_leader_len, &next_leader_flags, do_comments
-                ))
+    if (fmt_check_par(lnum, &next_leader_len, &next_leader_flags, do_comments))
         return TRUE;            /* "lnum" is not a paragraph line */
 
     if (has_format_option(FO_WHITE_PAR) && !ends_in_white(lnum - 1))
@@ -5458,8 +5450,7 @@ get_reg_contents(regname, flags)
             len += (long)STRLEN(retval + len);
 
             /*
-             * Insert a NL between lines and after the last line if y_type is
-             * MLINE.
+             * Insert a NL between lines and after the last line if y_type is MLINE.
              */
             if (y_current->y_type == MLINE || i < y_current->y_size - 1)
                 retval[len++] = '\n';
@@ -5547,7 +5538,7 @@ write_reg_contents_lst(name, strings, maxlen, must_append, yank_type, block_len)
             s = (char_u *)"";
         else if (strings[1] != NULL)
         {
-            EMSG((char *)"E883: search pattern and expression register may not contain two or more lines");
+            EMSG("E883: search pattern and expression register may not contain two or more lines");
             return;
         }
         else
@@ -5994,7 +5985,7 @@ cursor_pos_info()
             if (VIsual_mode == Ctrl_V && curwin->w_curswant < MAXCOL)
             {
                 getvcols(curwin, &min_pos, &max_pos, &min_pos.col, &max_pos.col);
-                vim_snprintf((char *)buf1, sizeof(buf1), (char *)"%ld Cols; ",
+                vim_snprintf((char *)buf1, sizeof(buf1), "%ld Cols; ",
                         (long)(oparg.end_vcol - oparg.start_vcol + 1));
             }
             else
@@ -6002,14 +5993,14 @@ cursor_pos_info()
 
             if (char_count_cursor == byte_count_cursor && char_count == byte_count)
                 vim_snprintf((char *)IObuff, IOSIZE,
-                        (char *)"Selected %s%ld of %ld Lines; %ld of %ld Words; %ld of %ld Bytes",
+                        "Selected %s%ld of %ld Lines; %ld of %ld Words; %ld of %ld Bytes",
                         buf1, line_count_selected,
                         (long)curbuf->b_ml.ml_line_count,
                         word_count_cursor, word_count,
                         byte_count_cursor, byte_count);
             else
                 vim_snprintf((char *)IObuff, IOSIZE,
-                        (char *)"Selected %s%ld of %ld Lines; %ld of %ld Words; %ld of %ld Chars; %ld of %ld Bytes",
+                        "Selected %s%ld of %ld Lines; %ld of %ld Words; %ld of %ld Chars; %ld of %ld Bytes",
                         buf1, line_count_selected,
                         (long)curbuf->b_ml.ml_line_count,
                         word_count_cursor, word_count,
@@ -6026,7 +6017,7 @@ cursor_pos_info()
             if (char_count_cursor == byte_count_cursor
                     && char_count == byte_count)
                 vim_snprintf((char *)IObuff, IOSIZE,
-                    (char *)"Col %s of %s; Line %ld of %ld; Word %ld of %ld; Byte %ld of %ld",
+                    "Col %s of %s; Line %ld of %ld; Word %ld of %ld; Byte %ld of %ld",
                     (char *)buf1, (char *)buf2,
                     (long)curwin->w_cursor.lnum,
                     (long)curbuf->b_ml.ml_line_count,
@@ -6034,7 +6025,7 @@ cursor_pos_info()
                     byte_count_cursor, byte_count);
             else
                 vim_snprintf((char *)IObuff, IOSIZE,
-                    (char *)"Col %s of %s; Line %ld of %ld; Word %ld of %ld; Char %ld of %ld; Byte %ld of %ld",
+                    "Col %s of %s; Line %ld of %ld; Word %ld of %ld; Char %ld of %ld; Byte %ld of %ld",
                     (char *)buf1, (char *)buf2,
                     (long)curwin->w_cursor.lnum,
                     (long)curbuf->b_ml.ml_line_count,
@@ -6045,7 +6036,7 @@ cursor_pos_info()
 
         byte_count = bomb_size();
         if (byte_count > 0)
-            sprintf((char *)IObuff + STRLEN(IObuff), (char *)"(+%ld for BOM)", byte_count);
+            sprintf((char *)IObuff + STRLEN(IObuff), "(+%ld for BOM)", byte_count);
         /* Don't shorten this message, the user asked for it. */
         p = p_shm;
         p_shm = (char_u *)"";

@@ -592,8 +592,7 @@ nfa_recognize_char_class(start, end, extra_newl)
                         config |= CLASS_o9;
                         break;
                     }
-                    else
-                    if (*(p + 2) == '7')
+                    else if (*(p + 2) == '7')
                     {
                         config |= CLASS_o7;
                         break;
@@ -604,8 +603,7 @@ nfa_recognize_char_class(start, end, extra_newl)
                         config |= CLASS_az;
                         break;
                     }
-                    else
-                    if (*(p + 2) == 'f')
+                    else if (*(p + 2) == 'f')
                     {
                         config |= CLASS_af;
                         break;
@@ -616,8 +614,7 @@ nfa_recognize_char_class(start, end, extra_newl)
                         config |= CLASS_AZ;
                         break;
                     }
-                    else
-                    if (*(p + 2) == 'F')
+                    else if (*(p + 2) == 'F')
                     {
                         config |= CLASS_AF;
                         break;
@@ -1301,7 +1298,7 @@ nfa_regatom()
                     re_has_z = REX_SET;
                     break;
                 default:
-                    EMSGN((char *)"E867: (NFA) Unknown operator '\\z%c'", no_Magic(c));
+                    EMSGN("E867: (NFA) Unknown operator '\\z%c'", no_Magic(c));
                     return FAIL;
             }
             break;
@@ -1336,8 +1333,7 @@ nfa_regatom()
                         }
 
                         if (nr < 0)
-                            EMSG2_RET_FAIL(
-                               (char *)"E678: Invalid character after %s%%[dxouU]",
+                            EMSG2_RET_FAIL("E678: Invalid character after %s%%[dxouU]",
                                     reg_magic == MAGIC_ALL);
                         /* A NUL is stored in the text as NL */
                         /* TODO: what if a composing character follows? */
@@ -1391,8 +1387,7 @@ nfa_regatom()
                          * matched an unlimited number of times. NFA_NOPEN is
                          * added only once at a position, while NFA_SPLIT is
                          * added multiple times.  This is more efficient than
-                         * not allowing NFA_SPLIT multiple times, it is used
-                         * a lot. */
+                         * not allowing NFA_SPLIT multiple times, it is used a lot. */
                         EMIT(NFA_NOPEN);
                         break;
                     }
@@ -1435,7 +1430,7 @@ nfa_regatom()
                             break;
                         }
                     }
-                    EMSGN((char *)"E867: (NFA) Unknown operator '\\%%%c'", no_Magic(c));
+                    EMSGN("E867: (NFA) Unknown operator '\\%%%c'", no_Magic(c));
                     return FAIL;
             }
             break;
@@ -1580,7 +1575,7 @@ collection:
                             if (result == FAIL)
                             {
                                 /* should never happen */
-                                EMSG_RET_FAIL((char *)"E868: Error building NFA with equivalence class!");
+                                EMSG_RET_FAIL("E868: Error building NFA with equivalence class!");
                             }
                             continue;
                         }
@@ -1620,24 +1615,23 @@ collection:
 
                         if (*regparse == 'n')
                             startc = reg_string ? NL : NFA_NEWL;
-                        else
-                            if  (*regparse == 'd'
+                        else if  (*regparse == 'd'
                                     || *regparse == 'o'
                                     || *regparse == 'x'
                                     || *regparse == 'u'
                                     || *regparse == 'U'
                                 )
-                            {
-                                /* TODO(RE) This needs more testing */
-                                startc = coll_get_char();
-                                got_coll_char = TRUE;
-                                mb_ptr_back(old_regparse, regparse);
-                            }
-                            else
-                            {
-                                /* \r,\t,\e,\b */
-                                startc = backslash_trans(*regparse);
-                            }
+                        {
+                            /* TODO(RE) This needs more testing */
+                            startc = coll_get_char();
+                            got_coll_char = TRUE;
+                            mb_ptr_back(old_regparse, regparse);
+                        }
+                        else
+                        {
+                            /* \r,\t,\e,\b */
+                            startc = backslash_trans(*regparse);
+                        }
                     }
 
                     /* Normal printable char */
@@ -1665,12 +1659,11 @@ collection:
                             EMIT(NFA_RANGE);
                             EMIT(NFA_CONCAT);
                         }
-                        else
-                             if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
+                        else if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
                         {
                             /* Emit the characters in the range.
                              * "startc" was already emitted, so skip it.
-                             * */
+                             */
                             for (c = startc + 1; c <= endc; c++)
                             {
                                 EMIT(c);
@@ -1692,18 +1685,15 @@ collection:
                     }
                     else
                     {
-                        /* This char (startc) is not part of a range. Just
-                         * emit it.
+                        /* This char (startc) is not part of a range. Just emit it.
                          * Normally, simply emit startc. But if we get char
-                         * code=0 from a collating char, then replace it with
-                         * 0x0a.
+                         * code=0 from a collating char, then replace it with 0x0a.
                          * This is needed to completely mimic the behaviour of
                          * the backtracking engine. */
                         if (startc == NFA_NEWL)
                         {
                             /* Line break can't be matched as part of the
-                             * collection, add an OR below. But not for negated
-                             * range. */
+                             * collection, add an OR below. But not for negated range. */
                             if (!negated)
                                 extra = NFA_ADD_NL;
                         }
@@ -1846,8 +1836,7 @@ nfa_regpiece()
              * Trick: Normally, (a*)\+ would match the whole input "aaa".  The
              * first and only submatch would be "aaa". But the backtracking
              * engine interprets the plus as "try matching one more time", and
-             * a* matches a second time at the end of the input, the empty
-             * string.
+             * a* matches a second time at the end of the input, the empty string.
              * The submatch will be the empty string.
              *
              * In order to be consistent with the old engine, we replace
@@ -1892,7 +1881,7 @@ nfa_regpiece()
             }
             if (i == 0)
             {
-                EMSGN((char *)"E869: (NFA) Unknown operator '\\@%c'", op);
+                EMSGN("E869: (NFA) Unknown operator '\\@%c'", op);
                 return FAIL;
             }
             EMIT(i);
@@ -1921,7 +1910,7 @@ nfa_regpiece()
                 greedy = FALSE;
             }
             if (!read_limits(&minval, &maxval))
-                EMSG_RET_FAIL((char *)"E870: (NFA regexp) Error reading repetition limits");
+                EMSG_RET_FAIL("E870: (NFA regexp) Error reading repetition limits");
 
             /*  <atom>{0,inf}, <atom>{0,} and <atom>{}  are equivalent to
              *  <atom>*  */
@@ -1996,7 +1985,7 @@ nfa_regpiece()
 
     if (re_multi_type(peekchr()) != NOT_MULTI)
         /* Can't have a multi follow a multi. */
-        EMSG_RET_FAIL((char *)"E871: (NFA regexp) Can't have a multi follow a multi !");
+        EMSG_RET_FAIL("E871: (NFA regexp) Can't have a multi follow a multi !");
 
     return OK;
 }
@@ -2126,8 +2115,7 @@ nfa_regbranch()
 /*
  *  Parse a pattern, one or more branches, separated by "\|".  It matches
  *  anything that matches one of the branches.  Example: "foo\|beep" matches
- *  "foo" and matches "beep".  If more than one branch matches, the first one
- *  is used.
+ *  "foo" and matches "beep".  If more than one branch matches, the first one is used.
  *
  *  pattern ::=     branch
  *      or  branch \| branch
@@ -2143,14 +2131,14 @@ nfa_reg(paren)
     if (paren == REG_PAREN)
     {
         if (regnpar >= NSUBEXP) /* Too many `(' */
-            EMSG_RET_FAIL((char *)"E872: (NFA regexp) Too many '('");
+            EMSG_RET_FAIL("E872: (NFA regexp) Too many '('");
         parno = regnpar++;
     }
     else if (paren == REG_ZPAREN)
     {
         /* Make a ZOPEN node. */
         if (regnzpar >= NSUBEXP)
-            EMSG_RET_FAIL((char *)"E879: (NFA regexp) Too many \\z(");
+            EMSG_RET_FAIL("E879: (NFA regexp) Too many \\z(");
         parno = regnzpar++;
     }
 
@@ -2178,7 +2166,7 @@ nfa_reg(paren)
         if (peekchr() == Magic(')'))
             EMSG2_RET_FAIL((char *)e_unmatchedpar, reg_magic == MAGIC_ALL);
         else
-            EMSG_RET_FAIL((char *)"E873: (NFA regexp) proper termination error");
+            EMSG_RET_FAIL("E873: (NFA regexp) proper termination error");
     }
     /*
      * Here we set the flag allowing back references to this set of
@@ -2374,7 +2362,7 @@ st_error(postfix, end, p)
         fclose(df);
     }
 #endif
-    EMSG((char *)"E874: (NFA) Could not pop the stack !");
+    EMSG("E874: (NFA) Could not pop the stack !");
 }
 
 /*
@@ -3121,10 +3109,10 @@ post2nfa(postfix, end, nfa_calc_size)
 
     e = POP();
     if (stackp != stack)
-        EMSG_RET_NULL((char *)"E875: (NFA regexp) (While converting from postfix to NFA), too many states left on stack");
+        EMSG_RET_NULL("E875: (NFA regexp) (While converting from postfix to NFA), too many states left on stack");
 
     if (istate >= nstate)
-        EMSG_RET_NULL((char *)"E876: (NFA regexp) Not enough space to store the whole NFA ");
+        EMSG_RET_NULL("E876: (NFA regexp) Not enough space to store the whole NFA ");
 
     matchstate = &state_ptr[istate++]; /* the match state */
     matchstate->c = NFA_MATCH;
@@ -3439,9 +3427,8 @@ sub_equal(sub1, sub2)
                     s2 = -1;
                 if (s1 != s2)
                     return FALSE;
-                if (s1 != -1 && sub1->list.multi[i].end_col
-                                               != sub2->list.multi[i].end_col)
-                return FALSE;
+                if (s1 != -1 && sub1->list.multi[i].end_col != sub2->list.multi[i].end_col)
+                    return FALSE;
             }
         }
     }
@@ -3505,8 +3492,7 @@ has_state_with_pos(l, state, subs, pim)
 }
 
 /*
- * Return TRUE if "one" and "two" are equal.  That includes when both are not
- * set.
+ * Return TRUE if "one" and "two" are equal.  That includes when both are not set.
  */
     static int
 pim_equal(one, two)
@@ -4425,7 +4411,7 @@ recursive_regmatch(state, pim, prog, submatch, m, listids)
             *listids = (int *)lalloc(sizeof(int) * nstate, TRUE);
             if (*listids == NULL)
             {
-                EMSG((char *)"E878: (NFA) Could not allocate memory for branch traversal!");
+                EMSG("E878: (NFA) Could not allocate memory for branch traversal!");
                 return 0;
             }
         }
@@ -4936,8 +4922,7 @@ nfa_regmatch(prog, start, submatch, m)
                             copy_sub_off(&m->synt, &t->subs.synt);
 
                         /*
-                         * First try matching the invisible match, then what
-                         * follows.
+                         * First try matching the invisible match, then what follows.
                          */
                         result = recursive_regmatch(t->state, NULL, prog, submatch, m, &listids);
                         if (result == NFA_TOO_EXPENSIVE)
@@ -5800,8 +5785,7 @@ nfa_regmatch(prog, start, submatch, m)
 
         /* Look for the start of a match in the current position by adding the
          * start state to the list of states.
-         * The first found match is the leftmost one, thus the order of states
-         * matters!
+         * The first found match is the leftmost one, thus the order of states matters!
          * Do not add the start state in recursive calls of nfa_regmatch(),
          * because recursive calls should only start in the first position.
          * Unless "nfa_endp" is not NULL, then we match the end position.
@@ -5842,8 +5826,7 @@ nfa_regmatch(prog, start, submatch, m)
                         /* Checking if the required start character matches is
                          * cheaper than adding a state that won't match. */
                         c = PTR2CHAR(reginput + clen);
-                        if (c != prog->regstart && (!ireg_ic || MB_TOLOWER(c)
-                                               != MB_TOLOWER(prog->regstart)))
+                        if (c != prog->regstart && (!ireg_ic || MB_TOLOWER(c) != MB_TOLOWER(prog->regstart)))
                         {
                             add = FALSE;
                         }

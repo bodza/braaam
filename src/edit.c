@@ -389,8 +389,7 @@ edit(cmdchar, startln, count)
 
         /*
          * If we inserted a character at the last position of the last line in
-         * the window, scroll the window one line up. This avoids an extra
-         * redraw.
+         * the window, scroll the window one line up. This avoids an extra redraw.
          * This is detected when the cursor column is smaller after inserting
          * something.
          * Don't do this when the topline changed already, it has
@@ -497,8 +496,7 @@ edit(cmdchar, startln, count)
             continue;
         }
 
-        if (cindent_on()
-           )
+        if (cindent_on())
         {
             /* A key name preceded by a bang means this key is not to be
              * inserted.  Skip ahead to the re-indenting below.
@@ -898,10 +896,8 @@ normalchar:
              * special character.  Let CTRL-] expand abbreviations without
              * inserting it. */
             if (vim_iswordc(c) || (!echeck_abbr(
-                        /* Add ABBR_OFF for characters above 0x100, this is
-                         * what check_abbr() expects. */
-                        (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) :
-                       c) && c != Ctrl_RSB))
+                /* Add ABBR_OFF for characters above 0x100, this is what check_abbr() expects. */
+                (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) : c) && c != Ctrl_RSB))
             {
                 insert_special(c, FALSE, FALSE);
                 revins_legal++;
@@ -921,8 +917,7 @@ normalchar:
         if (arrow_used)
             inserted_space = FALSE;
 
-        if (can_cindent && cindent_on()
-           )
+        if (can_cindent && cindent_on())
         {
 force_cindent:
             /*
@@ -1415,8 +1410,7 @@ change_indent(type, amount, round, replaced, call_changed_bytes)
 
 /*
  * Truncate the space at the end of a line.  This is to be used only in an
- * insert mode.  It handles fixing the replace stack for REPLACE and VREPLACE
- * modes.
+ * insert mode.  It handles fixing the replace stack for REPLACE and VREPLACE modes.
  */
     void
 truncate_spaces(line)
@@ -1605,8 +1599,7 @@ insert_special(c, allow_modmask, ctrlv)
 
     /*
      * Special function key, translate into "<Key>". Up to the last '>' is
-     * inserted with ins_str(), so as not to replace characters in replace
-     * mode.
+     * inserted with ins_str(), so as not to replace characters in replace mode.
      * Only use mod_mask for special keys, to avoid things like <S-Space>,
      * unless 'allow_modmask' is TRUE.
      */
@@ -2141,8 +2134,7 @@ internal_format(textwidth, second_indent, flags, format_only, c)
                 {
                     if (State & VREPLACE_FLAG)
                         change_indent(INDENT_SET, second_indent, FALSE, NUL, TRUE);
-                    else
-                        if (leader_len > 0 && second_indent - leader_len > 0)
+                    else if (leader_len > 0 && second_indent - leader_len > 0)
                     {
                         int i;
                         int padding = second_indent - leader_len;
@@ -2320,8 +2312,7 @@ auto_format(trailblank, prev_line)
 
 /*
  * When an extra space was added to continue a paragraph for auto-formatting,
- * delete it now.  The space must be under the cursor, just after the insert
- * position.
+ * delete it now.  The space must be under the cursor, just after the insert position.
  */
     static void
 check_auto_format(end_insert)
@@ -3270,9 +3261,8 @@ fix_indent()
         return;
     if (curbuf->b_p_lisp && curbuf->b_p_ai)
         fixthisline(get_lisp_indent);
-    else
-        if (cindent_on())
-            do_c_expr_indent();
+    else if (cindent_on())
+        do_c_expr_indent();
 }
 
 /*
@@ -3366,8 +3356,7 @@ in_cinkeys(keytyped, when, line_is_empty)
         }
 
         /*
-         * 'e' means to check for "else" at start of line and just before the
-         * cursor.
+         * 'e' means to check for "else" at start of line and just before the cursor.
          */
         else if (*look == 'e')
         {
@@ -3639,8 +3628,7 @@ ins_reg()
             AppendCharToRedobuff(literally);
             AppendCharToRedobuff(regname);
 
-            do_put(regname, BACKWARD, 1L,
-                 (literally == Ctrl_P ? PUT_FIXINDENT : 0) | PUT_CURSEND);
+            do_put(regname, BACKWARD, 1L, (literally == Ctrl_P ? PUT_FIXINDENT : 0) | PUT_CURSEND);
         }
         else if (insert_reg(regname, literally) == FAIL)
         {
@@ -3738,8 +3726,7 @@ ins_ctrl_hat()
 
 /*
  * Handle ESC in insert mode.
- * Returns TRUE when leaving insert mode, FALSE when going to repeat the
- * insert.
+ * Returns TRUE when leaving insert mode, FALSE when going to repeat the insert.
  */
     static int
 ins_esc(count, cmdchar, nomove)
@@ -3950,8 +3937,7 @@ ins_ctrl_o()
 {
     if (State & VREPLACE_FLAG)
         restart_edit = 'V';
-    else
-        if (State & REPLACE_FLAG)
+    else if (State & REPLACE_FLAG)
         restart_edit = 'R';
     else
         restart_edit = 'I';
@@ -4143,8 +4129,7 @@ ins_bs(c, mode, inserted_space_p)
         if (State & REPLACE_FLAG)
             cc = replace_pop();     /* returns -1 if NL was inserted */
         /*
-         * In replace mode, in the line we started replacing, we only move the
-         * cursor.
+         * In replace mode, in the line we started replacing, we only move the cursor.
          */
         if ((State & REPLACE_FLAG) && curwin->w_cursor.lnum <= lnum)
         {
@@ -4365,8 +4350,7 @@ ins_bs(c, mode, inserted_space_p)
         did_ai = FALSE;
     /*
      * It's a little strange to put backspaces into the redo
-     * buffer, but it makes auto-indent a lot easier to deal
-     * with.
+     * buffer, but it makes auto-indent a lot easier to deal with.
      */
     AppendCharToRedobuff(c);
 
@@ -4879,8 +4863,7 @@ ins_tab()
 
             /*
              * In VREPLACE mode, we haven't changed anything yet.  Do it now by
-             * backspacing over the changed spacing and then inserting the new
-             * spacing.
+             * backspacing over the changed spacing and then inserting the new spacing.
              */
             if (State & VREPLACE_FLAG)
             {
@@ -4954,8 +4937,7 @@ ins_eol(c)
 
 /*
  * Handle digraph in insert mode.
- * Returns character still to be inserted, or NUL when nothing remaining to be
- * done.
+ * Returns character still to be inserted, or NUL when nothing remaining to be done.
  */
     static int
 ins_digraph()

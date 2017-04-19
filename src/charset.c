@@ -139,8 +139,7 @@ buf_init_chartab(buf, global)
             }
             if (VIM_ISDIGIT(*p))
                 c = getdigits(&p);
-            else
-                 if (has_mbyte)
+            else if (has_mbyte)
                 c = mb_ptr2char_adv(&p);
             else
                 c = *p++;
@@ -150,8 +149,7 @@ buf_init_chartab(buf, global)
                 ++p;
                 if (VIM_ISDIGIT(*p))
                     c2 = getdigits(&p);
-                else
-                     if (has_mbyte)
+                else if (has_mbyte)
                     c2 = mb_ptr2char_adv(&p);
                 else
                     c2 = *p++;
@@ -179,8 +177,7 @@ buf_init_chartab(buf, global)
             while (c <= c2)
             {
                 /* Use the MB_ functions here, because isalpha() doesn't
-                 * work properly when 'encoding' is "latin1" and the locale is
-                 * "C".  */
+                 * work properly when 'encoding' is "latin1" and the locale is "C". */
                 if (!do_isalpha || MB_ISLOWER(c) || MB_ISUPPER(c))
                 {
                     if (i == 0)                 /* (re)set ID flag */
@@ -853,8 +850,7 @@ vim_isfilec_or_wc(c)
 
 /*
  * return TRUE if 'c' is a printable character
- * Assume characters above 0x100 are printable (multi-byte), except for
- * Unicode.
+ * Assume characters above 0x100 are printable (multi-byte), except for Unicode.
  */
     int
 vim_isprintc(c)
@@ -1104,8 +1100,7 @@ win_nolbr_chartabsize(wp, s, col, headp)
 }
 
 /*
- * Return TRUE if virtual column "vcol" is in the rightmost column of window
- * "wp".
+ * Return TRUE if virtual column "vcol" is in the rightmost column of window "wp".
  */
     int
 in_win_border(wp, vcol)

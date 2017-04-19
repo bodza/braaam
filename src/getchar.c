@@ -193,8 +193,7 @@ get_recorded()
     }
 
     /*
-     * When stopping recording from Insert mode with CTRL-O q, also remove the
-     * CTRL-O.
+     * When stopping recording from Insert mode with CTRL-O q, also remove the CTRL-O.
      */
     if (len > 0 && restart_edit != 0 && p[len - 1] == Ctrl_O)
         p[len - 1] = NUL;
@@ -237,7 +236,7 @@ add_buff(buf, s, slen)
     }
     else if (buf->bh_curr == NULL)      /* buffer has already been read */
     {
-        EMSG((char *)"E222: Add to read buffer");
+        EMSG("E222: Add to read buffer");
         return;
     }
     else if (buf->bh_index != 0)
@@ -403,8 +402,7 @@ stuff_empty()
 }
 
 /*
- * Return TRUE if readbuf1 is empty.  There may still be redo characters in
- * redbuf2.
+ * Return TRUE if readbuf1 is empty.  There may still be redo characters in redbuf2.
  */
     int
 readbuf1_empty()
@@ -476,8 +474,7 @@ ResetRedobuff()
 }
 
 /*
- * Discard the contents of the redo buffer and restore the previous redo
- * buffer.
+ * Discard the contents of the redo buffer and restore the previous redo buffer.
  */
     void
 CancelRedo()
@@ -954,8 +951,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
     /*
      * Need to allocate a new buffer.
      * In typebuf.tb_buf there must always be room for 3 * MAXMAPLEN + 4
-     * characters.  We add some extra room to avoid having to allocate too
-     * often.
+     * characters.  We add some extra room to avoid having to allocate too often.
      */
     else
     {
@@ -1047,8 +1043,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
 /*
  * Put character "c" back into the typeahead buffer.
  * Can be used for a character obtained by vgetc() that needs to be put back.
- * Uses cmd_silent, KeyTyped and KeyNoremap to restore the flags belonging to
- * the char.
+ * Uses cmd_silent, KeyTyped and KeyNoremap to restore the flags belonging to the char.
  */
     void
 ins_char_typebuf(c)
@@ -1481,8 +1476,7 @@ updatescript(c)
 /*
  * Get the next input character.
  * Can return a special key or a multi-byte character.
- * Can return NUL when called recursively, use safe_vgetc() if that's not
- * wanted.
+ * Can return NUL when called recursively, use safe_vgetc() if that's not wanted.
  * This translates escaped K_SPECIAL and CSI bytes to a K_SPECIAL or CSI byte.
  * Collects the bytes of a multibyte character into the whole character.
  * Returns the modifiers in the global "mod_mask".
@@ -1692,8 +1686,7 @@ vpeekc()
 
 #if defined(FEAT_TERMRESPONSE)
 /*
- * Like vpeekc(), but don't allow mapping.  Do allow checking for terminal
- * codes.
+ * Like vpeekc(), but don't allow mapping.  Do allow checking for terminal codes.
  */
     int
 vpeekc_nomap()
@@ -1907,8 +1900,7 @@ vgetorpeek(advance)
                      * - maphash_valid not set: no mappings present.
                      * - typebuf.tb_buf[typebuf.tb_off] should not be remapped
                      * - in insert or cmdline mode and 'paste' option set
-                     * - waiting for "hit return to continue" and CR or SPACE
-                     *   typed
+                     * - waiting for "hit return to continue" and CR or SPACE typed
                      * - waiting for a char with --more--
                      * - in Ctrl-X mode, and we get a valid char for that mode
                      */
@@ -2045,7 +2037,7 @@ vgetorpeek(advance)
                     {
                         for (mlen = 0; mlen < typebuf.tb_len && p_pt[mlen]; ++mlen)
                             if (p_pt[mlen] != typebuf.tb_buf[typebuf.tb_off + mlen])
-                                    break;
+                                break;
                         if (p_pt[mlen] == NUL)  /* match */
                         {
                             /* write chars to script file(s) */
@@ -2184,7 +2176,7 @@ vgetorpeek(advance)
                          */
                         if (++mapdepth >= p_mmd)
                         {
-                            EMSG((char *)"E223: recursive mapping");
+                            EMSG("E223: recursive mapping");
                             if (State & CMDLINE)
                                 redrawcmdline();
                             else
@@ -2239,8 +2231,7 @@ vgetorpeek(advance)
                          * If 'from' field is the same as the start of the
                          * 'to' field, don't remap the first character (but do
                          * allow abbreviations).
-                         * If m_noremap is set, don't remap the whole 'to'
-                         * part.
+                         * If m_noremap is set, don't remap the whole 'to' part.
                          */
                         if (s == NULL)
                             i = FAIL;
@@ -2701,9 +2692,9 @@ fix_input_buffer(buf, len, script)
     for (i = len; --i >= 0; ++p)
     {
         if (p[0] == NUL || (p[0] == K_SPECIAL && !script
-                    /* timeout may generate K_CURSORHOLD */
-                    && (i < 2 || p[1] != KS_EXTRA || p[2] != (int)KE_CURSORHOLD)
-                    ))
+                /* timeout may generate K_CURSORHOLD */
+                && (i < 2 || p[1] != KS_EXTRA || p[2] != (int)KE_CURSORHOLD)
+            ))
         {
             mch_memmove(p + 3, p + 1, (size_t)i);
             p[2] = K_THIRD(p[0]);
@@ -2980,14 +2971,13 @@ do_map(maptype, arg, mode, abbrev)
                     goto theend;
                 }
             }
-            else
-                if (vim_iswordc(keys[len - 1])) /* ends in keyword char */
-                    for (n = 0; n < len - 2; ++n)
-                        if (vim_iswordc(keys[n]) != vim_iswordc(keys[len - 2]))
-                        {
-                            retval = 1;
-                            goto theend;
-                        }
+            else if (vim_iswordc(keys[len - 1])) /* ends in keyword char */
+                for (n = 0; n < len - 2; ++n)
+                    if (vim_iswordc(keys[n]) != vim_iswordc(keys[len - 2]))
+                    {
+                        retval = 1;
+                        goto theend;
+                    }
             /* An abbreviation cannot contain white space. */
             for (n = 0; n < len; ++n)
                 if (vim_iswhite(keys[n]))
@@ -3030,9 +3020,9 @@ do_map(maptype, arg, mode, abbrev)
                         && STRNCMP(mp->m_keys, keys, (size_t)len) == 0)
                 {
                     if (abbrev)
-                        EMSG2((char *)"E224: global abbreviation already exists for %s", mp->m_keys);
+                        EMSG2("E224: global abbreviation already exists for %s", mp->m_keys);
                     else
-                        EMSG2((char *)"E225: global mapping already exists for %s", mp->m_keys);
+                        EMSG2("E225: global mapping already exists for %s", mp->m_keys);
                     retval = 5;
                     goto theend;
                 }
@@ -3159,9 +3149,9 @@ do_map(maptype, arg, mode, abbrev)
                         else if (unique)
                         {
                             if (abbrev)
-                                EMSG2((char *)"E226: abbreviation already exists for %s", p);
+                                EMSG2("E226: abbreviation already exists for %s", p);
                             else
-                                EMSG2((char *)"E227: mapping already exists for %s", p);
+                                EMSG2("E227: mapping already exists for %s", p);
                             retval = 5;
                             goto theend;
                         }
@@ -3236,9 +3226,9 @@ do_map(maptype, arg, mode, abbrev)
                 )
         {
             if (abbrev)
-                MSG((char *)"No abbreviation found");
+                MSG("No abbreviation found");
             else
-                MSG((char *)"No mapping found");
+                MSG("No mapping found");
         }
         goto theend;                        /* listing finished */
     }
@@ -4354,7 +4344,7 @@ makemap(fd, buf)
                         c1 = 'l';
                         break;
                     default:
-                        EMSG((char *)"E228: makemap: Illegal mode");
+                        EMSG("E228: makemap: Illegal mode");
                         return FAIL;
                 }
                 do      /* do this twice if c2 is set, 3 times with c3 */

@@ -645,8 +645,7 @@ getcount:
         oap->prev_opcount = ca.opcount;
         oap->prev_count0 = ca.count0;
     }
-    else
-        if (ca.opcount != 0)
+    else if (ca.opcount != 0)
     {
         /*
          * If we're in the middle of an operator (including after entering a
@@ -666,8 +665,7 @@ getcount:
     /*
      * Always remember the count.  It will be set to zero (on the next call,
      * above) when there is no pending operator.
-     * When called from main(), save the count for use by the "count" built-in
-     * variable.
+     * When called from main(), save the count for use by the "count" built-in variable.
      */
     ca.opcount = ca.count0;
     ca.count1 = (ca.count0 == 0 ? 1 : ca.count0);
@@ -944,8 +942,7 @@ getcount:
     /*
      * Flush the showcmd characters onto the screen so we can see them while
      * the command is being executed.  Only do this when the shown command was
-     * actually displayed, otherwise this will slow down a lot when executing
-     * mappings.
+     * actually displayed, otherwise this will slow down a lot when executing mappings.
      */
     if (need_flushbuf)
         out_flush();
@@ -1540,8 +1537,7 @@ do_pending_operator(cap, old_col, gui_yank)
              * Switch Visual off now, so screen updating does
              * not show inverted text when the screen is redrawn.
              * With OP_YANK and sometimes with OP_COLON and OP_FILTER there is
-             * no screen redraw, so it is done here to remove the inverted
-             * part.
+             * no screen redraw, so it is done here to remove the inverted part.
              */
             if (!gui_yank)
             {
@@ -1763,8 +1759,7 @@ do_pending_operator(cap, old_col, gui_yank)
         case OP_FORMAT:
             if (*curbuf->b_p_fex != NUL)
                 op_formatexpr(oap);     /* use expression */
-            else
-                if (*p_fp != NUL)
+            else if (*p_fp != NUL)
                 op_colon(oap);          /* use external command */
             else
                 op_format(oap, FALSE);  /* use internal function */
@@ -1891,7 +1886,7 @@ op_colon(oap)
         stuffReadbuff((char_u *)"!");
     if (oap->op_type == OP_INDENT)
     {
-            stuffReadbuff(get_equalprg());
+        stuffReadbuff(get_equalprg());
         stuffReadbuff((char_u *)"\n");
     }
     else if (oap->op_type == OP_FORMAT)
@@ -1919,7 +1914,7 @@ op_function(oap)
     int         save_virtual_op = virtual_op;
 
     if (*p_opfunc == NUL)
-        EMSG((char *)"E774: 'operatorfunc' is empty");
+        EMSG("E774: 'operatorfunc' is empty");
     else
     {
         /* Set '[ and '] marks to text to be operated on. */
@@ -2321,8 +2316,7 @@ do_mouse(oap, c, dir, count, fixindent)
             if (is_click && VIsual_active)
             {
                 /*
-                 * Remember the start and end of visual before moving the
-                 * cursor.
+                 * Remember the start and end of visual before moving the cursor.
                  */
                 if (lt(curwin->w_cursor, VIsual))
                 {
@@ -2410,8 +2404,7 @@ do_mouse(oap, c, dir, count, fixindent)
                 end_visual.col = leftcol;
             else
                 end_visual.col = rightcol;
-            if (curwin->w_cursor.lnum <
-                                    (start_visual.lnum + end_visual.lnum) / 2)
+            if (curwin->w_cursor.lnum < (start_visual.lnum + end_visual.lnum) / 2)
                 end_visual.lnum = end_visual.lnum;
             else
                 end_visual.lnum = start_visual.lnum;
@@ -2439,8 +2432,7 @@ do_mouse(oap, c, dir, count, fixindent)
                 /* In the same line, compare column number */
                 if (end_visual.lnum == start_visual.lnum)
                 {
-                    if (curwin->w_cursor.col - start_visual.col >
-                                    end_visual.col - curwin->w_cursor.col)
+                    if (curwin->w_cursor.col - start_visual.col > end_visual.col - curwin->w_cursor.col)
                         VIsual = start_visual;
                     else
                         VIsual = end_visual;
@@ -2458,8 +2450,7 @@ do_mouse(oap, c, dir, count, fixindent)
                         VIsual = end_visual;
                     else                        /* in the middle line */
                     {
-                        if (curwin->w_cursor.col <
-                                        (start_visual.col + end_visual.col) / 2)
+                        if (curwin->w_cursor.col < (start_visual.col + end_visual.col) / 2)
                             VIsual = end_visual;
                         else
                             VIsual = start_visual;
@@ -2753,7 +2744,7 @@ check_visual_highlight()
     if (full_screen)
     {
         if (!did_check && hl_attr(HLF_V) == 0)
-            MSG((char *)"Warning: terminal cannot highlight");
+            MSG("Warning: terminal cannot highlight");
         did_check = TRUE;
     }
 }
@@ -2938,15 +2929,13 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
         }
     }
 
-    if (ptr[col] == NUL || (i == 0 && (
-                has_mbyte ? this_class != 2 :
-                !vim_iswordc(ptr[col]))))
+    if (ptr[col] == NUL || (i == 0 && (has_mbyte ? this_class != 2 : !vim_iswordc(ptr[col]))))
     {
         /*
          * didn't find an identifier or string
          */
         if (find_type & FIND_STRING)
-            EMSG((char *)"E348: No string under cursor");
+            EMSG("E348: No string under cursor");
         else
             EMSG((char *)e_noident);
         return 0;
@@ -3315,8 +3304,7 @@ display_showcmd()
     }
 
     /*
-     * clear the rest of an old message by outputting up to SHOWCMD_COLS
-     * spaces
+     * clear the rest of an old message by outputting up to SHOWCMD_COLS spaces
      */
     screen_puts((char_u *)"          " + len, (int)Rows - 1, sc_col + len, 0);
 
@@ -3463,8 +3451,7 @@ check_scrollbind(topline_diff, leftcol_diff)
 
 /*
  * Command character that's ignored.
- * Used for CTRL-Q and CTRL-S to avoid problems with terminals that use
- * xon/xoff.
+ * Used for CTRL-Q and CTRL-S to avoid problems with terminals that use xon/xoff.
  */
     static void
 nv_ignore(cap)
@@ -3997,8 +3984,7 @@ nv_zet(cap)
     }
 
 dozet:
-    if (
-            checkclearop(cap->oap))
+    if (checkclearop(cap->oap))
         return;
 
     /*
@@ -4418,10 +4404,8 @@ nv_ident(cap)
         case '*':
         case '#':
             /*
-             * Put cursor at start of word, makes search skip the word
-             * under the cursor.
-             * Call setpcmark() first, so "*``" puts the cursor back where
-             * it was.
+             * Put cursor at start of word, makes search skip the word under the cursor.
+             * Call setpcmark() first, so "*``" puts the cursor back where it was.
              */
             setpcmark();
             curwin->w_cursor.col = (colnr_T) (ptr - ml_get_curline());
@@ -5611,9 +5595,9 @@ nv_replace(cap)
                 ptr = ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE);
                 if (cap->nchar == Ctrl_E || cap->nchar == Ctrl_Y)
                 {
-                  int c = ins_copychar(curwin->w_cursor.lnum + (cap->nchar == Ctrl_Y ? -1 : 1));
-                  if (c != NUL)
-                    ptr[curwin->w_cursor.col] = c;
+                    int c = ins_copychar(curwin->w_cursor.lnum + (cap->nchar == Ctrl_Y ? -1 : 1));
+                    if (c != NUL)
+                        ptr[curwin->w_cursor.col] = c;
                 }
                 else
                     ptr[curwin->w_cursor.col] = cap->nchar;
@@ -5996,11 +5980,11 @@ nv_pcmark(cap)
         else if (cap->cmdchar == 'g')
         {
             if (curbuf->b_changelistlen == 0)
-                EMSG((char *)"E664: changelist is empty");
+                EMSG("E664: changelist is empty");
             else if (cap->count1 < 0)
-                EMSG((char *)"E662: At start of changelist");
+                EMSG("E662: At start of changelist");
             else
-                EMSG((char *)"E663: At end of changelist");
+                EMSG("E663: At end of changelist");
         }
         else
             clearopbeep(cap->oap);
@@ -6030,8 +6014,7 @@ nv_regname(cap)
 
 /*
  * Handle "v", "V" and "CTRL-V" commands.
- * Also for "gh", "gH" and "g^H" commands: Always start Select mode, cap->arg
- * is TRUE.
+ * Also for "gh", "gH" and "g^H" commands: Always start Select mode, cap->arg is TRUE.
  * Handle CTRL-Q just like CTRL-V.
  */
     static void
@@ -7008,12 +6991,10 @@ nv_wordcmd(cap)
                  * This is a little strange. To match what the real Vi does,
                  * we effectively map 'cw' to 'ce', and 'cW' to 'cE', provided
                  * that we are not on a space or a TAB.  This seems impolite
-                 * at first, but it's really more what we mean when we say
-                 * 'cw'.
+                 * at first, but it's really more what we mean when we say 'cw'.
                  * Another strangeness: When standing on the end of a word
                  * "ce" will change until the end of the next word, but "cw"
-                 * will change only one character! This is done by setting
-                 * flag.
+                 * will change only one character! This is done by setting flag.
                  */
                 cap->oap->inclusive = TRUE;
                 word_end = TRUE;
@@ -7120,8 +7101,7 @@ unadjust_for_sel()
             pp = &VIsual;
         if (pp->coladd > 0)
             --pp->coladd;
-        else
-        if (pp->col > 0)
+        else if (pp->col > 0)
         {
             --pp->col;
             mb_adjustpos(curbuf, pp);
@@ -7231,7 +7211,7 @@ nv_esc(cap)
                 && cmdwin_type == 0
                 && !VIsual_active
                 && no_reason)
-            MSG((char *)"Type  :quit<Enter>  to exit Vim");
+            MSG("Type  :quit<Enter>  to exit Vim");
 
         /* Don't reset "restart_edit" when 'insertmode' is set, it won't be
          * set again below when halfway a mapping. */
@@ -7324,8 +7304,7 @@ nv_edit(cap)
                             || *ml_get_cursor() == NUL
                             || *ml_get_cursor() == TAB))
                     curwin->w_cursor.coladd++;
-                else
-                if (*ml_get_cursor() != NUL)
+                else if (*ml_get_cursor() != NUL)
                     inc_cursor();
                 break;
         }
@@ -7358,8 +7337,7 @@ invoke_edit(cap, repl, cmd, startln)
     int         restart_edit_save = 0;
 
     /* Complicated: When the user types "a<C-O>a" we don't want to do Insert
-     * mode recursively.  But when doing "a<C-O>." or "a<C-O>rx" we do allow
-     * it. */
+     * mode recursively.  But when doing "a<C-O>." or "a<C-O>rx" we do allow it. */
     if (repl || !stuff_empty())
         restart_edit_save = restart_edit;
     else

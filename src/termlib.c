@@ -250,8 +250,7 @@ tgetnum(id)
  *      ^x matches control-x (^@...^_).
  *      \nnn matches nnn octal.
  *      \x, where x is anything else, matches x. I differ
- *  from the standard library here, in that I allow ^: to match
- *  :.
+ *  from the standard library here, in that I allow ^: to match :.
  */
 
     char *
@@ -405,16 +404,19 @@ tgoto(cm, col, line)
             case '>':                           /* %>xy: if >x, add y */
                 gx = *ptr++;
                 gy = *ptr++;
-                if (col>gx) col += gy;
-                if (line>gx) line += gy;
+                if (col>gx)
+                    col += gy;
+                if (line>gx)
+                    line += gy;
                 break;
             case '+':                           /* %+c: add c */
                 line += *ptr++;
             case '.':                           /* print x/y */
                 if (line == '\t' ||             /* these are */
-                   line == '\n' ||              /* chars that */
-                   line == '\004' ||            /* UNIX hates */
-                   line == '\0') {
+                    line == '\n' ||              /* chars that */
+                    line == '\004' ||            /* UNIX hates */
+                    line == '\0')
+                {
                     line++;                     /* so go to next pos */
                     if (reverse == (line == col))
                         addup=1;                /* and mark UP */
@@ -499,8 +501,7 @@ tgoto(cm, col, line)
  *  nnnTEXT or nnn*TEXT. nnn is the number of milliseconds to delay,
  *  and may be a decimal (nnn.mmm). If the asterisk is given, then
  *  the delay is multiplied by afcnt. The delay is produced by outputting
- *  a number of nulls (or other padding char) after printing the
- *  TEXT.
+ *  a number of nulls (or other padding char) after printing the TEXT.
  */
 
 long _bauds[16]={

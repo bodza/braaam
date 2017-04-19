@@ -522,7 +522,7 @@ win_split(size, flags)
     flags |= cmdmod.split;
     if ((flags & WSP_TOP) && (flags & WSP_BOT))
     {
-        EMSG((char *)"E442: Can't split topleft and botright at the same time");
+        EMSG("E442: Can't split topleft and botright at the same time");
         return FAIL;
     }
 
@@ -590,8 +590,7 @@ win_split_ins(size, flags, new_wp, dir)
         layout = FR_ROW;
 
         /*
-         * Check if we are able to split the current window and compute its
-         * width.
+         * Check if we are able to split the current window and compute its width.
          */
         /* Current window requires at least 1 space. */
         wmw1 = (p_wmw == 0 ? 1 : p_wmw);
@@ -670,8 +669,7 @@ win_split_ins(size, flags, new_wp, dir)
         layout = FR_COL;
 
         /*
-         * Check if we are able to split the current window and compute its
-         * height.
+         * Check if we are able to split the current window and compute its height.
          */
         /* Current window requires at least 1 space. */
         wmh1 = (p_wmh == 0 ? 1 : p_wmh);
@@ -820,8 +818,7 @@ win_split_ins(size, flags, new_wp, dir)
             before = FALSE;
         else if (flags & WSP_ABOVE)
             before = TRUE;
-        else
-        if (flags & WSP_VERT)
+        else if (flags & WSP_VERT)
             before = !p_spr;
         else
             before = !p_sb;
@@ -1164,15 +1161,12 @@ make_windows(count, vertical)
     for (todo = count - 1; todo > 0; --todo)
         if (vertical)
         {
-            if (win_split(curwin->w_width - (curwin->w_width - todo)
-                        / (todo + 1) - 1, WSP_VERT | WSP_ABOVE) == FAIL)
+            if (win_split(curwin->w_width - (curwin->w_width - todo) / (todo + 1) - 1, WSP_VERT | WSP_ABOVE) == FAIL)
                 break;
         }
         else
         {
-            if (win_split(curwin->w_height - (curwin->w_height - todo
-                            * STATUS_HEIGHT) / (todo + 1)
-                        - STATUS_HEIGHT, WSP_ABOVE) == FAIL)
+            if (win_split(curwin->w_height - (curwin->w_height - todo * STATUS_HEIGHT) / (todo + 1) - STATUS_HEIGHT, WSP_ABOVE) == FAIL)
                 break;
         }
 
@@ -1304,7 +1298,7 @@ win_rotate(upwards, count)
     for (frp = curwin->w_frame->fr_parent->fr_child; frp != NULL; frp = frp->fr_next)
         if (frp->fr_win == NULL)
         {
-            EMSG((char *)"E443: Cannot rotate when another window is split");
+            EMSG("E443: Cannot rotate when another window is split");
             return;
         }
 
@@ -1455,8 +1449,7 @@ win_move_after(win1, win2)
 
 /*
  * Make all windows the same height.
- * 'next_curwin' will soon be the current window, make sure it has enough
- * rows.
+ * 'next_curwin' will soon be the current window, make sure it has enough rows.
  */
     void
 win_equal(next_curwin, current, dir)
@@ -1937,7 +1930,7 @@ win_close(win, free_buf)
 
     if (last_window())
     {
-        EMSG((char *)"E444: Cannot close last window");
+        EMSG("E444: Cannot close last window");
         return FAIL;
     }
 
@@ -1945,12 +1938,12 @@ win_close(win, free_buf)
         return FAIL; /* window is already being closed */
     if (win == aucmd_win)
     {
-        EMSG((char *)"E813: Cannot close autocmd window");
+        EMSG("E813: Cannot close autocmd window");
         return FAIL;
     }
     if ((firstwin == aucmd_win || lastwin == aucmd_win) && one_window())
     {
-        EMSG((char *)"E814: Cannot close window, only autocmd window would remain");
+        EMSG("E814: Cannot close window, only autocmd window would remain");
         return FAIL;
     }
 
@@ -1958,7 +1951,7 @@ win_close(win, free_buf)
      * and then close the window and the tab page to avoid that curwin and
      * curtab are invalid while we are freeing memory. */
     if (close_last_window_tabpage(win, free_buf, prev_curtab))
-      return FAIL;
+        return FAIL;
 
     /* When closing the help window, try restoring a snapshot after closing
      * the window.  Otherwise clear the snapshot, it's now invalid. */
@@ -2039,8 +2032,7 @@ win_close(win, free_buf)
     wp = win_free_mem(win, &dir, NULL);
 
     /* Make sure curwin isn't invalid.  It can cause severe trouble when
-     * printing an error message.  For win_equal() curbuf needs to be valid
-     * too. */
+     * printing an error message.  For win_equal() curbuf needs to be valid too. */
     if (win == curwin)
     {
         curwin = wp;
@@ -2078,8 +2070,7 @@ win_close(win, free_buf)
  * Close window "win" in tab page "tp", which is not the current tab page.
  * This may be the last window in that tab page and result in closing the tab,
  * thus "tp" may become invalid!
- * Caller must check if buffer is hidden and whether the tabline needs to be
- * updated.
+ * Caller must check if buffer is hidden and whether the tabline needs to be updated.
  */
     void
 win_close_othertab(win, free_buf, tp)
@@ -2220,8 +2211,7 @@ winframe_remove(win, dirp, tp)
     if (frp_close->fr_parent->fr_layout == FR_COL)
     {
         /* When 'winfixheight' is set, try to find another frame in the column
-         * (as close to the closed frame as possible) to distribute the height
-         * to. */
+         * (as close to the closed frame as possible) to distribute the height to. */
         if (frp2->fr_win != NULL && frp2->fr_win->w_p_wfh)
         {
             frp = frp_close->fr_prev;
@@ -2257,8 +2247,7 @@ winframe_remove(win, dirp, tp)
     else
     {
         /* When 'winfixwidth' is set, try to find another frame in the column
-         * (as close to the closed frame as possible) to distribute the width
-         * to. */
+         * (as close to the closed frame as possible) to distribute the width to. */
         if (frp2->fr_win != NULL && frp2->fr_win->w_p_wfw)
         {
             frp = frp_close->fr_prev;
@@ -2345,12 +2334,10 @@ winframe_remove(win, dirp, tp)
 }
 
 /*
- * Find out which frame is going to get the freed up space when "win" is
- * closed.
+ * Find out which frame is going to get the freed up space when "win" is closed.
  * if 'splitbelow'/'splitleft' the space goes to the window above/left.
  * if 'nosplitbelow'/'nosplitleft' the space goes to the window below/right.
- * This makes opening a window and closing it immediately keep the same window
- * layout.
+ * This makes opening a window and closing it immediately keep the same window layout.
  */
     static frame_T *
 win_altframe(win, tp)
@@ -2799,8 +2786,7 @@ frame_fix_height(wp)
  * Compute the minimal height for frame "topfrp".
  * Uses the 'winminheight' option.
  * When "next_curwin" isn't NULL, use p_wh for this window.
- * When "next_curwin" is NOWIN, don't use at least one line for the current
- * window.
+ * When "next_curwin" is NOWIN, don't use at least one line for the current window.
  */
     static int
 frame_minheight(topfrp, next_curwin)
@@ -2849,8 +2835,7 @@ frame_minheight(topfrp, next_curwin)
 /*
  * Compute the minimal width for frame "topfrp".
  * When "next_curwin" isn't NULL, use p_wiw for this window.
- * When "next_curwin" is NOWIN, don't use at least one column for the current
- * window.
+ * When "next_curwin" is NOWIN, don't use at least one column for the current window.
  */
     static int
 frame_minwidth(topfrp, next_curwin)
@@ -2950,7 +2935,7 @@ close_others(message, forceit)
     }
 
     if (message && lastwin != firstwin)
-        EMSG((char *)"E445: Other window contains changes");
+        EMSG("E445: Other window contains changes");
 }
 
 /*
@@ -3296,8 +3281,7 @@ tabpage_index(ftp)
 
 /*
  * Prepare for leaving the current tab page.
- * When autocommands change "curtab" we don't leave the tab page and return
- * FAIL.
+ * When autocommands change "curtab" we don't leave the tab page and return FAIL.
  * Careful: When OK is returned need to get a new tab page very very soon!
  */
     static int
@@ -3824,9 +3808,6 @@ win_enter_ext(wp, undo_sync, curwin_invalid, trigger_enter_autocmds, trigger_lea
         win_setwidth((int)p_wiw);
 
     setmouse();                 /* in case jumped to/from help buffer */
-
-    /* Change directories when the 'acd' option is set. */
-    DO_AUTOCHDIR
 }
 
 /*
@@ -3851,8 +3832,7 @@ buf_jump_open_win(buf)
 }
 
 /*
- * Jump to the first open window in any tab page that contains buffer "buf",
- * if one exists.
+ * Jump to the first open window in any tab page that contains buffer "buf", if one exists.
  * Returns a pointer to the window found, otherwise NULL.
  */
     win_T *
@@ -3883,8 +3863,7 @@ buf_jump_open_tab(buf)
 }
 
 /*
- * Allocate a window structure and link it in the window list when "hidden" is
- * FALSE.
+ * Allocate a window structure and link it in the window list when "hidden" is FALSE.
  */
     static win_T *
 win_alloc(after, hidden)
@@ -3917,8 +3896,7 @@ win_alloc(after, hidden)
     init_var_dict(new_wp->w_vars, &new_wp->w_winvar, VAR_SCOPE);
 
     /* Don't execute autocommands while the window is not properly
-     * initialized yet.  gui_create_scrollbar() may trigger a FocusGained
-     * event. */
+     * initialized yet.  gui_create_scrollbar() may trigger a FocusGained event. */
     block_autocmds();
     /*
      * link the window in the window list
@@ -4231,8 +4209,7 @@ win_size_restore(gap)
 }
 
 /*
- * Update the position for all windows, using the width and height of the
- * frames.
+ * Update the position for all windows, using the width and height of the frames.
  * Returns the row just after the last window.
  */
     int
@@ -4466,8 +4443,7 @@ frame_setheight(curfrp, height)
 
         /*
          * First take lines from the frames after the current frame.  If
-         * that is not enough, takes lines from frames above the current
-         * frame.
+         * that is not enough, takes lines from frames above the current frame.
          */
         for (run = 0; run < 2; ++run)
         {
@@ -4640,8 +4616,7 @@ frame_setwidth(curfrp, width)
 
         /*
          * First take lines from the frames right of the current frame.  If
-         * that is not enough, takes lines from frames left of the current
-         * frame.
+         * that is not enough, takes lines from frames left of the current frame.
          */
         for (run = 0; run < 2; ++run)
         {
@@ -5446,8 +5421,7 @@ check_lnums(do_curwin)
 }
 
 /*
- * A snapshot of the window sizes, to restore them after closing the help
- * window.
+ * A snapshot of the window sizes, to restore them after closing the help window.
  * Only these fields are used:
  * fr_layout
  * fr_width
@@ -5838,7 +5812,7 @@ match_add(wp, grp, pat, prio, id, pos_list)
             }
             else
             {
-                EMSG((char *)"List or number required");
+                EMSG("List or number required");
                 goto fail;
             }
             if (toplnum == 0 || lnum < toplnum)

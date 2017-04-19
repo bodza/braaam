@@ -1689,13 +1689,9 @@ void u_eval_tree(u_header_T *first_uhp, list_T *list);
 
 /* #include "version.pro" */
 
-int highest_patch(void);
 int has_patch(int n);
-void ex_version(exarg_T *eap);
-void list_version(void);
 void maybe_intro_message(void);
-void intro_message(int colon);
-void ex_intro(exarg_T *eap);
+void intro_message(void);
 
 /* #include "window.pro" */
 

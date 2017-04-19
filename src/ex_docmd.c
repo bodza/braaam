@@ -290,7 +290,7 @@ do_exmode(improved)
     ++RedrawingDisabled;            /* don't redisplay the window */
     ++no_wait_return;               /* don't wait for return */
 
-    MSG((char *)"Entering Ex mode.  Type \"visual\" to go to Normal mode.");
+    MSG("Entering Ex mode.  Type \"visual\" to go to Normal mode.");
     while (exmode_active)
     {
         /* Check for a ":normal" command and no more characters left. */
@@ -339,7 +339,7 @@ do_exmode(improved)
             if (curbuf->b_ml.ml_flags & ML_EMPTY)
                 EMSG((char *)e_emptybuf);
             else
-                EMSG((char *)"E501: At end-of-file");
+                EMSG("E501: At end-of-file");
         }
     }
 
@@ -427,7 +427,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
      * here.  The value of 200 allows nested function calls, ":source", etc. */
     if (call_depth == 200)
     {
-        EMSG((char *)"E169: Command too recursive");
+        EMSG("E169: Command too recursive");
         /* When converting to an exception, we do not include the command name
          * since this is not an error of the specific command. */
         do_errthrow((struct condstack *)NULL, (char_u *)NULL);
@@ -748,8 +748,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
 
             /*
              * An ":endwhile", ":endfor" and ":continue" is handled here.
-             * If we were executing commands, jump back to the ":while" or
-             * ":for".
+             * If we were executing commands, jump back to the ":while" or ":for".
              * If we were not executing commands, decrement cs_looplevel.
              */
             if (cstack.cs_lflags & (CSL_HAD_CONT | CSL_HAD_ENDLOOP))
@@ -947,7 +946,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
             {
                 case ET_USER:
                     vim_snprintf((char *)IObuff, IOSIZE,
-                            (char *)"E605: Exception not caught: %s",
+                            "E605: Exception not caught: %s",
                             current_exception->value);
                     p = vim_strsave(IObuff);
                     break;
@@ -1827,7 +1826,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
     {
         if (!ea.skip)
         {
-            STRCPY(IObuff, (char *)"E492: Not an editor command");
+            STRCPY(IObuff, "E492: Not an editor command");
             if (!sourcing)
                 append_command(*cmdlinep);
             errormsg = IObuff;
@@ -2197,10 +2196,6 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
             case CMD_call:
             case CMD_confirm:
             case CMD_delfunction:
-            case CMD_djump:
-            case CMD_dlist:
-            case CMD_dsearch:
-            case CMD_dsplit:
             case CMD_echo:
             case CMD_echoerr:
             case CMD_echomsg:
@@ -2208,10 +2203,6 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
             case CMD_execute:
             case CMD_help:
             case CMD_hide:
-            case CMD_ijump:
-            case CMD_ilist:
-            case CMD_isearch:
-            case CMD_isplit:
             case CMD_keepalt:
             case CMD_keepjumps:
             case CMD_keepmarks:
@@ -2219,26 +2210,17 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
             case CMD_leftabove:
             case CMD_let:
             case CMD_lockmarks:
-            case CMD_lua:
             case CMD_match:
-            case CMD_mzscheme:
             case CMD_noautocmd:
             case CMD_noswapfile:
-            case CMD_perl:
-            case CMD_psearch:
-            case CMD_python:
-            case CMD_py3:
-            case CMD_python3:
             case CMD_return:
             case CMD_rightbelow:
-            case CMD_ruby:
             case CMD_silent:
             case CMD_smagic:
             case CMD_snomagic:
             case CMD_substitute:
             case CMD_syntax:
             case CMD_tab:
-            case CMD_tcl:
             case CMD_throw:
             case CMD_tilde:
             case CMD_topleft:
@@ -2431,9 +2413,7 @@ append_command(cmd)
     d = IObuff + STRLEN(IObuff);
     while (*s != NUL && d - IObuff < IOSIZE - 7)
     {
-        if (
-                enc_utf8 ? (s[0] == 0xc2 && s[1] == 0xa0) :
-                *s == 0xa0)
+        if (enc_utf8 ? (s[0] == 0xc2 && s[1] == 0xa0) : *s == 0xa0)
         {
             s += enc_utf8 ? 2 : 1;
             STRCPY(d, "<a0>");
@@ -3138,8 +3118,6 @@ set_one_cmd_context(xp, buff)
         case CMD_bufdo:
         case CMD_confirm:
         case CMD_debug:
-        case CMD_folddoclosed:
-        case CMD_folddoopen:
         case CMD_hide:
         case CMD_keepalt:
         case CMD_keepjumps:
@@ -3277,33 +3255,6 @@ set_one_cmd_context(xp, buff)
             if (arg[0] != NUL)
                 return arg;
             break;
-        case CMD_isearch:
-        case CMD_dsearch:
-        case CMD_ilist:
-        case CMD_dlist:
-        case CMD_ijump:
-        case CMD_psearch:
-        case CMD_djump:
-        case CMD_isplit:
-        case CMD_dsplit:
-            arg = skipwhite(skipdigits(arg));       /* skip count */
-            if (*arg == '/')    /* Match regexp, not just whole words */
-            {
-                for (++arg; *arg && *arg != '/'; arg++)
-                    if (*arg == '\\' && arg[1] != NUL)
-                        arg++;
-                if (*arg)
-                {
-                    arg = skipwhite(arg + 1);
-
-                    /* Check for trailing illegal characters */
-                    if (*arg && vim_strchr((char_u *)"|\"\n", *arg) == NULL)
-                        xp->xp_context = EXPAND_NOTHING;
-                    else
-                        return arg;
-                }
-            }
-            break;
         case CMD_autocmd:
             return set_context_in_autocmd(xp, arg, FALSE);
 
@@ -3321,14 +3272,11 @@ set_one_cmd_context(xp, buff)
             break;
         case CMD_tag:
         case CMD_stag:
-        case CMD_ptag:
         case CMD_ltag:
         case CMD_tselect:
         case CMD_stselect:
-        case CMD_ptselect:
         case CMD_tjump:
         case CMD_stjump:
-        case CMD_ptjump:
             if (*p_wop != NUL)
                 xp->xp_context = EXPAND_TAGS_LISTFILES;
             else
@@ -3715,8 +3663,7 @@ get_address(ptr, addr_type, skip, to_other_file)
                 if (!skip)
                 {
                     /*
-                     * When search follows another address, start from
-                     * there.
+                     * When search follows another address, start from there.
                      */
                     if (lnum != MAXLNUM)
                         pos.lnum = lnum;
@@ -4003,12 +3950,6 @@ expand_filename(eap, cmdlinep, errormsgp)
         if (!eap->usefilter
                 && !escaped
                 && eap->cmdidx != CMD_bang
-                && eap->cmdidx != CMD_make
-                && eap->cmdidx != CMD_lmake
-                && eap->cmdidx != CMD_grep
-                && eap->cmdidx != CMD_lgrep
-                && eap->cmdidx != CMD_grepadd
-                && eap->cmdidx != CMD_lgrepadd
                 )
         {
             char_u      *l;
@@ -4395,8 +4336,7 @@ getargopt(eap)
     }
     else
     {
-        /* Check ++bad= argument.  Must be a single-byte character, "keep" or
-         * "drop". */
+        /* Check ++bad= argument.  Must be a single-byte character, "keep" or "drop". */
         p = eap->cmd + bad_char_idx;
         if (STRICMP(p, "keep") == 0)
             eap->bad_char = BAD_KEEP;
@@ -4674,20 +4614,19 @@ check_more(message, forceit)
                 char_u  buff[DIALOG_MSG_SIZE];
 
                 if (n == 1)
-                    vim_strncpy(buff,
-                            (char_u *)"1 more file to edit.  Quit anyway?",
+                    vim_strncpy(buff, (char_u *)"1 more file to edit.  Quit anyway?",
                                                          DIALOG_MSG_SIZE - 1);
                 else
                     vim_snprintf((char *)buff, DIALOG_MSG_SIZE,
-                              (char *)"%d more files to edit.  Quit anyway?", n);
+                              "%d more files to edit.  Quit anyway?", n);
                 if (vim_dialog_yesno(VIM_QUESTION, NULL, buff, 1) == VIM_YES)
                     return OK;
                 return FAIL;
             }
             if (n == 1)
-                EMSG((char *)"E173: 1 more file to edit");
+                EMSG("E173: 1 more file to edit");
             else
-                EMSGN((char *)"E173: %ld more files to edit", n);
+                EMSGN("E173: %ld more files to edit", n);
             quitmore = 2;           /* next try to quit is allowed */
         }
         return FAIL;
@@ -4775,7 +4714,7 @@ uc_add_command(name, name_len, rep, argt, def, flags, compl, compl_arg, addr_typ
         {
             if (!force)
             {
-                EMSG((char *)"E174: Command already exists: add ! to replace it");
+                EMSG("E174: Command already exists: add ! to replace it");
                 goto fail;
             }
 
@@ -4905,7 +4844,7 @@ uc_list(name, name_len)
 
             /* Put out the title first time */
             if (!found)
-                MSG_PUTS_TITLE((char *)"\n    Name        Args       Address   Complete  Definition");
+                MSG_PUTS_TITLE("\n    Name        Args       Address   Complete  Definition");
             found = TRUE;
             msg_putchar('\n');
             if (got_int)
@@ -5010,7 +4949,7 @@ uc_list(name, name_len)
     }
 
     if (!found)
-        MSG((char *)"No user-defined commands found");
+        MSG("No user-defined commands found");
 }
 
     static char_u *
@@ -5043,7 +4982,7 @@ uc_scan_attr(attr, len, argt, def, flags, compl, compl_arg, addr_type_arg)
 
     if (len == 0)
     {
-        EMSG((char *)"E175: No attribute specified");
+        EMSG("E175: No attribute specified");
         return FAIL;
     }
 
@@ -5095,7 +5034,7 @@ uc_scan_attr(attr, len, argt, def, flags, compl, compl_arg, addr_type_arg)
             else
             {
 wrong_nargs:
-                EMSG((char *)"E176: Invalid number of arguments");
+                EMSG("E176: Invalid number of arguments");
                 return FAIL;
             }
         }
@@ -5110,7 +5049,7 @@ wrong_nargs:
                 if (*def >= 0)
                 {
 two_count:
-                    EMSG((char *)"E177: Count cannot be specified twice");
+                    EMSG("E177: Count cannot be specified twice");
                     return FAIL;
                 }
 
@@ -5120,7 +5059,7 @@ two_count:
                 if (p != val + vallen || vallen == 0)
                 {
 invalid_count:
-                    EMSG((char *)"E178: Invalid default value for count");
+                    EMSG("E178: Invalid default value for count");
                     return FAIL;
                 }
             }
@@ -5148,7 +5087,7 @@ invalid_count:
         {
             if (val == NULL)
             {
-                EMSG((char *)"E179: argument required for -complete");
+                EMSG("E179: argument required for -complete");
                 return FAIL;
             }
 
@@ -5160,7 +5099,7 @@ invalid_count:
             *argt |= RANGE;
             if (val == NULL)
             {
-                EMSG((char *)"E179: argument required for -addr");
+                EMSG("E179: argument required for -addr");
                 return FAIL;
             }
             if (parse_addr_type_arg(val, (int)vallen, argt, addr_type_arg) == FAIL)
@@ -5172,7 +5111,7 @@ invalid_count:
         {
             char_u ch = attr[len];
             attr[len] = '\0';
-            EMSG2((char *)"E181: Invalid attribute: %s", attr);
+            EMSG2("E181: Invalid attribute: %s", attr);
             attr[len] = ch;
             return FAIL;
         }
@@ -5219,7 +5158,7 @@ ex_command(eap)
             ++p;
     if (!ends_excmd(*p) && !vim_iswhite(*p))
     {
-        EMSG((char *)"E182: Invalid command name");
+        EMSG("E182: Invalid command name");
         return;
     }
     end = p;
@@ -5235,13 +5174,13 @@ ex_command(eap)
     }
     else if (!ASCII_ISUPPER(*name))
     {
-        EMSG((char *)"E183: User defined commands must start with an uppercase letter");
+        EMSG("E183: User defined commands must start with an uppercase letter");
         return;
     }
     else if ((name_len == 1 && *name == 'X')
           || (name_len <= 4 && STRNCMP(name, "Next", name_len > 4 ? 4 : name_len) == 0))
     {
-        EMSG((char *)"E841: Reserved name, cannot be used for user defined command");
+        EMSG("E841: Reserved name, cannot be used for user defined command");
         return;
     }
     else
@@ -5307,7 +5246,7 @@ ex_delcommand(eap)
 
     if (cmp != 0)
     {
-        EMSG2((char *)"E184: No such user-defined command: %s", eap->arg);
+        EMSG2("E184: No such user-defined command: %s", eap->arg);
         return;
     }
 
@@ -5507,8 +5446,7 @@ uc_check_code(code, len, buf, cmd, eap, split_buf, split_len)
                     /* DBCS can contain \ in a trail byte, skip the
                      * double-byte character. */
                     ++p;
-                else
-                     if (*p == '\\' || *p == '"')
+                else if (*p == '\\' || *p == '"')
                     ++result;
             }
 
@@ -5521,8 +5459,7 @@ uc_check_code(code, len, buf, cmd, eap, split_buf, split_len)
                         /* DBCS can contain \ in a trail byte, copy the
                          * double-byte character to avoid escaping. */
                         *buf++ = *p++;
-                    else
-                         if (*p == '\\' || *p == '"')
+                    else if (*p == '\\' || *p == '"')
                         *buf++ = '\\';
                     *buf++ = *p;
                 }
@@ -5843,7 +5780,7 @@ parse_addr_type_arg(value, vallen, argt, addr_type_arg)
         for (i=0; err[i] == NUL || !vim_iswhite(err[i]); i++)
             ;
         err[i] = NUL;
-        EMSG2((char *)"E180: Invalid address type value: %s", err);
+        EMSG2("E180: Invalid address type value: %s", err);
         return FAIL;
     }
 
@@ -5902,19 +5839,19 @@ parse_compl_arg(value, vallen, complp, argt, compl_arg)
 
     if (command_complete[i].expand == 0)
     {
-        EMSG2((char *)"E180: Invalid complete value: %s", value);
+        EMSG2("E180: Invalid complete value: %s", value);
         return FAIL;
     }
 
     if (*complp != EXPAND_USER_DEFINED && *complp != EXPAND_USER_LIST && arg != NULL)
     {
-        EMSG((char *)"E468: Completion argument only allowed for custom completion");
+        EMSG("E468: Completion argument only allowed for custom completion");
         return FAIL;
     }
 
     if ((*complp == EXPAND_USER_DEFINED || *complp == EXPAND_USER_LIST) && arg == NULL)
     {
-        EMSG((char *)"E467: Custom completion requires a function argument");
+        EMSG("E467: Custom completion requires a function argument");
         return FAIL;
     }
 
@@ -5948,7 +5885,7 @@ ex_colorscheme(eap)
             MSG("default");
     }
     else if (load_colors(eap->arg) == FAIL)
-        EMSG2((char *)"E185: Cannot find color scheme '%s'", eap->arg);
+        EMSG2("E185: Cannot find color scheme '%s'", eap->arg);
 }
 
     static void
@@ -5956,7 +5893,7 @@ ex_highlight(eap)
     exarg_T     *eap;
 {
     if (*eap->arg == NUL && eap->cmd[2] == '!')
-        MSG((char *)"Greetings, Vim user!");
+        MSG("Greetings, Vim user!");
     do_highlight(eap->arg, eap->forceit, FALSE);
 }
 
@@ -6087,23 +6024,23 @@ ex_close(eap)
     int         winnr = 0;
     if (cmdwin_type != 0)
         cmdwin_result = Ctrl_C;
-    else
-        if (!text_locked() && !curbuf_locked())
+    else if (!text_locked() && !curbuf_locked())
+    {
+        if (eap->addr_count == 0)
+            ex_win_close(eap->forceit, curwin, NULL);
+        else
         {
-            if (eap->addr_count == 0)
-                ex_win_close(eap->forceit, curwin, NULL);
-            else {
-                for (win = firstwin; win != NULL; win = win->w_next)
-                {
-                    winnr++;
-                    if (winnr == eap->line2)
-                        break;
-                }
-                if (win == NULL)
-                    win = lastwin;
-                ex_win_close(eap->forceit, win, NULL);
+            for (win = firstwin; win != NULL; win = win->w_next)
+            {
+                winnr++;
+                if (winnr == eap->line2)
+                    break;
             }
+            if (win == NULL)
+                win = lastwin;
+            ex_win_close(eap->forceit, win, NULL);
         }
+    }
 }
 
 /*
@@ -6155,28 +6092,27 @@ ex_tabclose(eap)
 
     if (cmdwin_type != 0)
         cmdwin_result = K_IGNORE;
+    else if (first_tabpage->tp_next == NULL)
+        EMSG("E784: Cannot close last tab page");
     else
-        if (first_tabpage->tp_next == NULL)
-            EMSG((char *)"E784: Cannot close last tab page");
-        else
+    {
+        if (eap->addr_count > 0)
         {
-            if (eap->addr_count > 0)
+            tp = find_tabpage((int)eap->line2);
+            if (tp == NULL)
             {
-                tp = find_tabpage((int)eap->line2);
-                if (tp == NULL)
-                {
-                    beep_flush();
-                    return;
-                }
-                if (tp != curtab)
-                {
-                    tabpage_close_other(tp, eap->forceit);
-                    return;
-                }
+                beep_flush();
+                return;
             }
-            if (!text_locked() && !curbuf_locked())
-                tabpage_close(eap->forceit);
+            if (tp != curtab)
+            {
+                tabpage_close_other(tp, eap->forceit);
+                return;
+            }
         }
+        if (!text_locked() && !curbuf_locked())
+            tabpage_close(eap->forceit);
+    }
 }
 
 /*
@@ -6191,31 +6127,29 @@ ex_tabonly(eap)
 
     if (cmdwin_type != 0)
         cmdwin_result = K_IGNORE;
+    else if (first_tabpage->tp_next == NULL)
+        MSG("Already only one tab page");
     else
-        if (first_tabpage->tp_next == NULL)
-            MSG((char *)"Already only one tab page");
-        else
+    {
+        if (eap->addr_count > 0)
+            goto_tabpage(eap->line2);
+        /* Repeat this up to a 1000 times, because autocommands may mess up the lists. */
+        for (done = 0; done < 1000; ++done)
         {
-            if (eap->addr_count > 0)
-                goto_tabpage(eap->line2);
-            /* Repeat this up to a 1000 times, because autocommands may mess
-             * up the lists. */
-            for (done = 0; done < 1000; ++done)
-            {
-                for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
-                    if (tp->tp_topframe != topframe)
-                    {
-                        tabpage_close_other(tp, eap->forceit);
-                        /* if we failed to close it quit */
-                        if (valid_tabpage(tp))
-                            done = 1000;
-                        /* start over, "tp" is now invalid */
-                        break;
-                    }
-                if (first_tabpage->tp_next == NULL)
+            for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
+                if (tp->tp_topframe != topframe)
+                {
+                    tabpage_close_other(tp, eap->forceit);
+                    /* if we failed to close it quit */
+                    if (valid_tabpage(tp))
+                        done = 1000;
+                    /* start over, "tp" is now invalid */
                     break;
-            }
+                }
+            if (first_tabpage->tp_next == NULL)
+                break;
         }
+    }
 }
 
 /*
@@ -6300,7 +6234,7 @@ ex_all(eap)
 {
     if (eap->addr_count == 0)
         eap->line2 = 9999;
-    do_arg_all((int)eap->line2, eap->forceit, eap->cmdidx == CMD_drop);
+    do_arg_all((int)eap->line2, eap->forceit, FALSE);
 }
 
     static void
@@ -6644,9 +6578,7 @@ ex_splitview(eap)
      */
     if (eap->cmdidx == CMD_tabedit || eap->cmdidx == CMD_tabfind || eap->cmdidx == CMD_tabnew)
     {
-        if (win_new_tabpage(cmdmod.tab != 0 ? cmdmod.tab
-                         : eap->addr_count == 0 ? 0
-                                               : (int)eap->line2 + 1) != FAIL)
+        if (win_new_tabpage(cmdmod.tab != 0 ? cmdmod.tab : eap->addr_count == 0 ? 0 : (int)eap->line2 + 1) != FAIL)
         {
             do_exedit(eap, old_curwin);
 
@@ -6774,7 +6706,7 @@ ex_tabs(eap)
     for (tp = first_tabpage; tp != NULL && !got_int; tp = tp->tp_next)
     {
         msg_putchar('\n');
-        vim_snprintf((char *)IObuff, IOSIZE, (char *)"Tab page %d", tabcount++);
+        vim_snprintf((char *)IObuff, IOSIZE, "Tab page %d", tabcount++);
         msg_outtrans_attr(IObuff, hl_attr(HLF_T));
         out_flush();        /* output one line at a time */
         ui_breakcheck();
@@ -7040,8 +6972,7 @@ do_exedit(eap, old_curwin)
     }
 
     /*
-     * if ":split file" worked, set alternate file name in old window to new
-     * file
+     * if ":split file" worked, set alternate file name in old window to new file
      */
     if (old_curwin != NULL
             && *eap->arg != NUL
@@ -7069,14 +7000,13 @@ ex_swapname(eap)
     exarg_T     *eap UNUSED;
 {
     if (curbuf->b_ml.ml_mfp == NULL || curbuf->b_ml.ml_mfp->mf_fname == NULL)
-        MSG((char *)"No swap file");
+        MSG("No swap file");
     else
         msg(curbuf->b_ml.ml_mfp->mf_fname);
 }
 
 /*
- * ":syncbind" forces all 'scrollbind' windows to have the same relative
- * offset.
+ * ":syncbind" forces all 'scrollbind' windows to have the same relative offset.
  * (1998-11-02 16:21:01  R. Edward Ralston <eralston@computer.org>)
  */
     static void
@@ -7269,7 +7199,7 @@ ex_cd(eap)
             return;
         if (vim_strchr(p_cpo, CPO_CHDIR) != NULL && curbufIsChanged() && !eap->forceit)
         {
-            EMSG((char *)"E747: Cannot change directory, buffer is modified (add ! to override)");
+            EMSG("E747: Cannot change directory, buffer is modified (add ! to override)");
             return;
         }
 
@@ -7278,7 +7208,7 @@ ex_cd(eap)
         {
             if (prev_dir == NULL)
             {
-                EMSG((char *)"E186: No previous directory");
+                EMSG("E186: No previous directory");
                 return;
             }
             new_dir = prev_dir;
@@ -7324,7 +7254,7 @@ ex_pwd(eap)
         msg(NameBuff);
     }
     else
-        EMSG((char *)"E187: Unknown");
+        EMSG("E187: Unknown");
 }
 
 /*
@@ -7418,7 +7348,7 @@ ex_winsize(eap)
     if (*p != NUL && *arg == NUL)
         set_shellsize(w, h, TRUE);
     else
-        EMSG((char *)"E465: :winsize requires two number arguments");
+        EMSG("E465: :winsize requires two number arguments");
 }
 
     static void
@@ -7470,7 +7400,7 @@ ex_winpos(eap)
 
     if (*arg == NUL)
     {
-        EMSG((char *)"E188: Obtaining window position not implemented for this platform");
+        EMSG("E188: Obtaining window position not implemented for this platform");
     }
     else
     {
@@ -7480,7 +7410,7 @@ ex_winpos(eap)
         y = getdigits(&arg);
         if (*p == NUL || *arg != NUL)
         {
-            EMSG((char *)"E466: :winpos requires two number arguments");
+            EMSG("E466: :winpos requires two number arguments");
             return;
         }
 #if defined(HAVE_TGETENT)
@@ -8002,7 +7932,7 @@ vim_mkdir_emsg(name, prot)
 {
     if (vim_mkdir(name, prot) != 0)
     {
-        EMSG2((char *)"E739: Cannot create directory: %s", name);
+        EMSG2("E739: Cannot create directory: %s", name);
         return FAIL;
     }
     return OK;
@@ -8029,12 +7959,12 @@ open_exfile(fname, forceit, mode)
     }
     if (!forceit && *mode != 'a' && vim_fexists(fname))
     {
-        EMSG2((char *)"E189: \"%s\" exists (add ! to override)", fname);
+        EMSG2("E189: \"%s\" exists (add ! to override)", fname);
         return NULL;
     }
 
     if ((fd = mch_fopen((char *)fname, mode)) == NULL)
-        EMSG2((char *)"E190: Cannot open \"%s\" for writing", fname);
+        EMSG2("E190: Cannot open \"%s\" for writing", fname);
 
     return fd;
 }
@@ -8058,7 +7988,7 @@ ex_mark(eap)
         curwin->w_cursor.lnum = eap->line2;
         beginline(BL_WHITE | BL_FIX);
         if (setmark(*eap->arg) == FAIL) /* set mark */
-            EMSG((char *)"E191: Argument must be a letter or forward/backward quote");
+            EMSG("E191: Argument must be a letter or forward/backward quote");
         curwin->w_cursor = pos;         /* restore curwin->w_cursor */
     }
 }
@@ -8102,7 +8032,7 @@ ex_normal(eap)
     }
     if (ex_normal_busy >= p_mmd)
     {
-        EMSG((char *)"E192: Recursive use of :normal too deep");
+        EMSG("E192: Recursive use of :normal too deep");
         return;
     }
     ++ex_normal_busy;
@@ -8113,8 +8043,7 @@ ex_normal(eap)
 
     /*
      * vgetc() expects a CSI and K_SPECIAL to have been escaped.  Don't do
-     * this for the K_SPECIAL leading byte, otherwise special keys will not
-     * work.
+     * this for the K_SPECIAL leading byte, otherwise special keys will not work.
      */
     if (has_mbyte)
     {
@@ -8161,8 +8090,7 @@ ex_normal(eap)
     {
         /*
          * Repeat the :normal command for each line in the range.  When no
-         * range given, execute it just once, without positioning the cursor
-         * first.
+         * range given, execute it just once, without positioning the cursor first.
          */
         do
         {
@@ -8765,8 +8693,7 @@ expand_sfile(arg)
 put_eol(fd)
     FILE        *fd;
 {
-    if (
-            (putc('\n', fd) < 0))
+    if ((putc('\n', fd) < 0))
         return FAIL;
     return OK;
 }

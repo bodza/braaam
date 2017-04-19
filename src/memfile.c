@@ -453,7 +453,7 @@ mf_put(mfp, hp, dirty, infile)
     flags = hp->bh_flags;
 
     if ((flags & BH_LOCKED) == 0)
-        EMSG((char *)"E293: block was not locked");
+        EMSG("E293: block was not locked");
     flags &= ~BH_LOCKED;
     if (dirty)
     {
@@ -710,8 +710,7 @@ mf_release(mfp, page_count)
                                   || (total_mem_used >> 10) >= (long_u)p_mmt);
 
     /*
-     * Try to create a swap file if the amount of memory used is getting too
-     * high.
+     * Try to create a swap file if the amount of memory used is getting too high.
      */
     if (mfp->mf_fd < 0 && need_release && p_uc)
     {
@@ -751,8 +750,7 @@ mf_release(mfp, page_count)
     mf_rem_hash(mfp, hp);
 
     /*
-     * If a bhdr_T is returned, make sure that the page_count of bh_data is
-     * right
+     * If a bhdr_T is returned, make sure that the page_count of bh_data is right
      */
     if (hp->bh_page_count != page_count)
     {
@@ -896,12 +894,12 @@ mf_read(mfp, hp)
     size = page_size * hp->bh_page_count;
     if (lseek(mfp->mf_fd, offset, SEEK_SET) != offset)
     {
-        PERROR((char *)"E294: Seek error in swap file read");
+        PERROR("E294: Seek error in swap file read");
         return FAIL;
     }
     if ((unsigned)read_eintr(mfp->mf_fd, hp->bh_data, size) != size)
     {
-        PERROR((char *)"E295: Read error in swap file");
+        PERROR("E295: Read error in swap file");
         return FAIL;
     }
 
@@ -954,7 +952,7 @@ mf_write(mfp, hp)
         offset = (off_t)page_size * nr;
         if (lseek(mfp->mf_fd, offset, SEEK_SET) != offset)
         {
-            PERROR((char *)"E296: Seek error in swap file write");
+            PERROR("E296: Seek error in swap file write");
             return FAIL;
         }
         if (hp2 == NULL)            /* freed block, fill with dummy data */
@@ -971,7 +969,7 @@ mf_write(mfp, hp)
              * space becomes available.
              */
             if (!did_swapwrite_msg)
-                EMSG((char *)"E297: Write error in swap file");
+                EMSG("E297: Write error in swap file");
             did_swapwrite_msg = TRUE;
             return FAIL;
         }
@@ -1169,7 +1167,7 @@ mf_do_open(mfp, fname, flags)
     if ((flags & O_CREAT) && mch_lstat((char *)mfp->mf_fname, &sb) >= 0)
     {
         mfp->mf_fd = -1;
-        EMSG((char *)"E300: Swap file already exists (symlink attack?)");
+        EMSG("E300: Swap file already exists (symlink attack?)");
     }
     else
     {

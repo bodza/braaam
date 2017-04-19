@@ -491,8 +491,7 @@ check_cursor_col_win(win)
         win->w_cursor.col = 0;
 
     /* If virtual editing is on, we can leave the cursor on the old position,
-     * only we must set it to virtual.  But don't do it when at the end of the
-     * line. */
+     * only we must set it to virtual.  But don't do it when at the end of the line. */
     if (oldcol == MAXCOL)
         win->w_cursor.coladd = 0;
     else if (ve_flags == VE_ALL)
@@ -666,7 +665,7 @@ lalloc(size, message)
     {
         /* Don't hide this message */
         emsg_silent = 0;
-        EMSGN((char *)"E341: Internal error: lalloc(%ld, )", size);
+        EMSGN("E341: Internal error: lalloc(%ld, )", size);
         return NULL;
     }
 
@@ -729,7 +728,7 @@ do_outofmem_msg(size)
          * message fails, e.g. when setting v:errmsg. */
         did_outofmem_msg = TRUE;
 
-        EMSGN((char *)"E342: Out of memory!  (allocating %lu bytes)", size);
+        EMSGN("E342: Out of memory!  (allocating %lu bytes)", size);
     }
 }
 
@@ -878,10 +877,8 @@ vim_strsave(string)
 }
 
 /*
- * Copy up to "len" bytes of "string" into newly allocated memory and
- * terminate with a NUL.
- * The allocated memory always has size "len + 1", also when "string" is
- * shorter.
+ * Copy up to "len" bytes of "string" into newly allocated memory and terminate with a NUL.
+ * The allocated memory always has size "len + 1", also when "string" is shorter.
  */
     char_u *
 vim_strnsave(string, len)
@@ -2095,8 +2092,7 @@ get_special_key_name(c, modifiers)
         {
             if (has_mbyte && (*mb_char2len)(c) > 1)
                 idx += (*mb_char2bytes)(c, string + idx);
-            else
-            if (vim_isprintc(c))
+            else if (vim_isprintc(c))
                 string[idx++] = c;
             else
             {
@@ -2458,8 +2454,7 @@ get_fileformat(buf)
 }
 
 /*
- * Like get_fileformat(), but override 'fileformat' with "p" for "++opt=val"
- * argument.
+ * Like get_fileformat(), but override 'fileformat' with "p" for "++opt=val" argument.
  */
     int
 get_fileformat_force(buf, eap)
@@ -3179,8 +3174,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what, sear
     else
     {
         /* Reuse old visited lists. Get the visited list for the given
-         * filename. If no list for the current filename exists, creates a new
-         * one. */
+         * filename. If no list for the current filename exists, creates a new one. */
         search_ctx->ffsc_visited_list = ff_get_visited_list(filename,
                                         &search_ctx->ffsc_visited_lists_list);
         if (search_ctx->ffsc_visited_list == NULL)
@@ -3642,8 +3636,8 @@ ff_check_visited(visited_list, fname
         if (!url ? (vp->ffv_dev_valid && vp->ffv_dev == st.st_dev && vp->ffv_ino == st.st_ino)
                  : fnamecmp(vp->ffv_fname, ff_expand_buffer) == 0)
         {
-                /* already visited */
-                return FAIL;
+            /* already visited */
+            return FAIL;
         }
     }
 
@@ -3703,8 +3697,7 @@ ff_create_stack_element(fix_part,
         fix_part = (char_u *)"";
     new->ffs_fix_path = vim_strsave(fix_part);
 
-    if (new->ffs_fix_path == NULL
-            )
+    if (new->ffs_fix_path == NULL)
     {
         ff_free_stack_element(new);
         new = NULL;

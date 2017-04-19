@@ -162,7 +162,7 @@ suspend_shell()
         EMSG((char *)e_shellempty);
     else
     {
-        MSG_PUTS((char *)"new shell started\n");
+        MSG_PUTS("new shell started\n");
         do_shell(NULL, 0);
     }
 }
@@ -204,8 +204,7 @@ ui_set_shellsize(mustset)
 }
 
 /*
- * Called when Rows and/or Columns changed.  Adjust scroll region and mouse
- * region.
+ * Called when Rows and/or Columns changed.  Adjust scroll region and mouse region.
  */
     void
 ui_new_shellsize()
@@ -230,15 +229,13 @@ ui_breakcheck()
  *
  * Also note that the majority of functions here deal with the X 'primary'
  * (visible - for Visual mode use) selection, and only that. There are no
- * versions of these for the 'clipboard' selection, as Visual mode has no use
- * for them.
+ * versions of these for the 'clipboard' selection, as Visual mode has no use for them.
  */
 
 static void clip_copy_selection(VimClipboard *clip);
 
 /*
- * Selection stuff using Visual mode, for cutting and pasting text to other
- * windows.
+ * Selection stuff using Visual mode, for cutting and pasting text to other windows.
  */
 
 /*
@@ -426,8 +423,7 @@ clip_auto_select()
 }
 
 /*
- * Return TRUE if automatic selection of Visual area is desired for the *
- * register.
+ * Return TRUE if automatic selection of Visual area is desired for the * register.
  */
     int
 clip_isautosel_star()
@@ -437,8 +433,7 @@ clip_isautosel_star()
 }
 
 /*
- * Return TRUE if automatic selection of Visual area is desired for the +
- * register.
+ * Return TRUE if automatic selection of Visual area is desired for the + register.
  */
     int
 clip_isautosel_plus()
@@ -1051,8 +1046,7 @@ clip_get_word_boundaries(cb, row, col)
     for ( ; temp_col > 0; temp_col--)
         if (enc_dbcs != 0 && (mboff = dbcs_screen_head_off(p, p + temp_col - 1)) > 0)
             temp_col -= mboff;
-        else
-        if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
+        else if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
             break;
     cb->word_start_col = temp_col;
 
@@ -1060,15 +1054,13 @@ clip_get_word_boundaries(cb, row, col)
     for ( ; temp_col < screen_Columns; temp_col++)
         if (enc_dbcs != 0 && dbcs_ptr2cells(p + temp_col) == 2)
             ++temp_col;
-        else
-        if (CHAR_CLASS(p[temp_col]) != start_class && !(enc_utf8 && p[temp_col] == 0))
+        else if (CHAR_CLASS(p[temp_col]) != start_class && !(enc_utf8 && p[temp_col] == 0))
             break;
     cb->word_end_col = temp_col;
 }
 
 /*
- * Find the column position for the last non-whitespace character on the given
- * line.
+ * Find the column position for the last non-whitespace character on the given line.
  */
     static int
 clip_get_line_end(row)
@@ -1309,8 +1301,7 @@ fill_input_buf(exit_on_error)
     /*
      * Fill_input_buf() is only called when we really need a character.
      * If we can't get any, but there is some in the buffer, just return.
-     * If we can't get any, and there isn't any in the buffer, we give up and
-     * exit Vim.
+     * If we can't get any, and there isn't any in the buffer, we give up and exit Vim.
      */
 
     if (rest != NULL)
@@ -1416,7 +1407,7 @@ read_error_exit()
 {
     if (silent_mode)    /* Normal way to exit for "ex -s" */
         getout(0);
-    STRCPY(IObuff, (char *)"Vim: Error reading input, exiting...\n");
+    STRCPY(IObuff, "Vim: Error reading input, exiting...\n");
     preserve_exit();
 }
 

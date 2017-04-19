@@ -9,8 +9,7 @@
 
 /*
  * Some systems have a prototype for tgetstr() with (char *) instead of
- * (char **). This define removes that prototype. We include our own prototype
- * below.
+ * (char **). This define removes that prototype. We include our own prototype below.
  */
 
 #define tgetstr tgetstr_defined_wrong
@@ -38,8 +37,7 @@
  * can be accessed with "builtin_amiga", "builtin_ansi", "builtin_debug", etc.
  *
  * Each termcap is a list of builtin_term structures. It always starts with
- * KS_NAME, which separates the entries.  See parse_builtin_tcap() for all
- * details.
+ * KS_NAME, which separates the entries.  See parse_builtin_tcap() for all details.
  * bt_entry is either a KS_xxx code (>= 0), or a K_xxx code.
  *
  * Entries marked with "guessed" may be wrong.
@@ -585,8 +583,7 @@ set_termname(term)
                  * If try == 0, first try the external termcap. If that is not
                  * found we'll get back here with try == 2.
                  * If termcap_cleared is set we used the external termcap,
-                 * don't complain about not finding the term in the builtin
-                 * termcap.
+                 * don't complain about not finding the term in the builtin termcap.
                  */
                 if (try == 0)                   /* try external one */
                     continue;
@@ -602,7 +599,7 @@ set_termname(term)
                 }
                 mch_errmsg("'");
                 mch_errmsg((char *)term);
-                mch_errmsg((char *)"' not known. Available builtin terminals are:");
+                mch_errmsg("' not known. Available builtin terminals are:");
                 mch_errmsg("\r\n");
                 for (termp = &(builtin_termcaps[0]); termp->bt_string != NULL; ++termp)
                 {
@@ -625,7 +622,7 @@ set_termname(term)
                     return FAIL;
                 }
                 term = DEFAULT_TERM;
-                mch_errmsg((char *)"defaulting to '");
+                mch_errmsg("defaulting to '");
                 mch_errmsg((char *)term);
                 mch_errmsg("'\r\n");
                 if (emsg_silent == 0)
@@ -656,8 +653,7 @@ set_termname(term)
 /*
  * special: There is no info in the termcap about whether the cursor
  * positioning is relative to the start of the screen or to the start of the
- * scrolling region.  We just guess here. Only msdos pcterm is known to do it
- * relative.
+ * scrolling region.  We just guess here. Only msdos pcterm is known to do it relative.
  */
     if (STRCMP(term, "pcterm") == 0)
         T_CCS = (char_u *)"yes";
@@ -677,8 +673,7 @@ set_termname(term)
  * didn't work, use the default CTRL-H
  * The default for t_kD is DEL, unless t_kb is DEL.
  * The vim_strsave'd strings are probably lost forever, well it's only two
- * bytes.  Don't do this when the GUI is active, it uses "t_kb" and "t_kD"
- * directly.
+ * bytes.  Don't do this when the GUI is active, it uses "t_kb" and "t_kD" directly.
  */
     {
         bs_p = find_termcode((char_u *)"kb");
@@ -765,8 +760,7 @@ set_termname(term)
             buf_T       *old_curbuf;
 
             /*
-             * Execute the TermChanged autocommands for each buffer that is
-             * loaded.
+             * Execute the TermChanged autocommands for each buffer that is loaded.
              */
             old_curbuf = curbuf;
             for (curbuf = firstbuf; curbuf != NULL; curbuf = curbuf->b_next)
@@ -840,8 +834,7 @@ tgetent_error(tbuf, term)
        )
     {
         /* On FreeBSD tputs() gets a SEGV after a tgetent() which fails.  Call
-         * tgetent() with the always existing "dumb" entry to avoid a crash or
-         * hang. */
+         * tgetent() with the always existing "dumb" entry to avoid a crash or hang. */
         (void)TGETENT(tbuf, "dumb");
 
         if (i < 0)
@@ -1002,7 +995,7 @@ add_termcap_entry(name, force)
             EMSG(error_msg);
         else
 #endif
-            EMSG2((char *)"E436: No \"%s\" entry in termcap", name);
+            EMSG2("E436: No \"%s\" entry in termcap", name);
     }
     return FAIL;
 }
@@ -1414,7 +1407,7 @@ ttest(pairs)
      * MUST have "cm": cursor motion.
      */
     if (*T_CM == NUL)
-        EMSG((char *)"E437: terminal capability \"cm\" required");
+        EMSG("E437: terminal capability \"cm\" required");
 
     /*
      * if "cs" defined, use a scroll region, it's faster.
@@ -1539,8 +1532,7 @@ get_bytes_from_buf(buf, bytes, num_bytes)
 }
 
 /*
- * Check if the new shell size is valid, correct it if it's too small or way
- * too big.
+ * Check if the new shell size is valid, correct it if it's too small or way too big.
  */
     void
 check_shellsize()
@@ -1737,16 +1729,14 @@ settmode(tmode)
          * terminal to raw mode, even though we think it already is, because
          * the shell program may have reset the terminal mode.
          * When we think the terminal is normal, don't try to set it to
-         * normal again, because that causes problems (logout!) on some
-         * machines.
+         * normal again, because that causes problems (logout!) on some machines.
          */
         if (tmode != TMODE_COOK || cur_tmode != TMODE_COOK)
         {
 #if defined(FEAT_TERMRESPONSE)
             {
                 /* May need to check for T_CRV response and termcodes, it
-                 * doesn't work in Cooked mode, an external program may get
-                 * them. */
+                 * doesn't work in Cooked mode, an external program may get them. */
                 if (tmode != TMODE_RAW && (crv_status == CRV_SENT || u7_status == U7_SENT))
                     (void)vpeekc_nomap();
                 check_for_codes_from_term();
@@ -1827,8 +1817,7 @@ stoptermcap()
 #if defined(FEAT_TERMRESPONSE)
 /*
  * Request version string (for xterm) when needed.
- * Only do this after switching to raw mode, otherwise the result will be
- * echoed.
+ * Only do this after switching to raw mode, otherwise the result will be echoed.
  * Only do this after startup has finished, to avoid that the response comes
  * while executing "-c !cmd" or even after "-c quit".
  * Only do this after termcap mode has been started, otherwise the codes for
@@ -1882,24 +1871,24 @@ may_req_ambiguous_char_width()
             && *T_U7 != NUL
             && !option_was_set((char_u *)"ambiwidth"))
     {
-         char_u buf[16];
+        char_u buf[16];
 
-         LOG_TR("Sending U7 request");
-         /* Do this in the second row.  In the first row the returned sequence
-          * may be CSI 1;2R, which is the same as <S-F3>. */
-         term_windgoto(1, 0);
-         buf[mb_char2bytes(0x25bd, buf)] = 0;
-         out_str(buf);
-         out_str(T_U7);
-         u7_status = U7_SENT;
-         out_flush();
-         term_windgoto(1, 0);
-         out_str((char_u *)"  ");
-         term_windgoto(0, 0);
-         /* check for the characters now, otherwise they might be eaten by
-          * get_keystroke() */
-         out_flush();
-         (void)vpeekc_nomap();
+        LOG_TR("Sending U7 request");
+        /* Do this in the second row.  In the first row the returned sequence
+         * may be CSI 1;2R, which is the same as <S-F3>. */
+        term_windgoto(1, 0);
+        buf[mb_char2bytes(0x25bd, buf)] = 0;
+        out_str(buf);
+        out_str(T_U7);
+        u7_status = U7_SENT;
+        out_flush();
+        term_windgoto(1, 0);
+        out_str((char_u *)"  ");
+        term_windgoto(0, 0);
+        /* check for the characters now, otherwise they might be eaten by
+         * get_keystroke() */
+        out_flush();
+        (void)vpeekc_nomap();
     }
 }
 
@@ -2219,8 +2208,7 @@ add_termcode(name, string, flags)
              */
             if (termcodes[i].name[1] == name[1])
             {
-                if (flags == ATC_FROM_TERM && (j = termcode_star(
-                                    termcodes[i].code, termcodes[i].len)) > 0)
+                if (flags == ATC_FROM_TERM && (j = termcode_star(termcodes[i].code, termcodes[i].len)) > 0)
                 {
                     /* Don't replace ESC[123;*X or ESC O*X with another when
                      * invoked from got_code_from_term(). */
@@ -2392,8 +2380,7 @@ set_mouse_topline(wp)
  * Return 0 for no match, -1 for partial match, > 0 for full match.
  * Return KEYLEN_REMOVED when a key code was deleted.
  * With a match, the match is removed, the replacement code is inserted in
- * typebuf.tb_buf[] and the number of characters in typebuf.tb_buf[] is
- * returned.
+ * typebuf.tb_buf[] and the number of characters in typebuf.tb_buf[] is returned.
  * When "buf" is not NULL, buf[bufsize] is used instead of typebuf.tb_buf[].
  * "buflen" is then the length of the string in buf[] and is updated for
  * inserts and deletes.
@@ -2522,8 +2509,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     /*
                      * When found a keypad key, check if there is another key
                      * that matches and use that one.  This makes <Home> to be
-                     * found instead of <kHome> when they produce the same
-                     * key code.
+                     * found instead of <kHome> when they produce the same key code.
                      */
                     if (termcodes[idx].name[0] == 'K' && VIM_ISDIGIT(termcodes[idx].name[1]))
                     {
@@ -2553,8 +2539,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     modslen = termcodes[idx].modlen;
                     if (cpo_koffset && offset && len < modslen)
                         continue;
-                    if (STRNCMP(termcodes[idx].code, tp,
-                                (size_t)(modslen > len ? len : modslen)) == 0)
+                    if (STRNCMP(termcodes[idx].code, tp, (size_t)(modslen > len ? len : modslen)) == 0)
                     {
                         int         n;
 
@@ -2814,8 +2799,8 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 }
             }
 
-        if (key_name[0] == (int)KS_MOUSE)
-        {
+            if (key_name[0] == (int)KS_MOUSE)
+            {
                 /*
                  * Handle mouse events.
                  * Recognize the xterm mouse wheel, but not in the GUI, the
@@ -3016,8 +3001,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
  * Replace any terminal code strings in from[] with the equivalent internal
  * vim representation.  This is used for the "from" and "to" part of a
  * mapping, and the "to" part of a menu command.
- * Any strings like "<C-UP>" are also replaced, unless 'cpoptions' contains
- * '<'.
+ * Any strings like "<C-UP>" are also replaced, unless 'cpoptions' contains '<'.
  * K_SPECIAL by itself is replaced by K_SPECIAL KS_SPECIAL KE_FILLER.
  *
  * The replacement is done in result[] and finally copied into allocated
@@ -3299,7 +3283,7 @@ show_termcodes()
         return;
 
     /* Highlight title */
-    MSG_PUTS_TITLE((char *)"\n--- Terminal keys ---");
+    MSG_PUTS_TITLE("\n--- Terminal keys ---");
 
     /*
      * do the loop two times:
@@ -3316,9 +3300,7 @@ show_termcodes()
         for (i = 0; i < tc_len; i++)
         {
             len = show_one_termcode(termcodes[i].name, termcodes[i].code, FALSE);
-            if (len <= INC3 - GAP ? run == 1
-                        : len <= INC2 - GAP ? run == 2
-                        : run == 3)
+            if (len <= INC3 - GAP ? run == 1 : len <= INC2 - GAP ? run == 2 : run == 3)
                 items[item_count++] = i;
         }
 

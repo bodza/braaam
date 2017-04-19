@@ -1417,8 +1417,7 @@ do_digraph(c)
 }
 
 /*
- * Get a digraph.  Used after typing CTRL-K on the command line or in normal
- * mode.
+ * Get a digraph.  Used after typing CTRL-K on the command line or in normal mode.
  * Returns composed character, or NUL when ESC was used.
  */
     int
@@ -1585,7 +1584,7 @@ putdigraph(str)
         }
         if (char1 == ESC || char2 == ESC)
         {
-            EMSG((char *)"E104: Escape not allowed in digraph");
+            EMSG("E104: Escape not allowed in digraph");
             return;
         }
         str = skipwhite(str);

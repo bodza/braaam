@@ -524,8 +524,7 @@ getcmdline(firstc, count, indent)
                      * "list:longest") */
                     if (wim_flags[0] == WIM_LONGEST && ccline.cmdpos == j)
                         wim_index = 1;
-                    if ((wim_flags[wim_index] & WIM_LIST)
-                            )
+                    if ((wim_flags[wim_index] & WIM_LIST))
                     {
                         if (!(wim_flags[0] & WIM_LONGEST))
                         {
@@ -609,8 +608,7 @@ getcmdline(firstc, count, indent)
                                 p += (*mb_ptr2len)(p);
                         }
                     }
-                    else
-                        if (c == Ctrl_W)
+                    else if (c == Ctrl_W)
                     {
                         while (p > ccline.cmdbuff && vim_isspace(p[-1]))
                             --p;
@@ -949,9 +947,7 @@ getcmdline(firstc, count, indent)
                             c = MB_TOLOWER(c);
                         if (c != NUL)
                         {
-                            if (c == firstc || vim_strchr((char_u *)(
-                                            p_magic ? "\\^$.*[" : "\\^$"), c)
-                                                                      != NULL)
+                            if (c == firstc || vim_strchr((char_u *)(p_magic ? "\\^$.*[" : "\\^$"), c) != NULL)
                             {
                                 /* put a backslash before special characters */
                                 stuffcharReadbuff(c);
@@ -1174,8 +1170,7 @@ getcmdline(firstc, count, indent)
         if (do_abbr && (IS_SPECIAL(c) || !vim_iswordc(c)) && (ccheck_abbr(
                         /* Add ABBR_OFF for characters above 0x100, this is
                          * what check_abbr() expects. */
-                        (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) :
-                                                         c) || c == Ctrl_RSB))
+                        (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) : c) || c == Ctrl_RSB))
             goto cmdline_changed;
 
         /*
@@ -1202,8 +1197,7 @@ getcmdline(firstc, count, indent)
 /*
  * This part implements incremental searches for "/" and "?"
  * Jump to cmdline_not_changed when a character has been read but the command
- * line did not change. Then we only search and redraw if something changed in
- * the past.
+ * line did not change. Then we only search and redraw if something changed in the past.
  * Jump to cmdline_changed when the command line did change.
  * (Sorry for the goto's, I know it is ugly).
  */
@@ -1459,22 +1453,21 @@ curbuf_locked()
 {
     if (curbuf_lock > 0)
     {
-        EMSG((char *)"E788: Not allowed to edit another buffer now");
+        EMSG("E788: Not allowed to edit another buffer now");
         return TRUE;
     }
     return allbuf_locked();
 }
 
 /*
- * Check if "allbuf_lock" is set and return TRUE when it is and give an error
- * message.
+ * Check if "allbuf_lock" is set and return TRUE when it is and give an error message.
  */
     int
 allbuf_locked()
 {
     if (allbuf_lock > 0)
     {
-        EMSG((char *)"E811: Not allowed to change buffer information now");
+        EMSG("E811: Not allowed to change buffer information now");
         return TRUE;
     }
     return FALSE;
@@ -1490,8 +1483,7 @@ cmdline_charsize(idx)
 }
 
 /*
- * Compute the offset of the cursor on the command line for the prompt and
- * indent.
+ * Compute the offset of the cursor on the command line for the prompt and indent.
  */
     static void
 set_cmdspos()
@@ -1569,14 +1561,12 @@ getexline(c, cookie, indent)
 
 /*
  * Get an Ex command line for Ex mode.
- * In Ex mode we only use the OS supplied line editing features and no
- * mappings or abbreviations.
+ * In Ex mode we only use the OS supplied line editing features and no mappings or abbreviations.
  * Returns a string in allocated memory or NULL.
  */
     char_u *
 getexmodeline(promptc, cookie, indent)
-    int         promptc;        /* normally ':', NUL for ":append" and '?' for
-                                   :s prompt */
+    int         promptc;        /* normally ':', NUL for ":append" and '?' for :s prompt */
     void        *cookie UNUSED;
     int         indent;         /* indent for inside conditionals */
 {
@@ -2034,8 +2024,7 @@ put_on_cmdline(str, len, redraw)
                 else
                     ccline.cmdlen = ccline.cmdpos + len;
             }
-            else
-            if (ccline.cmdpos + len > ccline.cmdlen)
+            else if (ccline.cmdpos + len > ccline.cmdlen)
                 ccline.cmdlen = ccline.cmdpos + len;
         }
         mch_memmove(ccline.cmdbuff + ccline.cmdpos, str, (size_t)len);
@@ -2272,8 +2261,7 @@ cmdline_paste(regname, literally, remcr)
 /*
  * Put a string on the command line.
  * When "literally" is TRUE, insert literally.
- * When "literally" is FALSE, insert as typed, but don't leave the command
- * line.
+ * When "literally" is FALSE, insert as typed, but don't leave the command line.
  */
     void
 cmdline_paste_str(s, literally)
@@ -2304,8 +2292,7 @@ cmdline_paste_str(s, literally)
 }
 
 /*
- * this function is called when the screen size changes and with incremental
- * search
+ * this function is called when the screen size changes and with incremental search
  */
     void
 redrawcmdline()
@@ -2521,8 +2508,7 @@ nextwild(xp, type, options, escape)
             if (p_wic)
                 use_options += WILD_ICASE;
             p2 = ExpandOne(xp, p1,
-                         vim_strnsave(&ccline.cmdbuff[i], xp->xp_pattern_len),
-                                                           use_options, type);
+                         vim_strnsave(&ccline.cmdbuff[i], xp->xp_pattern_len), use_options, type);
             vim_free(p1);
             /* longest match: make sure it is not shorter, happens with :help */
             if (p2 != NULL && type == WILD_LONGEST)
@@ -2645,8 +2631,7 @@ ExpandOne(xp, str, orig, options, mode)
                 ++findex;
 
             /*
-             * When wrapping around, return the original string, set findex to
-             * -1.
+             * When wrapping around, return the original string, set findex to -1.
              */
             if (findex < 0)
             {
@@ -3082,10 +3067,10 @@ showmatches(xp, wildmenu)
 
         if (xp->xp_context == EXPAND_TAGS_LISTFILES)
         {
-            MSG_PUTS_ATTR((char *)"tagname", hl_attr(HLF_T));
+            MSG_PUTS_ATTR("tagname", hl_attr(HLF_T));
             msg_clr_eos();
             msg_advance(maxlen - 3);
-            MSG_PUTS_ATTR((char *)" kind file\n", hl_attr(HLF_T));
+            MSG_PUTS_ATTR(" kind file\n", hl_attr(HLF_T));
         }
 
         /* list the files line by line */
@@ -3199,8 +3184,7 @@ sm_gettail(s)
 
 /*
  * Return TRUE if we only need to show the tail of completion matches.
- * When not completing file names or there is a wildcard in the path FALSE is
- * returned.
+ * When not completing file names or there is a wildcard in the path FALSE is returned.
  */
     static int
 expand_showtail(xp)
@@ -3464,10 +3448,8 @@ set_cmd_context(xp, str, len, col)
 /*
  * Expand the command line "str" from context "xp".
  * "xp" must have been set by set_cmd_context().
- * xp->xp_pattern points into "str", to where the text that is to be expanded
- * starts.
- * Returns EXPAND_UNSUCCESSFUL when there is something illegal before the
- * cursor.
+ * xp->xp_pattern points into "str", to where the text that is to be expanded starts.
+ * Returns EXPAND_UNSUCCESSFUL when there is something illegal before the cursor.
  * Returns EXPAND_NOTHING when there is nothing to expand, might insert the
  * key that triggered expansion literally.
  * Returns EXPAND_OK otherwise.
@@ -4402,8 +4384,7 @@ static int      last_maptick = -1;      /* last seen maptick */
 
 /*
  * Add the given string to the given history.  If the string is already in the
- * history then it is moved to the front.  "histype" may be one of he HIST_
- * values.
+ * history then it is moved to the front.  "histype" may be one of he HIST_ values.
  */
     void
 add_to_history(histype, new_entry, in_map, sep)
@@ -4803,7 +4784,7 @@ ex_history(eap)
 
     if (hislen == 0)
     {
-        MSG((char *)"'history' option is zero");
+        MSG("'history' option is zero");
         return;
     }
 
@@ -5029,7 +5010,7 @@ ex_window()
     if (!win_valid(old_curwin) || !buf_valid(old_curbuf))
     {
         cmdwin_result = Ctrl_C;
-        EMSG((char *)"E199: Active window or buffer deleted");
+        EMSG("E199: Active window or buffer deleted");
     }
     else
     {

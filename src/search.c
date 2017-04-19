@@ -59,8 +59,7 @@ struct spat
 
 /*
  * Two search patterns are remembered: One for the :substitute command and
- * one for other searches.  last_idx points to the one that was used the last
- * time.
+ * one for other searches.  last_idx points to the one that was used the last time.
  */
 static struct spat spats[2] =
 {
@@ -306,8 +305,7 @@ ignorecase(pat)
 {
     int         ic = p_ic;
 
-    if (ic && !no_smartcase && p_scs
-                                                                    )
+    if (ic && !no_smartcase && p_scs)
         ic = !pat_has_uppercase(pat);
     no_smartcase = FALSE;
 
@@ -333,8 +331,7 @@ pat_has_uppercase(pat)
                 return TRUE;
             p += l;
         }
-        else
-             if (*p == '\\')
+        else if (*p == '\\')
         {
             if (p[1] == '_' && p[2] != NUL)  /* skip "\_X" */
                 p += 3;
@@ -480,11 +477,10 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
     int         save_called_emsg = called_emsg;
     int         break_loop = FALSE;
 
-    if (search_regcomp(pat, RE_SEARCH, pat_use,
-                   (options & (SEARCH_HIS + SEARCH_KEEP)), &regmatch) == FAIL)
+    if (search_regcomp(pat, RE_SEARCH, pat_use, (options & (SEARCH_HIS + SEARCH_KEEP)), &regmatch) == FAIL)
     {
         if ((options & SEARCH_MSG) && !rc_did_emsg)
-            EMSG2((char *)"E383: Invalid search string: %s", mr_pattern);
+            EMSG2("E383: Invalid search string: %s", mr_pattern);
         return FAIL;
     }
 
@@ -596,8 +592,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                         {
                             /*
                              * If vi-compatible searching, continue at the end
-                             * of the match, otherwise continue one position
-                             * forward.
+                             * of the match, otherwise continue one position forward.
                              */
                             if (vim_strchr(p_cpo, CPO_SEARCH) != NULL)
                             {
@@ -691,8 +686,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                              * We found a valid match, now check if there is
                              * another one after it.
                              * If vi-compatible searching, continue at the end
-                             * of the match, otherwise continue one position
-                             * forward.
+                             * of the match, otherwise continue one position forward.
                              */
                             if (vim_strchr(p_cpo, CPO_SEARCH) != NULL)
                             {
@@ -808,8 +802,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
 
             /*
              * Stop the search if wrapscan isn't set, "stop_lnum" is
-             * specified, after an interrupt, after a match and after looping
-             * twice.
+             * specified, after an interrupt, after a match and after looping twice.
              */
             if (!p_ws || stop_lnum != 0 || got_int || called_emsg || break_loop || found || loop)
                 break;
@@ -818,8 +811,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
              * If 'wrapscan' is set we continue at the other end of the file.
              * If 'shortmess' does not contain 's', we give a message.
              * This message is also remembered in keep_msg for when the screen
-             * is redrawn. The keep_msg is cleared whenever another message is
-             * written.
+             * is redrawn. The keep_msg is cleared whenever another message is written.
              */
             if (dir == BACKWARD)    /* start second loop at the other end */
                 lnum = buf->b_ml.ml_line_count;
@@ -846,9 +838,9 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
             if (p_ws)
                 EMSG2((char *)e_patnotf2, mr_pattern);
             else if (lnum == 0)
-                EMSG2((char *)"E384: search hit TOP without match for: %s", mr_pattern);
+                EMSG2("E384: search hit TOP without match for: %s", mr_pattern);
             else
-                EMSG2((char *)"E385: search hit BOTTOM without match for: %s", mr_pattern);
+                EMSG2("E385: search hit BOTTOM without match for: %s", mr_pattern);
         }
         return FAIL;
     }
@@ -1246,7 +1238,7 @@ do_search(oap, dirc, pat, count, options, tm)
         if (dirc != '?' && dirc != '/')
         {
             retval = 0;
-            EMSG((char *)"E386: Expected '?' or '/'  after ';'");
+            EMSG("E386: Expected '?' or '/'  after ';'");
             goto end_do_search;
         }
         ++pat;
@@ -1322,8 +1314,7 @@ searchc(cap, t_cmd)
         /* For multi-byte re-use last bytes[] and bytelen. */
 
         /* Force a move of at least one char, so ";" and "," will move the
-         * cursor, even if the cursor is right in front of char we are looking
-         * at. */
+         * cursor, even if the cursor is right in front of char we are looking at. */
         if (vim_strchr(p_cpo, CPO_SCOLON) == NULL && count == 1 && t_cmd)
             stop = FALSE;
     }
@@ -1420,8 +1411,7 @@ findmatch(oap, initc)
 /*
  * Return TRUE if the character before "linep[col]" equals "ch".
  * Return FALSE if "col" is zero.
- * Update "*prevcol" to the column of the previous character, unless "prevcol"
- * is NULL.
+ * Update "*prevcol" to the column of the previous character, unless "prevcol" is NULL.
  * Handles multibyte string correctly.
  */
     static int
@@ -1452,8 +1442,7 @@ check_prevcol(linep, col, ch, prevcol)
  *        FM_BLOCKSTOP  stop at start/end of block ({ or } in column 0)
  *        FM_SKIPCOMM   skip comments (not implemented yet!)
  *
- * "oap" is only used to set oap->motion_type for a linewise motion, it be
- * NULL
+ * "oap" is only used to set oap->motion_type for a linewise motion, it be NULL
  */
 
     pos_T *
@@ -1590,8 +1579,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
             {
                 /*
                  * Find the brace under or after the cursor.
-                 * If beyond the end of the line, use the last character in
-                 * the line.
+                 * If beyond the end of the line, use the last character in the line.
                  */
                 if (linep[pos.col] == NUL && pos.col)
                     --pos.col;
@@ -2629,8 +2617,7 @@ end_word(count, bigword, stop, empty)
             return FAIL;
 
         /*
-         * If we're in the middle of a word, we just have to move to the end
-         * of it.
+         * If we're in the middle of a word, we just have to move to the end of it.
          */
         if (cls() == sclass && sclass != 0)
         {
@@ -4007,8 +3994,7 @@ current_quote(oap, count, include, quotechar)
         else
         {
             /* Cursor is at start of Visual area.  Set the end of the Visual
-             * area when it was just inside quotes or it didn't end at a
-             * quote. */
+             * area when it was just inside quotes or it didn't end at a quote. */
             if (inside_quotes
                     || (!selected_quote
                         && line[VIsual.col] != quotechar
@@ -4093,8 +4079,7 @@ current_search(count, forward)
 
     /*
      * The trick is to first search backwards and then search forward again,
-     * so that a match at the current cursor position will be correctly
-     * captured.
+     * so that a match at the current cursor position will be correctly captured.
      */
     for (i = 0; i < 2; i++)
     {

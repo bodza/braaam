@@ -117,8 +117,7 @@ main
     init_normal_cmds();
 
     /*
-     * Allocate space for the generic buffers (needed for set_init_1() and
-     * EMSG2()).
+     * Allocate space for the generic buffers (needed for set_init_1() and EMSG2()).
      */
     if ((IObuff = alloc(IOSIZE)) == NULL || (NameBuff = alloc(MAXPATHL)) == NULL)
         mch_exit(0);
@@ -185,8 +184,7 @@ main
 
     /*
      * On some systems, when we compile with the GUI, we always use it.  On Mac
-     * there is no terminal version, and on Windows we can't fork one off with
-     * :gui.
+     * there is no terminal version, and on Windows we can't fork one off with :gui.
      */
 
     if (GARGCOUNT > 0)
@@ -213,8 +211,7 @@ main
 
     /*
      * mch_init() sets up the terminal (window) for use.  This must be
-     * done after resetting full_screen, otherwise it may move the cursor
-     * (MSDOS).
+     * done after resetting full_screen, otherwise it may move the cursor (MSDOS).
      * Note that we may use mch_exit() before mch_init()!
      */
     mch_init();
@@ -228,7 +225,7 @@ main
     /* This message comes before term inits, but after setting "silent_mode"
      * when the input is not a tty. */
     if (GARGCOUNT > 1 && !silent_mode)
-        printf((char *)"%d files to edit\n", GARGCOUNT);
+        printf("%d files to edit\n", GARGCOUNT);
 
     if (params.want_full_screen && !silent_mode)
     {
@@ -391,8 +388,7 @@ main
     setpcmark();
 
     /*
-     * If opened more than one window, start editing files in the other
-     * windows.
+     * If opened more than one window, start editing files in the other windows.
      */
     edit_buffers(&params, start_dir);
     vim_free(start_dir);
@@ -460,7 +456,7 @@ main
 
     /*
      * Call the main command loop.  This never returns.
-    */
+     */
     main_loop(FALSE, FALSE);
 
     return 0;
@@ -804,7 +800,7 @@ parse_command_name(parmp)
     /* Catch "[r][g]vimdiff" and "[r][g]viewdiff". */
     if (STRICMP(initstr, "diff") == 0)
     {
-        mch_errmsg((char *)"This Vim was not compiled with the diff feature.");
+        mch_errmsg("This Vim was not compiled with the diff feature.");
         mch_errmsg("\n");
         mch_exit(2);
     }
@@ -840,7 +836,7 @@ early_arg_scan(parmp)
 
         else if (strncmp(argv[i], "-nb", (size_t)3) == 0)
         {
-            mch_errmsg((char *)"'-nb' cannot be used: not enabled at compile time\n");
+            mch_errmsg("'-nb' cannot be used: not enabled at compile time\n");
             mch_exit(2);
         }
     }
@@ -906,28 +902,10 @@ command_line_scan(parmp)
 
             case '-':           /* "--" don't take any more option arguments */
                                 /* "--help" give help message */
-                                /* "--version" give version message */
-                                /* "--literal" take files literally */
-                                /* "--nofork" don't fork */
                                 /* "--noplugin[s]" skip plugins */
                                 /* "--cmd <cmd>" execute cmd before vimrc */
                 if (STRICMP(argv[0] + argv_idx, "help") == 0)
                     usage();
-                else if (STRICMP(argv[0] + argv_idx, "version") == 0)
-                {
-                    Columns = 80;       /* need to init Columns */
-                    info_message = TRUE; /* use mch_msg(), not mch_errmsg() */
-                    list_version();
-                    msg_putchar('\n');
-                    msg_didout = FALSE;
-                    mch_exit(0);
-                }
-                else if (STRNICMP(argv[0] + argv_idx, "literal", 7) == 0)
-                {
-                }
-                else if (STRNICMP(argv[0] + argv_idx, "nofork", 6) == 0)
-                {
-                }
                 else if (STRNICMP(argv[0] + argv_idx, "noplugin", 8) == 0)
                     p_lpl = FALSE;
                 else if (STRNICMP(argv[0] + argv_idx, "cmd", 3) == 0)
@@ -1205,7 +1183,7 @@ command_line_scan(parmp)
                     if (scriptin[0] != NULL)
                     {
 scripterror:
-                        mch_errmsg((char *)"Attempt to open script file again: \"");
+                        mch_errmsg("Attempt to open script file again: \"");
                         mch_errmsg(argv[-1]);
                         mch_errmsg(" ");
                         mch_errmsg(argv[0]);
@@ -1214,7 +1192,7 @@ scripterror:
                     }
                     if ((scriptin[0] = mch_fopen(argv[0], READBIN)) == NULL)
                     {
-                        mch_errmsg((char *)"Cannot open for reading: \"");
+                        mch_errmsg("Cannot open for reading: \"");
                         mch_errmsg(argv[0]);
                         mch_errmsg("\"\n");
                         mch_exit(2);
@@ -1259,7 +1237,7 @@ scripterror:
                         goto scripterror;
                     if ((scriptout = mch_fopen(argv[0], c == 'w' ? APPENDBIN : WRITEBIN)) == NULL)
                     {
-                        mch_errmsg((char *)"Cannot open for script output: \"");
+                        mch_errmsg("Cannot open for script output: \"");
                         mch_errmsg(argv[0]);
                         mch_errmsg("\"\n");
                         mch_exit(2);
@@ -1291,8 +1269,7 @@ scripterror:
 
         /*
          * If there are no more letters after the current "-", go to next
-         * argument.  argv_idx is set to -1 when the current argument is to be
-         * skipped.
+         * argument.  argv_idx is set to -1 when the current argument is to be skipped.
          */
         if (argv_idx <= 0 || argv[0][argv_idx] == NUL)
         {
@@ -1335,9 +1312,9 @@ check_tty(parmp)
     else if (parmp->want_full_screen && (!parmp->stdout_isatty || !input_isatty))
     {
         if (!parmp->stdout_isatty)
-            mch_errmsg((char *)"Vim: Warning: Output is not to a terminal\n");
+            mch_errmsg("Vim: Warning: Output is not to a terminal\n");
         if (!input_isatty)
-            mch_errmsg((char *)"Vim: Warning: Input is not from a terminal\n");
+            mch_errmsg("Vim: Warning: Input is not from a terminal\n");
         out_flush();
         if (scriptin[0] == NULL)
             ui_delay(2000L, TRUE);
@@ -1688,8 +1665,7 @@ source_startup_scripts(parmp)
     }
 
     /*
-     * If -u argument given, use only the initializations from that file and
-     * nothing else.
+     * If -u argument given, use only the initializations from that file and nothing else.
      */
     if (parmp->use_vimrc != NULL)
     {
@@ -1701,7 +1677,7 @@ source_startup_scripts(parmp)
         else
         {
             if (do_source(parmp->use_vimrc, FALSE, DOSO_NONE) != OK)
-                EMSG2((char *)"E282: Cannot read from \"%s\"", parmp->use_vimrc);
+                EMSG2("E282: Cannot read from \"%s\"", parmp->use_vimrc);
         }
     }
     else if (!silent_mode)
@@ -1848,7 +1824,7 @@ mainerr(n, str)
         mch_errmsg((char *)str);
         mch_errmsg("\"");
     }
-    mch_errmsg((char *)"\nMore info with: \"vim -h\"\n");
+    mch_errmsg("\nMore info with: \"vim -h\"\n");
 
     mch_exit(1);
 }
@@ -1889,54 +1865,53 @@ usage()
     reset_signals();            /* kill us with CTRL-C here, if you like */
 
     mch_msg(longVersion);
-    mch_msg((char *)"\n\nusage:");
+    mch_msg("\n\nusage:");
     for (i = 0; ; ++i)
     {
-        mch_msg((char *)" vim [arguments] ");
+        mch_msg(" vim [arguments] ");
         mch_msg((char *)use[i]);
         if (i == (sizeof(use) / sizeof(char_u *)) - 1)
             break;
-        mch_msg((char *)"\n   or:");
+        mch_msg("\n   or:");
     }
 
-    mch_msg((char *)"\n\nArguments:\n");
-    main_msg((char *)"--\t\t\tOnly file names after this");
-    main_msg((char *)"-v\t\t\tVi mode (like \"vi\")");
-    main_msg((char *)"-e\t\t\tEx mode (like \"ex\")");
-    main_msg((char *)"-E\t\t\tImproved Ex mode");
-    main_msg((char *)"-s\t\t\tSilent (batch) mode (only for \"ex\")");
-    main_msg((char *)"-y\t\t\tEasy mode (like \"evim\", modeless)");
-    main_msg((char *)"-R\t\t\tReadonly mode (like \"view\")");
-    main_msg((char *)"-Z\t\t\tRestricted mode (like \"rvim\")");
-    main_msg((char *)"-m\t\t\tModifications (writing files) not allowed");
-    main_msg((char *)"-M\t\t\tModifications in text not allowed");
-    main_msg((char *)"-b\t\t\tBinary mode");
-    main_msg((char *)"-l\t\t\tLisp mode");
-    main_msg((char *)"-C\t\t\tCompatible with Vi: 'compatible'");
-    main_msg((char *)"-N\t\t\tNot fully Vi compatible: 'nocompatible'");
-    main_msg((char *)"-V[N][fname]\t\tBe verbose [level N] [log messages to fname]");
-    main_msg((char *)"-D\t\t\tDebugging mode");
-    main_msg((char *)"-n\t\t\tNo swap file, use memory only");
-    main_msg((char *)"-r\t\t\tList swap files and exit");
-    main_msg((char *)"-r (with file name)\tRecover crashed session");
-    main_msg((char *)"-L\t\t\tSame as -r");
-    main_msg((char *)"-H\t\t\tStart in Hebrew mode");
-    main_msg((char *)"-T <terminal>\tSet terminal type to <terminal>");
-    main_msg((char *)"-u <vimrc>\t\tUse <vimrc> instead of any .vimrc");
-    main_msg((char *)"--noplugin\t\tDon't load plugin scripts");
-    main_msg((char *)"-p[N]\t\tOpen N tab pages (default: one for each file)");
-    main_msg((char *)"-o[N]\t\tOpen N windows (default: one for each file)");
-    main_msg((char *)"-O[N]\t\tLike -o but split vertically");
-    main_msg((char *)"+\t\t\tStart at end of file");
-    main_msg((char *)"+<lnum>\t\tStart at line <lnum>");
-    main_msg((char *)"--cmd <command>\tExecute <command> before loading any vimrc file");
-    main_msg((char *)"-c <command>\t\tExecute <command> after loading the first file");
-    main_msg((char *)"-S <session>\t\tSource file <session> after loading the first file");
-    main_msg((char *)"-s <scriptin>\tRead Normal mode commands from file <scriptin>");
-    main_msg((char *)"-w <scriptout>\tAppend all typed commands to file <scriptout>");
-    main_msg((char *)"-W <scriptout>\tWrite all typed commands to file <scriptout>");
-    main_msg((char *)"-h  or  --help\tPrint Help (this message) and exit");
-    main_msg((char *)"--version\t\tPrint version information and exit");
+    mch_msg("\n\nArguments:\n");
+    main_msg("--\t\t\tOnly file names after this");
+    main_msg("-v\t\t\tVi mode (like \"vi\")");
+    main_msg("-e\t\t\tEx mode (like \"ex\")");
+    main_msg("-E\t\t\tImproved Ex mode");
+    main_msg("-s\t\t\tSilent (batch) mode (only for \"ex\")");
+    main_msg("-y\t\t\tEasy mode (like \"evim\", modeless)");
+    main_msg("-R\t\t\tReadonly mode (like \"view\")");
+    main_msg("-Z\t\t\tRestricted mode (like \"rvim\")");
+    main_msg("-m\t\t\tModifications (writing files) not allowed");
+    main_msg("-M\t\t\tModifications in text not allowed");
+    main_msg("-b\t\t\tBinary mode");
+    main_msg("-l\t\t\tLisp mode");
+    main_msg("-C\t\t\tCompatible with Vi: 'compatible'");
+    main_msg("-N\t\t\tNot fully Vi compatible: 'nocompatible'");
+    main_msg("-V[N][fname]\t\tBe verbose [level N] [log messages to fname]");
+    main_msg("-D\t\t\tDebugging mode");
+    main_msg("-n\t\t\tNo swap file, use memory only");
+    main_msg("-r\t\t\tList swap files and exit");
+    main_msg("-r (with file name)\tRecover crashed session");
+    main_msg("-L\t\t\tSame as -r");
+    main_msg("-H\t\t\tStart in Hebrew mode");
+    main_msg("-T <terminal>\tSet terminal type to <terminal>");
+    main_msg("-u <vimrc>\t\tUse <vimrc> instead of any .vimrc");
+    main_msg("--noplugin\t\tDon't load plugin scripts");
+    main_msg("-p[N]\t\tOpen N tab pages (default: one for each file)");
+    main_msg("-o[N]\t\tOpen N windows (default: one for each file)");
+    main_msg("-O[N]\t\tLike -o but split vertically");
+    main_msg("+\t\t\tStart at end of file");
+    main_msg("+<lnum>\t\tStart at line <lnum>");
+    main_msg("--cmd <command>\tExecute <command> before loading any vimrc file");
+    main_msg("-c <command>\t\tExecute <command> after loading the first file");
+    main_msg("-S <session>\t\tSource file <session> after loading the first file");
+    main_msg("-s <scriptin>\tRead Normal mode commands from file <scriptin>");
+    main_msg("-w <scriptout>\tAppend all typed commands to file <scriptout>");
+    main_msg("-W <scriptout>\tWrite all typed commands to file <scriptout>");
+    main_msg("-h  or  --help\tPrint Help (this message) and exit");
 
         mch_exit(0);
 }

@@ -78,8 +78,7 @@ comp_botline(wp)
 }
 
 /*
- * Redraw when w_cline_row changes and 'relativenumber' or 'cursorline' is
- * set.
+ * Redraw when w_cline_row changes and 'relativenumber' or 'cursorline' is set.
  */
     static void
 redraw_for_cursorline(wp)
@@ -570,8 +569,7 @@ validate_virtcol_win(wp)
     {
         getvvcol(wp, &wp->w_cursor, NULL, &(wp->w_virtcol), NULL);
         wp->w_valid |= VALID_VIRTCOL;
-        if (wp->w_p_cuc
-                )
+        if (wp->w_p_cuc)
             redraw_win_later(wp, SOME_VALID);
     }
 }
@@ -731,8 +729,7 @@ curs_columns(may_scroll)
             curwin->w_wrow += n;
 
             /* When cursor wraps to first char of next line in Insert
-             * mode, the 'showbreak' string isn't shown, backup to first
-             * column */
+             * mode, the 'showbreak' string isn't shown, backup to first column */
             if (*p_sbr && *ml_get_cursor() == NUL && curwin->w_wcol == (int)vim_strsize(p_sbr))
                 curwin->w_wcol = 0;
         }
@@ -746,8 +743,7 @@ curs_columns(may_scroll)
         /*
          * If Cursor is left of the screen, scroll rightwards.
          * If Cursor is right of the screen, scroll leftwards
-         * If we get closer to the edge than 'sidescrolloff', scroll a little
-         * extra
+         * If we get closer to the edge than 'sidescrolloff', scroll a little extra
          */
         off_left = (int)startcol - (int)curwin->w_leftcol - p_siso;
         off_right = (int)endcol - (int)(curwin->w_leftcol + W_WIDTH(curwin) - p_siso) + 1;
@@ -1219,9 +1215,7 @@ scroll_cursor_bot(min_scroll, set_topbot)
             used += boff.height;
             if (used > curwin->w_height)
                 break;
-            if (extra < (
-                        mouse_dragging > 0 ? mouse_dragging - 1 :
-                        p_so) || scrolled < min_scroll)
+            if (extra < (mouse_dragging > 0 ? mouse_dragging - 1 : p_so) || scrolled < min_scroll)
             {
                 extra += boff.height;
                 if (boff.lnum >= curwin->w_botline)

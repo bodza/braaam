@@ -377,8 +377,7 @@ enc_canon_props(name)
  * p_enc must have been passed through enc_canonize() already.
  * Sets the "enc_unicode", "enc_utf8", "enc_dbcs" and "has_mbyte" flags.
  * Fills mb_bytelen_tab[] and returns NULL when there are no problems.
- * When there is something wrong: Returns an error message and doesn't change
- * anything.
+ * When there is something wrong: Returns an error message and doesn't change anything.
  */
     char_u *
 mb_init()
@@ -1426,8 +1425,7 @@ dbcs_ptr2char(p)
 
 /*
  * Convert a UTF-8 byte sequence to a wide character.
- * If the sequence is illegal or truncated by a NUL the first byte is
- * returned.
+ * If the sequence is illegal or truncated by a NUL the first byte is returned.
  * Does not include composing characters, of course.
  */
     int
@@ -1481,11 +1479,9 @@ utf_ptr2char(p)
  * On success, returns decoded codepoint, advances "s" to the beginning of
  * next character and decreases "n" accordingly.
  *
- * If end of string was reached, returns 0 and, if "n" > 0, advances "s" past
- * NUL byte.
+ * If end of string was reached, returns 0 and, if "n" > 0, advances "s" past NUL byte.
  *
- * If byte sequence is illegal or incomplete, returns -1 and does not advance
- * "s".
+ * If byte sequence is illegal or incomplete, returns -1 and does not advance "s".
  */
     static int
 utf_safe_read_char_adv(s, n)
@@ -3665,8 +3661,7 @@ enc_locale()
      */
     if ((p = (char *)vim_strchr((char_u *)s, '.')) != NULL)
     {
-        if (p > s + 2 && STRNICMP(p + 1, "EUC", 3) == 0
-                        && !isalnum((int)p[4]) && p[4] != '-' && p[-3] == '_')
+        if (p > s + 2 && STRNICMP(p + 1, "EUC", 3) == 0 && !isalnum((int)p[4]) && p[4] != '-' && p[-3] == '_')
         {
             /* copy "XY.EUC" to "euc-XY" to buf[10] */
             STRCPY(buf + 10, "euc-");
@@ -3790,8 +3785,7 @@ iconv_string(vcp, str, slen, unconvlenp, resultlenp)
         tolen = len - done - 2;
         /* Avoid a warning for systems with a wrong iconv() prototype by
          * casting the second argument to void *. */
-        if (iconv(vcp->vc_fd, (void *)&from, &fromlen, &to, &tolen)
-                                                                != (size_t)-1)
+        if (iconv(vcp->vc_fd, (void *)&from, &fromlen, &to, &tolen) != (size_t)-1)
         {
             /* Finished, append a NUL. */
             *to = NUL;
@@ -3854,8 +3848,7 @@ iconv_string(vcp, str, slen, unconvlenp, resultlenp)
  * Setup "vcp" for conversion from "from" to "to".
  * The names must have been made canonical with enc_canonize().
  * vcp->vc_type must have been initialized to CONV_NONE.
- * Note: cannot be used for conversion from/to ucs-2 and ucs-4 (will use utf-8
- * instead).
+ * Note: cannot be used for conversion from/to ucs-2 and ucs-4 (will use utf-8 instead).
  * Afterwards invoke with "from" and "to" equal to NULL to cleanup.
  * Return FAIL when conversion is not supported, OK otherwise.
  */

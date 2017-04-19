@@ -289,7 +289,7 @@ toggle_Magic(x)
 #define EMSG_RET_FAIL(m) return (EMSG(m), rc_did_emsg = TRUE, FAIL)
 #define EMSG2_RET_NULL(m, c) return (EMSG2((m), (c) ? "" : "\\"), rc_did_emsg = TRUE, (void *)NULL)
 #define EMSG2_RET_FAIL(m, c) return (EMSG2((m), (c) ? "" : "\\"), rc_did_emsg = TRUE, FAIL)
-#define EMSG_ONE_RET_NULL EMSG2_RET_NULL((char *)"E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL)
+#define EMSG_ONE_RET_NULL EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL)
 
 #define MAX_LIMIT       (32767L << 16L)
 
@@ -337,8 +337,7 @@ re_multi_type(c)
 #define WORST           0       /* Worst case. */
 
 /*
- * When regcode is set to this value, code is not emitted and size is computed
- * instead.
+ * When regcode is set to this value, code is not emitted and size is computed instead.
  */
 #define JUST_CALC_SIZE  ((char_u *) -1)
 
@@ -1054,13 +1053,12 @@ skip_anyof(p)
     {
         if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
             p += l;
-        else
-            if (*p == '-')
-            {
-                ++p;
-                if (*p != ']' && *p != NUL)
-                    mb_ptr_adv(p);
-            }
+        else if (*p == '-')
+        {
+            ++p;
+            if (*p != ']' && *p != NUL)
+                mb_ptr_adv(p);
+        }
         else if (*p == '\\'
                 && !reg_cpo_bsl
                 && (vim_strchr(REGEXP_INRANGE, p[1]) != NULL
@@ -1194,7 +1192,7 @@ bt_regcomp(expr, re_flags)
     /* Small enough for pointer-storage convention? */
 #if defined(SMALL_MALLOC) /* 16 bit storage allocation */
     if (regsize >= 65536L - 256L)
-        EMSG_RET_NULL((char *)"E339: Pattern too long");
+        EMSG_RET_NULL("E339: Pattern too long");
 #endif
 
     /* Allocate space. */
@@ -1212,7 +1210,7 @@ bt_regcomp(expr, re_flags)
     {
         vim_free(r);
         if (reg_toolong)
-            EMSG_RET_NULL((char *)"E339: Pattern too long");
+            EMSG_RET_NULL("E339: Pattern too long");
         return NULL;
     }
 
@@ -1364,17 +1362,16 @@ reg(paren, flagp)
     {
         /* Make a ZOPEN node. */
         if (regnzpar >= NSUBEXP)
-            EMSG_RET_NULL((char *)"E50: Too many \\z(");
+            EMSG_RET_NULL("E50: Too many \\z(");
         parno = regnzpar;
         regnzpar++;
         ret = regnode(ZOPEN + parno);
     }
-    else
-        if (paren == REG_PAREN)
+    else if (paren == REG_PAREN)
     {
         /* Make a MOPEN node. */
         if (regnpar >= NSUBEXP)
-            EMSG2_RET_NULL((char *)"E51: Too many %s(", reg_magic == MAGIC_ALL);
+            EMSG2_RET_NULL("E51: Too many %s(", reg_magic == MAGIC_ALL);
         parno = regnpar;
         ++regnpar;
         ret = regnode(MOPEN + parno);
@@ -1428,9 +1425,8 @@ reg(paren, flagp)
     if (paren != REG_NOPAREN && getchr() != Magic(')'))
     {
         if (paren == REG_ZPAREN)
-            EMSG_RET_NULL((char *)"E52: Unmatched \\z(");
-        else
-            if (paren == REG_NPAREN)
+            EMSG_RET_NULL("E52: Unmatched \\z(");
+        else if (paren == REG_NPAREN)
             EMSG2_RET_NULL((char *)e_unmatchedpp, reg_magic == MAGIC_ALL);
         else
             EMSG2_RET_NULL((char *)e_unmatchedp, reg_magic == MAGIC_ALL);
@@ -1477,8 +1473,7 @@ regbranch(flagp)
          * the branches anchors at start-of-line, the whole thing does.
          * If one of the branches uses look-behind, the whole thing does. */
         *flagp |= flags & (HASWIDTH | SPSTART | HASLOOKBH);
-        /* If one of the branches doesn't match a line-break, the whole thing
-         * doesn't. */
+        /* If one of the branches doesn't match a line-break, the whole thing doesn't. */
         *flagp &= ~HASNL | (flags & HASNL);
         if (chain != NULL)
             regtail(chain, latest);
@@ -1656,7 +1651,7 @@ regpiece(flagp)
                               }
                 }
                 if (lop == END)
-                    EMSG2_RET_NULL((char *)"E59: invalid character after %s@", reg_magic == MAGIC_ALL);
+                    EMSG2_RET_NULL("E59: invalid character after %s@", reg_magic == MAGIC_ALL);
                 /* Look behind must match with behind_pos. */
                 if (lop == BEHIND || lop == NOBEHIND)
                 {
@@ -1696,7 +1691,7 @@ regpiece(flagp)
             else
             {
                 if (num_complex_braces >= 10)
-                    EMSG2_RET_NULL((char *)"E60: Too many complex %s{...}s", reg_magic == MAGIC_ALL);
+                    EMSG2_RET_NULL("E60: Too many complex %s{...}s", reg_magic == MAGIC_ALL);
                 reginsert(BRACE_COMPLEX + num_complex_braces, ret);
                 regoptail(ret, regnode(BACK));
                 regoptail(ret, ret);
@@ -1711,9 +1706,9 @@ regpiece(flagp)
     {
         /* Can't have a multi follow a multi. */
         if (peekchr() == Magic('*'))
-            sprintf((char *)IObuff, (char *)"E61: Nested %s*", reg_magic >= MAGIC_ON ? "" : "\\");
+            sprintf((char *)IObuff, "E61: Nested %s*", reg_magic >= MAGIC_ON ? "" : "\\");
         else
-            sprintf((char *)IObuff, (char *)"E62: Nested %s%c",
+            sprintf((char *)IObuff, "E62: Nested %s%c",
                 reg_magic == MAGIC_ALL ? "" : "\\", no_Magic(peekchr()));
         EMSG_RET_NULL(IObuff);
     }
@@ -1828,7 +1823,7 @@ regatom(flagp)
       case Magic('U'):
         p = vim_strchr(classchars, no_Magic(c));
         if (p == NULL)
-            EMSG_RET_NULL((char *)"E63: invalid use of \\_");
+            EMSG_RET_NULL("E63: invalid use of \\_");
         /* When '.' is followed by a composing char ignore the dot, so that
          * the composing char is matched here. */
         if (enc_utf8 && c == Magic('.') && utf_iscomposing(peekchr()))
@@ -1882,7 +1877,7 @@ regatom(flagp)
       case Magic('{'):
       case Magic('*'):
         c = no_Magic(c);
-        sprintf((char *)IObuff, (char *)"E64: %s%c follows nothing",
+        sprintf((char *)IObuff, "E64: %s%c follows nothing",
                 (c == '*' ? reg_magic >= MAGIC_ON : reg_magic == MAGIC_ALL)
                 ? "" : "\\", c);
         EMSG_RET_NULL(IObuff);
@@ -1937,7 +1932,7 @@ regatom(flagp)
                         if (p[0] == '@' && p[1] == '<' && (p[2] == '!' || p[2] == '='))
                             break;
                     if (*p == NUL)
-                        EMSG_RET_NULL((char *)"E65: Illegal back reference");
+                        EMSG_RET_NULL("E65: Illegal back reference");
                 }
                 ret = regnode(BACKREF + refnum);
             }
@@ -1983,7 +1978,7 @@ regatom(flagp)
                               return NULL;
                           break;
 
-                default:  EMSG_RET_NULL((char *)"E68: Invalid character after \\z");
+                default:  EMSG_RET_NULL("E68: Invalid character after \\z");
             }
         }
         break;
@@ -2097,8 +2092,7 @@ regatom(flagp)
                               }
 
                               if (i < 0)
-                                  EMSG2_RET_NULL(
-                                        (char *)"E678: Invalid character after %s%%[dxouU]",
+                                  EMSG2_RET_NULL("E678: Invalid character after %s%%[dxouU]",
                                         reg_magic == MAGIC_ALL);
                               if (use_multibytecode(i))
                                   ret = regnode(MULTIBYTECODE);
@@ -2162,7 +2156,7 @@ regatom(flagp)
                               }
                           }
 
-                          EMSG2_RET_NULL((char *)"E71: Invalid character after %s%%",
+                          EMSG2_RET_NULL("E71: Invalid character after %s%%",
                                                       reg_magic == MAGIC_ALL);
             }
         }
@@ -3187,7 +3181,7 @@ read_limits(minval, maxval)
         regparse++;     /* Allow either \{...} or \{...\} */
     if (*regparse != '}')
     {
-        sprintf((char *)IObuff, (char *)"E554: Syntax error in %s{...}",
+        sprintf((char *)IObuff, "E554: Syntax error in %s{...}",
                                           reg_magic == MAGIC_ALL ? "" : "\\");
         EMSG_RET_FAIL(IObuff);
     }
@@ -3417,8 +3411,7 @@ static garray_T backpos = {0, 0, 0, 0, NULL};
  * Both for regstack and backpos tables we use the following strategy of
  * allocation (to reduce malloc/free calls):
  * - Initial size is fairly small.
- * - When needed, the tables are grown bigger (8 times at first, double after
- *   that).
+ * - When needed, the tables are grown bigger (8 times at first, double after that).
  * - After executing the match we free the memory only if the array has grown.
  *   Thus the memory is kept allocated when it's at the initial size.
  * This makes it fast while not keeping a lot of memory allocated.
@@ -3765,8 +3758,7 @@ ref_extmatch(em)
 }
 
 /*
- * Remove a reference to an extmatch.  If there are no references left, free
- * the info.
+ * Remove a reference to an extmatch.  If there are no references left, free the info.
  */
     void
 unref_extmatch(em)
@@ -3963,8 +3955,7 @@ static long     bl_maxval;
  * matches, push an item onto the regstack and loop to see whether the rest
  * matches, and then act accordingly.  In practice we make some effort to
  * avoid using the regstack, in particular by going through "ordinary" nodes
- * (that don't need to know whether the rest of the match failed) by a nested
- * loop.
+ * (that don't need to know whether the rest of the match failed) by a nested loop.
  *
  * Returns TRUE when there is a match.  Leaves reginput and reglnum just after
  * the last matched character.
@@ -4002,8 +3993,7 @@ regmatch(scan)
     fast_breakcheck();
 
     /*
-     * Repeat for items that can be matched sequentially, without using the
-     * regstack.
+     * Repeat for items that can be matched sequentially, without using the regstack.
      */
     for (;;)
     {
@@ -4853,8 +4843,7 @@ regmatch(scan)
                 /*
                  * When maxval > minval, try matching as much as possible, up
                  * to maxval.  When maxval < minval, try matching at least the
-                 * minimal number (since the range is backwards, that's also
-                 * maxval!).
+                 * minimal number (since the range is backwards, that's also maxval!).
                  */
                 rst.count = regrepeat(OPERAND(scan), rst.maxval);
                 if (got_int)
@@ -5198,8 +5187,7 @@ regmatch(scan)
                     else
                     {
                         mb_ptr_back(regline, rp->rs_un.regsave.rs_u.ptr);
-                        if (limit > 0 && (long)(behind_pos.rs_u.ptr
-                                     - rp->rs_un.regsave.rs_u.ptr) > limit)
+                        if (limit > 0 && (long)(behind_pos.rs_u.ptr - rp->rs_un.regsave.rs_u.ptr) > limit)
                             no = FAIL;
                     }
                 }
@@ -5289,8 +5277,7 @@ regmatch(scan)
                         {
                             /* Range is backwards, use shortest match first.
                              * Careful: maxval and minval are exchanged!
-                             * Couldn't or didn't match: try advancing one
-                             * char. */
+                             * Couldn't or didn't match: try advancing one char. */
                             if (rst->count == rst->minval || regrepeat(OPERAND(rp->rs_scan), 1L) == 0)
                                 break;
                             ++rst->count;
@@ -5323,8 +5310,7 @@ regmatch(scan)
 
         /* If we want to continue the inner loop or didn't pop a state
          * continue matching loop */
-        if (status == RA_CONT || rp == (regitem_T *)
-                             ((char *)regstack.ga_data + regstack.ga_len) - 1)
+        if (status == RA_CONT || rp == (regitem_T *)((char *)regstack.ga_data + regstack.ga_len) - 1)
             break;
     }
 
@@ -6109,7 +6095,7 @@ re_mult_next(what)
     char *what;
 {
     if (re_multi_type(peekchr()) == MULTI_MULT)
-        EMSG2_RET_FAIL((char *)"E888: (NFA regexp) cannot repeat %s", what);
+        EMSG2_RET_FAIL("E888: (NFA regexp) cannot repeat %s", what);
     return OK;
 }
 
@@ -6268,8 +6254,7 @@ cstrchr(s, c)
      * For UTF-8 need to use folded case. */
     if (enc_utf8 && c > 0x80)
         cc = utf_fold(c);
-    else
-         if (MB_ISUPPER(c))
+    else if (MB_ISUPPER(c))
         cc = MB_TOLOWER(c);
     else if (MB_ISLOWER(c))
         cc = MB_TOUPPER(c);
@@ -6726,9 +6711,8 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                 }
                 src += totlen - 1;
             }
-            else
-                if (copy)
-                    *dst = cc;
+            else if (copy)
+                *dst = cc;
             dst++;
         }
         else
@@ -6833,9 +6817,8 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                                     mb_char2bytes(cc, dst);
                                 dst += mb_char2len(cc) - 1;
                             }
-                            else
-                                if (copy)
-                                    *dst = cc;
+                            else if (copy)
+                                *dst = cc;
                             dst++;
                         }
 
@@ -7036,8 +7019,7 @@ reg_submatch_list(no)
         list = list_alloc();
         if (list == NULL)
             return NULL;
-        if (list_append_string(list, s,
-                                 (int)(submatch_match->endp[no] - s)) == FAIL)
+        if (list_append_string(list, s, (int)(submatch_match->endp[no] - s)) == FAIL)
             error = TRUE;
     }
 
@@ -7103,7 +7085,7 @@ vim_regcomp(expr_arg, re_flags)
         }
         else
         {
-            EMSG((char *)"E864: \\%#= can only be followed by 0, 1, or 2. The automatic engine will be used ");
+            EMSG("E864: \\%#= can only be followed by 0, 1, or 2. The automatic engine will be used ");
             regexp_engine = AUTOMATIC_ENGINE;
         }
     }
@@ -7165,7 +7147,7 @@ report_re_switch(pat)
     if (p_verbose > 0)
     {
         verbose_enter();
-        MSG_PUTS((char *)"Switching to backtracking RE engine for pattern: ");
+        MSG_PUTS("Switching to backtracking RE engine for pattern: ");
         MSG_PUTS(pat);
         verbose_leave();
     }

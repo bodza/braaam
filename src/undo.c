@@ -296,7 +296,7 @@ u_savecommon(top, bot, newbot, reload)
         {
             /* This happens when the FileChangedRO autocommand changes the
              * file in a way it becomes shorter. */
-            EMSG((char *)"E881: Line count changed unexpectedly");
+            EMSG("E881: Line count changed unexpectedly");
             return FAIL;
         }
     }
@@ -421,8 +421,7 @@ u_savecommon(top, bot, newbot, reload)
          * making lots of changes inside the same line.
          * This is only possible if the previous change didn't increase or
          * decrease the number of lines.
-         * Check the ten last changes.  More doesn't make sense and takes too
-         * long.
+         * Check the ten last changes.  More doesn't make sense and takes too long.
          */
         if (size == 1)
         {
@@ -515,8 +514,7 @@ u_savecommon(top, bot, newbot, reload)
 
     if (size > 0)
     {
-        if ((uep->ue_array = (char_u **)U_ALLOC_LINE(
-                                            sizeof(char_u *) * size)) == NULL)
+        if ((uep->ue_array = (char_u **)U_ALLOC_LINE(sizeof(char_u *) * size)) == NULL)
         {
             u_freeentry(uep, 0L);
             goto nomem;
@@ -677,7 +675,7 @@ corruption_error(mesg, file_name)
     char *mesg;
     char_u *file_name;
 {
-    EMSG3((char *)"E825: Corrupted undo file (%s): %s", mesg, file_name);
+    EMSG3("E825: Corrupted undo file (%s): %s", mesg, file_name);
 }
 
     static void
@@ -1350,7 +1348,7 @@ u_write_undo(name, forceit, buf, hash)
 write_error:
     fclose(fp);
     if (!write_ok)
-        EMSG2((char *)"E829: write error in undo file: %s", file_name);
+        EMSG2("E829: write error in undo file: %s", file_name);
 
 theend:
     if (file_name != name)
@@ -1431,7 +1429,7 @@ u_read_undo(name, hash, orig_name)
     if (fp == NULL)
     {
         if (name != NULL || p_verbose > 0)
-            EMSG2((char *)"E822: Cannot open undo file for reading: %s", file_name);
+            EMSG2("E822: Cannot open undo file for reading: %s", file_name);
         goto error;
     }
     bi.bi_buf = curbuf;
@@ -1443,18 +1441,18 @@ u_read_undo(name, hash, orig_name)
     if (fread(magic_buf, UF_START_MAGIC_LEN, 1, fp) != 1
                 || memcmp(magic_buf, UF_START_MAGIC, UF_START_MAGIC_LEN) != 0)
     {
-        EMSG2((char *)"E823: Not an undo file: %s", file_name);
+        EMSG2("E823: Not an undo file: %s", file_name);
         goto error;
     }
     version = get2c(fp);
     if (version == UF_VERSION_CRYPT)
     {
-        EMSG2((char *)"E827: Undo file is encrypted: %s", file_name);
+        EMSG2("E827: Undo file is encrypted: %s", file_name);
         goto error;
     }
     else if (version != UF_VERSION)
     {
-        EMSG2((char *)"E824: Incompatible undo file: %s", file_name);
+        EMSG2("E824: Incompatible undo file: %s", file_name);
         goto error;
     }
 
@@ -1738,7 +1736,7 @@ u_doit(startcount)
                 beep_flush();
                 if (count == startcount - 1)
                 {
-                    MSG((char *)"Already at oldest change");
+                    MSG("Already at oldest change");
                     return;
                 }
                 break;
@@ -1753,7 +1751,7 @@ u_doit(startcount)
                 beep_flush();   /* nothing to redo */
                 if (count == startcount - 1)
                 {
-                    MSG((char *)"Already at newest change");
+                    MSG("Already at newest change");
                     return;
                 }
                 break;
@@ -1774,8 +1772,7 @@ u_doit(startcount)
 /*
  * Undo or redo over the timeline.
  * When "step" is negative go back in time, otherwise goes forward in time.
- * When "sec" is FALSE make "step" steps, when "sec" is TRUE use "step" as
- * seconds.
+ * When "sec" is FALSE make "step" steps, when "sec" is TRUE use "step" as seconds.
  * When "file" is TRUE use "step" as a number of file writes.
  * When "absolute" is TRUE use "step" as the sequence number to jump to.
  * "sec" must be FALSE then.
@@ -1989,16 +1986,16 @@ undo_time(step, sec, file, absolute)
 
         if (absolute)
         {
-            EMSGN((char *)"E830: Undo number %ld not found", step);
+            EMSGN("E830: Undo number %ld not found", step);
             return;
         }
 
         if (closest == closest_start)
         {
             if (step < 0)
-                MSG((char *)"Already at oldest change");
+                MSG("Already at oldest change");
             else
-                MSG((char *)"Already at newest change");
+                MSG("Already at newest change");
             return;
         }
 
@@ -2165,7 +2162,7 @@ u_undoredo(undo)
         if (top > curbuf->b_ml.ml_line_count || top >= bot || bot > curbuf->b_ml.ml_line_count + 1)
         {
             unblock_autocmds();
-            EMSG((char *)"E438: u_undo: line numbers wrong");
+            EMSG("E438: u_undo: line numbers wrong");
             changed();          /* don't want UNCHANGED now */
             return;
         }
@@ -2187,8 +2184,7 @@ u_undoredo(undo)
             else
             {
                 /* Use the first line that actually changed.  Avoids that
-                 * undoing auto-formatting puts the cursor in the previous
-                 * line. */
+                 * undoing auto-formatting puts the cursor in the previous line. */
                 for (i = 0; i < newsize && i < oldsize; ++i)
                     if (STRCMP(uep->ue_array[i], ml_get(top + 1 + i)) != 0)
                         break;
@@ -2210,8 +2206,7 @@ u_undoredo(undo)
         /* delete the lines between top and bot and save them in newarray */
         if (oldsize > 0)
         {
-            if ((newarray = (char_u **)U_ALLOC_LINE(
-                                         sizeof(char_u *) * oldsize)) == NULL)
+            if ((newarray = (char_u **)U_ALLOC_LINE(sizeof(char_u *) * oldsize)) == NULL)
             {
                 do_outofmem_msg((long_u)(sizeof(char_u *) * oldsize));
                 /*
@@ -2450,7 +2445,7 @@ u_undo_end(did_undo, absolute)
     smsg((char_u *)"%ld %s; %s #%ld  %s",
             u_oldcount < 0 ? -u_oldcount : u_oldcount,
             (char *)msgstr,
-            did_undo ? (char *)"before" : (char *)"after",
+            did_undo ? "before" : "after",
             uhp == NULL ? 0L : uhp->uh_seq,
             msgbuf);
 }
@@ -2556,7 +2551,7 @@ ex_undolist(eap)
     }
 
     if (ga.ga_len == 0)
-        MSG((char *)"Nothing to undo");
+        MSG("Nothing to undo");
     else
     {
         sort_strings((char_u **)ga.ga_data, ga.ga_len);
@@ -2598,7 +2593,7 @@ u_add_time(buf, buflen, tt)
             (void)strftime((char *)buf, buflen, "%Y/%m/%d %H:%M:%S", curtime);
     }
     else
-        vim_snprintf((char *)buf, buflen, (char *)"%ld seconds ago", (long)(time(NULL) - tt));
+        vim_snprintf((char *)buf, buflen, "%ld seconds ago", (long)(time(NULL) - tt));
 }
 
 /*
@@ -2612,7 +2607,7 @@ ex_undojoin(eap)
         return;             /* nothing changed before */
     if (curbuf->b_u_curhead != NULL)
     {
-        EMSG((char *)"E790: undojoin is not allowed after undo");
+        EMSG("E790: undojoin is not allowed after undo");
         return;
     }
     if (!curbuf->b_u_synced)
@@ -2717,7 +2712,7 @@ u_get_headentry()
 {
     if (curbuf->b_u_newhead == NULL || curbuf->b_u_newhead->uh_entry == NULL)
     {
-        EMSG((char *)"E439: undo list corrupt");
+        EMSG("E439: undo list corrupt");
         return NULL;
     }
     return curbuf->b_u_newhead->uh_entry;
@@ -2749,11 +2744,10 @@ u_getbot()
         uep->ue_bot = uep->ue_top + uep->ue_size + 1 + extra;
         if (uep->ue_bot < 1 || uep->ue_bot > curbuf->b_ml.ml_line_count)
         {
-            EMSG((char *)"E440: undo line missing");
+            EMSG("E440: undo line missing");
             uep->ue_bot = uep->ue_top + 1;  /* assume all lines deleted, will
                                              * get all the old lines back
-                                             * without deleting the current
-                                             * ones */
+                                             * without deleting the current ones */
         }
 
         curbuf->b_u_newhead->uh_getbot_entry = NULL;
@@ -2946,8 +2940,7 @@ u_undoline()
     }
 
     /* first save the line for the 'u' command */
-    if (u_savecommon(curbuf->b_u_line_lnum - 1,
-                       curbuf->b_u_line_lnum + 1, (linenr_T)0, FALSE) == FAIL)
+    if (u_savecommon(curbuf->b_u_line_lnum - 1, curbuf->b_u_line_lnum + 1, (linenr_T)0, FALSE) == FAIL)
         return;
     oldp = u_save_line(curbuf->b_u_line_lnum);
     if (oldp == NULL)

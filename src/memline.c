@@ -1,7 +1,3 @@
-/* for debugging */
-/* #define CHECK(c, s)  if (c) EMSG(s) */
-#define CHECK(c, s)
-
 /*
  * memline.c: Contains the functions for appending, deleting and changing the
  * text lines. The memfile functions are used to store the information in
@@ -289,7 +285,7 @@ ml_open(buf)
         goto error;
     if (hp->bh_bnum != 0)
     {
-        EMSG((char *)"E298: Didn't get block nr 0?");
+        EMSG("E298: Didn't get block nr 0?");
         goto error;
     }
     b0p = (ZERO_BL *)(hp->bh_data);
@@ -301,7 +297,7 @@ ml_open(buf)
     b0p->b0_magic_short = (short)B0_MAGIC_SHORT;
     b0p->b0_magic_char = B0_MAGIC_CHAR;
     STRNCPY(b0p->b0_version, "VIM ", 4);
-    STRNCPY(b0p->b0_version + 4, Version, 6);
+    STRNCPY(b0p->b0_version + 4, shortVersion, 6);
     long_to_char((long)mfp->mf_page_size, b0p->b0_page_size);
 
     {
@@ -333,7 +329,7 @@ ml_open(buf)
         goto error;
     if (hp->bh_bnum != 1)
     {
-        EMSG((char *)"E298: Didn't get block nr 1?");
+        EMSG("E298: Didn't get block nr 1?");
         goto error;
     }
     pp = (PTR_BL *)(hp->bh_data);
@@ -351,7 +347,7 @@ ml_open(buf)
         goto error;
     if (hp->bh_bnum != 2)
     {
-        EMSG((char *)"E298: Didn't get block nr 2?");
+        EMSG("E298: Didn't get block nr 2?");
         goto error;
     }
 
@@ -448,7 +444,7 @@ ml_setname(buf)
         if (mfp->mf_fd < 0)
         {
             /* could not (re)open the swap file, what can we do???? */
-            EMSG((char *)"E301: Oops, lost the swap file!!!");
+            EMSG("E301: Oops, lost the swap file!!!");
             return;
         }
         {
@@ -458,7 +454,7 @@ ml_setname(buf)
         }
     }
     if (!success)
-        EMSG((char *)"E302: Could not rename swap file");
+        EMSG("E302: Could not rename swap file");
 }
 
 /*
@@ -531,7 +527,7 @@ ml_open_file(buf)
     {
         need_wait_return = TRUE;        /* call wait_return later */
         ++no_wait_return;
-        (void)EMSG2((char *)"E303: Unable to open swap file for \"%s\", recovery impossible",
+        (void)EMSG2("E303: Unable to open swap file for \"%s\", recovery impossible",
                     buf_spname(buf) != NULL ? buf_spname(buf) : buf->b_fname);
         --no_wait_return;
     }
@@ -659,7 +655,7 @@ ml_upd_block0(buf, what)
 
     b0p = (ZERO_BL *)(hp->bh_data);
     if (ml_check_b0_id(b0p) == FAIL)
-        EMSG((char *)"E304: ml_upd_block0(): Didn't get block 0??");
+        EMSG("E304: ml_upd_block0(): Didn't get block 0??");
     else
     {
         if (what == UB_FNAME)
@@ -739,8 +735,7 @@ set_b0_fname(b0p, buf)
 /*
  * Update the B0_SAME_DIR flag of the swap file.  It's set if the file and the
  * swapfile for "buf" are in the same directory.
- * This is fail safe: if we are not sure the directories are equal the flag is
- * not set.
+ * This is fail safe: if we are not sure the directories are equal the flag is not set.
  */
     static void
 set_b0_dir_flag(b0p, buf)
@@ -841,7 +836,7 @@ ml_recover()
         len = recover_names(fname, FALSE, 0, NULL);
         if (len == 0)               /* no swap files found */
         {
-            EMSG2((char *)"E305: No swap file found for %s", fname);
+            EMSG2("E305: No swap file found for %s", fname);
             goto theend;
         }
         if (len == 1)               /* one swap file found, use it */
@@ -851,7 +846,7 @@ ml_recover()
             /* list the names of the swap files */
             (void)recover_names(fname, TRUE, 0, NULL);
             msg_putchar('\n');
-            MSG_PUTS((char *)"Enter number of swap file to use (0 to quit): ");
+            MSG_PUTS("Enter number of swap file to use (0 to quit): ");
             i = get_number(FALSE, NULL);
             if (i < 1 || i > len)
                 goto theend;
@@ -894,7 +889,7 @@ ml_recover()
     if (mfp == NULL || mfp->mf_fd < 0)
     {
         if (fname_used != NULL)
-            EMSG2((char *)"E306: Cannot open %s", fname_used);
+            EMSG2("E306: Cannot open %s", fname_used);
         goto theend;
     }
     buf->b_ml.ml_mfp = mfp;
@@ -913,9 +908,9 @@ ml_recover()
     if ((hp = mf_get(mfp, (blocknr_T)0, 1)) == NULL)
     {
         msg_start();
-        MSG_PUTS_ATTR((char *)"Unable to read block 0 from ", attr | MSG_HIST);
+        MSG_PUTS_ATTR("Unable to read block 0 from ", attr | MSG_HIST);
         msg_outtrans_attr(mfp->mf_fname, attr | MSG_HIST);
-        MSG_PUTS_ATTR((char *)"\nMaybe no changes were made or Vim did not update the swap file.",
+        MSG_PUTS_ATTR("\nMaybe no changes were made or Vim did not update the swap file.",
                 attr | MSG_HIST);
         msg_end();
         goto theend;
@@ -925,33 +920,33 @@ ml_recover()
     {
         msg_start();
         msg_outtrans_attr(mfp->mf_fname, MSG_HIST);
-        MSG_PUTS_ATTR((char *)" cannot be used with this version of Vim.\n", MSG_HIST);
-        MSG_PUTS_ATTR((char *)"Use Vim version 3.0.\n", MSG_HIST);
+        MSG_PUTS_ATTR(" cannot be used with this version of Vim.\n", MSG_HIST);
+        MSG_PUTS_ATTR("Use Vim version 3.0.\n", MSG_HIST);
         msg_end();
         goto theend;
     }
     if (ml_check_b0_id(b0p) == FAIL)
     {
-        EMSG2((char *)"E307: %s does not look like a Vim swap file", mfp->mf_fname);
+        EMSG2("E307: %s does not look like a Vim swap file", mfp->mf_fname);
         goto theend;
     }
     if (b0_magic_wrong(b0p))
     {
         msg_start();
         msg_outtrans_attr(mfp->mf_fname, attr | MSG_HIST);
-        MSG_PUTS_ATTR((char *)" cannot be used on this computer.\n", attr | MSG_HIST);
-        MSG_PUTS_ATTR((char *)"The file was created on ", attr | MSG_HIST);
+        MSG_PUTS_ATTR(" cannot be used on this computer.\n", attr | MSG_HIST);
+        MSG_PUTS_ATTR("The file was created on ", attr | MSG_HIST);
         /* avoid going past the end of a corrupted hostname */
         b0p->b0_fname[0] = NUL;
         MSG_PUTS_ATTR(b0p->b0_hname, attr | MSG_HIST);
-        MSG_PUTS_ATTR((char *)",\nor the file has been damaged.", attr | MSG_HIST);
+        MSG_PUTS_ATTR(",\nor the file has been damaged.", attr | MSG_HIST);
         msg_end();
         goto theend;
     }
 
     if (b0p->b0_id[1] != BLOCK0_ID1)
     {
-        EMSG2((char *)"E833: %s is encrypted and this version of Vim does not support encryption", mfp->mf_fname);
+        EMSG2("E833: %s is encrypted and this version of Vim does not support encryption", mfp->mf_fname);
         goto theend;
     }
 
@@ -968,7 +963,7 @@ ml_recover()
         {
             msg_start();
             msg_outtrans_attr(mfp->mf_fname, attr | MSG_HIST);
-            MSG_PUTS_ATTR((char *)" has been damaged (page size is smaller than minimum value).\n",
+            MSG_PUTS_ATTR(" has been damaged (page size is smaller than minimum value).\n",
                         attr | MSG_HIST);
             msg_end();
             goto theend;
@@ -1019,7 +1014,7 @@ ml_recover()
                     && org_stat.st_mtime > swp_stat.st_mtime)
                 || org_stat.st_mtime != mtime))
     {
-        EMSG((char *)"E308: Warning: Original file may have been changed");
+        EMSG("E308: Warning: Original file may have been changed");
     }
     out_flush();
 
@@ -1091,7 +1086,7 @@ ml_recover()
         {
             if (bnum == 1)
             {
-                EMSG2((char *)"E309: Unable to read block 1 from %s", mfp->mf_fname);
+                EMSG2("E309: Unable to read block 1 from %s", mfp->mf_fname);
                 goto theend;
             }
             ++error;
@@ -1173,7 +1168,7 @@ ml_recover()
                 {
                     if (bnum == 1)
                     {
-                        EMSG2((char *)"E310: Block 1 ID wrong (%s not a .swp file?)", mfp->mf_fname);
+                        EMSG2("E310: Block 1 ID wrong (%s not a .swp file?)", mfp->mf_fname);
                         goto theend;
                     }
                     ++error;
@@ -1286,27 +1281,27 @@ ml_recover()
 
     recoverymode = FALSE;
     if (got_int)
-        EMSG((char *)"E311: Recovery Interrupted");
+        EMSG("E311: Recovery Interrupted");
     else if (error)
     {
         ++no_wait_return;
         MSG(">>>>>>>>>>>>>");
-        EMSG((char *)"E312: Errors detected while recovering; look for lines starting with ???");
+        EMSG("E312: Errors detected while recovering; look for lines starting with ???");
         --no_wait_return;
-        MSG((char *)"See \":help E312\" for more information.");
+        MSG("See \":help E312\" for more information.");
         MSG(">>>>>>>>>>>>>");
     }
     else
     {
         if (curbuf->b_changed)
         {
-            MSG((char *)"Recovery completed. You should check if everything is OK.");
-            MSG_PUTS((char *)"\n(You might want to write out this file under another name\n");
-            MSG_PUTS((char *)"and run diff with the original file to check for changes)");
+            MSG("Recovery completed. You should check if everything is OK.");
+            MSG_PUTS("\n(You might want to write out this file under another name\n");
+            MSG_PUTS("and run diff with the original file to check for changes)");
         }
         else
-            MSG((char *)"Recovery completed. Buffer contents equals file contents.");
-        MSG_PUTS((char *)"\nYou may want to delete the .swp file now.\n\n");
+            MSG("Recovery completed. Buffer contents equals file contents.");
+        MSG_PUTS("\nYou may want to delete the .swp file now.\n\n");
         cmdline_row = msg_row;
     }
     redraw_curbuf_later(NOT_VALID);
@@ -1522,13 +1517,13 @@ recover_names(fname, list, nr, fname_out)
             if (dir_name[0] == '.' && dir_name[1] == NUL)
             {
                 if (fname == NULL)
-                    MSG_PUTS((char *)"   In current directory:\n");
+                    MSG_PUTS("   In current directory:\n");
                 else
-                    MSG_PUTS((char *)"   Using specified name:\n");
+                    MSG_PUTS("   Using specified name:\n");
             }
             else
             {
-                MSG_PUTS((char *)"   In directory ");
+                MSG_PUTS("   In directory ");
                 msg_home_replace(dir_name);
                 MSG_PUTS(":\n");
             }
@@ -1546,7 +1541,7 @@ recover_names(fname, list, nr, fname_out)
                 }
             }
             else
-                MSG_PUTS((char *)"      -- none --\n");
+                MSG_PUTS("      -- none --\n");
             out_flush();
         }
         else
@@ -1614,12 +1609,12 @@ swapfile_info(fname)
         /* print name of owner of the file */
         if (mch_get_uname(st.st_uid, uname, B0_UNAME_SIZE) == OK)
         {
-            MSG_PUTS((char *)"          owned by: ");
+            MSG_PUTS("          owned by: ");
             msg_outtrans(uname);
-            MSG_PUTS((char *)"   dated: ");
+            MSG_PUTS("   dated: ");
         }
         else
-            MSG_PUTS((char *)"             dated: ");
+            MSG_PUTS("             dated: ");
         x = st.st_mtime;                    /* Manx C can't do &st.st_mtime */
         p = ctime(&x);                      /* includes '\n' */
         if (p == NULL)
@@ -1638,62 +1633,62 @@ swapfile_info(fname)
         {
             if (STRNCMP(b0.b0_version, "VIM 3.0", 7) == 0)
             {
-                MSG_PUTS((char *)"         [from Vim version 3.0]");
+                MSG_PUTS("         [from Vim version 3.0]");
             }
             else if (ml_check_b0_id(&b0) == FAIL)
             {
-                MSG_PUTS((char *)"         [does not look like a Vim swap file]");
+                MSG_PUTS("         [does not look like a Vim swap file]");
             }
             else
             {
-                MSG_PUTS((char *)"         file name: ");
+                MSG_PUTS("         file name: ");
                 if (b0.b0_fname[0] == NUL)
-                    MSG_PUTS((char *)"[No Name]");
+                    MSG_PUTS("[No Name]");
                 else
                     msg_outtrans(b0.b0_fname);
 
-                MSG_PUTS((char *)"\n          modified: ");
-                MSG_PUTS(b0.b0_dirty ? (char *)"YES" : (char *)"no");
+                MSG_PUTS("\n          modified: ");
+                MSG_PUTS(b0.b0_dirty ? "YES" : "no");
 
                 if (*(b0.b0_uname) != NUL)
                 {
-                    MSG_PUTS((char *)"\n         user name: ");
+                    MSG_PUTS("\n         user name: ");
                     msg_outtrans(b0.b0_uname);
                 }
 
                 if (*(b0.b0_hname) != NUL)
                 {
                     if (*(b0.b0_uname) != NUL)
-                        MSG_PUTS((char *)"   host name: ");
+                        MSG_PUTS("   host name: ");
                     else
-                        MSG_PUTS((char *)"\n         host name: ");
+                        MSG_PUTS("\n         host name: ");
                     msg_outtrans(b0.b0_hname);
                 }
 
                 if (char_to_long(b0.b0_pid) != 0L)
                 {
-                    MSG_PUTS((char *)"\n        process ID: ");
+                    MSG_PUTS("\n        process ID: ");
                     msg_outnum(char_to_long(b0.b0_pid));
                     /* EMX kill() not working correctly, it seems */
                     if (kill((pid_t)char_to_long(b0.b0_pid), 0) == 0)
                     {
-                        MSG_PUTS((char *)" (still running)");
+                        MSG_PUTS(" (still running)");
                         process_still_running = TRUE;
                     }
                 }
 
                 if (b0_magic_wrong(&b0))
                 {
-                    MSG_PUTS((char *)"\n         [not usable on this computer]");
+                    MSG_PUTS("\n         [not usable on this computer]");
                 }
             }
         }
         else
-            MSG_PUTS((char *)"         [cannot be read]");
+            MSG_PUTS("         [cannot be read]");
         close(fd);
     }
     else
-        MSG_PUTS((char *)"         [cannot be opened]");
+        MSG_PUTS("         [cannot be opened]");
     msg_putchar('\n');
 
     return x;
@@ -1851,7 +1846,7 @@ ml_preserve(buf, message)
     if (mfp == NULL || mfp->mf_fname == NULL)
     {
         if (message)
-            EMSG((char *)"E313: Cannot preserve, there is no swap file");
+            EMSG("E313: Cannot preserve, there is no swap file");
         return;
     }
 
@@ -1868,8 +1863,7 @@ ml_preserve(buf, message)
 
     /*
      * Some of the data blocks may have been changed from negative to
-     * positive block number. In that case the pointer blocks need to be
-     * updated.
+     * positive block number. In that case the pointer blocks need to be updated.
      *
      * We don't know in which pointer block the references are, so we visit
      * all data blocks until there are no more translations to be done (or
@@ -1889,7 +1883,6 @@ ml_preserve(buf, message)
                 status = FAIL;
                 goto theend;
             }
-            CHECK(buf->b_ml.ml_locked_low != lnum, "low != lnum");
             lnum = buf->b_ml.ml_locked_high + 1;
         }
         (void)ml_find_line(buf, (linenr_T)0, ML_FLUSH); /* flush locked block */
@@ -1904,9 +1897,9 @@ theend:
     if (message)
     {
         if (status == OK)
-            MSG((char *)"File preserved");
+            MSG("File preserved");
         else
-            EMSG((char *)"E314: Preserve failed");
+            EMSG("E314: Preserve failed");
     }
 }
 
@@ -1962,8 +1955,7 @@ ml_get_cursor()
 /*
  * Return a pointer to a line in a specific buffer
  *
- * "will_change": if TRUE mark the buffer dirty (chars in the line will be
- * changed)
+ * "will_change": if TRUE mark the buffer dirty (chars in the line will be changed)
  */
     char_u  *
 ml_get_buf(buf, lnum, will_change)
@@ -1983,7 +1975,7 @@ ml_get_buf(buf, lnum, will_change)
             /* Avoid giving this message for a recursive call, may happen when
              * the GUI redraws part of the text. */
             ++recursive;
-            EMSGN((char *)"E315: ml_get: invalid lnum: %ld", lnum);
+            EMSGN("E315: ml_get: invalid lnum: %ld", lnum);
             --recursive;
         }
 errorret:
@@ -1999,8 +1991,7 @@ errorret:
     /*
      * See if it is the same line as requested last time.
      * Otherwise may need to flush last used line.
-     * Don't use the last used line when 'swapfile' is reset, need to load all
-     * blocks.
+     * Don't use the last used line when 'swapfile' is reset, need to load all blocks.
      */
     if (buf->b_ml.ml_line_lnum != lnum || mf_dont_release)
     {
@@ -2018,7 +2009,7 @@ errorret:
                 /* Avoid giving this message for a recursive call, may happen
                  * when the GUI redraws part of the text. */
                 ++recursive;
-                EMSGN((char *)"E316: ml_get: cannot find line %ld", lnum);
+                EMSGN("E316: ml_get: cannot find line %ld", lnum);
                 --recursive;
             }
             goto errorret;
@@ -2153,7 +2144,6 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
         db_idx = -1;                /* careful, it is negative! */
                     /* get line count before the insertion */
         line_count = buf->b_ml.ml_locked_high - buf->b_ml.ml_locked_low;
-        CHECK(buf->b_ml.ml_locked_low != lnum + 1, "locked_low != lnum + 1");
 
         dp = (DATA_BL *)(hp->bh_data);
     }
@@ -2403,7 +2393,7 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
             pp = (PTR_BL *)(hp->bh_data);   /* must be pointer block */
             if (pp->pb_id != PTR_ID)
             {
-                EMSG((char *)"E317: pointer block id wrong 3");
+                EMSG("E317: pointer block id wrong 3");
                 mf_put(mfp, hp, FALSE, FALSE);
                 return FAIL;
             }
@@ -2482,7 +2472,6 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
                     mf_put(mfp, hp, TRUE, FALSE);   /* release block 1 */
                     hp = hp_new;                /* new block is to be split */
                     pp = pp_new;
-                    CHECK(stack_idx != 0, (char *)"stack_idx should be 0");
                     ip->ip_index = 0;
                     ++stack_idx;        /* do block 1 again later */
                 }
@@ -2544,7 +2533,7 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
          */
         if (stack_idx < 0)
         {
-            EMSG((char *)"E318: Updated too many blocks?");
+            EMSG("E318: Updated too many blocks?");
             buf->b_ml.ml_stack_top = 0; /* invalidate stack */
         }
     }
@@ -2696,7 +2685,7 @@ ml_delete_int(buf, lnum, message)
             pp = (PTR_BL *)(hp->bh_data);   /* must be pointer block */
             if (pp->pb_id != PTR_ID)
             {
-                EMSG((char *)"E317: pointer block id wrong 4");
+                EMSG("E317: pointer block id wrong 4");
                 mf_put(mfp, hp, FALSE, FALSE);
                 return FAIL;
             }
@@ -2722,7 +2711,6 @@ ml_delete_int(buf, lnum, message)
                 break;
             }
         }
-        CHECK(stack_idx < 0, (char *)"deleted block 1?");
     }
     else
     {
@@ -2904,7 +2892,7 @@ ml_flush_line(buf)
 
         hp = ml_find_line(buf, lnum, ML_FIND);
         if (hp == NULL)
-            EMSGN((char *)"E320: Cannot find line %ld", lnum);
+            EMSGN("E320: Cannot find line %ld", lnum);
         else
         {
             dp = (DATA_BL *)(hp->bh_data);
@@ -3150,7 +3138,7 @@ ml_find_line(buf, lnum, action)
         pp = (PTR_BL *)(dp);            /* must be pointer block */
         if (pp->pb_id != PTR_ID)
         {
-            EMSG((char *)"E317: pointer block id wrong");
+            EMSG("E317: pointer block id wrong");
             goto error_block;
         }
 
@@ -3166,7 +3154,7 @@ ml_find_line(buf, lnum, action)
         for (idx = 0; idx < (int)pp->pb_count; ++idx)
         {
             t = pp->pb_pointer[idx].pe_line_count;
-            CHECK(t == 0, (char *)"pe_line_count is zero");
+
             if ((low += t) > lnum)
             {
                 ip->ip_index = idx;
@@ -3195,11 +3183,11 @@ ml_find_line(buf, lnum, action)
         if (idx >= (int)pp->pb_count)       /* past the end: something wrong! */
         {
             if (lnum > buf->b_ml.ml_line_count)
-                EMSGN((char *)"E322: line number out of range: %ld past the end",
+                EMSGN("E322: line number out of range: %ld past the end",
                                               lnum - buf->b_ml.ml_line_count);
 
             else
-                EMSGN((char *)"E323: line count wrong in block %ld", bnum);
+                EMSGN("E323: line count wrong in block %ld", bnum);
             goto error_block;
         }
         if (action == ML_DELETE)
@@ -3248,8 +3236,6 @@ ml_add_stack(buf)
     /* may have to increase the stack size */
     if (top == buf->b_ml.ml_stack_size)
     {
-        CHECK(top > 0, (char *)"Stack size increases"); /* more than 5 levels??? */
-
         newstack = (infoptr_T *)alloc((unsigned)sizeof(infoptr_T) *
                                         (buf->b_ml.ml_stack_size + STACK_INCR));
         if (newstack == NULL)
@@ -3294,7 +3280,7 @@ ml_lineadd(buf, count)
         if (pp->pb_id != PTR_ID)
         {
             mf_put(mfp, hp, FALSE, FALSE);
-            EMSG((char *)"E317: pointer block id wrong 2");
+            EMSG("E317: pointer block id wrong 2");
             break;
         }
         pp->pb_pointer[ip->ip_index].pe_line_count += count;
@@ -3305,8 +3291,7 @@ ml_lineadd(buf, count)
 
 /*
  * Resolve a symlink in the last component of a file name.
- * Note that f_resolve() does it for every part of the path, we don't do that
- * here.
+ * Note that f_resolve() does it for every part of the path, we don't do that here.
  * If it worked returns OK and the resolved link in "buf[MAXPATHL]".
  * Otherwise returns FAIL.
  */
@@ -3330,7 +3315,7 @@ resolve_symlink(fname, buf)
         /* Limit symlink depth to 100, catch recursive loops. */
         if (++depth == 100)
         {
-            EMSG2((char *)"E773: Symlink loop for \"%s\"", fname);
+            EMSG2("E773: Symlink loop for \"%s\"", fname);
             return FAIL;
         }
 
@@ -3431,8 +3416,7 @@ makeswapname(fname, ffname, buf, dir_name)
  * - If "dname" is ".", return "fname" (swap file in dir of file).
  * - If "dname" starts with "./", insert "dname" in "fname" (swap file
  *   relative to dir of file).
- * - Otherwise, prepend "dname" to the tail of "fname" (swap file in specific
- *   dir).
+ * - Otherwise, prepend "dname" to the tail of "fname" (swap file in specific dir).
  *
  * The return value is an allocated string and can be NULL.
  */
@@ -3490,17 +3474,17 @@ attention_message(buf, fname)
     char        *p;
 
     ++no_wait_return;
-    (void)EMSG((char *)"E325: ATTENTION");
-    MSG_PUTS((char *)"\nFound a swap file by the name \"");
+    (void)EMSG("E325: ATTENTION");
+    MSG_PUTS("\nFound a swap file by the name \"");
     msg_home_replace(fname);
     MSG_PUTS("\"\n");
     sx = swapfile_info(fname);
-    MSG_PUTS((char *)"While opening file \"");
+    MSG_PUTS("While opening file \"");
     msg_outtrans(buf->b_fname);
     MSG_PUTS("\"\n");
     if (mch_stat((char *)buf->b_fname, &st) != -1)
     {
-        MSG_PUTS((char *)"             dated: ");
+        MSG_PUTS("             dated: ");
         x = st.st_mtime;    /* Manx C can't do &st.st_mtime */
         p = ctime(&x);                      /* includes '\n' */
         if (p == NULL)
@@ -3508,19 +3492,19 @@ attention_message(buf, fname)
         else
             MSG_PUTS(p);
         if (sx != 0 && x > sx)
-            MSG_PUTS((char *)"      NEWER than swap file!\n");
+            MSG_PUTS("      NEWER than swap file!\n");
     }
     /* Some of these messages are long to allow translation to
      * other languages. */
-    MSG_PUTS((char *)"\n(1) Another program may be editing the same file.  If this is the case,\n    be careful not to end up with two different instances of the same\n    file when making changes.");
-    MSG_PUTS((char *)"  Quit, or continue with caution.\n");
-    MSG_PUTS((char *)"(2) An edit session for this file crashed.\n");
-    MSG_PUTS((char *)"    If this is the case, use \":recover\" or \"vim -r ");
+    MSG_PUTS("\n(1) Another program may be editing the same file.  If this is the case,\n    be careful not to end up with two different instances of the same\n    file when making changes.");
+    MSG_PUTS("  Quit, or continue with caution.\n");
+    MSG_PUTS("(2) An edit session for this file crashed.\n");
+    MSG_PUTS("    If this is the case, use \":recover\" or \"vim -r ");
     msg_outtrans(buf->b_fname);
-    MSG_PUTS((char *)"\"\n    to recover the changes (see \":help recovery\").\n");
-    MSG_PUTS((char *)"    If you did this already, delete the swap file \"");
+    MSG_PUTS("\"\n    to recover the changes (see \":help recovery\").\n");
+    MSG_PUTS("    If you did this already, delete the swap file \"");
     msg_outtrans(fname);
-    MSG_PUTS((char *)"\"\n    to avoid this message.\n");
+    MSG_PUTS("\"\n    to avoid this message.\n");
     cmdline_row = msg_row;
     --no_wait_return;
 }
@@ -3842,13 +3826,13 @@ findswapname(buf, dirp, old_fname)
                         char_u  *name;
 
                         name = alloc((unsigned)(STRLEN(fname)
-                                + STRLEN((char *)"Swap file \"")
-                                + STRLEN((char *)"\" already exists!") + 5));
+                                + STRLEN("Swap file \"")
+                                + STRLEN("\" already exists!") + 5));
                         if (name != NULL)
                         {
-                            STRCPY(name, (char *)"Swap file \"");
+                            STRCPY(name, "Swap file \"");
                             home_replace(NULL, fname, name + STRLEN(name), 1000, TRUE);
-                            STRCAT(name, (char *)"\" already exists!");
+                            STRCAT(name, "\" already exists!");
                         }
                         choice = do_dialog(VIM_WARNING,
                                     (char_u *)"VIM - ATTENTION",
@@ -3917,7 +3901,7 @@ findswapname(buf, dirp, old_fname)
         {
             if (fname[n - 2] == 'a')    /* ".saa": tried enough, give up */
             {
-                EMSG((char *)"E326: Too many swap files found");
+                EMSG("E326: Too many swap files found");
                 vim_free(fname);
                 fname = NULL;
                 break;
@@ -3952,8 +3936,7 @@ b0_magic_wrong(b0p)
  * - When working over a network the full path of a file depends on the host.
  *   We check the inode number if possible.  It is not 100% reliable though,
  *   because the device number cannot be used over a network.
- * - When a file does not exist yet (editing a new file) there is no inode
- *   number.
+ * - When a file does not exist yet (editing a new file) there is no inode number.
  * - The file name in a swap file may not be valid on the current host.  The
  *   "~user" form is used whenever possible to avoid this.
  *
@@ -3988,8 +3971,7 @@ b0_magic_wrong(b0p)
  *              == 0   == 0    FAIL     FAIL    FALSE
  *
  * Note that when the ino_t is 64 bits, only the last 32 will be used.  This
- * can't be changed without making the block 0 incompatible with 32 bit
- * versions.
+ * can't be changed without making the block 0 incompatible with 32 bit versions.
  */
 
     static int

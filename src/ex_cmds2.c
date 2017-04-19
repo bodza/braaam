@@ -3,7 +3,7 @@
  */
 
 #include "vim.h"
-#include "version.h"
+/* #include "version.h" */
 
 static void     cmd_source(char_u *fname, exarg_T *eap);
 
@@ -71,7 +71,7 @@ do_debug(cmd)
     State = NORMAL;
 
     if (!debug_did_msg)
-        MSG((char *)"Entering Debug mode.  Type \"cont\" to continue.");
+        MSG("Entering Debug mode.  Type \"cont\" to continue.");
     if (sourcing_name != NULL)
         msg(sourcing_name);
     if (sourcing_lnum != 0)
@@ -557,7 +557,7 @@ ex_breakdel(eap)
     }
 
     if (todel < 0)
-        EMSG2((char *)"E161: Breakpoint not found: %s", eap->arg);
+        EMSG2("E161: Breakpoint not found: %s", eap->arg);
     else
     {
         while (gap->ga_len > 0)
@@ -590,7 +590,7 @@ ex_breaklist(eap)
     int         i;
 
     if (dbg_breakp.ga_len == 0)
-        MSG((char *)"No breakpoints defined");
+        MSG("No breakpoints defined");
     else
         for (i = 0; i < dbg_breakp.ga_len; ++i)
         {
@@ -657,8 +657,7 @@ debuggy_find(file, fname, after, gap, fp)
         /* Skip entries that are not useful or are for a line that is beyond
          * an already found breakpoint. */
         bp = &DEBUGGY(gap, i);
-        if (((bp->dbg_type == DBG_FILE) == file && (
-                (bp->dbg_lnum > after && (lnum == 0 || bp->dbg_lnum < lnum)))))
+        if (((bp->dbg_type == DBG_FILE) == file && ((bp->dbg_lnum > after && (lnum == 0 || bp->dbg_lnum < lnum)))))
         {
             /*
              * Save the value of got_int and reset it.  We don't want a
@@ -924,7 +923,7 @@ dialog_changed(buf, checkall)
     buf_T       *buf2;
     exarg_T     ea;
 
-    dialog_msg(buff, (char *)"Save changes to \"%s\"?",
+    dialog_msg(buff, "Save changes to \"%s\"?",
                         (buf->b_fname != NULL) ?
                         buf->b_fname : (char_u *)"Untitled");
     if (checkall)
@@ -1093,7 +1092,7 @@ check_changed_any(hidden)
             msg_col = 0;
             msg_didout = FALSE;
         }
-        if (EMSG2((char *)"E162: No write since last change for buffer \"%s\"",
+        if (EMSG2("E162: No write since last change for buffer \"%s\"",
                     buf_spname(buf) != NULL ? buf_spname(buf) : buf->b_fname))
         {
             save = no_wait_return;
@@ -1160,7 +1159,7 @@ buf_write_all(buf, forceit)
     if (curbuf != old_curbuf)
     {
         msg_source(hl_attr(HLF_W));
-        MSG((char *)"Warning: Entered other buffer unexpectedly (check autocommands)");
+        MSG("Warning: Entered other buffer unexpectedly (check autocommands)");
     }
     return retval;
 }
@@ -1381,8 +1380,7 @@ alist_check_arg_idx()
 }
 
 /*
- * Return TRUE if window "win" is editing the file at the current argument
- * index.
+ * Return TRUE if window "win" is editing the file at the current argument index.
  */
     static int
 editing_arg_idx(win)
@@ -1455,8 +1453,7 @@ ex_args(eap)
          */
         ex_next(eap);
     }
-    else
-        if (eap->cmdidx == CMD_args)
+    else if (eap->cmdidx == CMD_args)
     {
         /*
          * ":args": list arguments.
@@ -1560,11 +1557,11 @@ do_argfile(eap, argn)
     if (argn < 0 || argn >= ARGCOUNT)
     {
         if (ARGCOUNT <= 1)
-            EMSG((char *)"E163: There is only one file to edit");
+            EMSG("E163: There is only one file to edit");
         else if (argn < 0)
-            EMSG((char *)"E164: Cannot go before first file");
+            EMSG("E164: Cannot go before first file");
         else
-            EMSG((char *)"E165: Cannot go beyond last file");
+            EMSG("E165: Cannot go beyond last file");
     }
     else
     {
@@ -1992,7 +1989,7 @@ ex_compiler(eap)
 
             sprintf((char *)buf, "compiler/%s.vim", eap->arg);
             if (source_runtime(buf, TRUE) == FAIL)
-                EMSG2((char *)"E666: compiler not supported: %s", eap->arg);
+                EMSG2("E666: compiler not supported: %s", eap->arg);
             vim_free(buf);
 
             do_cmdline_cmd((char_u *)":delcommand CompilerSet");
@@ -2054,8 +2051,7 @@ source_runtime(name, all)
 /*
  * Find "name" in 'runtimepath'.  When found, invoke the callback function for
  * it: callback(fname, "cookie")
- * When "all" is TRUE repeat for all matches, otherwise only the first one is
- * used.
+ * When "all" is TRUE repeat for all matches, otherwise only the first one is used.
  * Returns OK when at least one match found, FAIL otherwise.
  *
  * If "name" is NULL calls callback for each entry in runtimepath. Cookie is
@@ -2181,8 +2177,7 @@ cmd_source(fname, eap)
 
     else if (eap != NULL && eap->forceit)
         /* ":source!": read Normal mode commands
-         * Need to execute the commands directly.  This is required at least
-         * for:
+         * Need to execute the commands directly.  This is required at least for:
          * - ":g" command busy
          * - after ":argdo", ":windo" or ":bufdo"
          * - another command follows
@@ -2578,8 +2573,7 @@ getsourceline(c, cookie, indent)
         sp->dbg_tick = debug_tick;
     }
     /*
-     * Get current line.  If there is a read-ahead line, use it, otherwise get
-     * one now.
+     * Get current line.  If there is a read-ahead line, use it, otherwise get one now.
      */
     if (sp->finished)
         line = NULL;
@@ -2739,7 +2733,7 @@ ex_scriptencoding(eap)
 
     if (!getline_equal(eap->getline, eap->cookie, getsourceline))
     {
-        EMSG((char *)"E167: :scriptencoding used outside of a sourced file");
+        EMSG("E167: :scriptencoding used outside of a sourced file");
         return;
     }
 
@@ -2770,7 +2764,7 @@ ex_finish(eap)
     if (getline_equal(eap->getline, eap->cookie, getsourceline))
         do_finish(eap, FALSE);
     else
-        EMSG((char *)"E168: :finish used outside of a sourced file");
+        EMSG("E168: :finish used outside of a sourced file");
 }
 
 /*

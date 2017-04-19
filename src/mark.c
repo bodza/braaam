@@ -12,8 +12,7 @@
  * If a named file mark's lnum is non-zero, it is valid.
  * If a named file mark's fnum is non-zero, it is for an existing buffer,
  * otherwise it is from .viminfo and namedfm[n].fname is the file name.
- * There are marks 'A - 'Z (set by user) and '0 to '9 (set when writing
- * viminfo).
+ * There are marks 'A - 'Z (set by user) and '0 to '9 (set when writing viminfo).
  */
 #define EXTRA_MARKS 10                                  /* marks 0-9 */
 static xfmark_T namedfm[NMARKS + EXTRA_MARKS];          /* marks with file nr */
@@ -325,8 +324,7 @@ getmark_buf_fnum(buf, c, changefile, fnum)
 
         pos = curwin->w_cursor;
         listcmd_busy = TRUE;        /* avoid that '' is changed */
-        if (findpar(&oa.inclusive,
-                               c == '}' ? FORWARD : BACKWARD, 1L, NUL, FALSE))
+        if (findpar(&oa.inclusive, c == '}' ? FORWARD : BACKWARD, 1L, NUL, FALSE))
         {
             pos_copy = curwin->w_cursor;
             posp = &pos_copy;
@@ -704,9 +702,9 @@ show_one_mark(c, arg, p, name, current)
         else
         {
             if (arg == NULL)
-                MSG((char *)"No marks set");
+                MSG("No marks set");
             else
-                EMSG2((char *)"E283: No marks matching \"%s\"", arg);
+                EMSG2("E283: No marks matching \"%s\"", arg);
         }
     }
     /* don't output anything if 'q' typed at --more-- prompt */
@@ -715,7 +713,7 @@ show_one_mark(c, arg, p, name, current)
         if (!did_title)
         {
             /* Highlight title */
-            MSG_PUTS_TITLE((char *)"\nmark line  col file/text");
+            MSG_PUTS_TITLE("\nmark line  col file/text");
             did_title = TRUE;
         }
         msg_putchar('\n');
@@ -834,7 +832,7 @@ ex_jumps(eap)
 
     cleanup_jumplist();
     /* Highlight title */
-    MSG_PUTS_TITLE((char *)"\n jump line  col file/text");
+    MSG_PUTS_TITLE("\n jump line  col file/text");
     for (i = 0; i < curwin->w_jumplistlen && !got_int; ++i)
     {
         if (curwin->w_jumplist[i].fmark.mark.lnum != 0)
@@ -880,7 +878,7 @@ ex_changes(eap)
     char_u      *name;
 
     /* Highlight title */
-    MSG_PUTS_TITLE((char *)"\nchange line  col text");
+    MSG_PUTS_TITLE("\nchange line  col text");
 
     for (i = 0; i < curbuf->b_changelistlen && !got_int; ++i)
     {
@@ -1093,8 +1091,7 @@ mark_adjust(line1, line2, amount, amount_after)
 
 /*
  * Adjust marks in line "lnum" at column "mincol" and further: add
- * "lnum_amount" to the line number and add "col_amount" to the column
- * position.
+ * "lnum_amount" to the line number and add "col_amount" to the column position.
  */
     void
 mark_col_adjust(lnum, mincol, lnum_amount, col_amount)

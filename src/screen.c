@@ -43,8 +43,7 @@
  *
  * Commands that scroll a window change w_topline and must call
  * check_cursor() to move the cursor into the visible part of the window, and
- * call redraw_later(VALID) to have the window displayed by update_screen()
- * later.
+ * call redraw_later(VALID) to have the window displayed by update_screen() later.
  *
  * Commands that change text in the buffer must call changed_bytes() or
  * changed_lines() to mark the area that changed and will require updating
@@ -533,8 +532,7 @@ update_screen(type)
     }
 
     /*
-     * Go from top to bottom through the windows, redrawing the ones that need
-     * it.
+     * Go from top to bottom through the windows, redrawing the ones that need it.
      */
     did_one = FALSE;
     search_hl.rm.regprog = NULL;
@@ -1004,16 +1002,14 @@ win_update(wp)
         }
 
         /* When starting redraw in the first line, redraw all lines.  When
-         * there is only one window it's probably faster to clear the screen
-         * first. */
+         * there is only one window it's probably faster to clear the screen first. */
         if (mid_start == 0)
         {
             mid_end = wp->w_height;
             if (lastwin == firstwin)
             {
                 /* Clear the screen when it was not done by win_del_lines() or
-                 * win_ins_lines() above, "screen_cleared" is FALSE or MAYBE
-                 * then. */
+                 * win_ins_lines() above, "screen_cleared" is FALSE or MAYBE then. */
                 if (screen_cleared != TRUE)
                     screenclear();
                 /* The screen was cleared, redraw the tab pages line. */
@@ -1366,8 +1362,7 @@ win_update(wp)
                     else if (xtra_rows > 0)
                     {
                         /* May scroll text down.  If there is not enough
-                         * remaining text of scrolling fails, must redraw the
-                         * rest. */
+                         * remaining text of scrolling fails, must redraw the rest. */
                         if (row + xtra_rows >= wp->w_height - 2)
                             mod_bot = MAXLNUM;
                         else
@@ -2074,8 +2069,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
     }
 
     /* Cursor line highlighting for 'cursorline' in the current window.  Not
-     * when Visual mode is active, because it's not clear what is selected
-     * then. */
+     * when Visual mode is active, because it's not clear what is selected then. */
     if (wp->w_p_cul && lnum == wp->w_cursor.lnum && !(wp == curwin && VIsual_active))
     {
         line_attr = hl_attr(HLF_CUL);
@@ -3573,8 +3567,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
                     /* When there is a multi-byte character, just output a
                      * space to keep it simple. */
-                    if (has_mbyte && MB_BYTE2LEN(ScreenLines[LineOffset[
-                                        screen_row - 1] + (Columns - 1)]) > 1)
+                    if (has_mbyte && MB_BYTE2LEN(ScreenLines[LineOffset[screen_row - 1] + (Columns - 1)]) > 1)
                         out_char(' ');
                     else
                         out_char(ScreenLines[LineOffset[screen_row - 1] + (Columns - 1)]);
@@ -3805,8 +3798,7 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
                         && (*mb_off2cells)(off_to + 1, max_off_to) > 1)
                 {
                     /* Writing the second half of a double-cell character over
-                     * a double-cell character: need to redraw the second
-                     * cell. */
+                     * a double-cell character: need to redraw the second cell. */
                     ScreenLines[off_to + 2] = 0;
                     redraw_next = TRUE;
                 }
@@ -4083,7 +4075,7 @@ win_redr_status(wp)
             *(p + len++) = ' ';
         if (wp->w_buffer->b_help)
         {
-            STRCPY(p + len, (char *)"[Help]");
+            STRCPY(p + len, "[Help]");
             len += (int)STRLEN(p + len);
         }
         if (bufIsChanged(wp->w_buffer))
@@ -4093,7 +4085,7 @@ win_redr_status(wp)
         }
         if (wp->w_buffer->b_p_ro)
         {
-            STRCPY(p + len, (char *)"[RO]");
+            STRCPY(p + len, "[RO]");
             len += 4;
         }
 
@@ -4105,33 +4097,31 @@ win_redr_status(wp)
             p = (char_u *)"<";          /* No room for file name! */
             len = 1;
         }
-        else
-            if (has_mbyte)
-            {
-                int     clen = 0, i;
+        else if (has_mbyte)
+        {
+            int     clen = 0, i;
 
-                /* Count total number of display cells. */
-                clen = mb_string2cells(p, -1);
+            /* Count total number of display cells. */
+            clen = mb_string2cells(p, -1);
 
-                /* Find first character that will fit.
-                 * Going from start to end is much faster for DBCS. */
-                for (i = 0; p[i] != NUL && clen >= this_ru_col - 1; i += (*mb_ptr2len)(p + i))
-                    clen -= (*mb_ptr2cells)(p + i);
-                len = clen;
-                if (i > 0)
-                {
-                    p = p + i - 1;
-                    *p = '<';
-                    ++len;
-                }
-            }
-            else
-            if (len > this_ru_col - 1)
+            /* Find first character that will fit.
+                * Going from start to end is much faster for DBCS. */
+            for (i = 0; p[i] != NUL && clen >= this_ru_col - 1; i += (*mb_ptr2len)(p + i))
+                clen -= (*mb_ptr2cells)(p + i);
+            len = clen;
+            if (i > 0)
             {
-                p += len - (this_ru_col - 1);
+                p = p + i - 1;
                 *p = '<';
-                len = this_ru_col - 1;
+                ++len;
             }
+        }
+        else if (len > this_ru_col - 1)
+        {
+            p += len - (this_ru_col - 1);
+            *p = '<';
+            len = this_ru_col - 1;
+        }
 
         row = W_WINROW(wp) + wp->w_height;
         screen_puts(p, row, W_WINCOL(wp), attr);
@@ -4532,8 +4522,7 @@ screen_puts(text, row, col, attr)
 }
 
 /*
- * Like screen_puts(), but output "text[len]".  When "len" is -1 output up to
- * a NUL.
+ * Like screen_puts(), but output "text[len]".  When "len" is -1 output up to a NUL.
  */
     void
 screen_puts_len(text, textlen, row, col, attr)
@@ -5434,8 +5423,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
         }
         /*
          * Try to use delete-line termcap code, when no attributes or in a
-         * "normal" terminal, where a bold/italic space is just a
-         * space.
+         * "normal" terminal, where a bold/italic space is just a space.
          */
         did_delete = FALSE;
         if (c2 == ' '
@@ -5981,8 +5969,7 @@ can_clear(p)
 
 /*
  * Reset cursor position. Use whenever cursor was moved because of outputting
- * something directly to the screen (shell commands) or a terminal control
- * code.
+ * something directly to the screen (shell commands) or a terminal control code.
  */
     void
 screen_start()
@@ -6054,8 +6041,7 @@ windgoto(row, col)
         if (row >= screen_cur_row && screen_cur_col < Columns)
         {
             /*
-             * If the cursor is in the same row, bigger col, we can use CR
-             * or T_LE.
+             * If the cursor is in the same row, bigger col, we can use CR or T_LE.
              */
             bs = NULL;                      /* init for GCC */
             attr = screen_attr;
@@ -6341,8 +6327,7 @@ win_ins_lines(wp, row, line_count, invalid, mayclear)
 /*
  * delete "line_count" window lines at "row" in window "wp"
  * If "invalid" is TRUE curwin->w_lines[] is invalidated.
- * If "mayclear" is TRUE the screen will be cleared if it is faster than
- * scrolling
+ * If "mayclear" is TRUE the screen will be cleared if it is faster than scrolling
  * Return OK for success, FAIL if the lines are not deleted.
  */
     int
@@ -6543,8 +6528,7 @@ screen_ins_lines(off, row, line_count, end, wp)
      *    present or line_count > 1. It looks better if we do all the inserts
      *    at once.
      * 3. Use T_CDL (delete multiple lines) if it exists and the result of the
-     *    insert is just empty lines and T_CE is not present or line_count >
-     *    1.
+     *    insert is just empty lines and T_CE is not present or line_count > 1.
      * 4. Use T_AL (insert line) if it exists.
      * 5. Use T_CE (erase line) if it exists and the result of the insert is
      *    just empty lines.
@@ -6561,8 +6545,7 @@ screen_ins_lines(off, row, line_count, end, wp)
     result_empty = (row + line_count >= end);
     if (wp != NULL && wp->w_width != Columns && *T_CSV == NUL)
         type = USE_REDRAW;
-    else
-    if (can_clear(T_CD) && result_empty)
+    else if (can_clear(T_CD) && result_empty)
         type = USE_T_CD;
     else if (*T_CAL != NUL && (line_count > 1 || *T_AL == NUL))
         type = USE_T_CAL;
@@ -6651,8 +6634,7 @@ screen_ins_lines(off, row, line_count, end, wp)
     /* redraw the characters */
     if (type == USE_REDRAW)
         redraw_block(row, end, wp);
-    else
-        if (type == USE_T_CAL)
+    else if (type == USE_T_CAL)
     {
         term_append_lines(line_count);
         screen_start();         /* don't know where cursor is now */
@@ -6751,8 +6733,7 @@ screen_del_lines(off, row, line_count, end, force, wp)
      */
     if (wp != NULL && wp->w_width != Columns && *T_CSV == NUL)
         type = USE_REDRAW;
-    else
-    if (can_clear(T_CD) && result_empty)
+    else if (can_clear(T_CD) && result_empty)
         type = USE_T_CD;
     else if (row == 0 && (line_count == 1 || *T_CDL == NUL))
         type = USE_NL;
@@ -6830,8 +6811,7 @@ screen_del_lines(off, row, line_count, end, force, wp)
     /* redraw the characters */
     if (type == USE_REDRAW)
         redraw_block(row, end, wp);
-    else
-        if (type == USE_T_CD)   /* delete the lines */
+    else if (type == USE_T_CD)   /* delete the lines */
     {
         windgoto(cursor_row, 0);
         out_str(T_CD);
@@ -6939,26 +6919,25 @@ showmode()
             MSG_PUTS_ATTR("--", attr);
             {
                 if (State & VREPLACE_FLAG)
-                    MSG_PUTS_ATTR((char *)" VREPLACE", attr);
-                else
-                    if (State & REPLACE_FLAG)
-                    MSG_PUTS_ATTR((char *)" REPLACE", attr);
+                    MSG_PUTS_ATTR(" VREPLACE", attr);
+                else if (State & REPLACE_FLAG)
+                    MSG_PUTS_ATTR(" REPLACE", attr);
                 else if (State & INSERT)
                 {
                     if (p_ri)
-                        MSG_PUTS_ATTR((char *)" REVERSE", attr);
-                    MSG_PUTS_ATTR((char *)" INSERT", attr);
+                        MSG_PUTS_ATTR(" REVERSE", attr);
+                    MSG_PUTS_ATTR(" INSERT", attr);
                 }
                 else if (restart_edit == 'I')
-                    MSG_PUTS_ATTR((char *)" (insert)", attr);
+                    MSG_PUTS_ATTR(" (insert)", attr);
                 else if (restart_edit == 'R')
-                    MSG_PUTS_ATTR((char *)" (replace)", attr);
+                    MSG_PUTS_ATTR(" (replace)", attr);
                 else if (restart_edit == 'V')
-                    MSG_PUTS_ATTR((char *)" (vreplace)", attr);
+                    MSG_PUTS_ATTR(" (vreplace)", attr);
                 if (p_hkmap)
-                    MSG_PUTS_ATTR((char *)" Hebrew", attr);
+                    MSG_PUTS_ATTR(" Hebrew", attr);
                 if ((State & INSERT) && p_paste)
-                    MSG_PUTS_ATTR((char *)" (paste)", attr);
+                    MSG_PUTS_ATTR(" (paste)", attr);
 
                 if (VIsual_active)
                 {
@@ -6983,10 +6962,9 @@ showmode()
 
             need_clear = TRUE;
         }
-        if (Recording
-                )
+        if (Recording)
         {
-            MSG_PUTS_ATTR((char *)"recording", attr);
+            MSG_PUTS_ATTR("recording", attr);
             need_clear = TRUE;
         }
 
@@ -7044,7 +7022,7 @@ unshowmode(force)
     {
         msg_pos_mode();
         if (Recording)
-            MSG_PUTS_ATTR((char *)"recording", hl_attr(HLF_CM));
+            MSG_PUTS_ATTR("recording", hl_attr(HLF_CM));
         msg_clr_eos();
     }
 }
@@ -7169,8 +7147,7 @@ draw_tabline()
                         len -= ptr2cells(p);
                         mb_ptr_adv(p);
                     }
-                else
-                    if (len > room)
+                else if (len > room)
                 {
                     p += len - room;
                     len = room;
@@ -7462,8 +7439,7 @@ win_redr_ruler(wp, always)
                 }
             }
         }
-        else
-        if (this_ru_col + (int)STRLEN(buffer) > WITH_WIDTH(width))
+        else if (this_ru_col + (int)STRLEN(buffer) > WITH_WIDTH(width))
             buffer[WITH_WIDTH(width) - this_ru_col] = NUL;
 
         screen_puts(buffer, row, this_ru_col + WITH_OFF(off), attr);

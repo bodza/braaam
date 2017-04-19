@@ -310,8 +310,7 @@ free_msglist(l)
 }
 
 /*
- * Free global "*msg_list" and the messages it contains, then set "*msg_list"
- * to NULL.
+ * Free global "*msg_list" and the messages it contains, then set "*msg_list" to NULL.
  */
     void
 free_global_msglist()
@@ -378,8 +377,7 @@ do_intthrow(cstack)
     {
         /*
          * The interrupt aborts everything except for executing finally clauses.
-         * Discard any user or error or interrupt exception currently being
-         * thrown.
+         * Discard any user or error or interrupt exception currently being thrown.
          */
         if (did_throw)
             discard_current_exception();
@@ -513,7 +511,7 @@ throw_exception(value, type, cmdname)
                 && (((char_u *)value)[3] == NUL || ((char_u *)value)[3] == ':'
                     || ((char_u *)value)[3] == '('))
         {
-            EMSG((char *)"E608: Cannot :throw exceptions with 'Vim' prefix");
+            EMSG("E608: Cannot :throw exceptions with 'Vim' prefix");
             goto fail;
         }
     }
@@ -654,7 +652,7 @@ catch_exception(excp)
     if (*excp->throw_name != NUL)
     {
         if (excp->throw_lnum != 0)
-            vim_snprintf((char *)IObuff, IOSIZE, (char *)"%s, line %ld",
+            vim_snprintf((char *)IObuff, IOSIZE, "%s, line %ld",
                                     excp->throw_name, (long)excp->throw_lnum);
         else
             vim_snprintf((char *)IObuff, IOSIZE, "%s", excp->throw_name);
@@ -706,16 +704,14 @@ finish_exception(excp)
         {
             if (caught_stack->throw_lnum != 0)
                 vim_snprintf((char *)IObuff, IOSIZE,
-                        (char *)"%s, line %ld", caught_stack->throw_name,
+                        "%s, line %ld", caught_stack->throw_name,
                         (long)caught_stack->throw_lnum);
             else
-                vim_snprintf((char *)IObuff, IOSIZE, "%s",
-                                                    caught_stack->throw_name);
+                vim_snprintf((char *)IObuff, IOSIZE, "%s", caught_stack->throw_name);
             set_vim_var_string(VV_THROWPOINT, IObuff, -1);
         }
         else
-            /* throw_name not set on an exception from a command that was
-             * typed. */
+            /* throw_name not set on an exception from a command that was typed. */
             set_vim_var_string(VV_THROWPOINT, NULL, -1);
     }
     else
@@ -788,17 +784,17 @@ report_pending(action, pending, value)
         default:
             if (pending & CSTP_THROW)
             {
-                vim_snprintf((char *)IObuff, IOSIZE, (char *)mesg, (char *)"Exception");
+                vim_snprintf((char *)IObuff, IOSIZE, (char *)mesg, "Exception");
                 mesg = vim_strnsave(IObuff, (int)STRLEN(IObuff) + 4);
                 STRCAT(mesg, ": %s");
                 s = (char *)((except_T *)value)->value;
             }
             else if ((pending & CSTP_ERROR) && (pending & CSTP_INTERRUPT))
-                s = (char *)"Error and interrupt";
+                s = "Error and interrupt";
             else if (pending & CSTP_ERROR)
-                s = (char *)"Error";
+                s = "Error";
             else /* if (pending & CSTP_INTERRUPT) */
-                s = (char *)"Interrupt";
+                s = "Interrupt";
     }
 
     save_msg_silent = msg_silent;
@@ -1001,8 +997,7 @@ ex_else(eap)
      * a ">quit" debug command as if an interrupt had occurred before the
      * ":else" or ":elseif".  That is, set "skip" and throw an interrupt
      * exception if appropriate.  Doing this here prevents that an exception
-     * for a parsing errors is discarded when throwing the interrupt exception
-     * later on.
+     * for a parsing errors is discarded when throwing the interrupt exception later on.
      */
     if (!skip && dbg_check_skipped(eap) && got_int)
     {
@@ -1125,8 +1120,7 @@ ex_while(eap)
             cstack->cs_lflags &= ~CSL_HAD_LOOP;
             /* If the ":while" evaluates to FALSE or ":for" is past the end of
              * the list, show the debug prompt at the ":endwhile"/":endfor" as
-             * if there was a ":break" in a ":while"/":for" evaluating to
-             * TRUE. */
+             * if there was a ":break" in a ":while"/":for" evaluating to TRUE. */
             if (!skip && !error)
                 cstack->cs_flags[cstack->cs_idx] |= CSF_TRUE;
         }
@@ -1735,8 +1729,7 @@ ex_finally(eap)
                  * exception.  When emsg() is called for a missing ":endif" or
                  * a missing ":endwhile"/":endfor" detected here, the
                  * exception will be discarded. */
-                if (did_throw && cstack->cs_exception[cstack->cs_idx]
-                                                         != current_exception)
+                if (did_throw && cstack->cs_exception[cstack->cs_idx] != current_exception)
                     EMSG((char *)e_internal);
             }
 
@@ -2233,8 +2226,7 @@ get_end_emsg(cstack)
 /*
  * Rewind conditionals until index "idx" is reached.  "cond_type" and
  * "cond_level" specify a conditional type and the address of a level variable
- * which is to be decremented with each skipped conditional of the specified
- * type.
+ * which is to be decremented with each skipped conditional of the specified type.
  * Also free "for info" structures where needed.
  */
     void
@@ -2261,7 +2253,7 @@ rewind_conditionals(cstack, idx, cond_type, cond_level)
 ex_endfunction(eap)
     exarg_T     *eap UNUSED;
 {
-    EMSG((char *)"E193: :endfunction not inside a function");
+    EMSG("E193: :endfunction not inside a function");
 }
 
 /*

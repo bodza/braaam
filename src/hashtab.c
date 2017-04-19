@@ -14,8 +14,7 @@
  * implemented.  The algorithm is from Knuth Vol. 3, Sec. 6.4.
  *
  * The hashtable grows to accommodate more entries when needed.  At least 1/3
- * of the entries is empty to keep the lookup efficient (at the cost of extra
- * memory).
+ * of the entries is empty to keep the lookup efficient (at the cost of extra memory).
  */
 
 #include "vim.h"
@@ -146,8 +145,7 @@ hash_lookup(ht, key, hash)
      * smaller down to (1/4 table size + 1).  This means it goes through all
      * table entries in the end.
      * When we run into a NULL key it's clear that the key isn't there.
-     * Return the first available slot found (can be a slot of a removed
-     * item).
+     * Return the first available slot found (can be a slot of a removed item).
      */
     for (perturb = hash; ; perturb >>= PERTURB_SHIFT)
     {
@@ -225,8 +223,7 @@ hash_add_item(ht, hi, key, hash)
 #if 0 /* not used */
 /*
  * Overwrite hashtable item "hi" with "key".  "hi" must point to the item that
- * is to be overwritten.  Thus the number of items in the hashtable doesn't
- * change.
+ * is to be overwritten.  Thus the number of items in the hashtable doesn't change.
  * Although the key must be identical, the pointer may be different, thus it's
  * set anyway (the key is part of an item with that key).
  * The caller must take care of freeing the old item.

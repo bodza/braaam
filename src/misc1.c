@@ -541,8 +541,7 @@ cin_is_cinword(line)
  * file, otherwise we just start replacing the next line.
  *
  * Caller must take care of undo.  Since VREPLACE may affect any number of
- * lines however, it may call u_save_cursor() again when starting to change a
- * new line.
+ * lines however, it may call u_save_cursor() again when starting to change a new line.
  * "flags": OPENLINE_DELSPACES  delete spaces after cursor
  *          OPENLINE_DO_COM     format comments
  *          OPENLINE_KEEPTRAIL  keep trailing spaces
@@ -784,8 +783,7 @@ open_line(dir, flags, second_line_indent)
                     }
                     /*
                      * Look for "if" and the like, use 'cinwords'.
-                     * Don't do this if the previous line ended in ';' or
-                     * '}'.
+                     * Don't do this if the previous line ended in ';' or '}'.
                      */
                     else if (last_char != ';' && last_char != '}' && cin_is_cinword(ptr))
                         did_si = TRUE;
@@ -1080,8 +1078,7 @@ open_line(dir, flags, second_line_indent)
                                 lead_len -= l;
                                 *p = ' ';
                             }
-                            else
-                            if (!vim_iswhite(*p))
+                            else if (!vim_iswhite(*p))
                                 *p = ' ';
                         }
                     }
@@ -1205,8 +1202,7 @@ open_line(dir, flags, second_line_indent)
             /*
              * We have finished a comment, so we don't use the leader.
              * If this was a C-comment and 'ai' or 'si' is set do a normal
-             * indent to align with the line containing the start of the
-             * comment.
+             * indent to align with the line containing the start of the comment.
              */
             if (comment_end[0] == '*' && comment_end[1] == '/' && (curbuf->b_p_ai || do_si))
             {
@@ -1479,13 +1475,10 @@ theend:
 
 /*
  * get_leader_len() returns the length in bytes of the prefix of the given
- * string which introduces a comment.  If this string is not a comment then
- * 0 is returned.
- * When "flags" is not NULL, it is set to point to the flags of the recognized
- * comment leader.
+ * string which introduces a comment.  If this string is not a comment then 0 is returned.
+ * When "flags" is not NULL, it is set to point to the flags of the recognized comment leader.
  * "backward" must be true for the "O" command.
- * If "include_space" is set, include trailing whitespace while calculating the
- * length.
+ * If "include_space" is set, include trailing whitespace while calculating the length.
  */
     int
 get_leader_len(line, flags, backward, include_space)
@@ -1667,8 +1660,7 @@ get_last_leader_offset(line, flags)
              */
             (void)copy_option_part(&list, part_buf, COM_MAX_LEN, ",");
             string = vim_strchr(part_buf, ':');
-            if (string == NULL) /* If everything is fine, this cannot actually
-                                 * happen. */
+            if (string == NULL) /* If everything is fine, this cannot actually happen. */
             {
                 continue;
             }
@@ -2037,8 +2029,7 @@ ins_char_bytes(buf, charlen)
             }
             curwin->w_p_list = old_list;
         }
-        else
-            if (oldp[col] != NUL)
+        else if (oldp[col] != NUL)
         {
             /* normal replace */
             oldlen = (*mb_ptr2len)(oldp + col);
@@ -2979,8 +2970,7 @@ get_keystroke()
         out_flush();
 
         /* Leave some room for check_termcode() to insert a key code into (max
-         * 5 chars plus NUL).  And fix_input_buffer() can triple the number of
-         * bytes. */
+         * 5 chars plus NUL).  And fix_input_buffer() can triple the number of bytes. */
         maxlen = (buflen - 6 - len) / 3;
         if (buf == NULL)
             buf = alloc(buflen);
@@ -3154,9 +3144,9 @@ prompt_for_number(mouse_used)
 
     /* When using ":silent" assume that <CR> was entered. */
     if (mouse_used != NULL)
-        MSG_PUTS((char *)"Type number and <Enter> or click with mouse (empty cancels): ");
+        MSG_PUTS("Type number and <Enter> or click with mouse (empty cancels): ");
     else
-        MSG_PUTS((char *)"Type number and <Enter> (empty cancels): ");
+        MSG_PUTS("Type number and <Enter> (empty cancels): ");
 
     /* Set the state such that text can be selected/copied/pasted and we still
      * get mouse events. */
@@ -3215,9 +3205,9 @@ msgmore(n)
         else
         {
             if (n > 0)
-                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, (char *)"%ld more lines", pn);
+                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, "%ld more lines", pn);
             else
-                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, (char *)"%ld fewer lines", pn);
+                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, "%ld fewer lines", pn);
         }
         if (got_int)
             vim_strcat(msg_buf, (char_u *)" (Interrupted)", MSG_BUF_LEN);
@@ -3811,8 +3801,7 @@ int match_user(name)
 }
 
 /*
- * Replace home directory by "~" in each space or comma separated file name in
- * 'src'.
+ * Replace home directory by "~" in each space or comma separated file name in 'src'.
  * If anything fails (except when out of space) dst equals src.
  */
     void
@@ -4568,8 +4557,7 @@ cin_islabel()           /* XXX */
     if (cin_islabel_skip(&s))
     {
         /*
-         * Only accept a label if the previous line is terminated or is a case
-         * label.
+         * Only accept a label if the previous line is terminated or is a case label.
          */
         pos_T   cursor_save;
         pos_T   *trypos;
@@ -5025,8 +5013,7 @@ cin_islinecomment(p)
 }
 
 /*
- * Recognize a line that starts with '{' or '}', or ends with ';', ',', '{' or
- * '}'.
+ * Recognize a line that starts with '{' or '}', or ends with ';', ',', '{' or '}'.
  * Don't consider "} else" a terminated line.
  * If a line begins with an "else", only consider it terminated if no unmatched
  * opening braces follow (handle "else { foo();" correctly).
@@ -5611,8 +5598,7 @@ cin_skip2pos(trypos)
 /*
  * Find the '{' at the start of the block we are in.
  * Return NULL if no match found.
- * Ignore a '{' that is in a comment, makes indenting the next three lines
- * work. */
+ * Ignore a '{' that is in a comment, makes indenting the next three lines work. */
 /* foo()    */
 /* {        */
 /* }        */
@@ -6412,8 +6398,7 @@ get_c_indent()
                  * When b_ind_unclosed_wrapped is set and the matching paren is
                  * the last nonwhite character of the line, use either the
                  * indent of the current line or the indentation of the next
-                 * outer paren and add b_ind_unclosed_wrapped (for very long
-                 * lines).
+                 * outer paren and add b_ind_unclosed_wrapped (for very long lines).
                  */
                 if (theline[0] != ')')
                 {
@@ -6505,8 +6490,7 @@ get_c_indent()
                 {
                     curwin->w_cursor.lnum = our_paren_pos.lnum;
                     curwin->w_cursor.col = col;
-                    if (find_match_paren_after_brace(curbuf->b_ind_maxparen)
-                                                                      != NULL)
+                    if (find_match_paren_after_brace(curbuf->b_ind_maxparen) != NULL)
                         amount += curbuf->b_ind_unclosed2;
                     else
                     {
@@ -6745,8 +6729,7 @@ get_c_indent()
                         l = ml_get_curline();
 
                         /*
-                         * If we're in a comment now, skip to the start of the
-                         * comment.
+                         * If we're in a comment now, skip to the start of the comment.
                          */
                         trypos = ind_find_start_comment();
                         if (trypos != NULL)
@@ -6852,8 +6835,7 @@ get_c_indent()
                         if (lookfor_cpp_namespace)
                         {
                             /*
-                             * Looking for C++ namespace, need to look further
-                             * back.
+                             * Looking for C++ namespace, need to look further back.
                              */
                             if (curwin->w_cursor.lnum == ourscope)
                                 continue;
@@ -6945,8 +6927,7 @@ get_c_indent()
                             || (!iscase && lookfor == LOOKFOR_SCOPEDECL))
                     {
                         /*
-                         * Check that this case label is not for another
-                         * switch()
+                         * Check that this case label is not for another switch()
                          */                                 /* XXX */
                         if ((trypos = find_start_brace()) == NULL || trypos->lnum == ourscope)
                         {
@@ -7167,8 +7148,7 @@ get_c_indent()
                         trypos = NULL;
 
                     /*
-                     * If we are looking for ',', we also look for matching
-                     * braces.
+                     * If we are looking for ',', we also look for matching braces.
                      */
                     if (trypos == NULL && terminated == ',' && find_last_paren(l, '{', '}'))
                         trypos = find_start_brace();
@@ -7392,8 +7372,7 @@ get_c_indent()
                              *      sizeof a,
                              *      124 };
                              * or a normal possible continuation line.
-                             * but only, of no other statement has been found
-                             * yet.
+                             * but only, of no other statement has been found yet.
                              */
                             if (lookfor == LOOKFOR_INITIAL && terminated == ',')
                             {
@@ -8926,7 +8905,7 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
              */
             if (mch_has_exp_wildcard(p))
             {
-                    add_pat = mch_expandpath(&ga, p, flags);
+                add_pat = mch_expandpath(&ga, p, flags);
             }
         }
 
