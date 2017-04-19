@@ -555,9 +555,7 @@ qf_init_ext(qi, efile, buf, tv, errorformat, newlist, lnumfirst, lnumlast,
             break;
 
         IObuff[CMDBUFFSIZE - 2] = NUL;  /* for very long lines */
-#if defined(FEAT_MBYTE)
         remove_bom(IObuff);
-#endif
 
         if ((efmp = vim_strrchr(IObuff, '\n')) != NULL)
             *efmp = NUL;
@@ -2349,9 +2347,6 @@ ex_copen(eap)
         height = QF_WINHEIGHT;
 
     reset_VIsual_and_resel();                   /* stop Visual mode */
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
 
     /*
      * Find existing quickfix window, or open a new one.
@@ -2839,10 +2834,8 @@ ex_make(eap)
     {
         apply_autocmds(EVENT_QUICKFIXCMDPRE, au_name,
                                                curbuf->b_fname, TRUE, curbuf);
-#if defined(FEAT_EVAL)
         if (did_throw || force_abort)
             return;
-#endif
     }
 #endif
 
@@ -2881,12 +2874,6 @@ ex_make(eap)
 
     /* let the shell know if we are redirecting output or not */
     do_shell(cmd, *p_sp != NUL ? SHELL_DOOUT : 0);
-
-#if (0)
-    out_flush();
-                /* read window status report and redraw before message */
-    (void)char_avail();
-#endif
 
     res = qf_init(wp, fname, (eap->cmdidx != CMD_make
                             && eap->cmdidx != CMD_lmake) ? p_gefm : p_efm,
@@ -3706,7 +3693,7 @@ wipe_dummy_buffer(buf, dirname_start)
 {
     if (curbuf != buf)          /* safety check */
     {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         cleanup_T   cs;
 
         /* Reset the error/interrupt/exception state here so that aborting()
@@ -3717,7 +3704,7 @@ wipe_dummy_buffer(buf, dirname_start)
 
         wipe_buffer(buf, FALSE);
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* Restore the error/interrupt/exception state if not discarded by a
          * new aborting error, interrupt, or uncaught exception. */
         leave_cleanup(&cs);
@@ -3746,7 +3733,7 @@ unload_dummy_buffer(buf, dirname_start)
     }
 }
 
-#if defined(FEAT_EVAL)
+#if (1)
 /*
  * Add each quickfix error to list "list" as a dictionary.
  */
@@ -3994,7 +3981,6 @@ ex_cbuffer(eap)
     }
 }
 
-#if defined(FEAT_EVAL)
 /*
  * ":cexpr {expr}", ":cgetexpr {expr}", ":caddexpr {expr}" command.
  * ":lexpr {expr}", ":lgetexpr {expr}", ":laddexpr {expr}" command.
@@ -4035,7 +4021,6 @@ ex_cexpr(eap)
         free_tv(tv);
     }
 }
-#endif
 
 /*
  * ":helpgrep {pattern}"
@@ -4053,19 +4038,11 @@ ex_helpgrep(eap)
     int         fi;
     qfline_T    *prevp = NULL;
     long        lnum;
-#if defined(FEAT_MULTI_LANG)
-    char_u      *lang;
-#endif
     qf_info_T   *qi = &ql_info;
     int         new_qi = FALSE;
     win_T       *wp;
 #if defined(FEAT_AUTOCMD)
     char_u      *au_name =  NULL;
-#endif
-
-#if defined(FEAT_MULTI_LANG)
-    /* Check for a specified language */
-    lang = check_help_lang(eap->arg);
 #endif
 
 #if defined(FEAT_AUTOCMD)
@@ -4113,7 +4090,6 @@ ex_helpgrep(eap)
     regmatch.rm_ic = FALSE;
     if (regmatch.regprog != NULL)
     {
-#if defined(FEAT_MBYTE)
         vimconv_T vc;
 
         /* Help files are in utf-8 or latin1, convert lines when 'encoding'
@@ -4121,7 +4097,6 @@ ex_helpgrep(eap)
         vc.vc_type = CONV_NONE;
         if (!enc_utf8)
             convert_setup(&vc, (char_u *)"utf-8", p_enc);
-#endif
 
         /* create a new quickfix list */
         qf_new_list(qi, *eap->cmdlinep);
@@ -4141,16 +4116,6 @@ ex_helpgrep(eap)
             {
                 for (fi = 0; fi < fcount && !got_int; ++fi)
                 {
-#if defined(FEAT_MULTI_LANG)
-                    /* Skip files for a different language. */
-                    if (lang != NULL
-                            && STRNICMP(lang, fnames[fi]
-                                            + STRLEN(fnames[fi]) - 3, 2) != 0
-                            && !(STRNICMP(lang, "en", 2) == 0
-                                && STRNICMP("txt", fnames[fi]
-                                           + STRLEN(fnames[fi]) - 3, 3) == 0))
-                            continue;
-#endif
                     fd = mch_fopen((char *)fnames[fi], "r");
                     if (fd != NULL)
                     {
@@ -4158,7 +4123,6 @@ ex_helpgrep(eap)
                         while (!vim_fgets(IObuff, IOSIZE, fd) && !got_int)
                         {
                             char_u    *line = IObuff;
-#if defined(FEAT_MBYTE)
                             /* Convert a line if 'encoding' is not utf-8 and
                              * the line contains a non-ASCII character. */
                             if (vc.vc_type != CONV_NONE
@@ -4167,7 +4131,6 @@ ex_helpgrep(eap)
                                 if (line == NULL)
                                     line = IObuff;
                             }
-#endif
 
                             if (vim_regexec(&regmatch, line, (colnr_T)0))
                             {
@@ -4193,17 +4156,13 @@ ex_helpgrep(eap)
                                             ) == FAIL)
                                 {
                                     got_int = TRUE;
-#if defined(FEAT_MBYTE)
                                     if (line != IObuff)
                                         vim_free(line);
-#endif
                                     break;
                                 }
                             }
-#if defined(FEAT_MBYTE)
                             if (line != IObuff)
                                 vim_free(line);
-#endif
                             ++lnum;
                             line_breakcheck();
                         }
@@ -4215,10 +4174,8 @@ ex_helpgrep(eap)
         }
 
         vim_regfree(regmatch.regprog);
-#if defined(FEAT_MBYTE)
         if (vc.vc_type != CONV_NONE)
             convert_setup(&vc, NULL, NULL);
-#endif
 
         qi->qf_lists[qi->qf_curlist].qf_nonevalid = FALSE;
         qi->qf_lists[qi->qf_curlist].qf_ptr =

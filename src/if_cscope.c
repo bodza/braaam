@@ -11,9 +11,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#if defined(UNIX)
 #include <sys/wait.h>
-#endif
 #include "if_cscope.h"
 
 static void         cs_usage_msg __ARGS((csid_e x));
@@ -409,7 +407,6 @@ cs_print_tags()
  *
  *              Note: All string comparisons are case sensitive!
  */
-#if defined(FEAT_EVAL)
     int
 cs_connection(num, dbpath, ppath)
     int num;
@@ -460,7 +457,6 @@ cs_connection(num, dbpath, ppath)
 
     return FALSE;
 } /* cs_connection */
-#endif
 
 /*
  * PRIVATE functions
@@ -599,12 +595,7 @@ staterr:
 
         i = cs_insert_filelist(fname2, ppath, flags, &statbuf);
     }
-#if defined(UNIX)
     else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode))
-#else
-        /* WIN32 - substitute define S_ISREG from os_unix.h */
-    else if (((statbuf.st_mode) & S_IFMT) == S_IFREG)
-#endif
     {
         i = cs_insert_filelist(fname, ppath, flags, &statbuf);
     }
@@ -818,13 +809,10 @@ cs_create_cmd(csoption, pattern)
 cs_create_connection(i)
     int i;
 {
-#if defined(UNIX)
     int         to_cs[2], from_cs[2];
-#endif
     int         len;
     char        *prog, *cmd, *ppath = NULL;
 
-#if defined(UNIX)
     /*
      * Cscope reads from to_cs[0] and writes to from_cs[1]; vi reads from
      * from_cs[0] and writes to to_cs[1].
@@ -861,40 +849,10 @@ err_closing:
         /* close unused */
         (void)close(to_cs[1]);
         (void)close(from_cs[0]);
-#else
-        /* WIN32 */
-        /* Create pipes to communicate with cscope */
-        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-        sa.bInheritHandle = TRUE;
-        sa.lpSecurityDescriptor = NULL;
-
-        if (!(pipe_stdin = CreatePipe(&stdin_rd, &stdin_wr, &sa, 0))
-                || !(pipe_stdout = CreatePipe(&stdout_rd, &stdout_wr, &sa, 0)))
-        {
-            (void)EMSG(_("E566: Could not create cscope pipes"));
-err_closing:
-            if (pipe_stdin)
-            {
-                CloseHandle(stdin_rd);
-                CloseHandle(stdin_wr);
-            }
-            if (pipe_stdout)
-            {
-                CloseHandle(stdout_rd);
-                CloseHandle(stdout_wr);
-            }
-            return CSCOPE_FAILURE;
-        }
-#endif
         /* expand the cscope exec for env var's */
         if ((prog = (char *)alloc(MAXPATHL + 1)) == NULL)
         {
-#if defined(UNIX)
             return CSCOPE_FAILURE;
-#else
-            /* WIN32 */
-            goto err_closing;
-#endif
         }
         expand_env((char_u *)p_csprg, (char_u *)prog, MAXPATHL);
 
@@ -906,12 +864,7 @@ err_closing:
             if ((ppath = (char *)alloc(MAXPATHL + 1)) == NULL)
             {
                 vim_free(prog);
-#if defined(UNIX)
                 return CSCOPE_FAILURE;
-#else
-                /* WIN32 */
-                goto err_closing;
-#endif
             }
             expand_env((char_u *)csinfo[i].ppath, (char_u *)ppath, MAXPATHL);
 
@@ -925,21 +878,11 @@ err_closing:
         {
             vim_free(prog);
             vim_free(ppath);
-#if defined(UNIX)
             return CSCOPE_FAILURE;
-#else
-            /* WIN32 */
-            goto err_closing;
-#endif
         }
 
         /* run the cscope command; is there execl for non-unix systems? */
-#if defined(UNIX)
         (void)sprintf(cmd, "exec %s -dl -f %s", prog, csinfo[i].fname);
-#else
-        /* WIN32 */
-        (void)sprintf(cmd, "%s -dl -f %s", prog, csinfo[i].fname);
-#endif
         if (csinfo[i].ppath != NULL)
         {
             (void)strcat(cmd, " -P");
@@ -950,13 +893,10 @@ err_closing:
             (void)strcat(cmd, " ");
             (void)strcat(cmd, csinfo[i].flags);
         }
-#if defined(UNIX)
       /* on Win32 we still need prog */
         vim_free(prog);
-#endif
         vim_free(ppath);
 
-#if defined(UNIX)
 #if defined(HAVE_SETSID) || defined(HAVE_SETPGID)
         /* Change our process group to avoid cscope receiving SIGWINCH. */
 #if defined(HAVE_SETSID)
@@ -987,47 +927,6 @@ err_closing:
 
         break;
     }
-
-#else
-    /* WIN32 */
-    /* Create a new process to run cscope and use pipes to talk with it */
-    GetStartupInfo(&si);
-    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_HIDE;  /* Hide child application window */
-    si.hStdOutput = stdout_wr;
-    si.hStdError  = stdout_wr;
-    si.hStdInput  = stdin_rd;
-    created = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NEW_CONSOLE,
-                                                        NULL, NULL, &si, &pi);
-    vim_free(prog);
-    vim_free(cmd);
-
-    if (!created)
-    {
-        PERROR(_("cs_create_connection exec failed"));
-        (void)EMSG(_("E623: Could not spawn cscope process"));
-        goto err_closing;
-    }
-    /* else */
-    csinfo[i].pid = pi.dwProcessId;
-    csinfo[i].hProc = pi.hProcess;
-    CloseHandle(pi.hThread);
-
-    /* TODO - tidy up after failure to create files on pipe handles. */
-    if (((fd = _open_osfhandle((OPEN_OH_ARGTYPE)stdin_wr,
-                                                      _O_TEXT|_O_APPEND)) < 0)
-            || ((csinfo[i].to_fp = _fdopen(fd, "w")) == NULL))
-        PERROR(_("cs_create_connection: fdopen for to_fp failed"));
-    if (((fd = _open_osfhandle((OPEN_OH_ARGTYPE)stdout_rd,
-                                                      _O_TEXT|_O_RDONLY)) < 0)
-            || ((csinfo[i].fr_fp = _fdopen(fd, "r")) == NULL))
-        PERROR(_("cs_create_connection: fdopen for fr_fp failed"));
-
-    /* Close handles for file descriptors inherited by the cscope process */
-    CloseHandle(stdin_rd);
-    CloseHandle(stdout_wr);
-
-#endif
 
     return CSCOPE_SUCCESS;
 } /* cs_create_connection */
@@ -1156,10 +1055,8 @@ cs_find_common(opt, pat, forceit, verbose, use_ll, cmdline)
         {
             apply_autocmds(EVENT_QUICKFIXCMDPRE, (char_u *)"cscope",
                                                curbuf->b_fname, TRUE, curbuf);
-#if defined(FEAT_EVAL)
             if (did_throw || force_abort)
                 return FALSE;
-#endif
         }
 #endif
     }
@@ -1342,38 +1239,12 @@ clear_csinfo(i)
     csinfo[i].fname  = NULL;
     csinfo[i].ppath  = NULL;
     csinfo[i].flags  = NULL;
-#if defined(UNIX)
     csinfo[i].st_dev = (dev_t)0;
     csinfo[i].st_ino = (ino_t)0;
-#else
-    csinfo[i].nVolume = 0;
-    csinfo[i].nIndexHigh = 0;
-    csinfo[i].nIndexLow = 0;
-#endif
     csinfo[i].pid    = 0;
     csinfo[i].fr_fp  = NULL;
     csinfo[i].to_fp  = NULL;
 }
-
-#if !defined(UNIX)
-static char *GetWin32Error __ARGS((void));
-
-    static char *
-GetWin32Error()
-{
-    char *msg = NULL;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-            NULL, GetLastError(), 0, (LPSTR)&msg, 0, NULL);
-    if (msg != NULL)
-    {
-        /* remove trailing \r\n */
-        char *pcrlf = strstr(msg, "\r\n");
-        if (pcrlf != NULL)
-            *pcrlf = '\0';
-    }
-    return msg;
-}
-#endif
 
 /*
  * PRIVATE: cs_insert_filelist
@@ -1388,55 +1259,12 @@ cs_insert_filelist(fname, ppath, flags, sb)
     struct stat *sb UNUSED;
 {
     short       i, j;
-#if !defined(UNIX)
-    BY_HANDLE_FILE_INFORMATION bhfi;
-
-    /* On windows 9x GetFileInformationByHandle doesn't work, so skip it */
-    if (!mch_windows95())
-    {
-        switch (win32_fileinfo(fname, &bhfi))
-        {
-        case FILEINFO_ENC_FAIL:         /* enc_to_utf16() failed */
-        case FILEINFO_READ_FAIL:        /* CreateFile() failed */
-            if (p_csverbose)
-            {
-                char *cant_msg = _("E625: cannot open cscope database: %s");
-                char *winmsg = GetWin32Error();
-
-                if (winmsg != NULL)
-                {
-                    (void)EMSG2(cant_msg, winmsg);
-                    LocalFree(winmsg);
-                }
-                else
-                    /* subst filename if can't get error text */
-                    (void)EMSG2(cant_msg, fname);
-            }
-            return -1;
-
-        case FILEINFO_INFO_FAIL:    /* GetFileInformationByHandle() failed */
-            if (p_csverbose)
-                (void)EMSG(_("E626: cannot get cscope database information"));
-            return -1;
-        }
-    }
-#endif
 
     i = -1; /* can be set to the index of an empty item in csinfo */
     for (j = 0; j < csinfo_size; j++)
     {
         if (csinfo[j].fname != NULL
-#if defined(UNIX)
             && csinfo[j].st_dev == sb->st_dev && csinfo[j].st_ino == sb->st_ino
-#else
-            /* compare pathnames first */
-            && ((fullpathcmp(csinfo[j].fname, fname, FALSE) & FPC_SAME)
-                /* if not Windows 9x, test index file attributes too */
-                || (!mch_windows95()
-                    && csinfo[j].nVolume == bhfi.dwVolumeSerialNumber
-                    && csinfo[j].nIndexHigh == bhfi.nFileIndexHigh
-                    && csinfo[j].nIndexLow == bhfi.nFileIndexLow))
-#endif
             )
         {
             if (p_csverbose)
@@ -1509,15 +1337,9 @@ cs_insert_filelist(fname, ppath, flags, sb)
     } else
         csinfo[i].flags = NULL;
 
-#if defined(UNIX)
     csinfo[i].st_dev = sb->st_dev;
     csinfo[i].st_ino = sb->st_ino;
 
-#else
-    csinfo[i].nVolume = bhfi.dwVolumeSerialNumber;
-    csinfo[i].nIndexLow = bhfi.nFileIndexLow;
-    csinfo[i].nIndexHigh = bhfi.nFileIndexHigh;
-#endif
     return i;
 } /* cs_insert_filelist */
 
@@ -2226,7 +2048,7 @@ cs_read_prompt(i)
     return CSCOPE_SUCCESS;
 }
 
-#if defined(UNIX) && defined(SIGALRM)
+#if defined(SIGALRM)
 /*
  * Used to catch and ignore SIGALRM below.
  */
@@ -2257,7 +2079,6 @@ cs_release_csp(i, freefnpp)
         (void)fputs("q\n", csinfo[i].to_fp);
         (void)fflush(csinfo[i].to_fp);
     }
-#if defined(UNIX)
     {
         int waitpid_errno;
         int pstat;
@@ -2342,15 +2163,6 @@ cs_release_csp(i, freefnpp)
             }
         }
     }
-#else
-    if (csinfo[i].hProc != NULL)
-    {
-        /* Give cscope a chance to exit normally */
-        if (WaitForSingleObject(csinfo[i].hProc, 1000) == WAIT_TIMEOUT)
-            TerminateProcess(csinfo[i].hProc, 0);
-        CloseHandle(csinfo[i].hProc);
-    }
-#endif
 
     if (csinfo[i].fr_fp != NULL)
         (void)fclose(csinfo[i].fr_fp);

@@ -37,9 +37,6 @@
 #include <sys/statfs.h>
 #define STATFS statfs
 #define F_BSIZE f_bsize
-#if defined(__MINT__) /* do we still need this? */
-#define fstatfs(fd, buf, len, nul) mch_fstat((fd), (buf))
-#endif
 #endif
 #endif
 
@@ -105,7 +102,7 @@ mf_open(fname, flags)
 {
     memfile_T           *mfp;
     off_t               size;
-#if defined(STATFS) && defined(UNIX) && !defined(__minix)
+#if defined(STATFS) && !defined(__minix)
 #define USE_FSTATFS
     struct STATFS       stf;
 #endif
@@ -594,7 +591,6 @@ mf_sync(mfp, flags)
 
     if ((flags & MFS_FLUSH) && *p_sws != NUL)
     {
-#if defined(UNIX)
 #if defined(HAVE_FSYNC)
         /*
          * most Unixes have the very useful fsync() function, just what we need.
@@ -615,11 +611,10 @@ mf_sync(mfp, flags)
             /* OpenNT is strictly POSIX (Benzinger) */
             /* Tandem/Himalaya NSK-OSS doesn't have sync() */
             /* No sync() on Stratus VOS */
-#if defined(__OPENNT) || defined(__TANDEM) || defined(__VOS__)
+#if defined(__VOS__)
             fflush(NULL);
 #else
             sync();
-#endif
 #endif
 #if defined(SYNC_DUP_CLOSE)
         /*

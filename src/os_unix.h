@@ -218,12 +218,6 @@
 #define VIMRC_FILE     ".vimrc"
 #endif
 
-#if defined(FEAT_GUI)
-#if !defined(GVIMRC_FILE)
-#define GVIMRC_FILE   ".gvimrc"
-#endif
-#endif
-
 #if !defined(SYNTAX_FNAME)
 #define SYNTAX_FNAME   "$VIMRUNTIME/syntax/%s.vim"
 #endif
@@ -301,16 +295,8 @@
 #else
 int mch_rename __ARGS((const char *src, const char *dest));
 #endif
-#if (1)
-#if defined(__MVS__)
-  /* on OS390 Unix getenv() doesn't return a pointer to persistent
-   * storage -> use __getenv() */
-#define mch_getenv(x) (char_u *)__getenv((char *)(x))
-#else
 #define mch_getenv(x) (char_u *)getenv((char *)(x))
-#endif
 #define mch_setenv(name, val, x) setenv(name, val, x)
-#endif
 
 #if !defined(S_ISDIR) && defined(S_IFDIR)
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)

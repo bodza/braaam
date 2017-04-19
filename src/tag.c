@@ -763,7 +763,7 @@ do_tag(tag, type, count, forceit, verbose)
                     got_int = FALSE;    /* only stop the listing */
                 ask_for_selection = TRUE;
             }
-#if defined(FEAT_QUICKFIX) && defined(FEAT_EVAL)
+#if defined(FEAT_QUICKFIX)
             else if (type == DT_LTAG)
             {
                 list_T  *list;
@@ -1347,17 +1347,9 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     char_u      **matches;
     int         mtt;
     int         help_save;
-#if defined(FEAT_MULTI_LANG)
-    int         help_pri = 0;
-    char_u      *help_lang_find = NULL;         /* lang to be found */
-    char_u      help_lang[3];                   /* lang of current tags file */
-    char_u      *saved_pat = NULL;              /* copy of pat[] */
-#endif
 
     pat_T       orgpat;                 /* holds unconverted pattern info */
-#if defined(FEAT_MBYTE)
     vimconv_T   vimconv;
-#endif
 
 #if defined(FEAT_TAG_BINS)
     int         findall = (mincount == MAXCOL || mincount == TAG_MANY);
@@ -1379,9 +1371,7 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
 
     help_save = curbuf->b_help;
     orgpat.pat = pat;
-#if defined(FEAT_MBYTE)
     vimconv.vc_type = CONV_NONE;
-#endif
 
 /*
  * Allocate memory for the buffers that are used
@@ -1413,25 +1403,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
         curbuf->b_help = TRUE;                  /* will be restored later */
 
     orgpat.len = (int)STRLEN(pat);
-#if defined(FEAT_MULTI_LANG)
-    if (curbuf->b_help)
-    {
-        /* When "@ab" is specified use only the "ab" language, otherwise
-         * search all languages. */
-        if (orgpat.len > 3 && pat[orgpat.len - 3] == '@'
-                                          && ASCII_ISALPHA(pat[orgpat.len - 2])
-                                         && ASCII_ISALPHA(pat[orgpat.len - 1]))
-        {
-            saved_pat = vim_strnsave(pat, orgpat.len - 3);
-            if (saved_pat != NULL)
-            {
-                help_lang_find = &pat[orgpat.len - 2];
-                orgpat.pat = saved_pat;
-                orgpat.len -= 3;
-            }
-        }
-    }
-#endif
     if (p_tl != 0 && orgpat.len > p_tl)         /* adjust for 'taglength' */
         orgpat.len = p_tl;
 
@@ -1488,55 +1459,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
         else
 #endif
         {
-#if defined(FEAT_MULTI_LANG)
-            if (curbuf->b_help)
-            {
-                /* Prefer help tags according to 'helplang'.  Put the
-                 * two-letter language name in help_lang[]. */
-                i = (int)STRLEN(tag_fname);
-                if (i > 3 && tag_fname[i - 3] == '-')
-                    STRCPY(help_lang, tag_fname + i - 2);
-                else
-                    STRCPY(help_lang, "en");
-
-                /* When searching for a specific language skip tags files
-                 * for other languages. */
-                if (help_lang_find != NULL
-                                   && STRICMP(help_lang, help_lang_find) != 0)
-                    continue;
-
-                /* For CTRL-] in a help file prefer a match with the same
-                 * language. */
-                if ((flags & TAG_KEEP_LANG)
-                        && help_lang_find == NULL
-                        && curbuf->b_fname != NULL
-                        && (i = (int)STRLEN(curbuf->b_fname)) > 4
-                        && curbuf->b_fname[i - 1] == 'x'
-                        && curbuf->b_fname[i - 4] == '.'
-                        && STRNICMP(curbuf->b_fname + i - 3, help_lang, 2) == 0)
-                    help_pri = 0;
-                else
-                {
-                    help_pri = 1;
-                    for (s = p_hlg; *s != NUL; ++s)
-                    {
-                        if (STRNICMP(s, help_lang, 2) == 0)
-                            break;
-                        ++help_pri;
-                        if ((s = vim_strchr(s, ',')) == NULL)
-                            break;
-                    }
-                    if (s == NULL || *s == NUL)
-                    {
-                        /* Language not in 'helplang': use last, prefer English,
-                         * unless found already. */
-                        ++help_pri;
-                        if (STRICMP(help_lang, "en") != 0)
-                            ++help_pri;
-                    }
-                }
-            }
-#endif
 
             if ((fp = mch_fopen((char *)tag_fname, "r")) == NULL)
                 continue;
@@ -1694,7 +1616,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
             }
 line_read_in:
 
-#if defined(FEAT_MBYTE)
             if (vimconv.vc_type != CONV_NONE)
             {
                 char_u  *conv_line;
@@ -1721,7 +1642,6 @@ line_read_in:
                     }
                 }
             }
-#endif
 
 #if defined(FEAT_EMACS_TAGS)
             /*
@@ -1809,7 +1729,6 @@ line_read_in:
                     if (STRNCMP(lbuf, "!_TAG_FILE_SORTED\t", 18) == 0)
                         tag_file_sorted = lbuf[18];
 #endif
-#if defined(FEAT_MBYTE)
                     if (STRNCMP(lbuf, "!_TAG_FILE_ENCODING\t", 20) == 0)
                     {
                         /* Prepare to convert every line from the specified
@@ -1819,7 +1738,6 @@ line_read_in:
                         *p = NUL;
                         convert_setup(&vimconv, lbuf + 20, p_enc);
                     }
-#endif
 
                     /* Read the next line.  Unrecognized flags are ignored. */
                     continue;
@@ -2244,11 +2162,7 @@ parse_line:
 
                     if (help_only)
                     {
-#if defined(FEAT_MULTI_LANG)
-#define ML_EXTRA 3
-#else
 #define ML_EXTRA 0
-#endif
                         /*
                          * Append the help-heuristic number after the
                          * tagname, for sorting it later.
@@ -2266,16 +2180,9 @@ parse_line:
 #define ML_HELP_LEN 6
                             p = mfp->match;
                             STRCPY(p, tagp.tagname);
-#if defined(FEAT_MULTI_LANG)
-                            p[len] = '@';
-                            STRCPY(p + len + 1, help_lang);
-#endif
                             sprintf((char *)p + len + 1 + ML_EXTRA, "%06d",
                                     help_heuristic(tagp.tagname,
                                         match_re ? matchoff : 0, !match_no_ic)
-#if defined(FEAT_MULTI_LANG)
-                                    + help_pri
-#endif
                                     );
                         }
                         *tagp.tagname_end = TAB;
@@ -2436,10 +2343,8 @@ parse_line:
             vim_free(incstack[incstack_idx].etag_fname);
         }
 #endif
-#if defined(FEAT_MBYTE)
         if (vimconv.vc_type != CONV_NONE)
             convert_setup(&vimconv, NULL, NULL);
-#endif
 
 #if defined(FEAT_TAG_BINS)
         tag_file_sorted = NUL;
@@ -2538,9 +2443,6 @@ findtag_end:
     *num_matches = match_count;
 
     curbuf->b_help = help_save;
-#if defined(FEAT_MULTI_LANG)
-    vim_free(saved_pat);
-#endif
 
     return retval;
 }
@@ -2609,21 +2511,7 @@ get_tagfname(tnp, first, buf)
         {
             ga_clear_strings(&tag_fnames);
             ga_init2(&tag_fnames, (int)sizeof(char_u *), 10);
-            do_in_runtimepath((char_u *)
-#if defined(FEAT_MULTI_LANG)
-#if (0)
-                    /* Functions decc$to_vms() and decc$translate_vms() crash
-                     * on some VMS systems with wildcards "??".  Seems ECO
-                     * patches do fix the problem in C RTL, but we can't use
-                     * an #ifdef for that. */
-                    "doc/tags doc/tags-*"
-#else
-                    "doc/tags doc/tags-??"
-#endif
-#else
-                    "doc/tags"
-#endif
-                                              , TRUE, found_tagfile_cb, NULL);
+            do_in_runtimepath((char_u *)"doc/tags", TRUE, found_tagfile_cb, NULL);
         }
 
         if (tnp->tn_hf_idx >= tag_fnames.ga_len)
@@ -3129,10 +3017,6 @@ jumpto_tag(lbuf, forceit, keep_help)
 
     ++RedrawingDisabled;
 
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
-
 #if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
     if (g_do_tagpreview != 0)
     {
@@ -3449,7 +3333,6 @@ expand_tag_fname(fname, tag_fname, expand)
 simplify_filename(filename)
     char_u      *filename;
 {
-#if (1) /* Amiga doesn't have "..", it uses "/" */
     int         components = 0;
     char_u      *p, *tail, *start;
     int         stripping_disabled = FALSE;
@@ -3474,24 +3357,7 @@ simplify_filename(filename)
     {
         /* At this point "p" is pointing to the char following a single "/"
          * or "p" is at the "start" of the (absolute or relative) path name. */
-#if (0)
-        /* VMS allows device:[path] - don't strip the [ in directory  */
-        if ((*p == '[' || *p == '<') && p > filename && p[-1] == ':')
-        {
-            /* :[ or :< composition: vms directory component */
-            ++components;
-            p = getnextcomp(p + 1);
-        }
-        /* allow remote calls as host"user passwd"::device:[path] */
-        else if (p[0] == ':' && p[1] == ':' && p > filename && p[-1] == '"' )
-        {
-            /* ":: composition: vms host/passwd component */
-            ++components;
-            p = getnextcomp(p + 2);
-        }
-        else
-#endif
-          if (vim_ispathsep(*p))
+        if (vim_ispathsep(*p))
             STRMOVE(p, p + 1);          /* remove duplicate "/" */
         else if (p[0] == '.' && (vim_ispathsep(p[1]) || p[1] == NUL))
         {
@@ -3534,11 +3400,7 @@ simplify_filename(filename)
                      * link that refers to a non-existent file. */
                     saved_char = p[-1];
                     p[-1] = NUL;
-#if defined(UNIX)
                     if (mch_lstat((char *)filename, &st) < 0)
-#else
-                        if (mch_stat((char *)filename, &st) < 0)
-#endif
                             do_strip = TRUE;
                     p[-1] = saved_char;
 
@@ -3566,7 +3428,6 @@ simplify_filename(filename)
                         else
                             stripping_disabled = TRUE;
                         *tail = saved_char;
-#if defined(UNIX)
                         if (do_strip)
                         {
                             struct stat new_st;
@@ -3597,7 +3458,6 @@ simplify_filename(filename)
                                  * still valid. */
                             }
                         }
-#endif
                     }
                 }
 
@@ -3649,7 +3509,6 @@ simplify_filename(filename)
             p = getnextcomp(p);
         }
     } while (*p != NUL);
-#endif
 }
 
 /*
@@ -3789,7 +3648,6 @@ expand_tags(tagnames, pat, num_file, file)
 }
 #endif
 
-#if defined(FEAT_EVAL)
 static int add_tag_field __ARGS((dict_T *dict, char *field_name, char_u *start, char_u *end));
 
 /*
@@ -3936,4 +3794,3 @@ get_tags(list, pat)
     }
     return ret;
 }
-#endif

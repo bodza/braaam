@@ -1,69 +1,3 @@
-#if defined(FEAT_GUI_MOTIF)
-#include <Xm/Xm.h>
-#endif
-
-#if defined(FEAT_GUI_ATHENA)
-#include <X11/Intrinsic.h>
-#include <X11/StringDefs.h>
-#endif
-
-#if defined(FEAT_BEVAL)
-#include "gui_beval.h"
-#endif
-
-#if defined(FEAT_GUI_GTK)
-#include <X11/Intrinsic.h>
-#include <gtk/gtk.h>
-#endif
-
-#if defined(FEAT_GUI_MAC)
-#include <Types.h>
-/*# include <Memory.h>*/
-#include <Quickdraw.h>
-#include <Fonts.h>
-#include <Events.h>
-#include <Menus.h>
-#if !(defined(TARGET_API_MAC_CARBON) && (TARGET_API_MAC_CARBON))
-#include <Windows.h>
-#endif
-#include <Controls.h>
-/*# include <TextEdit.h>*/
-#include <Dialogs.h>
-#include <OSUtils.h>
-/*
-#include <ToolUtils.h>
-#include <SegLoad.h>*/
-#endif
-
-#if defined(FEAT_GUI_PHOTON)
-#include <Ph.h>
-#include <Pt.h>
-#include "photon/PxProto.h"
-#endif
-
-/*
- * On some systems scrolling needs to be done right away instead of in the
- * main loop.
- */
-#if defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_GTK)
-#define USE_ON_FLY_SCROLL
-#endif
-
-/*
- * GUIs that support dropping files on a running Vim.
- */
-#if defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_GTK)
-#define HAVE_DROP_FILE
-#endif
-
-/*
- * This define makes menus always use a fontset.
- * We're not sure if this code always works, thus it can be disabled.
- */
-#if defined(FEAT_XFONTSET)
-#define FONTSET_ALWAYS
-#endif
-
 /*
  * These macros convert between character row/column and pixel coordinates.
  * TEXT_X   - Convert character column into X pixel coord for drawing strings.
@@ -75,14 +9,6 @@
  * X_2_COL  - Convert X pixel coord into character column.
  * Y_2_ROW  - Convert Y pixel coord into character row.
  */
-#if defined(FEAT_GUI_W32)
-#define TEXT_X(col)    ((col) * gui.char_width)
-#define TEXT_Y(row)    ((row) * gui.char_height + gui.char_ascent)
-#define FILL_X(col)    ((col) * gui.char_width)
-#define FILL_Y(row)    ((row) * gui.char_height)
-#define X_2_COL(x)     ((x) / gui.char_width)
-#define Y_2_ROW(y)     ((y) / gui.char_height)
-#else
 #define TEXT_X(col)    ((col) * gui.char_width  + gui.border_offset)
 #define FILL_X(col)    ((col) * gui.char_width  + gui.border_offset)
 #define X_2_COL(x)     (((x) - gui.border_offset) / gui.char_width)
@@ -90,7 +16,6 @@
                                                         + gui.border_offset)
 #define FILL_Y(row)    ((row) * gui.char_height + gui.border_offset)
 #define Y_2_ROW(y)     (((y) - gui.border_offset) / gui.char_height)
-#endif
 
 /* Indices for arrays of scrollbars */
 #define SBAR_NONE           -1
@@ -120,9 +45,6 @@
 #define DRAW_BOLD               0x02    /* draw bold text */
 #define DRAW_UNDERL             0x04    /* draw underline text */
 #define DRAW_UNDERC             0x08    /* draw undercurl text */
-#if defined(FEAT_GUI_GTK)
-#define DRAW_ITALIC            0x10    /* draw italic text */
-#endif
 #define DRAW_CURSOR             0x20    /* drawing block cursor (win32) */
 
 /* For our own tearoff menu item */
@@ -130,23 +52,11 @@
 #define TEAR_LEN                (9)     /* length of above string */
 
 /* for the toolbar */
-#if defined(FEAT_GUI_W16)
-#define TOOLBAR_BUTTON_HEIGHT  15
-#define TOOLBAR_BUTTON_WIDTH   16
-#else
 #define TOOLBAR_BUTTON_HEIGHT  18
 #define TOOLBAR_BUTTON_WIDTH   18
-#endif
 #define TOOLBAR_BORDER_HEIGHT   12  /* room above+below buttons for MSWindows */
 
-#if defined(FEAT_GUI_MSWIN)
-#define TABLINE_HEIGHT 22
-#endif
-#if defined(FEAT_GUI_MOTIF)
-#define TABLINE_HEIGHT 30
-#endif
-
-#if defined(NO_CONSOLE) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_X11)
+#if defined(NO_CONSOLE)
 #define NO_CONSOLE_INPUT       /* use no_console_input() to check if there
                                    is no console input possible */
 #endif
@@ -157,9 +67,6 @@ typedef struct GuiScrollbar
     win_T       *wp;            /* Scrollbar's window, NULL for bottom */
     int         type;           /* one of SBAR_{LEFT,RIGHT,BOTTOM} */
     long        value;          /* Represents top line number visible */
-#if defined(FEAT_GUI_ATHENA)
-    int         pixval;         /* pixel count of value */
-#endif
     long        size;           /* Size of scrollbar thumb */
     long        max;            /* Number of lines in buffer */
 
@@ -170,27 +77,7 @@ typedef struct GuiScrollbar
     int         width;          /* Current width of scroll bar in cols */
 #endif
     int         status_height;  /* Height of status line */
-#if defined(FEAT_GUI_X11)
-    Widget      id;             /* Id of real scroll bar */
-#endif
-#if defined(FEAT_GUI_GTK)
-    GtkWidget *id;              /* Id of real scroll bar */
-    unsigned long handler_id;   /* Id of "value_changed" signal handler */
-#endif
 
-#if defined(FEAT_GUI_MSWIN)
-    HWND        id;             /* Id of real scroll bar */
-    int         scroll_shift;   /* The scrollbar stuff can handle only up to
-                                   32767 lines.  When the file is longer,
-                                   scroll_shift is set to the number of shifts
-                                   to reduce the count.  */
-#endif
-#if defined(FEAT_GUI_MAC)
-    ControlHandle id;           /* A handle to the scrollbar */
-#endif
-#if defined(FEAT_GUI_PHOTON)
-    PtWidget_t  *id;
-#endif
 } scrollbar_T;
 
 typedef long        guicolor_T; /* handle for a GUI color; for X11 this should
@@ -200,31 +87,10 @@ typedef long        guicolor_T; /* handle for a GUI color; for X11 this should
                                    displays there is a tiny chance this is an
                                    actual color */
 
-#if defined(FEAT_GUI_GTK)
-  typedef PangoFontDescription  *GuiFont;       /* handle for a GUI font */
-  typedef PangoFontDescription  *GuiFontset;    /* handle for a GUI fontset */
-#define NOFONT         (GuiFont)NULL
-#define NOFONTSET      (GuiFontset)NULL
-#else
-#if defined(FEAT_GUI_PHOTON)
-  typedef char          *GuiFont;
-  typedef char          *GuiFontset;
-#define NOFONT        (GuiFont)NULL
-#define NOFONTSET     (GuiFontset)NULL
-#else
-#if defined(FEAT_GUI_X11)
-  typedef XFontStruct   *GuiFont;       /* handle for a GUI font */
-  typedef XFontSet      GuiFontset;     /* handle for a GUI fontset */
-#define NOFONT       (GuiFont)0
-#define NOFONTSET    (GuiFontset)0
-#else
   typedef long_u        GuiFont;        /* handle for a GUI font */
   typedef long_u        GuiFontset;     /* handle for a GUI fontset */
 #define NOFONT       (GuiFont)0
 #define NOFONTSET    (GuiFontset)0
-#endif
-#endif
-#endif
 
 typedef struct Gui
 {
@@ -255,14 +121,9 @@ typedef struct Gui
     int         right_sbar_x;       /* Calculated x coord for right scrollbar */
 
 #if defined(FEAT_MENU)
-#if !defined(FEAT_GUI_GTK)
     int         menu_height;        /* Height of the menu bar */
     int         menu_width;         /* Width of the menu bar */
-#endif
     char        menu_is_active;     /* TRUE if menu is present */
-#if defined(FEAT_GUI_ATHENA)
-    char        menu_height_fixed;  /* TRUE if menu height fixed */
-#endif
 #endif
 
     scrollbar_T bottom_sbar;        /* Bottom scrollbar */
@@ -276,171 +137,30 @@ typedef struct Gui
     int         border_offset;      /* Total pixel offset for all borders */
 
     GuiFont     norm_font;          /* Normal font */
-#if !defined(FEAT_GUI_GTK)
     GuiFont     bold_font;          /* Bold font */
     GuiFont     ital_font;          /* Italic font */
     GuiFont     boldital_font;      /* Bold-Italic font */
-#else
-    int         font_can_bold;      /* Whether norm_font supports bold weight.
-                                     * The styled font variants are not used. */
-#endif
 
-#if defined(FEAT_MENU) && !defined(FEAT_GUI_GTK)
+#if defined(FEAT_MENU)
 #if defined(FONTSET_ALWAYS)
     GuiFontset  menu_fontset;       /* set of fonts for multi-byte chars */
 #else
     GuiFont     menu_font;          /* menu item font */
 #endif
 #endif
-#if defined(FEAT_MBYTE)
     GuiFont     wide_font;          /* Normal 'guifontwide' font */
-#if !defined(FEAT_GUI_GTK)
     GuiFont     wide_bold_font;     /* Bold 'guifontwide' font */
     GuiFont     wide_ital_font;     /* Italic 'guifontwide' font */
     GuiFont     wide_boldital_font; /* Bold-Italic 'guifontwide' font */
-#endif
-#endif
-#if defined(FEAT_XFONTSET)
-    GuiFontset  fontset;            /* set of fonts for multi-byte chars */
-#endif
     guicolor_T  back_pixel;         /* Color of background */
     guicolor_T  norm_pixel;         /* Color of normal text */
     guicolor_T  def_back_pixel;     /* default Color of background */
     guicolor_T  def_norm_pixel;     /* default Color of normal text */
 
-#if defined(FEAT_GUI_X11)
-    char        *rsrc_menu_fg_name;     /* Color of menu & dialog foreground */
-    guicolor_T  menu_fg_pixel;          /* Same in Pixel format */
-    char        *rsrc_menu_bg_name;     /* Color of menu & dialog background */
-    guicolor_T  menu_bg_pixel;          /* Same in Pixel format */
-    char        *rsrc_scroll_fg_name;   /* Color of scrollbar foreground */
-    guicolor_T  scroll_fg_pixel;        /* Same in Pixel format */
-    char        *rsrc_scroll_bg_name;   /* Color of scrollbar background */
-    guicolor_T  scroll_bg_pixel;        /* Same in Pixel format */
-
-#if defined(FEAT_GUI_MOTIF)
-    guicolor_T  menu_def_fg_pixel;  /* Default menu foreground */
-    guicolor_T  menu_def_bg_pixel;  /* Default menu background */
-    guicolor_T  scroll_def_fg_pixel;  /* Default scrollbar foreground */
-    guicolor_T  scroll_def_bg_pixel;  /* Default scrollbar background */
-#endif
-    Display     *dpy;               /* X display */
-    Window      wid;                /* Window id of text area */
-    int         visibility;         /* Is shell partially/fully obscured? */
-    GC          text_gc;
-    GC          back_gc;
-    GC          invert_gc;
-    Cursor      blank_pointer;      /* Blank pointer */
-
-    /* X Resources */
-    char_u      *rsrc_font_name;    /* Resource font name, used if 'guifont'
-                                       not set */
-    char_u      *rsrc_bold_font_name; /* Resource bold font name */
-    char_u      *rsrc_ital_font_name; /* Resource italic font name */
-    char_u      *rsrc_boldital_font_name;  /* Resource bold-italic font name */
-    char_u      *rsrc_menu_font_name;    /* Resource menu Font name */
-    Bool        rsrc_rev_video;     /* Use reverse video? */
-
-    char_u      *geom;              /* Geometry, eg "80x24" */
-    Bool        color_approx;       /* Some color was approximated */
-#endif
-
-#if defined(FEAT_GUI_GTK)
-    int         visibility;         /* Is shell partially/fully obscured? */
-    GdkCursor   *blank_pointer;     /* Blank pointer */
-
-    /* X Resources */
-    char_u      *geom;              /* Geometry, eg "80x24" */
-
-    GtkWidget   *mainwin;           /* top level GTK window */
-    GtkWidget   *formwin;           /* manages all the windows below */
-    GtkWidget   *drawarea;          /* the "text" area */
-#if defined(FEAT_MENU)
-    GtkWidget   *menubar;           /* menubar */
-#endif
-#if defined(FEAT_TOOLBAR)
-    GtkWidget   *toolbar;           /* toolbar */
-#endif
-#if defined(FEAT_GUI_GNOME)
-    GtkWidget   *menubar_h;         /* menubar handle */
-    GtkWidget   *toolbar_h;         /* toolbar handle */
-#endif
-    GdkColor    *fgcolor;           /* GDK-styled foreground color */
-    GdkColor    *bgcolor;           /* GDK-styled background color */
-    GdkColor    *spcolor;           /* GDK-styled special color */
-    GdkGC       *text_gc;           /* cached GC for normal text */
-    PangoContext     *text_context; /* the context used for all text */
-    PangoFont        *ascii_font;   /* cached font for ASCII strings */
-    PangoGlyphString *ascii_glyphs; /* cached code point -> glyph map */
-#if defined(FEAT_GUI_TABLINE)
-    GtkWidget   *tabline;           /* tab pages line handle */
-#endif
-
-    GtkAccelGroup *accel_group;
-    GtkWidget   *filedlg;           /* file selection dialog */
-    char_u      *browse_fname;      /* file name from filedlg */
-
-    guint32     event_time;
-#endif
-
-#if defined(FEAT_GUI_TABLINE) && (defined(FEAT_GUI_W32) || defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_MAC))
-    int         tabline_height;
-#endif
-
 #if defined(FEAT_FOOTER)
     int         footer_height;      /* height of the message footer */
 #endif
 
-#if defined(FEAT_TOOLBAR) && (defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MOTIF))
-    int         toolbar_height;     /* height of the toolbar */
-#endif
-
-#if defined(FEAT_BEVAL_TIP)
-    /* Tooltip properties; also used for balloon evaluation */
-    char_u      *rsrc_tooltip_font_name; /* tooltip font name */
-    char        *rsrc_tooltip_fg_name;  /* tooltip foreground color name */
-    char        *rsrc_tooltip_bg_name;  /* tooltip background color name */
-    guicolor_T  tooltip_fg_pixel;       /* tooltip foreground color */
-    guicolor_T  tooltip_bg_pixel;       /* tooltip background color */
-    XFontSet    tooltip_fontset;        /* tooltip fontset */
-#endif
-
-#if defined(FEAT_GUI_MSWIN)
-    GuiFont     currFont;           /* Current font */
-    guicolor_T  currFgColor;        /* Current foreground text color */
-    guicolor_T  currBgColor;        /* Current background text color */
-    guicolor_T  currSpColor;        /* Current special text color */
-#endif
-
-#if defined(FEAT_GUI_MAC)
-    WindowPtr   VimWindow;
-    MenuHandle  MacOSHelpMenu;      /* Help menu provided by the MacOS */
-    int         MacOSHelpItems;     /* Nr of help-items supplied by MacOS */
-    WindowPtr   wid;                /* Window id of text area */
-    int         visibility;         /* Is window partially/fully obscured? */
-#endif
-
-#if defined(FEAT_GUI_PHOTON)
-    PtWidget_t  *vimWindow;             /* PtWindow */
-    PtWidget_t  *vimTextArea;           /* PtRaw */
-    PtWidget_t  *vimContainer;          /* PtPanel */
-#if defined(FEAT_MENU) || defined(FEAT_TOOLBAR)
-    PtWidget_t  *vimToolBarGroup;
-#endif
-#if defined(FEAT_MENU)
-    PtWidget_t  *vimMenuBar;
-#endif
-#if defined(FEAT_TOOLBAR)
-    PtWidget_t  *vimToolBar;
-    int         toolbar_height;
-#endif
-    PhEvent_t   *event_buffer;
-#endif
-
-#if defined(FEAT_XIM)
-    char        *rsrc_input_method;
-    char        *rsrc_preedit_type_name;
-#endif
 } gui_T;
 
 extern gui_T gui;                       /* this is defined in gui.c */
@@ -470,45 +190,7 @@ typedef enum
 #define FRD_MATCH_CASE 0x10    /* match case */
 #endif
 
-#if defined(FEAT_GUI_GTK)
-/*
- * Convenience macros to convert from 'encoding' to 'termencoding' and
- * vice versa.  If no conversion is necessary the passed-in pointer is
- * returned as is, without allocating any memory.  Thus additional _FREE()
- * macros are provided.  The _FREE() macros also set the pointer to NULL,
- * in order to avoid bugs due to illegal memory access only happening if
- * 'encoding' != utf-8...
- *
- * Defining these macros as pure expressions looks a bit tricky but
- * avoids depending on the context of the macro expansion.  One of the
- * rare occasions where the comma operator comes in handy :)
- *
- * Note: Do NOT keep the result around when handling control back to
- * the main Vim!  The user could change 'encoding' at any time.
- */
-#define CONVERT_TO_UTF8(String)                                \
-    ((output_conv.vc_type == CONV_NONE || (String) == NULL)     \
-            ? (String)                                          \
-            : string_convert(&output_conv, (String), NULL))
-
-#define CONVERT_TO_UTF8_FREE(String)                           \
-    ((String) = ((output_conv.vc_type == CONV_NONE)             \
-                        ? (char_u *)NULL                        \
-                        : (vim_free(String), (char_u *)NULL)))
-
-#define CONVERT_FROM_UTF8(String)                              \
-    ((input_conv.vc_type == CONV_NONE || (String) == NULL)      \
-            ? (String)                                          \
-            : string_convert(&input_conv, (String), NULL))
-
-#define CONVERT_FROM_UTF8_FREE(String)                         \
-    ((String) = ((input_conv.vc_type == CONV_NONE)              \
-                        ? (char_u *)NULL                        \
-                        : (vim_free(String), (char_u *)NULL)))
-
-#else
 #define CONVERT_TO_UTF8(String) (String)
 #define CONVERT_TO_UTF8_FREE(String) ((String) = (char_u *)NULL)
 #define CONVERT_FROM_UTF8(String) (String)
 #define CONVERT_FROM_UTF8_FREE(String) ((String) = (char_u *)NULL)
-#endif

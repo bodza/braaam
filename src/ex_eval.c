@@ -4,8 +4,6 @@
 
 #include "vim.h"
 
-#if defined(FEAT_EVAL)
-
 static void     free_msglist __ARGS((struct msglist *l));
 static int      throw_exception __ARGS((void *, int, char_u *));
 static char_u   *get_end_emsg __ARGS((struct condstack *cstack));
@@ -2310,5 +2308,3 @@ has_loop_cmd(p)
         return TRUE;
     return FALSE;
 }
-
-#endif

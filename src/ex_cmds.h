@@ -85,9 +85,6 @@ static struct cmdname
     long_u      cmd_argt;       /* flags declared above */
     int         cmd_addr_type;  /* flag for address type */
 }
-#if defined(FEAT_GUI_W16)
-_far
-#endif
 cmdnames[] =
 #else
 #define EX(a, b, c, d, e)  a
@@ -1707,19 +1704,15 @@ struct exarg
     int         force_bin;      /* 0, FORCE_BIN or FORCE_NOBIN */
     int         read_edit;      /* ++edit argument */
     int         force_ff;       /* ++ff= argument (index in cmd[]) */
-#if defined(FEAT_MBYTE)
     int         force_enc;      /* ++enc= argument (index in cmd[]) */
     int         bad_char;       /* BAD_KEEP, BAD_DROP or replacement byte */
-#endif
 #if defined(FEAT_USR_CMDS)
     int         useridx;        /* user command index */
 #endif
     char_u      *errmsg;        /* returned error message */
     char_u      *(*getline) __ARGS((int, void *, int));
     void        *cookie;        /* argument for getline() */
-#if defined(FEAT_EVAL)
     struct condstack *cstack;   /* condition stack for ":if" etc. */
-#endif
 };
 
 #define FORCE_BIN 1             /* ":edit ++bin file" */

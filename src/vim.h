@@ -7,15 +7,6 @@
 #include "config.h"
 #define HAVE_PATHDEF
 
-/*
- * Check if configure correctly managed to find sizeof(int).  If this failed,
- * it becomes zero.  This is likely a problem of not being able to run the
- * test program.  Other items from configure may also be wrong then!
- */
-#if (VIM_SIZEOF_INT == 0)
-    Error: configure did not run properly.  Check config.log.
-#endif
-
 /* We may need to define the uint32_t on non-Unix system, but using the same
  * identifier causes conflicts.  Therefore use UINT32_T. */
 #define UINT32_TYPEDEF uint32_t
@@ -32,65 +23,9 @@
 #endif
 
 /* user ID of root is usually zero, but not for everybody */
-#if defined(__TANDEM)
-#if !defined(_TANDEM_SOURCE)
-#define _TANDEM_SOURCE
-#endif
-#include <floss.h>
-#define ROOT_UID 65535
-#define OLDXAW
-#if (_TANDEM_ARCH_ == 2 && __H_Series_RVU >= 621)
-#define SA_ONSTACK_COMPATIBILITY
-#endif
-#else
 #define ROOT_UID 0
-#endif
-
-/*
- * MACOS_CLASSIC compiling for MacOS prior to MacOS X
- * MACOS_X_UNIX  compiling for MacOS X (using os_unix.c)
- * MACOS_X       compiling for MacOS X (using os_unix.c)
- * MACOS         compiling for either one
- */
-#if defined(macintosh) && !defined(MACOS_CLASSIC)
-#define MACOS_CLASSIC
-#endif
-#if defined(MACOS_X_UNIX)
-#define MACOS_X
-#if !defined(HAVE_CONFIG_H)
-#define UNIX
-#endif
-#if !defined(FEAT_CLIPBOARD)
-#define FEAT_CLIPBOARD
-#if !defined(FEAT_MOUSE)
-#define FEAT_MOUSE
-#endif
-#endif
-#endif
-#if defined(MACOS_X) || defined(MACOS_CLASSIC)
-#define MACOS
-#endif
-#if defined(MACOS_X) && defined(MACOS_CLASSIC)
-    Error: To compile for both MACOS X and Classic use a Classic Carbon
-#endif
-/* Unless made through the Makefile enforce GUI on Mac */
-#if defined(MACOS) && !defined(HAVE_CONFIG_H)
-#define FEAT_GUI_MAC
-#endif
-
-#if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_W32) || defined(FEAT_GUI_W16) || defined(FEAT_GUI_PHOTON)
-#define FEAT_GUI_ENABLED  /* also defined with NO_X11_INCLUDES */
-#if !defined(FEAT_GUI) && !defined(NO_X11_INCLUDES)
-#define FEAT_GUI
-#endif
-#endif
 
 /* Check support for rendering options */
-#if defined(FEAT_GUI)
-#if defined(FEAT_DIRECTX)
-#define FEAT_RENDER_OPTIONS
-#endif
-#endif
 
 /* Visual Studio 2005 has 'deprecated' many of the standard CRT functions */
 #if _MSC_VER >= 1400
@@ -98,65 +33,17 @@
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 
-#if defined(FEAT_GUI_W32) || defined(FEAT_GUI_W16)
-#define FEAT_GUI_MSWIN
-#endif
-
-/*
- * VIM_SIZEOF_INT is used in feature.h, and the system-specific included files
- * need items from feature.h.  Therefore define VIM_SIZEOF_INT here.
- */
-
-#if defined(MACOS)
-#if defined(__POWERPC__) || defined(MACOS_X) || defined(__fourbyteints__) || defined(__MRC__) || defined(__SC__) || defined(__APPLE_CC__)/* MPW Compilers */
-#define VIM_SIZEOF_INT 4
-#else
-#define VIM_SIZEOF_INT 2
-#endif
-#endif
-
 #include "feature.h"    /* #defines for optionals and features */
-
-/* +x11 is only enabled when it's both available and wanted. */
-#if defined(HAVE_X11) && defined(WANT_X11)
-#define FEAT_X11
-#endif
 
 #if defined(NO_X11_INCLUDES)
     /* In os_mac_conv.c and os_macosx.m NO_X11_INCLUDES is defined to avoid
      * X11 headers.  Disable all X11 related things to avoid conflicts. */
-#if defined(FEAT_X11)
-#undef FEAT_X11
-#endif
-#if defined(FEAT_GUI_X11)
-#undef FEAT_GUI_X11
-#endif
 #if defined(FEAT_XCLIPBOARD)
 #undef FEAT_XCLIPBOARD
-#endif
-#if defined(FEAT_GUI_MOTIF)
-#undef FEAT_GUI_MOTIF
-#endif
-#if defined(FEAT_GUI_ATHENA)
-#undef FEAT_GUI_ATHENA
-#endif
-#if defined(FEAT_GUI_GTK)
-#undef FEAT_GUI_GTK
-#endif
-#if defined(FEAT_BEVAL_TIP)
-#undef FEAT_BEVAL_TIP
-#endif
-#if defined(FEAT_XIM)
-#undef FEAT_XIM
 #endif
 #if defined(FEAT_CLIENTSERVER)
 #undef FEAT_CLIENTSERVER
 #endif
-#endif
-
-/* The Mac conversion stuff doesn't work under X11. */
-#if defined(FEAT_MBYTE) && defined(MACOS_X)
-#define MACOS_CONVERT
 #endif
 
 /* Can't use "PACKAGE" here, conflicts with a Perl include file. */
@@ -167,29 +54,14 @@
 /*
  * Find out if function definitions should include argument types
  */
-#if defined(AZTEC_C)
-#include <functions.h>
-#define __ARGS(x)  x
-#endif
-
-#if defined(SASC)
-#include <clib/exec_protos.h>
-#define __ARGS(x)  x
-#endif
 
 #if defined(_DCC)
 #include <clib/exec_protos.h>
 #define __ARGS(x)  x
 #endif
 
-#if defined(UNIX) && (!defined(MACOS_X) || defined(HAVE_CONFIG_H))
 #include "os_unix.h"       /* bring lots of system header files */
-#endif
 
-#if defined(MACOS) && (defined(__MRC__) || defined(__SC__))
-   /* Apple's Compilers support prototypes */
-#define __ARGS(x) x
-#endif
 #if !defined(__ARGS)
 #if defined(__STDC__) || defined(__GNUC__)
 #define __ARGS(x) x
@@ -218,23 +90,8 @@
  * a concrete example, gcc-3.2 enforces exception specifications, and
  * glibc-2.2.5 has them in their system headers.
  */
-#if !defined(__cplusplus) && defined(UNIX) && !defined(MACOS_X) /* MACOS_X doesn't yet support osdef.h */
+#if !defined(__cplusplus) /* MACOS_X doesn't yet support osdef.h */
 #include "osdef.h"     /* bring missing declarations in */
-#endif
-
-#if defined(__MINT__)
-#include "os_mint.h"
-#endif
-
-#if defined(MACOS)
-#if defined(__MRC__) || defined(__SC__) /* MPW Compilers */
-#define HAVE_SETENV
-#endif
-#include "os_mac.h"
-#endif
-
-#if defined(FEAT_SUN_WORKSHOP)
-#include "workshop.h"
 #endif
 
 #if defined(X_LOCALE)
@@ -275,8 +132,7 @@ typedef unsigned int    int_u;
 /* Make sure long_u is big enough to hold a pointer.
  * On Win64, longs are 32 bits and pointers are 64 bits.
  * For printf() and scanf(), we need to take care of long_u specifically. */
-#if (0)
-#else
+
   /* Microsoft-specific. The __w64 keyword should be specified on any typedefs
    * that change size between 32-bit and 64-bit platforms.  For any such type,
    * __w64 should appear only on the 32-bit definition of the typedef.
@@ -290,7 +146,7 @@ typedef          long __w64     long_i;
 #define SCANF_HEX_LONG_U       "%lx"
 #define SCANF_DECIMAL_LONG_U   "%lu"
 #define PRINTF_HEX_LONG_U      "0x%lx"
-#endif
+
 #define PRINTF_DECIMAL_LONG_U SCANF_DECIMAL_LONG_U
 
 /*
@@ -321,21 +177,10 @@ typedef unsigned char sattr_T;
  * bits.  u8char_T is only used for displaying, it could be 16 bits to save
  * memory.
  */
-#if defined(FEAT_MBYTE)
 #if defined(UNICODE16)
 typedef unsigned short u8char_T;    /* short should be 16 bits */
 #else
-#if VIM_SIZEOF_INT >= 4
 typedef unsigned int u8char_T;      /* int is 32 bits */
-#else
-typedef unsigned long u8char_T;     /* long should be 32 bits or more */
-#endif
-#endif
-#endif
-
-#if !defined(UNIX) /* For Unix this is included in os_unix.h */
-#include <stdio.h>
-#include <ctype.h>
 #endif
 
 #include "ascii.h"
@@ -353,27 +198,6 @@ typedef unsigned long u8char_T;     /* long should be 32 bits or more */
 
 #if defined(HAVE_ERRNO_H) || defined(DJGPP)
 #include <errno.h>
-#endif
-
-/*
- * Allow other (non-unix) systems to configure themselves now
- * These are also in os_unix.h, because osdef.sh needs them there.
- */
-#if !defined(UNIX)
-/* Note: Some systems need both string.h and strings.h (Savage).  If the
- * system can't handle this, define NO_STRINGS_WITH_STRING_H. */
-#if defined(HAVE_STRING_H)
-#include <string.h>
-#endif
-#if defined(HAVE_STRINGS_H) && !defined(NO_STRINGS_WITH_STRING_H)
-#include <strings.h>
-#endif
-#if defined(HAVE_STAT_H)
-#include <stat.h>
-#endif
-#if defined(HAVE_STDLIB_H)
-#include <stdlib.h>
-#endif
 #endif
 
 #include <assert.h>
@@ -412,9 +236,6 @@ typedef unsigned long u8char_T;     /* long should be 32 bits or more */
 /*
  * Check input method control.
  */
-#if defined(FEAT_XIM) || (defined(FEAT_GUI_MAC) && defined(FEAT_MBYTE))
-#define USE_IM_CONTROL
-#endif
 
 /*
  * For dynamically loaded gettext library.  Currently, only for Win32.
@@ -736,11 +557,7 @@ extern char *(*dyn_libintl_textdomain)(const char *domainname);
 
 #if defined(FEAT_SYN_HL)
 #define SST_MIN_ENTRIES 150    /* minimal size for state stack array */
-#if defined(FEAT_GUI_W16)
-#define SST_MAX_ENTRIES 500   /* (only up to 64K blocks) */
-#else
 #define SST_MAX_ENTRIES 1000  /* maximal size for state stack array */
-#endif
 #define SST_FIX_STATES  7      /* size of sst_stack[]. */
 #define SST_DIST        16     /* normal distance between entries */
 #define SST_INVALID    (synstate_T *)-1        /* invalid syn_state pointer */
@@ -1327,14 +1144,9 @@ typedef UINT32_TYPEDEF UINT32_T;
 
 #define DIALOG_MSG_SIZE 1000    /* buffer size for dialog_msg() */
 
-#if defined(FEAT_MBYTE)
 #define MSG_BUF_LEN 480        /* length of buffer for small messages */
 #define MSG_BUF_CLEN  (MSG_BUF_LEN / 6)    /* cell length (worst case: utf-8
                                                takes 6 bytes for one cell) */
-#else
-#define MSG_BUF_LEN 80         /* length of buffer for small messages */
-#define MSG_BUF_CLEN  MSG_BUF_LEN          /* cell length */
-#endif
 
 /* Size of the buffer used for tgetent().  Unfortunately this is largely
  * undocumented, some systems use 1024.  Using a buffer that is too small
@@ -1414,7 +1226,6 @@ typedef UINT32_TYPEDEF UINT32_T;
 #endif
 #endif
 
-#if defined(FEAT_MBYTE)
 /* We need to call mb_stricmp() even when we aren't dealing with a multi-byte
  * encoding because mb_stricmp() takes care of all ascii and non-ascii
  * encodings, including characters with umlauts in latin1, etc., while
@@ -1423,10 +1234,6 @@ typedef UINT32_TYPEDEF UINT32_T;
 
 #define MB_STRICMP(d, s)       mb_strnicmp((char_u *)(d), (char_u *)(s), (int)MAXCOL)
 #define MB_STRNICMP(d, s, n)   mb_strnicmp((char_u *)(d), (char_u *)(s), (int)(n))
-#else
-#define MB_STRICMP(d, s)       STRICMP((d), (s))
-#define MB_STRNICMP(d, s, n)   STRNICMP((d), (s), (n))
-#endif
 
 #define STRCAT(d, s)        strcat((char *)(d), (char *)(s))
 #define STRNCAT(d, s, n)    strncat((char *)(d), (char *)(s), (size_t)(n))
@@ -1473,15 +1280,7 @@ typedef unsigned short disptick_T;      /* display tick type */
  * With this we restrict the maximum line length to 1073741823. I guess this is
  * not a real problem. BTW:  Longer lines are split.
  */
-#if VIM_SIZEOF_INT >= 4
-#if defined(__MVS__)
-#define MAXCOL (0x3fffffffL)          /* maximum column number, 30 bits */
-#else
 #define MAXCOL (0x7fffffffL)          /* maximum column number, 31 bits */
-#endif
-#else
-#define MAXCOL (0x7fff)                /* maximum column number, 15 bits */
-#endif
 
 #define SHOWCMD_COLS 10                 /* columns needed by shown command */
 #define STL_MAX_ITEM 80                 /* max nr of %<flag> in statusline */
@@ -1525,9 +1324,7 @@ int vim_memcmp __ARGS((void *, void *, size_t));
 #endif
 #endif
 
-#if defined(UNIX) || defined(FEAT_GUI) || defined(FEAT_CLIENTSERVER)
 #define USE_INPUT_BUF
-#endif
 
 #if !defined(EINTR)
 #define read_eintr(fd, buf, count) vim_read((fd), (buf), (count))
@@ -1563,16 +1360,12 @@ int vim_memcmp __ARGS((void *, void *, size_t));
 #endif
 #endif
 
-#if defined(FEAT_MBYTE)
 #define MAX_MCO        6       /* maximum value for 'maxcombine' */
 
 /* Maximum number of bytes in a multi-byte character.  It can be one 32-bit
  * character of up to 6 bytes, or one 16-bit character of up to three bytes
  * plus six following composing characters of three bytes each. */
 #define MB_MAXBYTES    21
-#else
-#define MB_MAXBYTES    1
-#endif
 
 #if (defined(FEAT_PROFILE) || defined(FEAT_RELTIME))
 typedef struct timeval proftime_T;
@@ -1661,7 +1454,7 @@ typedef int proftime_T;     /* dummy for function prototypes */
 #define MOUSE_MAY_STOP_VIS     0x10    /* may stop Visual mode */
 #define MOUSE_RELEASED         0x20    /* button was released */
 
-#if defined(UNIX) && defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
+#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
 #define CHECK_DOUBLE_CLICK 1  /* Checking for double clicks ourselves. */
 #endif
 
@@ -1749,16 +1542,6 @@ typedef int proftime_T;     /* dummy for function prototypes */
 #define SELECT_MODE_WORD       1
 #define SELECT_MODE_LINE       2
 
-#if defined(FEAT_GUI_W32)
-#if defined(FEAT_OLE)
-#define WM_OLE (WM_APP+0)
-#endif
-#if defined(FEAT_NETBEANS_INTG)
-    /* message for Netbeans socket event */
-#define WM_NETBEANS (WM_APP+1)
-#endif
-#endif
-
 /* Info about selected text */
 typedef struct VimClipboard
 {
@@ -1779,12 +1562,8 @@ typedef struct VimClipboard
     short_u     state;          /* Current selection state */
     short_u     mode;           /* Select by char, word, or line. */
 
-#if defined(FEAT_GUI_X11) || defined(FEAT_XCLIPBOARD)
+#if defined(FEAT_XCLIPBOARD)
     Atom        sel_atom;       /* PRIMARY/CLIPBOARD selection ID */
-#endif
-
-#if defined(FEAT_GUI_GTK)
-    GdkAtom     gtk_sel_atom;   /* PRIMARY/CLIPBOARD selection ID */
 #endif
 
 #if defined(FEAT_CYGWIN_WIN32_CLIPBOARD)
@@ -1803,18 +1582,9 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
  * functions of these names. The declarations would break if the defines had
  * been seen at that stage.  But it must be before globals.h, where error_ga
  * is declared. */
-#if !defined(FEAT_GUI_W32) && !defined(FEAT_GUI_X11) && !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_MAC)
 #define mch_errmsg(str)        fprintf(stderr, "%s", (str))
 #define display_errors()       fflush(stderr)
 #define mch_msg(str)           printf("%s", (str))
-#else
-#define USE_MCH_ERRMSG
-#endif
-
-#if !defined(FEAT_MBYTE)
-#define after_pathsep(b, p)    vim_ispathsep(*((p) - 1))
-#define transchar_byte(c)      transchar(c)
-#endif
 
 #if !defined(FEAT_LINEBREAK)
 /* Without the 'numberwidth' option line numbers are always 7 chars. */
@@ -1822,10 +1592,6 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #endif
 
 #include "globals.h"        /* global variables and messages */
-
-#if defined(FEAT_SNIFF)
-#include "if_sniff.h"
-#endif
 
 #if !defined(FEAT_VIRTUALEDIT)
 #define getvvcol(w, p, s, c, e) getvcol(w, p, s, c, e)
@@ -1899,7 +1665,6 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #define ALT_INPUT_LOCK_ON      suppress_alternate_input = TRUE
 #endif
 
-#if defined(FEAT_MBYTE)
 /*
  * Return byte length of character that starts with byte "b".
  * Returns 1 for a single-byte character.
@@ -1908,9 +1673,7 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
  */
 #define MB_BYTE2LEN(b)         mb_bytelen_tab[b]
 #define MB_BYTE2LEN_CHECK(b)   (((b) < 0 || (b) > 255) ? 1 : mb_bytelen_tab[b])
-#endif
 
-#if defined(FEAT_MBYTE) || defined(FEAT_POSTSCRIPT)
 /* properties used in enc_canon_table[] (first three mutually exclusive) */
 #define ENC_8BIT       0x01
 #define ENC_DBCS       0x02
@@ -1926,9 +1689,7 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #define ENC_LATIN1     0x200       /* Latin1 */
 #define ENC_LATIN9     0x400       /* Latin9 */
 #define ENC_MACROMAN   0x800       /* Mac Roman (not Macro Man! :-) */
-#endif
 
-#if defined(FEAT_MBYTE)
 #if defined(USE_ICONV)
 #if !defined(EILSEQ)
 #define EILSEQ 123
@@ -1947,8 +1708,6 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #endif
 #endif
 
-#endif
-
 /* ISSYMLINK(mode) tests if a file is a symbolic link. */
 #if (defined(S_IFMT) && defined(S_IFLNK)) || defined(S_ISLNK)
 #define HAVE_ISSYMLINK
@@ -1962,30 +1721,7 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #define SIGN_BYTE 1         /* byte value used where sign is displayed;
                                attribute value is sign type */
 
-#if defined(FEAT_NETBEANS_INTG)
-#define MULTISIGN_BYTE 2   /* byte value used where sign is displayed if
-                               multiple signs exist on the line */
-#endif
-
-#if defined(FEAT_GUI) && defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_GUI_GTK)
-   /* Avoid using a global variable for the X display.  It's ugly
-    * and is likely to cause trouble in multihead environments. */
-#define X_DISPLAY     ((gui.in_use) ? gui_mch_get_display() : xterm_dpy)
-#else
-#define X_DISPLAY     (gui.in_use ? gui.dpy : xterm_dpy)
-#endif
-#else
-#if defined(FEAT_GUI)
-#if defined(FEAT_GUI_GTK)
-#define X_DISPLAY    ((gui.in_use) ? gui_mch_get_display() : (Display *)NULL)
-#else
-#define X_DISPLAY    gui.dpy
-#endif
-#else
 #define X_DISPLAY     xterm_dpy
-#endif
-#endif
 
 #if defined(FEAT_BROWSE) && defined(GTK_CHECK_VERSION)
 #if GTK_CHECK_VERSION(2,4,0)
@@ -1993,9 +1729,7 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #endif
 #endif
 
-#if !defined(FEAT_NETBEANS_INTG)
 #undef NBDEBUG
-#endif
 #if defined(NBDEBUG) /* Netbeans debugging. */
 #include "nbdebug.h"
 #else
@@ -2033,18 +1767,12 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #endif
   /* bool may cause trouble on MACOS but is required on a few other systems
    * and for Perl */
-#if defined(bool) && defined(MACOS) && !defined(FEAT_PERL)
-#undef bool
-#endif
 
 #endif
 
 /* values for vim_handle_signal() that are not a signal */
 #define SIGNAL_BLOCK    -1
 #define SIGNAL_UNBLOCK  -2
-#if !defined(UNIX)
-#define vim_handle_signal(x) 0
-#endif
 
 /* flags for skip_vimgrep_pat() */
 #define VGR_GLOBAL      1
@@ -2109,10 +1837,6 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 /* Character used as separated in autoload function/variable names. */
 #define AUTOLOAD_CHAR '#'
 
-#if defined(FEAT_EVAL)
 #define SET_NO_HLSEARCH(flag) no_hlsearch = (flag); set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls)
-#else
-#define SET_NO_HLSEARCH(flag) no_hlsearch = (flag)
-#endif
 
 #endif

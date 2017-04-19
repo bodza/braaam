@@ -14,8 +14,6 @@
 #include <sys/ioctl.h>
 #endif
 
-#if !defined(USE_SYSTEM) /* use fork/exec to start the shell */
-
 #if defined(HAVE_SYS_WAIT_H) || defined(HAVE_UNION_WAIT)
 #include <sys/wait.h>
 #endif
@@ -34,8 +32,6 @@
 #else
 #define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
-#endif
-
 #endif
 
 #if defined(HAVE_STROPTS_H)
@@ -105,10 +101,6 @@
 
 /* shared library access */
 #if defined(HAVE_DLFCN_H) && defined(USE_DLOPEN)
-#if defined(__MVS__)
-    /* needed to define RTLD_LAZY (Anthony Giorgio) */
-#define __SUSV3
-#endif
 #include <dlfcn.h>
 #else
 #if defined(HAVE_DL_H) && defined(HAVE_SHL_LOAD)

@@ -1081,11 +1081,9 @@ foldAdjustVisual()
         end->col = (colnr_T)STRLEN(ptr);
         if (end->col > 0 && *p_sel == 'o')
             --end->col;
-#if defined(FEAT_MBYTE)
         /* prevent cursor from moving on the trail byte */
         if (has_mbyte)
             mb_adjust_cursor();
-#endif
     }
 }
 
@@ -1914,7 +1912,6 @@ get_foldtext(wp, lnum, lnume, foldinfo, buf)
     char_u      *buf;
 {
     char_u      *text = NULL;
-#if defined(FEAT_EVAL)
      /* an error occurred when evaluating 'fdt' setting */
     static int      got_fdt_error = FALSE;
     int             save_did_emsg = did_emsg;
@@ -1982,7 +1979,6 @@ get_foldtext(wp, lnum, lnume, foldinfo, buf)
              * replace a TAB with a space. */
             for (p = text; *p != NUL; ++p)
             {
-#if defined(FEAT_MBYTE)
                 int     len;
 
                 if (has_mbyte && (len = (*mb_ptr2len)(p)) > 1)
@@ -1992,7 +1988,6 @@ get_foldtext(wp, lnum, lnume, foldinfo, buf)
                     p += len - 1;
                 }
                 else
-#endif
                     if (*p == TAB)
                         *p = ' ';
                     else if (ptr2cells(p) > 1)
@@ -2007,7 +2002,6 @@ get_foldtext(wp, lnum, lnume, foldinfo, buf)
         }
     }
     if (text == NULL)
-#endif
     {
         sprintf((char *)buf, _("+--%3ld lines folded "),
                                                     (long)(lnume - lnum + 1));
@@ -3072,10 +3066,6 @@ foldlevelDiff(flp)
 foldlevelExpr(flp)
     fline_T     *flp;
 {
-#if !defined(FEAT_EVAL)
-    flp->start = FALSE;
-    flp->lvl = 0;
-#else
     win_T       *win;
     int         n;
     int         c;
@@ -3162,7 +3152,6 @@ foldlevelExpr(flp)
 
     curwin = win;
     curbuf = curwin->w_buffer;
-#endif
 }
 
 /* parseMarker() {{{2 */

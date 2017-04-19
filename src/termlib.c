@@ -3,9 +3,7 @@
 #include "vim.h"
 #include "termlib.pro"
 
-#if !defined(MACOS)
 #include <sgtty.h>
-#endif
 
 static int  getent __ARGS((char *, char *, FILE *, int));
 static int  nextent __ARGS((char *, FILE *, int));
@@ -44,15 +42,7 @@ short   ospeed;               /* Baud rate (1-16, 1=300, 16=19200), as in stty *
  */
 
 #if !defined(TERMCAPFILE)
-#if (0)
-#define TERMCAPFILE "s:termcap"
-#else
-#if (0)
-#define TERMCAPFILE "VIMRUNTIME:termcap"
-#else
 #define TERMCAPFILE "/etc/termcap"
-#endif
-#endif
 #endif
 
     int
@@ -73,13 +63,6 @@ tgetent(tbuf, term)
         if (*tmp == '/')                /* TERMCAP = name of termcap file */
         {
             tcap = tmp ;
-#if (0)
-            /* Convert /usr/share/lib/termcap to usr:share/lib/termcap */
-            tcap++;
-            tmp = strchr(tcap, '/');
-            if (tmp)
-                *tmp = ':';
-#endif
         }
         else                            /* TERMCAP = termcap entry itself */
         {

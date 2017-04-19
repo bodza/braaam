@@ -391,26 +391,6 @@ u_savecommon(top, bot, newbot, reload)
         if (!undo_allowed())
             return FAIL;
 
-#if defined(FEAT_NETBEANS_INTG)
-        /*
-         * Netbeans defines areas that cannot be modified.  Bail out here when
-         * trying to change text in a guarded area.
-         */
-        if (netbeans_active())
-        {
-            if (netbeans_is_guarded(top, bot))
-            {
-                EMSG(_(e_guarded));
-                return FAIL;
-            }
-            if (curbuf->b_p_ro)
-            {
-                EMSG(_(e_nbreadonly));
-                return FAIL;
-            }
-        }
-#endif
-
 #if defined(FEAT_AUTOCMD)
         /*
          * Saving text for undo means we are going to make a change.  Give a
@@ -632,15 +612,6 @@ u_savecommon(top, bot, newbot, reload)
         u_getbot();
     }
 
-#if !defined(UNIX) && !defined(DJGPP)
-        /*
-         * With Amiga and MSDOS 16 bit we can't handle big undo's, because
-         * then u_alloc_line would have to allocate a block larger than 32K
-         */
-    if (size >= 8000)
-        goto nomem;
-#endif
-
     /*
      * add lines in front of entry list
      */
@@ -802,20 +773,11 @@ u_get_undo_file_name(buf_ffname, reading)
             if (undo_file_name == NULL)
                 break;
             p = gettail(undo_file_name);
-#if (0)
-            /* VMS can not handle more than one dot in the filenames
-             * use "dir/name" -> "dir/_un_name" - add _un_
-             * at the beginning to keep the extension */
-            mch_memmove(p + 4,  p, STRLEN(p) + 1);
-            mch_memmove(p, "_un_", 4);
-
-#else
             /* Use same directory as the ffname,
              * "dir/name" -> "dir/.name.un~" */
             mch_memmove(p + 1, p, STRLEN(p) + 1);
             *p = '.';
             STRCAT(p, ".un~");
-#endif
         }
         else
         {
@@ -1554,11 +1516,9 @@ u_write_undo(name, forceit, buf, hash)
     FILE        *fp = NULL;
     int         perm;
     int         write_ok = FALSE;
-#if defined(UNIX)
     int         st_old_valid = FALSE;
     struct stat st_old;
     struct stat st_new;
-#endif
     bufinfo_T   bi;
 
     vim_memset(&bi, 0, sizeof(bi));
@@ -1589,17 +1549,11 @@ u_write_undo(name, forceit, buf, hash)
     perm = 0600;
     if (buf->b_ffname != NULL)
     {
-#if defined(UNIX)
         if (mch_stat((char *)buf->b_ffname, &st_old) >= 0)
         {
             perm = st_old.st_mode;
             st_old_valid = TRUE;
         }
-#else
-        perm = mch_getperm(buf->b_ffname);
-        if (perm < 0)
-            perm = 0600;
-#endif
     }
 
     /* strip any s-bit */
@@ -1683,7 +1637,6 @@ u_write_undo(name, forceit, buf, hash)
     u_check(FALSE);
 #endif
 
-#if defined(UNIX)
     /*
      * Try to set the group of the undo file same as the original file. If
      * this fails, set the protection bits for the group same as the
@@ -1700,7 +1653,6 @@ u_write_undo(name, forceit, buf, hash)
 #if defined(HAVE_SELINUX) || defined(HAVE_SMACK)
     if (buf->b_ffname != NULL)
         mch_copy_sec(buf->b_ffname, file_name);
-#endif
 #endif
 
     fp = fdopen(fd, "w");
@@ -1776,12 +1728,6 @@ write_error:
     if (!write_ok)
         EMSG2(_("E829: write error in undo file: %s"), file_name);
 
-#if defined(MACOS_CLASSIC)
-    /* Copy file attributes; for systems where this can only be done after
-     * closing the file. */
-    if (buf->b_ffname != NULL)
-        (void)mch_copy_file_attribute(buf->b_ffname, file_name);
-#endif
 #if defined(HAVE_ACL)
     if (buf->b_ffname != NULL)
     {
@@ -1840,10 +1786,8 @@ u_read_undo(name, hash, orig_name)
 #if defined(U_DEBUG)
     int         *uhp_table_used;
 #endif
-#if defined(UNIX)
     struct stat st_orig;
     struct stat st_undo;
-#endif
     bufinfo_T   bi;
 
     vim_memset(&bi, 0, sizeof(bi));
@@ -1853,7 +1797,6 @@ u_read_undo(name, hash, orig_name)
         if (file_name == NULL)
             return;
 
-#if defined(UNIX)
         /* For safety we only read an undo file if the owner is equal to the
          * owner of the text file or equal to the current user. */
         if (mch_stat((char *)orig_name, &st_orig) >= 0
@@ -1870,7 +1813,6 @@ u_read_undo(name, hash, orig_name)
             }
             return;
         }
-#endif
     }
     else
         file_name = name;
@@ -2824,10 +2766,6 @@ u_undoredo(undo)
     if (old_flags & UH_CHANGED)
         changed();
     else
-#if defined(FEAT_NETBEANS_INTG)
-        /* per netbeans undo rules, keep it as modified */
-        if (!isNetbeansModified(curbuf))
-#endif
         unchanged(curbuf, FALSE);
 
     /*
@@ -3009,10 +2947,6 @@ u_sync(force)
     /* Skip it when already synced or syncing is disabled. */
     if (curbuf->b_u_synced || (!force && no_u_sync > 0))
         return;
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-    if (im_is_preediting())
-        return;             /* XIM is busy, don't break an undo sequence */
-#endif
     if (get_undolevel() < 0)
         curbuf->b_u_synced = TRUE;  /* no entries, nothing to do */
     else
@@ -3583,7 +3517,6 @@ curbufIsChanged()
         (curbuf->b_changed || file_ff_differs(curbuf, TRUE));
 }
 
-#if defined(FEAT_EVAL)
 /*
  * For undotree(): Append the list of undo blocks at "first_uhp" to "list".
  * Recursive.
@@ -3626,4 +3559,3 @@ u_eval_tree(first_uhp, list)
         uhp = uhp->uh_prev.ptr;
     }
 }
-#endif

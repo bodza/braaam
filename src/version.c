@@ -26,11 +26,6 @@ static char *(features[]) =
 #else
         "-autocmd",
 #endif
-#if defined(FEAT_BEVAL)
-        "+balloon_eval",
-#else
-        "-balloon_eval",
-#endif
 #if defined(FEAT_BROWSE)
         "+browse",
 #else
@@ -133,13 +128,6 @@ static char *(features[]) =
 #else
         "-digraphs",
 #endif
-#if defined(FEAT_GUI_W32)
-#if defined(FEAT_DIRECTX)
-        "+directx",
-#else
-        "-directx",
-#endif
-#endif
 #if defined(FEAT_DND)
         "+dnd",
 #else
@@ -150,11 +138,7 @@ static char *(features[]) =
 #else
         "-emacs_tags",
 #endif
-#if defined(FEAT_EVAL)
         "+eval",
-#else
-        "-eval",
-#endif
 #if defined(FEAT_EX_EXTRA)
         "+ex_extra",
 #else
@@ -191,9 +175,7 @@ static char *(features[]) =
         "-footer",
 #endif
             /* only interesting on Unix systems */
-#if !defined(USE_SYSTEM) && defined(UNIX)
         "+fork()",
-#endif
 #if defined(FEAT_GETTEXT)
 #if defined(DYNAMIC_GETTEXT)
         "+gettext/dyn",
@@ -202,11 +184,6 @@ static char *(features[]) =
 #endif
 #else
         "-gettext",
-#endif
-#if defined(FEAT_HANGULIN)
-        "+hangul_input",
-#else
-        "-hangul_input",
 #endif
 #if (defined(HAVE_ICONV_H) && defined(USE_ICONV)) || defined(DYNAMIC_ICONV)
 #if defined(DYNAMIC_ICONV)
@@ -262,15 +239,6 @@ static char *(features[]) =
 #else
         "-localmap",
 #endif
-#if defined(FEAT_LUA)
-#if defined(DYNAMIC_LUA)
-        "+lua/dyn",
-#else
-        "+lua",
-#endif
-#else
-        "-lua",
-#endif
 #if defined(FEAT_MENU)
         "+menu",
 #else
@@ -297,7 +265,6 @@ static char *(features[]) =
         "-mouse",
 #endif
 
-#if defined(UNIX)
 #if defined(FEAT_MOUSE_DEC)
         "+mouse_dec",
 #else
@@ -318,9 +285,7 @@ static char *(features[]) =
 #else
         "-mouse_netterm",
 #endif
-#endif
 
-#if defined(UNIX)
 #if defined(FEAT_MOUSE_SGR)
         "+mouse_sgr",
 #else
@@ -341,52 +306,12 @@ static char *(features[]) =
 #else
         "-mouse_xterm",
 #endif
-#endif
 
-#if defined(FEAT_MBYTE)
         "+multi_byte",
-#else
-        "-multi_byte",
-#endif
-#if defined(FEAT_MULTI_LANG)
-        "+multi_lang",
-#else
-        "-multi_lang",
-#endif
-#if defined(FEAT_MZSCHEME)
-#if defined(DYNAMIC_MZSCHEME)
-        "+mzscheme/dyn",
-#else
-        "+mzscheme",
-#endif
-#else
-        "-mzscheme",
-#endif
-#if defined(FEAT_NETBEANS_INTG)
-        "+netbeans_intg",
-#else
-        "-netbeans_intg",
-#endif
-#if defined(FEAT_GUI_W32)
-#if defined(FEAT_OLE)
-        "+ole",
-#else
-        "-ole",
-#endif
-#endif
 #if defined(FEAT_PATH_EXTRA)
         "+path_extra",
 #else
         "-path_extra",
-#endif
-#if defined(FEAT_PERL)
-#if defined(DYNAMIC_PERL)
-        "+perl/dyn",
-#else
-        "+perl",
-#endif
-#else
-        "-perl",
 #endif
 #if defined(FEAT_PERSISTENT_UNDO)
         "+persistent_undo",
@@ -408,24 +333,6 @@ static char *(features[]) =
 #else
         "-profile",
 #endif
-#if defined(FEAT_PYTHON)
-#if defined(DYNAMIC_PYTHON)
-        "+python/dyn",
-#else
-        "+python",
-#endif
-#else
-        "-python",
-#endif
-#if defined(FEAT_PYTHON3)
-#if defined(DYNAMIC_PYTHON3)
-        "+python3/dyn",
-#else
-        "+python3",
-#endif
-#else
-        "-python3",
-#endif
 #if defined(FEAT_QUICKFIX)
         "+quickfix",
 #else
@@ -440,15 +347,6 @@ static char *(features[]) =
         "+rightleft",
 #else
         "-rightleft",
-#endif
-#if defined(FEAT_RUBY)
-#if defined(DYNAMIC_RUBY)
-        "+ruby/dyn",
-#else
-        "+ruby",
-#endif
-#else
-        "-ruby",
 #endif
 #if defined(FEAT_SCROLLBIND)
         "+scrollbind",
@@ -465,11 +363,6 @@ static char *(features[]) =
 #else
         "-smartindent",
 #endif
-#if defined(FEAT_SNIFF)
-        "+sniff",
-#else
-        "-sniff",
-#endif
 #if defined(STARTUPTIME)
         "+startuptime",
 #else
@@ -480,20 +373,13 @@ static char *(features[]) =
 #else
         "-statusline",
 #endif
-#if defined(FEAT_SUN_WORKSHOP)
-        "+sun_workshop",
-#else
         "-sun_workshop",
-#endif
 #if defined(FEAT_SYN_HL)
         "+syntax",
 #else
         "-syntax",
 #endif
             /* only interesting on Unix systems */
-#if defined(USE_SYSTEM) && defined(UNIX)
-        "+system()",
-#endif
 #if defined(FEAT_TAG_BINS)
         "+tag_binary",
 #else
@@ -509,28 +395,11 @@ static char *(features[]) =
 #else
         "-tag_any_white",
 #endif
-#if defined(FEAT_TCL)
-#if defined(DYNAMIC_TCL)
-        "+tcl/dyn",
-#else
-        "+tcl",
-#endif
-#else
-        "-tcl",
-#endif
-#if defined(UNIX)
 /* only Unix (or OS/2 with EMX!) can have terminfo instead of termcap */
 #if defined(TERMINFO)
         "+terminfo",
 #else
         "-terminfo",
-#endif
-#else               /* unix always includes termcap support */
-#if defined(HAVE_TGETENT)
-        "+tgetent",
-#else
-        "-tgetent",
-#endif
 #endif
 #if defined(FEAT_TERMRESPONSE)
         "+termresponse",
@@ -603,38 +472,10 @@ static char *(features[]) =
 #else
         "-writebackup",
 #endif
-#if defined(UNIX)
-#if defined(FEAT_X11)
-        "+X11",
-#else
-        "-X11",
-#endif
-#endif
-#if defined(FEAT_XFONTSET)
-        "+xfontset",
-#else
-        "-xfontset",
-#endif
-#if defined(FEAT_XIM)
-        "+xim",
-#else
-        "-xim",
-#endif
-#if defined(UNIX)
-#if defined(USE_XSMP_INTERACT)
-        "+xsmp_interact",
-#else
-#if defined(USE_XSMP)
-        "+xsmp",
-#else
-        "-xsmp",
-#endif
-#endif
 #if defined(FEAT_XCLIPBOARD)
         "+xterm_clipboard",
 #else
         "-xterm_clipboard",
-#endif
 #endif
 #if defined(FEAT_XTERM_SAVE)
         "+xterm_save",
@@ -748,7 +589,6 @@ highest_patch()
     return h;
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Return TRUE if patch "n" has been included.
  */
@@ -763,7 +603,6 @@ has_patch(n)
             return TRUE;
     return FALSE;
 }
-#endif
 
     void
 ex_version(eap)
@@ -861,17 +700,6 @@ list_version()
      * internal variables in eval.c!
      */
     MSG(longVersion);
-#if defined(MACOS)
-#if defined(MACOS_X)
-#if defined(MACOS_X_UNIX)
-    MSG_PUTS(_("\nMacOS X (unix) version"));
-#else
-    MSG_PUTS(_("\nMacOS X version"));
-#endif
-#else
-    MSG_PUTS(_("\nMacOS version"));
-#endif
-#endif
 
     /* Print the list of patch numbers if there is at least one. */
     /* Print a range when patches are consecutive: "1-10, 12, 15-40, 42-45" */
@@ -938,48 +766,7 @@ list_version()
 #endif
 
     MSG_PUTS(_("\nNormal version "));
-#if !defined(FEAT_GUI)
     MSG_PUTS(_("without GUI."));
-#else
-#if defined(FEAT_GUI_GTK)
-#if defined(FEAT_GUI_GNOME)
-    MSG_PUTS(_("with GTK2-GNOME GUI."));
-#else
-    MSG_PUTS(_("with GTK2 GUI."));
-#endif
-#else
-#if defined(FEAT_GUI_MOTIF)
-    MSG_PUTS(_("with X11-Motif GUI."));
-#else
-#if defined(FEAT_GUI_ATHENA)
-#if defined(FEAT_GUI_NEXTAW)
-    MSG_PUTS(_("with X11-neXtaw GUI."));
-#else
-    MSG_PUTS(_("with X11-Athena GUI."));
-#endif
-#else
-#if defined(FEAT_GUI_PHOTON)
-    MSG_PUTS(_("with Photon GUI."));
-#else
-#if (0)
-#else
-#if defined(TARGET_API_MAC_CARBON) && TARGET_API_MAC_CARBON
-    MSG_PUTS(_("with Carbon GUI."));
-#else
-#if defined(TARGET_API_MAC_OSX) && TARGET_API_MAC_OSX
-    MSG_PUTS(_("with Cocoa GUI."));
-#else
-#if defined(MACOS)
-    MSG_PUTS(_("with (classic) GUI."));
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
     version_msg(_("  Features included (+) or not (-):\n"));
 
     list_features();
@@ -1013,33 +800,6 @@ list_version()
     version_msg(_("  2nd user exrc file: \""));
     version_msg(USR_EXRC_FILE2);
     version_msg("\"\n");
-#endif
-#if defined(FEAT_GUI)
-#if defined(SYS_GVIMRC_FILE)
-    version_msg(_("  system gvimrc file: \""));
-    version_msg(SYS_GVIMRC_FILE);
-    version_msg("\"\n");
-#endif
-    version_msg(_("    user gvimrc file: \""));
-    version_msg(USR_GVIMRC_FILE);
-    version_msg("\"\n");
-#if defined(USR_GVIMRC_FILE2)
-    version_msg(_("2nd user gvimrc file: \""));
-    version_msg(USR_GVIMRC_FILE2);
-    version_msg("\"\n");
-#endif
-#if defined(USR_GVIMRC_FILE3)
-    version_msg(_("3rd user gvimrc file: \""));
-    version_msg(USR_GVIMRC_FILE3);
-    version_msg("\"\n");
-#endif
-#endif
-#if defined(FEAT_GUI)
-#if defined(SYS_MENU_FILE)
-    version_msg(_("    system menu file: \""));
-    version_msg(SYS_MENU_FILE);
-    version_msg("\"\n");
-#endif
 #endif
 #if defined(HAVE_PATHDEF)
     if (*default_vim_dir != NUL)
@@ -1137,31 +897,6 @@ intro_message(colon)
         N_("type  :set nocp<Enter>        for Vim defaults"),
         N_("type  :help cp-default<Enter> for info on this"),
     };
-#if defined(FEAT_GUI)
-    static char *(gui_lines[]) =
-    {
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-#if defined(MODIFIED_BY)
-        NULL,
-#endif
-        NULL,
-        NULL,
-        NULL,
-        N_("menu  Help->Orphans           for information    "),
-        NULL,
-        N_("Running modeless, typed text is inserted"),
-        N_("menu  Edit->Global Settings->Toggle Insert Mode  "),
-        N_("                              for two modes      "),
-        NULL,
-        NULL,
-        NULL,
-        N_("menu  Edit->Global Settings->Toggle Vi Compatible"),
-        N_("                              for Vim defaults   "),
-    };
-#endif
 
     /* blanklines = screen height - # message lines */
     blanklines = (int)Rows - ((sizeof(lines) / sizeof(char *)) - 1);
@@ -1188,10 +923,6 @@ intro_message(colon)
         for (i = 0; i < (int)(sizeof(lines) / sizeof(char *)); ++i)
         {
             p = lines[i];
-#if defined(FEAT_GUI)
-            if (p_im && gui.in_use && gui_lines[i] != NULL)
-                p = gui_lines[i];
-#endif
             if (p == NULL)
             {
                 if (!p_cp)
@@ -1277,14 +1008,12 @@ do_intro_line(row, mesg, add_version, attr)
         for (l = 0; p[l] != NUL
                          && (l == 0 || (p[l] != '<' && p[l - 1] != '>')); ++l)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 clen += ptr2cells(p + l);
                 l += (*mb_ptr2len)(p + l) - 1;
             }
             else
-#endif
                 clen += byte2cells(p[l]);
         }
         screen_puts_len(p, l, row, col, *p == '<' ? hl_attr(HLF_8) : attr);

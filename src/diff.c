@@ -729,11 +729,9 @@ ex_diffupdate(eap)
             mch_remove(tmp_orig);
         }
 
-#if defined(FEAT_EVAL)
         /* When using 'diffexpr' break here. */
         if (*p_dex != NUL)
             break;
-#endif
 
         /* If we checked if "-a" works already, break here. */
         if (diff_a_works != MAYBE)
@@ -807,12 +805,10 @@ diff_file(tmp_orig, tmp_new, tmp_diff)
     char_u      *cmd;
     size_t      len;
 
-#if defined(FEAT_EVAL)
     if (*p_dex != NUL)
         /* Use 'diffexpr' to generate the diff file. */
         eval_diff(tmp_orig, tmp_new, tmp_diff);
     else
-#endif
     {
         len = STRLEN(tmp_orig) + STRLEN(tmp_new)
                                       + STRLEN(tmp_diff) + STRLEN(p_srr) + 27;
@@ -860,10 +856,8 @@ ex_diffpatch(eap)
     size_t      buflen;
     win_T       *old_curwin = curwin;
     char_u      *newname = NULL;        /* name of patched file buffer */
-#if defined(UNIX)
     char_u      dirbuf[MAXPATHL];
     char_u      *fullname = NULL;
-#endif
 #if defined(FEAT_BROWSE)
     char_u      *browseFile = NULL;
     int         browse_flag = cmdmod.browse;
@@ -894,20 +888,15 @@ ex_diffpatch(eap)
                                      NULL, FALSE, FALSE, FALSE, TRUE) == FAIL)
         goto theend;
 
-#if defined(UNIX)
     /* Get the absolute path of the patchfile, changing directory below. */
     fullname = FullName_save(eap->arg, FALSE);
-#endif
     buflen = STRLEN(tmp_orig) + (
-#if defined(UNIX)
                     fullname != NULL ? STRLEN(fullname) :
-#endif
                     STRLEN(eap->arg)) + STRLEN(tmp_new) + 16;
     buf = alloc((unsigned)buflen);
     if (buf == NULL)
         goto theend;
 
-#if defined(UNIX)
     /* Temporarily chdir to /tmp, to avoid patching files in the current
      * directory when the patch file contains more than one patch.  When we
      * have our own temp dir use that instead, it will be cleaned up when we
@@ -925,26 +914,19 @@ ex_diffpatch(eap)
             ignored = mch_chdir("/tmp");
         shorten_fnames(TRUE);
     }
-#endif
 
-#if defined(FEAT_EVAL)
     if (*p_pex != NUL)
         /* Use 'patchexpr' to generate the new file. */
         eval_patch(tmp_orig,
-#if defined(UNIX)
                 fullname != NULL ? fullname :
-#endif
                 eap->arg, tmp_new);
     else
-#endif
     {
         /* Build the patch command and execute it.  Ignore errors.  Switch to
          * cooked mode to allow the user to respond to prompts. */
         vim_snprintf((char *)buf, buflen, "patch -o %s %s < \"%s\"",
                 tmp_new, tmp_orig,
-#if defined(UNIX)
                 fullname != NULL ? fullname :
-#endif
                 eap->arg);
 #if defined(FEAT_AUTOCMD)
         block_autocmds();       /* Avoid ShellCmdPost stuff */
@@ -955,14 +937,12 @@ ex_diffpatch(eap)
 #endif
     }
 
-#if defined(UNIX)
     if (dirbuf[0] != NUL)
     {
         if (mch_chdir((char *)dirbuf) != 0)
             EMSG(_(e_prev_dir));
         shorten_fnames(TRUE);
     }
-#endif
 
     /* patch probably has written over the screen */
     redraw_later(CLEAR);
@@ -988,9 +968,6 @@ ex_diffpatch(eap)
                 STRCAT(newname, ".new");
         }
 
-#if defined(FEAT_GUI)
-        need_mouse_correct = TRUE;
-#endif
         /* don't use a new tab page, each tab page has its own diffs */
         cmdmod.tab = 0;
 
@@ -1033,9 +1010,7 @@ theend:
     vim_free(tmp_new);
     vim_free(newname);
     vim_free(buf);
-#if defined(UNIX)
     vim_free(fullname);
-#endif
 #if defined(FEAT_BROWSE)
     vim_free(browseFile);
     cmdmod.browse = browse_flag;
@@ -1051,9 +1026,6 @@ ex_diffsplit(eap)
 {
     win_T       *old_curwin = curwin;
 
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
     /* don't use a new tab page, each tab page has its own diffs */
     cmdmod.tab = 0;
 
@@ -1607,9 +1579,7 @@ diff_cmp(s1, s2)
     char_u      *s2;
 {
     char_u      *p1, *p2;
-#if defined(FEAT_MBYTE)
     int         l;
-#endif
 
     if ((diff_flags & (DIFF_ICASE | DIFF_IWHITE)) == 0)
         return STRCMP(s1, s2);
@@ -1628,7 +1598,6 @@ diff_cmp(s1, s2)
         }
         else
         {
-#if defined(FEAT_MBYTE)
             l  = (*mb_ptr2len)(p1);
             if (l != (*mb_ptr2len)(p2))
                 break;
@@ -1644,7 +1613,6 @@ diff_cmp(s1, s2)
                 p2 += l;
             }
             else
-#endif
             {
                 if (*p1 != *p2 && (!(diff_flags & DIFF_ICASE)
                                      || TOLOWER_LOC(*p1) != TOLOWER_LOC(*p2)))
@@ -1966,7 +1934,6 @@ diff_find_change(wp, lnum, startp, endp)
                     ++si_new;
                 }
             }
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 /* Move back to first byte of character in both lines (may
@@ -1974,7 +1941,6 @@ diff_find_change(wp, lnum, startp, endp)
                 si_org -= (*mb_head_off)(line_org, line_org + si_org);
                 si_new -= (*mb_head_off)(line_new, line_new + si_new);
             }
-#endif
             if (*startp > si_org)
                 *startp = si_org;
 

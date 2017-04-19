@@ -33,7 +33,6 @@ extern RETSIGTYPE (*sigset __ARGS((int, RETSIGTYPE (*func) SIGPROTOARG))) __ARGS
 #if defined(HAVE_SETJMP_H)
 #if defined(HAVE_SIGSETJMP)
 extern int      sigsetjmp __ARGS((sigjmp_buf, int));
-#else
 #endif
 #endif
 

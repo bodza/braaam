@@ -546,11 +546,9 @@ nfa_get_match_text(start)
         s = ret;
         while (p->c > 0)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 s += (*mb_char2bytes)(p->c, s);
             else
-#endif
                 *s++ = p->c;
             p = p->out;
         }
@@ -748,16 +746,10 @@ nfa_emit_equi_class(c)
     int     c;
 {
 #define EMIT2(c)    EMIT(c); EMIT(NFA_CONCAT);
-#if defined(FEAT_MBYTE)
 #define EMITMBC(c) EMIT(c); EMIT(NFA_CONCAT);
-#else
-#define EMITMBC(c)
-#endif
 
-#if defined(FEAT_MBYTE)
     if (enc_utf8 || STRCMP(p_enc, "latin1") == 0
                                          || STRCMP(p_enc, "iso-8859-15") == 0)
-#endif
     {
         switch (c)
         {
@@ -1127,9 +1119,7 @@ nfa_regatom()
     int         got_coll_char;
     char_u      *p;
     char_u      *endp;
-#if defined(FEAT_MBYTE)
     char_u      *old_regparse = regparse;
-#endif
     int         extra = 0;
     int         emit_range;
     int         negated;
@@ -1233,7 +1223,6 @@ nfa_regatom()
                 EMSGN("INTERNAL: Unknown character class char: %ld", c);
                 return FAIL;
             }
-#if defined(FEAT_MBYTE)
             /* When '.' is followed by a composing char ignore the dot, so that
              * the composing char is matched here. */
             if (enc_utf8 && c == Magic('.') && utf_iscomposing(peekchr()))
@@ -1242,7 +1231,6 @@ nfa_regatom()
                 c = getchr();
                 goto nfa_do_multibyte;
             }
-#endif
             EMIT(nfa_classcodes[p - classchars]);
             if (extra == NFA_ADD_NL)
             {
@@ -1734,7 +1722,6 @@ collection:
                             EMIT(NFA_CONCAT);
                         }
                         else
-#if defined(FEAT_MBYTE)
                              if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
                         {
                             /* Emit the characters in the range.
@@ -1747,7 +1734,6 @@ collection:
                             }
                         }
                         else
-#endif
                         {
                             /* Emit the range. "startc" was already emitted, so
                              * skip it. */
@@ -1823,7 +1809,6 @@ collection:
 
         default:
             {
-#if defined(FEAT_MBYTE)
                 int     plen;
 
 nfa_do_multibyte:
@@ -1855,7 +1840,6 @@ nfa_do_multibyte:
                     regparse = old_regparse + plen;
                 }
                 else
-#endif
                 {
                     c = no_Magic(c);
                     EMIT(c);
@@ -2104,9 +2088,7 @@ nfa_regconcat()
                 break;
 
             case Magic('Z'):
-#if defined(FEAT_MBYTE)
                 regflags |= RF_ICOMBINE;
-#endif
                 skipchr_keepstart();
                 break;
             case Magic('c'):
@@ -2922,13 +2904,11 @@ nfa_max_width(startstate, depth)
             case NFA_START_COLL:
             case NFA_START_NEG_COLL:
                 /* matches some character, including composing chars */
-#if defined(FEAT_MBYTE)
                 if (enc_utf8)
                     len += MB_MAXBYTES;
                 else if (has_mbyte)
                     len += 2;
                 else
-#endif
                     ++len;
                 if (state->c != NFA_ANY)
                 {
@@ -2974,11 +2954,9 @@ nfa_max_width(startstate, depth)
             case NFA_NUPPER_IC:
             case NFA_ANY_COMPOSING:
                 /* possibly non-ascii */
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     len += 3;
                 else
-#endif
                     ++len;
                 break;
 
@@ -3423,7 +3401,6 @@ post2nfa(postfix, end, nfa_calc_size)
             break;
           }
 
-#if defined(FEAT_MBYTE)
         case NFA_COMPOSING:     /* char with composing char */
 #if 0
             /* TODO */
@@ -3433,7 +3410,6 @@ post2nfa(postfix, end, nfa_calc_size)
             }
 #endif
             /* FALLTHROUGH */
-#endif
 
         case NFA_MOPEN: /* \( \) Submatch */
         case NFA_MOPEN1:
@@ -3480,9 +3456,7 @@ post2nfa(postfix, end, nfa_calc_size)
                 case NFA_ZOPEN8: mclose = NFA_ZCLOSE8; break;
                 case NFA_ZOPEN9: mclose = NFA_ZCLOSE9; break;
 #endif
-#if defined(FEAT_MBYTE)
                 case NFA_COMPOSING: mclose = NFA_END_COMPOSING; break;
-#endif
                 default:
                     /* NFA_MOPEN, NFA_MOPEN1 .. NFA_MOPEN9 */
                     mclose = *p + NSUBEXP;
@@ -3518,11 +3492,9 @@ post2nfa(postfix, end, nfa_calc_size)
                 goto theend;
             patch(e.out, s1);
 
-#if defined(FEAT_MBYTE)
             if (mopen == NFA_COMPOSING)
                 /* COMPOSING->out1 = END_COMPOSING */
                 patch(list1(&s->out1), s1);
-#endif
 
             PUSH(frag(s, list1(&s1->out)));
             break;
@@ -5049,10 +5021,8 @@ recursive_regmatch(state, pim, prog, submatch, m, listids)
             if ((int)(reginput - regline) >= state->val)
             {
                 reginput -= state->val;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     reginput -= mb_head_off(regline, reginput);
-#endif
             }
             else
                 reginput = regline;
@@ -5314,9 +5284,7 @@ skip_to_start(c, colp)
 
     /* Used often, do some work to avoid call overhead. */
     if (!ireg_ic
-#if defined(FEAT_MBYTE)
                 && !has_mbyte
-#endif
                 )
         s = vim_strbyte(regline + *colp, c);
     else
@@ -5359,11 +5327,9 @@ find_match_text(startcol, regstart, match_text)
             len2 += MB_CHAR2LEN(c2);
         }
         if (match
-#if defined(FEAT_MBYTE)
                 /* check that no composing char follows */
                 && !(enc_utf8
                            && utf_iscomposing(PTR2CHAR(regline + col + len2)))
-#endif
                 )
         {
             cleanup_subexpr();
@@ -5513,14 +5479,12 @@ nfa_regmatch(prog, start, submatch, m)
         int     curc;
         int     clen;
 
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             curc = (*mb_ptr2char)(reginput);
             clen = (*mb_ptr2len)(reginput);
         }
         else
-#endif
         {
             curc = *reginput;
             clen = 1;
@@ -5607,12 +5571,10 @@ nfa_regmatch(prog, start, submatch, m)
             {
             case NFA_MATCH:
               {
-#if defined(FEAT_MBYTE)
                 /* If the match ends before a composing characters and
                  * ireg_icombine is not set, that is not really a match. */
                 if (enc_utf8 && !ireg_icombine && utf_iscomposing(curc))
                     break;
-#endif
                 nfa_match = TRUE;
                 copy_sub(&submatch->norm, &t->subs.norm);
 #if defined(FEAT_SYN_HL)
@@ -5923,7 +5885,6 @@ nfa_regmatch(prog, start, submatch, m)
 
                 if (curc == NUL)
                     result = FALSE;
-#if defined(FEAT_MBYTE)
                 else if (has_mbyte)
                 {
                     int this_class;
@@ -5935,7 +5896,6 @@ nfa_regmatch(prog, start, submatch, m)
                     else if (reg_prev_class() == this_class)
                         result = FALSE;
                 }
-#endif
                 else if (!vim_iswordc_buf(curc, reg_buf)
                            || (reginput > regline
                                    && vim_iswordc_buf(reginput[-1], reg_buf)))
@@ -5951,7 +5911,6 @@ nfa_regmatch(prog, start, submatch, m)
                 result = TRUE;
                 if (reginput == regline)
                     result = FALSE;
-#if defined(FEAT_MBYTE)
                 else if (has_mbyte)
                 {
                     int this_class, prev_class;
@@ -5963,7 +5922,6 @@ nfa_regmatch(prog, start, submatch, m)
                                         || prev_class == 0 || prev_class == 1)
                         result = FALSE;
                 }
-#endif
                 else if (!vim_iswordc_buf(reginput[-1], reg_buf)
                         || (reginput[0] != NUL
                                            && vim_iswordc_buf(curc, reg_buf)))
@@ -5992,7 +5950,6 @@ nfa_regmatch(prog, start, submatch, m)
                 }
                 break;
 
-#if defined(FEAT_MBYTE)
             case NFA_COMPOSING:
             {
                 int         mc = curc;
@@ -6068,7 +6025,6 @@ nfa_regmatch(prog, start, submatch, m)
                 ADD_STATE_IF_MATCH(end);
                 break;
             }
-#endif
 
             case NFA_NEWL:
                 if (curc == NUL && !reg_line_lbr && REG_MULTI
@@ -6173,13 +6129,11 @@ nfa_regmatch(prog, start, submatch, m)
             case NFA_ANY_COMPOSING:
                 /* On a composing character skip over it.  Otherwise do
                  * nothing.  Always matches. */
-#if defined(FEAT_MBYTE)
                 if (enc_utf8 && utf_iscomposing(curc))
                 {
                     add_off = clen;
                 }
                 else
-#endif
                 {
                     add_here = TRUE;
                     add_off = 0;
@@ -6461,9 +6415,7 @@ nfa_regmatch(prog, start, submatch, m)
                     /* Bail out quickly when there can't be a match, avoid the
                      * overhead of win_linetabsize() on long lines. */
                     if (op != 1 && col > t->state->val
-#if defined(FEAT_MBYTE)
                             * (has_mbyte ? MB_MAXBYTES : 1)
-#endif
                             )
                         break;
                     result = FALSE;
@@ -6574,12 +6526,10 @@ nfa_regmatch(prog, start, submatch, m)
 
                 if (!result && ireg_ic)
                     result = MB_TOLOWER(c) == MB_TOLOWER(curc);
-#if defined(FEAT_MBYTE)
                 /* If ireg_icombine is not set only skip over the character
                  * itself.  When it is set skip over composing characters. */
                 if (result && enc_utf8 && !ireg_icombine)
                     clen = utf_char2len(curc);
-#endif
                 ADD_STATE_IF_MATCH(t->state);
                 break;
               }
@@ -6998,11 +6948,9 @@ nfa_regexec_both(line, startcol, tm)
     else if (prog->regflags & RF_NOICASE)
         ireg_ic = FALSE;
 
-#if defined(FEAT_MBYTE)
     /* If pattern contains "\Z" overrule value of ireg_icombine */
     if (prog->regflags & RF_ICOMBINE)
         ireg_icombine = TRUE;
-#endif
 
     regline = line;
     reglnum = 0;    /* relative to line */
@@ -7039,9 +6987,7 @@ nfa_regexec_both(line, startcol, tm)
         /* If match_text is set it contains the full text that must match.
          * Nothing else to try. Doesn't handle combining chars well. */
         if (prog->match_text != NULL
-#if defined(FEAT_MBYTE)
                     && !ireg_icombine
-#endif
                 )
             return find_match_text(col, prog->regstart, prog->match_text);
     }
@@ -7216,9 +7162,7 @@ nfa_regexec_nl(rmp, line, col, line_lbr)
     reg_buf = curbuf;
     reg_win = NULL;
     ireg_ic = rmp->rm_ic;
-#if defined(FEAT_MBYTE)
     ireg_icombine = FALSE;
-#endif
     ireg_maxcol = 0;
     return nfa_regexec_both(line, col, NULL);
 }
@@ -7265,9 +7209,7 @@ nfa_regexec_multi(rmp, win, buf, lnum, col, tm)
     reg_maxline = reg_buf->b_ml.ml_line_count - lnum;
     reg_line_lbr = FALSE;
     ireg_ic = rmp->rmm_ic;
-#if defined(FEAT_MBYTE)
     ireg_icombine = FALSE;
-#endif
     ireg_maxcol = rmp->rmm_maxcol;
 
     return nfa_regexec_both(NULL, col, tm);

@@ -20,9 +20,7 @@
 #define DELETION_REGISTER       36
 #if defined(FEAT_CLIPBOARD)
 #define STAR_REGISTER          37
-#if defined(FEAT_X11)
-#define PLUS_REGISTER        38
-#else
+#if (1)
 #define PLUS_REGISTER        STAR_REGISTER       /* there is only one */
 #endif
 #endif
@@ -88,9 +86,7 @@ static void     put_reedit_in_typebuf __ARGS((int silent));
 static int      put_in_typebuf __ARGS((char_u *s, int esc, int colon,
                                                                  int silent));
 static void     stuffescaped __ARGS((char_u *arg, int literally));
-#if defined(FEAT_MBYTE)
 static void     mb_adjust_opend __ARGS((oparg_T *oap));
-#endif
 static void     free_yank __ARGS((long));
 static void     free_yank_all __ARGS((void));
 static int      yank_copy_line __ARGS((struct block_def *bd, long y_idx));
@@ -103,9 +99,7 @@ static void     dis_msg __ARGS((char_u *p, int skip_esc));
 static char_u   *skip_comment __ARGS((char_u *line, int process, int include_space, int *is_comment));
 #endif
 static void     block_prep __ARGS((oparg_T *oap, struct block_def *, linenr_T, int));
-#if defined(FEAT_CLIPBOARD) || defined(FEAT_EVAL)
 static void     str_to_reg __ARGS((struct yankreg *y_ptr, int yank_type, char_u *str, long len, long blocklen, int str_list));
-#endif
 static int      ends_in_white __ARGS((linenr_T lnum));
 #if defined(FEAT_COMMENTS)
 static int      same_leader __ARGS((linenr_T lnum, int, char_u *, int, char_u *));
@@ -402,11 +396,9 @@ shift_block(oap, amount)
         ws_vcol = bd.start_vcol - bd.pre_whitesp;
         if (bd.startspaces)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 bd.textstart += (*mb_ptr2len)(bd.textstart);
             else
-#endif
                 ++bd.textstart;
         }
         for ( ; vim_iswhite(*bd.textstart); )
@@ -600,7 +592,6 @@ block_insert(oap, s, b_insert, bdp)
             }
         }
 
-#if defined(FEAT_MBYTE)
         if (has_mbyte && spaces > 0)
         {
             int off;
@@ -618,7 +609,6 @@ block_insert(oap, s, b_insert, bdp)
             spaces -= off;
             count -= off;
         }
-#endif
 
         newp = alloc_check((unsigned)(STRLEN(oldp)) + s_len + count + 1);
         if (newp == NULL)
@@ -754,7 +744,6 @@ op_reindent(oap, how)
 }
 #endif
 
-#if defined(FEAT_EVAL)
 /*
  * Keep the last expression line here, for repeating.
  */
@@ -833,7 +822,6 @@ get_expr_line_src()
         return NULL;
     return vim_strsave(expr_line);
 }
-#endif
 
 /*
  * Check if 'regname' is a valid name of a yank register.
@@ -845,13 +833,7 @@ valid_yank_reg(regname, writing)
     int     writing;        /* if TRUE check for writable registers */
 {
     if (       (regname > 0 && ASCII_ISALNUM(regname))
-            || (!writing && vim_strchr((char_u *)
-#if defined(FEAT_EVAL)
-                                    "/.%:="
-#else
-                                    "/.%:"
-#endif
-                                        , regname) != NULL)
+            || (!writing && vim_strchr((char_u *)"/.%:=", regname) != NULL)
             || regname == '#'
             || regname == '"'
             || regname == '-'
@@ -1235,7 +1217,6 @@ do_execreg(regname, colon, addcr, silent)
         vim_free(p);
     }
 #endif
-#if defined(FEAT_EVAL)
     else if (regname == '=')
     {
         p = get_expr_line();
@@ -1244,7 +1225,6 @@ do_execreg(regname, colon, addcr, silent)
         retval = put_in_typebuf(p, TRUE, colon, silent);
         vim_free(p);
     }
-#endif
     else if (regname == '.')            /* use last inserted text */
     {
         p = get_last_insert_save();
@@ -1455,11 +1435,9 @@ stuffescaped(arg, literally)
         /* stuff a single special character */
         if (*arg != NUL)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 c = mb_cptr2char_adv(&arg);
             else
-#endif
                 c = *arg++;
             if (literally && ((c < ' ' && c != TAB) || c == DEL))
                 stuffcharReadbuff(Ctrl_V);
@@ -1495,12 +1473,10 @@ get_spec_reg(regname, argp, allocated, errmsg)
             *argp = getaltfname(errmsg);        /* may give emsg if not set */
             return TRUE;
 
-#if defined(FEAT_EVAL)
         case '=':               /* result of expression */
             *argp = get_expr_line();
             *allocated = TRUE;
             return TRUE;
-#endif
 
         case ':':               /* last command line */
             if (last_cmdline == NULL && errmsg)
@@ -1655,10 +1631,8 @@ op_delete(oap)
     adjust_clip_reg(&oap->regname);
 #endif
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         mb_adjust_opend(oap);
-#endif
 
     /*
      * Imitate the strange Vi behaviour: If the delete spans more than one
@@ -2019,7 +1993,6 @@ setmarks:
     return OK;
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Adjust end of operating area for ending on a multi-byte character.
  * Used for deletion.
@@ -2036,7 +2009,6 @@ mb_adjust_opend(oap)
         oap->end.col += mb_tail_off(p, p + oap->end.col);
     }
 }
-#endif
 
 #if defined(FEAT_VISUALEXTRA)
 /*
@@ -2048,9 +2020,7 @@ op_replace(oap, c)
     int         c;
 {
     int                 n, numc;
-#if defined(FEAT_MBYTE)
     int                 num_chars;
-#endif
     char_u              *newp, *oldp;
     size_t              oldlen;
     struct block_def    bd;
@@ -2063,10 +2033,8 @@ op_replace(oap, c)
     if (had_ctrl_v_cr)
         c = (c == -1 ? '\r' : '\n');
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         mb_adjust_opend(oap);
-#endif
 
     if (u_save((linenr_T)(oap->start.lnum - 1),
                                        (linenr_T)(oap->end.lnum + 1)) == FAIL)
@@ -2117,7 +2085,6 @@ op_replace(oap, c)
             if (bd.is_short && (!virtual_op || bd.is_MAX))
                 numc -= (oap->end_vcol - bd.end_vcol) + 1;
 
-#if defined(FEAT_MBYTE)
             /* A double-wide character can be replaced only up to half the
              * times. */
             if ((*mb_char2cells)(c) > 1)
@@ -2133,7 +2100,6 @@ op_replace(oap, c)
             /* Compute bytes needed, move character count to num_chars. */
             num_chars = numc;
             numc *= (*mb_char2len)(c);
-#endif
             /* oldlen includes textlen, so don't double count */
             n += numc - bd.textlen;
 
@@ -2152,7 +2118,6 @@ op_replace(oap, c)
             /* -1/-2 is used for entering CR literally. */
             if (had_ctrl_v_cr || (c != '\r' && c != '\n'))
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     n = (int)STRLEN(newp);
@@ -2160,7 +2125,6 @@ op_replace(oap, c)
                         n += (*mb_char2bytes)(c, newp + n);
                 }
                 else
-#endif
                     copy_chars(newp + STRLEN(newp), (size_t)numc, c);
                 if (!bd.is_short)
                 {
@@ -2210,7 +2174,6 @@ op_replace(oap, c)
             n = gchar_cursor();
             if (n != NUL)
             {
-#if defined(FEAT_MBYTE)
                 if ((*mb_char2len)(c) > 1 || (*mb_char2len)(n) > 1)
                 {
                     /* This is slow, but it handles replacing a single-byte
@@ -2225,7 +2188,6 @@ op_replace(oap, c)
                     dec_cursor();
                 }
                 else
-#endif
                 {
 #if defined(FEAT_VIRTUALEDIT)
                     if (n == TAB)
@@ -2317,17 +2279,6 @@ op_tilde(oap)
             one_change = swapchars(oap->op_type, &pos, bd.textlen);
             did_change |= one_change;
 
-#if defined(FEAT_NETBEANS_INTG)
-            if (netbeans_active() && one_change)
-            {
-                char_u *ptr = ml_get_buf(curbuf, pos.lnum, FALSE);
-
-                netbeans_removed(curbuf, pos.lnum, bd.textcol,
-                                                            (long)bd.textlen);
-                netbeans_inserted(curbuf, pos.lnum, bd.textcol,
-                                                &ptr[bd.textcol], bd.textlen);
-            }
-#endif
         }
         if (did_change)
             changed_lines(oap->start.lnum, 0, oap->end.lnum + 1, 0L);
@@ -2361,30 +2312,6 @@ op_tilde(oap)
         {
             changed_lines(oap->start.lnum, oap->start.col, oap->end.lnum + 1,
                                                                           0L);
-#if defined(FEAT_NETBEANS_INTG)
-            if (netbeans_active() && did_change)
-            {
-                char_u *ptr;
-                int count;
-
-                pos = oap->start;
-                while (pos.lnum < oap->end.lnum)
-                {
-                    ptr = ml_get_buf(curbuf, pos.lnum, FALSE);
-                    count = (int)STRLEN(ptr) - pos.col;
-                    netbeans_removed(curbuf, pos.lnum, pos.col, (long)count);
-                    netbeans_inserted(curbuf, pos.lnum, pos.col,
-                                                        &ptr[pos.col], count);
-                    pos.col = 0;
-                    pos.lnum++;
-                }
-                ptr = ml_get_buf(curbuf, pos.lnum, FALSE);
-                count = oap->end.col - pos.col + 1;
-                netbeans_removed(curbuf, pos.lnum, pos.col, (long)count);
-                netbeans_inserted(curbuf, pos.lnum, pos.col,
-                                                        &ptr[pos.col], count);
-            }
-#endif
         }
     }
 
@@ -2425,7 +2352,6 @@ swapchars(op_type, pos, length)
 
     for (todo = length; todo > 0; --todo)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             int len = (*mb_ptr2len)(ml_get_pos(pos));
@@ -2434,7 +2360,6 @@ swapchars(op_type, pos, length)
             if (len > 0)
                 todo -= len - 1;
         }
-#endif
         did_change |= swapchar(op_type, pos);
         if (inc(pos) == -1)    /* at end of file */
             break;
@@ -2463,7 +2388,6 @@ swapchar(op_type, pos)
     if (c >= 0x80 && op_type == OP_ROT13)
         return FALSE;
 
-#if defined(FEAT_MBYTE)
     if (op_type == OP_UPPER && c == 0xdf
                       && (enc_latin1like || STRCMP(p_enc, "iso-8859-2") == 0))
     {
@@ -2480,7 +2404,6 @@ swapchar(op_type, pos)
 
     if (enc_dbcs != 0 && c >= 0x100)    /* No lower/uppercase letter */
         return FALSE;
-#endif
     nc = c;
     if (MB_ISLOWER(c))
     {
@@ -2498,7 +2421,6 @@ swapchar(op_type, pos)
     }
     if (nc != c)
     {
-#if defined(FEAT_MBYTE)
         if (enc_utf8 && (c >= 0x80 || nc >= 0x80))
         {
             pos_T   sp = curwin->w_cursor;
@@ -2510,7 +2432,6 @@ swapchar(op_type, pos)
             curwin->w_cursor = sp;
         }
         else
-#endif
             pchar(*pos, nc);
         return TRUE;
     }
@@ -2948,9 +2869,6 @@ op_yank(oap, deleting, mess)
     char_u              *p;
     char_u              *pnew;
     struct block_def    bd;
-#if defined(FEAT_CLIPBOARD) && defined(FEAT_X11)
-    int                 did_star = FALSE;
-#endif
 
                                     /* check for read-only register */
     if (oap->regname != 0 && !valid_yank_reg(oap->regname, TRUE))
@@ -3074,12 +2992,10 @@ op_yank(oap, deleting, mess)
                         {
                             getvcol(curwin, &oap->end, &cs, NULL, &ce);
                             if (p[endcol] == NUL || (cs + oap->end.coladd < ce
-#if defined(FEAT_MBYTE)
                                         /* Don't add space for double-wide
                                          * char; endcol will be on last byte
                                          * of multi-byte char. */
                                         && (*mb_head_off)(p, p + endcol) == 0
-#endif
                                         ))
                             {
                                 if (oap->start.lnum == oap->end.lnum
@@ -3217,37 +3133,7 @@ op_yank(oap, deleting, mess)
 
         clip_own_selection(&clip_star);
         clip_gen_set_selection(&clip_star);
-#if defined(FEAT_X11)
-        did_star = TRUE;
-#endif
     }
-
-#if defined(FEAT_X11)
-    /*
-     * If we were yanking to the '+' register, send result to selection.
-     * Also copy to the '*' register, in case auto-select is off.
-     */
-    if (clip_plus.available
-            && (curr == &(y_regs[PLUS_REGISTER])
-                || (!deleting && oap->regname == 0
-                  && ((clip_unnamed | clip_unnamed_saved) &
-                      CLIP_UNNAMED_PLUS))))
-    {
-        if (curr != &(y_regs[PLUS_REGISTER]))
-            /* Copy the text from register 0 to the clipboard register. */
-            copy_yank_reg(&(y_regs[PLUS_REGISTER]));
-
-        clip_own_selection(&clip_plus);
-        clip_gen_set_selection(&clip_plus);
-        if (!clip_isautosel_star() && !did_star
-                                          && curr == &(y_regs[PLUS_REGISTER]))
-        {
-            copy_yank_reg(&(y_regs[STAR_REGISTER]));
-            clip_own_selection(&clip_star);
-            clip_gen_set_selection(&clip_star);
-        }
-    }
-#endif
 #endif
 
     return OK;
@@ -3398,7 +3284,6 @@ do_put(regname, dir, count, flags)
     if (insert_string != NULL)
     {
         y_type = MCHAR;
-#if defined(FEAT_EVAL)
         if (regname == '=')
         {
             /* For the = register we need to split the string at NL
@@ -3436,7 +3321,6 @@ do_put(regname, dir, count, flags)
             }
         }
         else
-#endif
         {
             y_size = 1;         /* use fake one-line yank register */
             y_array = &insert_string;
@@ -3570,12 +3454,10 @@ do_put(regname, dir, count, flags)
 #endif
                 getvcol(curwin, &curwin->w_cursor, NULL, NULL, &col);
 
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 /* move to start of next multi-byte character */
                 curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
             else
-#endif
 #if defined(FEAT_VIRTUALEDIT)
             if (c != TAB || ve_flags != VE_ALL)
 #endif
@@ -3645,10 +3527,8 @@ do_put(regname, dir, count, flags)
                 bd.startspaces = incr - bd.endspaces;
                 --bd.textcol;
                 delcount = 1;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     bd.textcol -= (*mb_head_off)(oldp, oldp + bd.textcol);
-#endif
                 if (oldp[bd.textcol] != TAB)
                 {
                     /* Only a Tab can be split into spaces.  Other
@@ -3744,7 +3624,6 @@ do_put(regname, dir, count, flags)
              * char */
             if (dir == FORWARD && gchar_cursor() != NUL)
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     int bytelen = (*mb_ptr2len)(ml_get_cursor());
@@ -3758,7 +3637,6 @@ do_put(regname, dir, count, flags)
                     }
                 }
                 else
-#endif
                 {
                     ++col;
                     if (yanklen)
@@ -4068,11 +3946,7 @@ ex_display(eap)
     int                 name;
     int                 attr;
     char_u              *arg = eap->arg;
-#if defined(FEAT_MBYTE)
     int                 clen;
-#else
-#define clen 1
-#endif
 
     if (arg != NULL && *arg == NUL)
         arg = NULL;
@@ -4109,12 +3983,10 @@ ex_display(eap)
         else
             yb = &(y_regs[i]);
 
-#if defined(FEAT_EVAL)
         if (name == MB_TOLOWER(redir_reg)
                 || (redir_reg == '"' && yb == y_previous))
             continue;       /* do not list register being written to, the
                              * pointer can be freed */
-#endif
 
         if (yb->y_array != NULL)
         {
@@ -4133,13 +4005,9 @@ ex_display(eap)
                 }
                 for (p = yb->y_array[j]; *p && (n -= ptr2cells(p)) >= 0; ++p)
                 {
-#if defined(FEAT_MBYTE)
                     clen = (*mb_ptr2len)(p);
-#endif
                     msg_outtrans_len(p, clen);
-#if defined(FEAT_MBYTE)
                     p += clen - 1;
-#endif
                 }
             }
             if (n > 1 && yb->y_type == MLINE)
@@ -4204,7 +4072,6 @@ ex_display(eap)
         dis_msg(last_search_pat(), FALSE);
     }
 
-#if defined(FEAT_EVAL)
     /*
      * display last used expression
      */
@@ -4214,7 +4081,6 @@ ex_display(eap)
         MSG_PUTS("\n\"=   ");
         dis_msg(expr_line, FALSE);
     }
-#endif
 }
 
 /*
@@ -4227,23 +4093,19 @@ dis_msg(p, skip_esc)
     int         skip_esc;           /* if TRUE, ignore trailing ESC */
 {
     int         n;
-#if defined(FEAT_MBYTE)
     int         l;
-#endif
 
     n = (int)Columns - 6;
     while (*p != NUL
             && !(*p == ESC && skip_esc && *(p + 1) == NUL)
             && (n -= ptr2cells(p)) >= 0)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
         {
             msg_outtrans_len(p, l);
             p += l;
         }
         else
-#endif
             msg_outtrans_len(p++, 1);
     }
     ui_breakcheck();
@@ -4419,12 +4281,10 @@ do_join(count, insert_space, save_undo, use_formatoptions, setmark)
         {
             curr = skipwhite(curr);
             if (*curr != ')' && currsize != 0 && endcurr1 != TAB
-#if defined(FEAT_MBYTE)
                     && (!has_format_option(FO_MBYTE_JOIN)
                         || (mb_ptr2char(curr) < 0x100 && endcurr1 < 0x100))
                     && (!has_format_option(FO_MBYTE_JOIN2)
                         || mb_ptr2char(curr) < 0x100 || endcurr1 < 0x100)
-#endif
                )
             {
                 /* don't add a space if the line is ending in a space */
@@ -4445,7 +4305,6 @@ do_join(count, insert_space, save_undo, use_formatoptions, setmark)
         endcurr1 = endcurr2 = NUL;
         if (insert_space && currsize > 0)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 cend = curr + currsize;
@@ -4458,7 +4317,6 @@ do_join(count, insert_space, save_undo, use_formatoptions, setmark)
                 }
             }
             else
-#endif
             {
                 endcurr1 = *(curr + currsize - 1);
                 if (currsize > 1)
@@ -4707,7 +4565,6 @@ op_format(oap, keep_cursor)
     }
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Implementation of the format operator 'gq' for when using 'formatexpr'.
  */
@@ -4756,7 +4613,6 @@ fex_format(lnum, count, c)
 
     return r;
 }
-#endif
 
 /*
  * Format "line_count" lines, starting at the cursor position.
@@ -5862,86 +5718,6 @@ write_viminfo_registers(fp)
  * 'permanent' of the two), otherwise the PRIMARY one.
  * For now, use a hard-coded sanity limit of 1Mb of data.
  */
-#if defined(FEAT_X11) && defined(FEAT_CLIPBOARD)
-    void
-x11_export_final_selection()
-{
-    Display     *dpy;
-    char_u      *str = NULL;
-    long_u      len = 0;
-    int         motion_type = -1;
-
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        dpy = X_DISPLAY;
-    else
-#endif
-#if defined(FEAT_XCLIPBOARD)
-        dpy = xterm_dpy;
-#else
-        return;
-#endif
-
-    /* Get selection to export */
-    if (clip_plus.owned)
-        motion_type = clip_convert_selection(&str, &len, &clip_plus);
-    else if (clip_star.owned)
-        motion_type = clip_convert_selection(&str, &len, &clip_star);
-
-    /* Check it's OK */
-    if (dpy != NULL && str != NULL && motion_type >= 0
-                                               && len < 1024*1024 && len > 0)
-    {
-#if defined(FEAT_MBYTE)
-        int ok = TRUE;
-
-        /* The CUT_BUFFER0 is supposed to always contain latin1.  Convert from
-         * 'enc' when it is a multi-byte encoding.  When 'enc' is an 8-bit
-         * encoding conversion usually doesn't work, so keep the text as-is.
-         */
-        if (has_mbyte)
-        {
-            vimconv_T   vc;
-
-            vc.vc_type = CONV_NONE;
-            if (convert_setup(&vc, p_enc, (char_u *)"latin1") == OK)
-            {
-                int     intlen = len;
-                char_u  *conv_str;
-
-                vc.vc_fail = TRUE;
-                conv_str = string_convert(&vc, str, &intlen);
-                len = intlen;
-                if (conv_str != NULL)
-                {
-                    vim_free(str);
-                    str = conv_str;
-                }
-                else
-                {
-                    ok = FALSE;
-                }
-                convert_setup(&vc, NULL, NULL);
-            }
-            else
-            {
-                ok = FALSE;
-            }
-        }
-
-        /* Do not store the string if conversion failed.  Better to use any
-         * other selection than garbled text. */
-        if (ok)
-#endif
-        {
-            XStoreBuffer(dpy, (char *)str, (int)len, 0);
-            XFlush(dpy);
-        }
-    }
-
-    vim_free(str);
-}
-#endif
 
     void
 clip_free_selection(cbd)
@@ -6150,7 +5926,6 @@ dnd_yank_drag_data(str, len)
 }
 #endif
 
-#if defined(FEAT_EVAL)
 /*
  * Return the type of a register.
  * Used for getregtype()
@@ -6411,9 +6186,7 @@ write_reg_contents_lst(name, strings, maxlen, must_append, yank_type, block_len)
     struct yankreg  *old_y_previous, *old_y_current;
 
     if (name == '/'
-#if defined(FEAT_EVAL)
             || name == '='
-#endif
             )
     {
         char_u  *s;
@@ -6489,7 +6262,6 @@ write_reg_contents_ex(name, str, maxlen, must_append, yank_type, block_len)
         return;
     }
 
-#if defined(FEAT_EVAL)
     if (name == '=')
     {
         char_u      *p, *s;
@@ -6506,7 +6278,6 @@ write_reg_contents_ex(name, str, maxlen, must_append, yank_type, block_len)
         set_expr_line(p);
         return;
     }
-#endif
 
     if (name == '_')        /* black hole: nothing to do */
         return;
@@ -6519,9 +6290,7 @@ write_reg_contents_ex(name, str, maxlen, must_append, yank_type, block_len)
 
     finish_write_reg(name, old_y_previous, old_y_current);
 }
-#endif
 
-#if defined(FEAT_CLIPBOARD) || defined(FEAT_EVAL)
 /*
  * Put a string into a register.  When the register is not empty, the string
  * is appended.
@@ -6656,7 +6425,6 @@ str_to_reg(y_ptr, yank_type, str, len, blocklen, str_list)
     else
         y_ptr->y_width = 0;
 }
-#endif
 
     void
 clear_oparg(oap)
@@ -6707,11 +6475,7 @@ line_count_info(line, wc, cc, limit, eol_size)
         else if (!vim_isspace(line[i]))
             is_word = 1;
         ++chars;
-#if defined(FEAT_MBYTE)
         i += (*mb_ptr2len)(line + i);
-#else
-        ++i;
-#endif
     }
 
     if (is_word)
@@ -6949,12 +6713,10 @@ cursor_pos_info()
                     byte_count_cursor, byte_count);
         }
 
-#if defined(FEAT_MBYTE)
         byte_count = bomb_size();
         if (byte_count > 0)
             sprintf((char *)IObuff + STRLEN(IObuff), _("(+%ld for BOM)"),
                                                                   byte_count);
-#endif
         /* Don't shorten this message, the user asked for it. */
         p = p_shm;
         p_shm = (char_u *)"";

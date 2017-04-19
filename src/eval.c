@@ -4,12 +4,6 @@
 
 #include "vim.h"
 
-#if defined(FEAT_EVAL)
-
-#if defined(MACOS)
-#include <time.h>      /* for time_t */
-#endif
-
 #if defined(FEAT_FLOAT) && defined(HAVE_MATH_H)
 #include <math.h>
 #endif
@@ -596,9 +590,6 @@ static void f_localtime __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_log __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_log10 __ARGS((typval_T *argvars, typval_T *rettv));
 #endif
-#if defined(FEAT_LUA)
-static void f_luaeval __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_map __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_maparg __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_mapcheck __ARGS((typval_T *argvars, typval_T *rettv));
@@ -616,9 +607,6 @@ static void f_min __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_mkdir __ARGS((typval_T *argvars, typval_T *rettv));
 #endif
 static void f_mode __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_MZSCHEME)
-static void f_mzeval __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_nextnonblank __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_nr2char __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_or __ARGS((typval_T *argvars, typval_T *rettv));
@@ -629,12 +617,6 @@ static void f_pow __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_prevnonblank __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_printf __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_pumvisible __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_PYTHON3)
-static void f_py3eval __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
-#if defined(FEAT_PYTHON)
-static void f_pyeval __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_range __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_readfile __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_reltime __ARGS((typval_T *argvars, typval_T *rettv));
@@ -1143,7 +1125,6 @@ var_redir_stop()
     redir_varname = NULL;
 }
 
-#if defined(FEAT_MBYTE)
     int
 eval_charconvert(enc_from, enc_to, fname_from, fname_to)
     char_u      *enc_from;
@@ -1168,7 +1149,6 @@ eval_charconvert(enc_from, enc_to, fname_from, fname_to)
         return FAIL;
     return OK;
 }
-#endif
 
 #if defined(FEAT_POSTSCRIPT)
     int
@@ -3842,31 +3822,6 @@ tv_islocked(tv)
                 && (tv->vval.v_dict->dv_lock & VAR_LOCKED));
 }
 
-#if (defined(FEAT_MENU) && defined(FEAT_MULTI_LANG))
-/*
- * Delete all "menutrans_" variables.
- */
-    void
-del_menutrans_vars()
-{
-    hashitem_T  *hi;
-    int         todo;
-
-    hash_lock(&globvarht);
-    todo = (int)globvarht.ht_used;
-    for (hi = globvarht.ht_array; todo > 0 && !got_int; ++hi)
-    {
-        if (!HASHITEM_EMPTY(hi))
-        {
-            --todo;
-            if (STRNCMP(HI2DI(hi)->di_key, "menutrans_", 10) == 0)
-                delete_var(&globvarht, hi);
-        }
-    }
-    hash_unlock(&globvarht);
-}
-#endif
-
 #if defined(FEAT_CMDL_COMPL)
 
 /*
@@ -5677,13 +5632,11 @@ get_string_tv(arg, rettv, evaluate)
                                   nr = (nr << 4) + hex2nr(*p);
                               }
                               ++p;
-#if defined(FEAT_MBYTE)
                               /* For "\u" store the number according to
                                * 'encoding'. */
                               if (c != 'X')
                                   name += (*mb_char2bytes)(nr, name);
                               else
-#endif
                                   *name++ = nr;
                           }
                           break;
@@ -6019,18 +5972,6 @@ list_equal(l1, l2, ic, recursive)
             return FALSE;
     return item1 == NULL && item2 == NULL;
 }
-
-#if defined(FEAT_RUBY) || defined(FEAT_PYTHON) || defined(FEAT_PYTHON3) || defined(FEAT_MZSCHEME) || defined(FEAT_LUA)
-/*
- * Return the dictitem that an entry in a hashtable points to.
- */
-    dictitem_T *
-dict_lookup(hi)
-    hashitem_T *hi;
-{
-    return HI2DI(hi);
-}
-#endif
 
 /*
  * Return TRUE when two dictionaries have exactly the same key/values.
@@ -6828,18 +6769,6 @@ garbage_collect()
 
     /* v: vars */
     abort = abort || set_ref_in_ht(&vimvarht, copyID, NULL);
-
-#if defined(FEAT_LUA)
-    abort = abort || set_ref_in_lua(copyID);
-#endif
-
-#if defined(FEAT_PYTHON)
-    abort = abort || set_ref_in_python(copyID);
-#endif
-
-#if defined(FEAT_PYTHON3)
-    abort = abort || set_ref_in_python3(copyID);
-#endif
 
     if (!abort)
     {
@@ -8127,9 +8056,6 @@ static struct fst
     {"log",             1, 1, f_log},
     {"log10",           1, 1, f_log10},
 #endif
-#if defined(FEAT_LUA)
-    {"luaeval",         1, 2, f_luaeval},
-#endif
     {"map",             2, 2, f_map},
     {"maparg",          1, 4, f_maparg},
     {"mapcheck",        1, 3, f_mapcheck},
@@ -8147,9 +8073,6 @@ static struct fst
     {"mkdir",           1, 3, f_mkdir},
 #endif
     {"mode",            0, 1, f_mode},
-#if defined(FEAT_MZSCHEME)
-    {"mzeval",          1, 1, f_mzeval},
-#endif
     {"nextnonblank",    1, 1, f_nextnonblank},
     {"nr2char",         1, 2, f_nr2char},
     {"or",              2, 2, f_or},
@@ -8160,12 +8083,6 @@ static struct fst
     {"prevnonblank",    1, 1, f_prevnonblank},
     {"printf",          2, 19, f_printf},
     {"pumvisible",      0, 0, f_pumvisible},
-#if defined(FEAT_PYTHON3)
-    {"py3eval",         1, 1, f_py3eval},
-#endif
-#if defined(FEAT_PYTHON)
-    {"pyeval",          1, 1, f_pyeval},
-#endif
     {"range",           1, 3, f_range},
     {"readfile",        1, 3, f_readfile},
     {"reltime",         0, 2, f_reltime},
@@ -9338,9 +9255,7 @@ byteidx(argvars, rettv, comp)
     typval_T    *rettv;
     int         comp UNUSED;
 {
-#if defined(FEAT_MBYTE)
     char_u      *t;
-#endif
     char_u      *str;
     long        idx;
 
@@ -9350,7 +9265,6 @@ byteidx(argvars, rettv, comp)
     if (str == NULL || idx < 0)
         return;
 
-#if defined(FEAT_MBYTE)
     t = str;
     for ( ; idx > 0; idx--)
     {
@@ -9362,10 +9276,6 @@ byteidx(argvars, rettv, comp)
             t += (*mb_ptr2len)(t);
     }
     rettv->vval.v_number = (varnumber_T)(t - str);
-#else
-    if ((size_t)idx <= STRLEN(str))
-        rettv->vval.v_number = idx;
-#endif
 }
 
 /*
@@ -9506,7 +9416,6 @@ f_char2nr(argvars, rettv)
     typval_T    *argvars;
     typval_T    *rettv;
 {
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         int     utf8 = 0;
@@ -9520,7 +9429,6 @@ f_char2nr(argvars, rettv)
             rettv->vval.v_number = (*mb_ptr2char)(get_tv_string(&argvars[0]));
     }
     else
-#endif
     rettv->vval.v_number = get_tv_string(&argvars[0])[0];
 }
 
@@ -9598,15 +9506,10 @@ f_col(argvars, rettv)
                 if (curwin->w_cursor.coladd >= (colnr_T)chartabsize(p,
                                  curwin->w_virtcol - curwin->w_cursor.coladd))
                 {
-#if defined(FEAT_MBYTE)
                     int         l;
 
                     if (*p != NUL && p[(l = (*mb_ptr2len)(p))] == NUL)
                         col += l;
-#else
-                    if (*p != NUL && p[1] == NUL)
-                        ++col;
-#endif
                 }
             }
 #endif
@@ -9947,11 +9850,9 @@ f_cursor(argvars, rettv)
 
     /* Make sure the cursor is in a valid position. */
     check_cursor();
-#if defined(FEAT_MBYTE)
     /* Correct cursor for multi-byte character. */
     if (has_mbyte)
         mb_adjust_cursor();
-#endif
 
     curwin->w_set_curswant = TRUE;
     rettv->vval.v_number = 0;
@@ -11164,11 +11065,6 @@ f_foreground(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        gui_mch_set_foreground();
-#else
-#endif
 }
 
 /*
@@ -11475,10 +11371,8 @@ f_getchar(argvars, rettv)
             temp[i++] = K_SECOND(n);
             temp[i++] = K_THIRD(n);
         }
-#if defined(FEAT_MBYTE)
         else if (has_mbyte)
             i += (*mb_char2bytes)(n, temp + i);
-#endif
         else
             temp[i++] = n;
         temp[i++] = NUL;
@@ -11624,33 +11518,6 @@ f_getfontname(argvars, rettv)
 {
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        GuiFont font;
-        char_u  *name = NULL;
-
-        if (argvars[0].v_type == VAR_UNKNOWN)
-        {
-            /* Get the "Normal" font.  Either the name saved by
-             * hl_set_font_name() or from the font ID. */
-            font = gui.norm_font;
-            name = hl_get_font_name();
-        }
-        else
-        {
-            name = get_tv_string(&argvars[0]);
-            if (STRCMP(name, "*") == 0)     /* don't use font dialog */
-                return;
-            font = gui_mch_get_font(name, FALSE);
-            if (font == NOFONT)
-                return;     /* Invalid font name, return empty string. */
-        }
-        rettv->vval.v_string = gui_mch_get_fontname(font, name);
-        if (argvars[0].v_type != VAR_UNKNOWN)
-            gui_mch_free_font(font);
-    }
-#endif
 }
 
 /*
@@ -12165,15 +12032,6 @@ f_getwinposx(argvars, rettv)
     typval_T    *rettv;
 {
     rettv->vval.v_number = -1;
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        int         x, y;
-
-        if (gui_mch_get_winpos(&x, &y) == OK)
-            rettv->vval.v_number = x;
-    }
-#endif
 }
 
 /*
@@ -12185,15 +12043,6 @@ f_getwinposy(argvars, rettv)
     typval_T    *rettv;
 {
     rettv->vval.v_number = -1;
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        int         x, y;
-
-        if (gui_mch_get_winpos(&x, &y) == OK)
-            rettv->vval.v_number = y;
-    }
-#endif
 }
 
 /*
@@ -12438,18 +12287,7 @@ f_has(argvars, rettv)
     int         n = FALSE;
     static char *(has_list[]) =
     {
-#if defined(MACOS)
-        "mac",
-#endif
-#if defined(MACOS_X_UNIX)
-        "macunix",
-#endif
-#if defined(UNIX)
         "unix",
-#endif
-#if defined(UNIX) && (0)
-        "win32unix",
-#endif
 #if !defined(CASE_INSENSITIVE_FILENAME)
         "fname_case",
 #endif
@@ -12459,19 +12297,13 @@ f_has(argvars, rettv)
 #if defined(FEAT_AUTOCMD)
         "autocmd",
 #endif
-#if defined(FEAT_BEVAL)
-        "balloon_eval",
-#if !defined(FEAT_GUI_W32) /* other GUIs always have multiline balloons */
-        "balloon_multiline",
-#endif
-#endif
 #if defined(SOME_BUILTIN_TCAPS) || defined(ALL_BUILTIN_TCAPS)
         "builtin_terms",
 #if defined(ALL_BUILTIN_TCAPS)
         "all_builtin_terms",
 #endif
 #endif
-#if defined(FEAT_BROWSE) && (defined(USE_FILE_CHOOSER) || defined(FEAT_GUI_W32) || defined(FEAT_GUI_MOTIF))
+#if defined(FEAT_BROWSE) && defined(USE_FILE_CHOOSER)
         "browsefilter",
 #endif
 #if defined(FEAT_BYTEOFF)
@@ -12559,46 +12391,9 @@ f_has(argvars, rettv)
 #if defined(FEAT_FOOTER)
         "footer",
 #endif
-#if !defined(USE_SYSTEM) && defined(UNIX)
         "fork",
-#endif
 #if defined(FEAT_GETTEXT)
         "gettext",
-#endif
-#if defined(FEAT_GUI)
-        "gui",
-#endif
-#if defined(FEAT_GUI_ATHENA)
-#if defined(FEAT_GUI_NEXTAW)
-        "gui_neXtaw",
-#else
-        "gui_athena",
-#endif
-#endif
-#if defined(FEAT_GUI_GTK)
-        "gui_gtk",
-        "gui_gtk2",
-#endif
-#if defined(FEAT_GUI_GNOME)
-        "gui_gnome",
-#endif
-#if defined(FEAT_GUI_MAC)
-        "gui_mac",
-#endif
-#if defined(FEAT_GUI_MOTIF)
-        "gui_motif",
-#endif
-#if defined(FEAT_GUI_PHOTON)
-        "gui_photon",
-#endif
-#if defined(FEAT_GUI_W16)
-        "gui_win16",
-#endif
-#if defined(FEAT_GUI_W32)
-        "gui_win32",
-#endif
-#if defined(FEAT_HANGULIN)
-        "hangul_input",
 #endif
 #if defined(HAVE_ICONV_H) && defined(USE_ICONV)
         "iconv",
@@ -12630,11 +12425,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_LOCALMAP)
         "localmap",
 #endif
-#if defined(FEAT_LUA)
-#if !defined(DYNAMIC_LUA)
-        "lua",
-#endif
-#endif
 #if defined(FEAT_MENU)
         "menu",
 #endif
@@ -12650,7 +12440,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_MOUSESHAPE)
         "mouseshape",
 #endif
-#if defined(UNIX)
 #if defined(FEAT_MOUSE_DEC)
         "mouse_dec",
 #endif
@@ -12678,41 +12467,12 @@ f_has(argvars, rettv)
 #if defined(FEAT_MOUSE_XTERM)
         "mouse_xterm",
 #endif
-#endif
-#if defined(FEAT_MBYTE)
         "multi_byte",
-#endif
-#if defined(FEAT_MULTI_LANG)
-        "multi_lang",
-#endif
-#if defined(FEAT_MZSCHEME)
-#if !defined(DYNAMIC_MZSCHEME)
-        "mzscheme",
-#endif
-#endif
-#if defined(FEAT_OLE)
-        "ole",
-#endif
 #if defined(FEAT_PATH_EXTRA)
         "path_extra",
 #endif
-#if defined(FEAT_PERL)
-#if !defined(DYNAMIC_PERL)
-        "perl",
-#endif
-#endif
 #if defined(FEAT_PERSISTENT_UNDO)
         "persistent_undo",
-#endif
-#if defined(FEAT_PYTHON)
-#if !defined(DYNAMIC_PYTHON)
-        "python",
-#endif
-#endif
-#if defined(FEAT_PYTHON3)
-#if !defined(DYNAMIC_PYTHON3)
-        "python3",
-#endif
 #endif
 #if defined(FEAT_POSTSCRIPT)
         "postscript",
@@ -12732,9 +12492,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_RIGHTLEFT)
         "rightleft",
 #endif
-#if defined(FEAT_RUBY) && !defined(DYNAMIC_RUBY)
-        "ruby",
-#endif
 #if defined(FEAT_SCROLLBIND)
         "scrollbind",
 #endif
@@ -12748,29 +12505,17 @@ f_has(argvars, rettv)
 #if defined(FEAT_SMARTINDENT)
         "smartindent",
 #endif
-#if defined(FEAT_SNIFF)
-        "sniff",
-#endif
 #if defined(STARTUPTIME)
         "startuptime",
 #endif
 #if defined(FEAT_STL_OPT)
         "statusline",
 #endif
-#if defined(FEAT_SUN_WORKSHOP)
-        "sun_workshop",
-#endif
-#if defined(FEAT_NETBEANS_INTG)
-        "netbeans_intg",
-#endif
 #if defined(FEAT_SPELL)
         "spell",
 #endif
 #if defined(FEAT_SYN_HL)
         "syntax",
-#endif
-#if defined(USE_SYSTEM) || !defined(UNIX)
-        "system",
 #endif
 #if defined(FEAT_TAG_BINS)
         "tag_binary",
@@ -12780,11 +12525,6 @@ f_has(argvars, rettv)
 #endif
 #if defined(FEAT_TAG_ANYWHITE)
         "tag_any_white",
-#endif
-#if defined(FEAT_TCL)
-#if !defined(DYNAMIC_TCL)
-        "tcl",
-#endif
 #endif
 #if defined(TERMINFO)
         "terminfo",
@@ -12803,9 +12543,6 @@ f_has(argvars, rettv)
 #endif
 #if defined(FEAT_TOOLBAR)
         "toolbar",
-#endif
-#if defined(FEAT_CLIPBOARD) && defined(FEAT_X11)
-        "unnamedplus",
 #endif
 #if defined(FEAT_USR_CMDS)
         "user-commands",    /* was accidentally included in 5.4 */
@@ -12836,17 +12573,8 @@ f_has(argvars, rettv)
 #if defined(FEAT_WINDOWS)
         "windows",
 #endif
-#if defined(FEAT_WAK)
-        "winaltkeys",
-#endif
 #if defined(FEAT_WRITEBACKUP)
         "writebackup",
-#endif
-#if defined(FEAT_XIM)
-        "xim",
-#endif
-#if defined(FEAT_XFONTSET)
-        "xfontset",
 #endif
 #if defined(FEAT_XPM_W32)
         "xpm",
@@ -12856,20 +12584,11 @@ f_has(argvars, rettv)
         "xpm",
 #endif
 #endif
-#if defined(USE_XSMP)
-        "xsmp",
-#endif
-#if defined(USE_XSMP_INTERACT)
-        "xsmp_interact",
-#endif
 #if defined(FEAT_XCLIPBOARD)
         "xterm_clipboard",
 #endif
 #if defined(FEAT_XTERM_SAVE)
         "xterm_save",
-#endif
-#if defined(UNIX) && defined(FEAT_X11)
-        "X11",
 #endif
         NULL
     };
@@ -12907,69 +12626,15 @@ f_has(argvars, rettv)
         }
         else if (STRICMP(name, "vim_starting") == 0)
             n = (starting != 0);
-#if defined(FEAT_MBYTE)
         else if (STRICMP(name, "multi_byte_encoding") == 0)
             n = has_mbyte;
-#endif
-#if defined(FEAT_BEVAL) && defined(FEAT_GUI_W32)
-        else if (STRICMP(name, "balloon_multiline") == 0)
-            n = multiline_balloon_available();
-#endif
-#if defined(DYNAMIC_TCL)
-        else if (STRICMP(name, "tcl") == 0)
-            n = tcl_enabled(FALSE);
-#endif
 #if defined(USE_ICONV) && defined(DYNAMIC_ICONV)
         else if (STRICMP(name, "iconv") == 0)
             n = iconv_enabled(FALSE);
 #endif
-#if defined(DYNAMIC_LUA)
-        else if (STRICMP(name, "lua") == 0)
-            n = lua_enabled(FALSE);
-#endif
-#if defined(DYNAMIC_MZSCHEME)
-        else if (STRICMP(name, "mzscheme") == 0)
-            n = mzscheme_enabled(FALSE);
-#endif
-#if defined(DYNAMIC_RUBY)
-        else if (STRICMP(name, "ruby") == 0)
-            n = ruby_enabled(FALSE);
-#endif
-#if defined(FEAT_PYTHON)
-#if defined(DYNAMIC_PYTHON)
-        else if (STRICMP(name, "python") == 0)
-            n = python_enabled(FALSE);
-#endif
-#endif
-#if defined(FEAT_PYTHON3)
-#if defined(DYNAMIC_PYTHON3)
-        else if (STRICMP(name, "python3") == 0)
-            n = python3_enabled(FALSE);
-#endif
-#endif
-#if defined(DYNAMIC_PERL)
-        else if (STRICMP(name, "perl") == 0)
-            n = perl_enabled(FALSE);
-#endif
-#if defined(FEAT_GUI)
-        else if (STRICMP(name, "gui_running") == 0)
-            n = (gui.in_use || gui.starting);
-#if defined(FEAT_GUI_W32)
-        else if (STRICMP(name, "gui_win32s") == 0)
-            n = gui_is_win32s();
-#endif
-#if defined(FEAT_BROWSE)
-        else if (STRICMP(name, "browse") == 0)
-            n = gui.in_use;     /* gui_mch_browse() works when GUI is running */
-#endif
-#endif
 #if defined(FEAT_SYN_HL)
         else if (STRICMP(name, "syntax_items") == 0)
             n = syntax_present(curwin);
-#endif
-#if defined(FEAT_NETBEANS_INTG)
-        else if (STRICMP(name, "netbeans_enabled") == 0)
-            n = netbeans_active();
 #endif
     }
 
@@ -13200,17 +12865,14 @@ f_iconv(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_MBYTE)
     char_u      buf1[NUMBUFLEN];
     char_u      buf2[NUMBUFLEN];
     char_u      *from, *to, *str;
     vimconv_T   vimconv;
-#endif
 
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
 
-#if defined(FEAT_MBYTE)
     str = get_tv_string(&argvars[0]);
     from = enc_canonize(enc_skip(get_tv_string_buf(&argvars[1], buf1)));
     to = enc_canonize(enc_skip(get_tv_string_buf(&argvars[2], buf2)));
@@ -13226,7 +12888,6 @@ f_iconv(argvars, rettv)
     convert_setup(&vimconv, NULL, NULL);
     vim_free(from);
     vim_free(to);
-#endif
 }
 
 /*
@@ -14126,23 +13787,6 @@ f_log10(argvars, rettv)
 }
 #endif
 
-#if defined(FEAT_LUA)
-/*
- * "luaeval()" function
- */
-    static void
-f_luaeval(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    char_u      *str;
-    char_u      buf[NUMBUFLEN];
-
-    str = get_tv_string_buf(&argvars[0], buf);
-    do_luaeval(str, argvars + 1, rettv);
-}
-#endif
-
 /*
  * "map()" function
  */
@@ -14307,14 +13951,8 @@ find_some_match(argvars, rettv, type)
             }
             else
             {
-#if defined(FEAT_MBYTE)
-                startcol = (colnr_T)(regmatch.startp[0]
-                                    + (*mb_ptr2len)(regmatch.startp[0]) - str);
-#else
-                startcol = (colnr_T)(regmatch.startp[0] + 1 - str);
-#endif
-                if (startcol > (colnr_T)len
-                                      || str + startcol <= regmatch.startp[0])
+                startcol = (colnr_T)(regmatch.startp[0] + (*mb_ptr2len)(regmatch.startp[0]) - str);
+                if (startcol > (colnr_T)len || str + startcol <= regmatch.startp[0])
                 {
                     match = FALSE;
                     break;
@@ -14788,39 +14426,6 @@ f_mode(argvars, rettv)
     rettv->v_type = VAR_STRING;
 }
 
-#if defined(FEAT_MZSCHEME)
-/*
- * "mzeval()" function
- */
-    static void
-f_mzeval(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    char_u      *str;
-    char_u      buf[NUMBUFLEN];
-
-    str = get_tv_string_buf(&argvars[0], buf);
-    do_mzeval(str, rettv);
-}
-
-    void
-mzscheme_call_vim(name, args, rettv)
-    char_u      *name;
-    typval_T    *args;
-    typval_T    *rettv;
-{
-    typval_T argvars[3];
-
-    argvars[0].v_type = VAR_STRING;
-    argvars[0].vval.v_string = name;
-    copy_tv(args, &argvars[1]);
-    argvars[2].v_type = VAR_UNKNOWN;
-    f_call(argvars, rettv);
-    clear_tv(&argvars[1]);
-}
-#endif
-
 /*
  * "nextnonblank()" function
  */
@@ -14854,7 +14459,6 @@ f_nr2char(argvars, rettv)
 {
     char_u      buf[NUMBUFLEN];
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         int     utf8 = 0;
@@ -14867,7 +14471,6 @@ f_nr2char(argvars, rettv)
             buf[(*mb_char2bytes)((int)get_tv_number(&argvars[0]), buf)] = NUL;
     }
     else
-#endif
     {
         buf[0] = (char_u)get_tv_number(&argvars[0]);
         buf[1] = NUL;
@@ -15007,40 +14610,6 @@ f_pumvisible(argvars, rettv)
         rettv->vval.v_number = 1;
 #endif
 }
-
-#if defined(FEAT_PYTHON3)
-/*
- * "py3eval()" function
- */
-    static void
-f_py3eval(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    char_u      *str;
-    char_u      buf[NUMBUFLEN];
-
-    str = get_tv_string_buf(&argvars[0], buf);
-    do_py3eval(str, rettv);
-}
-#endif
-
-#if defined(FEAT_PYTHON)
-/*
- * "pyeval()" function
- */
-    static void
-f_pyeval(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    char_u      *str;
-    char_u      buf[NUMBUFLEN];
-
-    str = get_tv_string_buf(&argvars[0], buf);
-    do_pyeval(str, rettv);
-}
-#endif
 
 /*
  * "range()" function
@@ -15196,7 +14765,6 @@ f_readfile(argvars, rettv)
             }
             else if (*p == NUL)
                 *p = '\n';
-#if defined(FEAT_MBYTE)
             /* Check for utf8 "bom"; U+FEFF is encoded as EF BB BF.  Do this
              * when finding the BF and check the previous two bytes. */
             else if (*p == 0xbf && enc_utf8 && !binary)
@@ -15236,7 +14804,6 @@ f_readfile(argvars, rettv)
                     }
                 }
             }
-#endif
         } /* for */
 
         if (failed || (cnt >= maxline && maxline >= 0) || readlen <= 0)
@@ -15389,38 +14956,6 @@ f_reltimestr(argvars, rettv)
 #endif
 }
 
-#if defined(FEAT_CLIENTSERVER) && defined(FEAT_X11)
-static void make_connection __ARGS((void));
-static int check_connection __ARGS((void));
-
-    static void
-make_connection()
-{
-    if (X_DISPLAY == NULL
-#if defined(FEAT_GUI)
-            && !gui.in_use
-#endif
-            )
-    {
-        x_force_connect = TRUE;
-        setup_term_clip();
-        x_force_connect = FALSE;
-    }
-}
-
-    static int
-check_connection()
-{
-    make_connection();
-    if (X_DISPLAY == NULL)
-    {
-        EMSG(_("E240: No connection to Vim server"));
-        return FAIL;
-    }
-    return OK;
-}
-#endif
-
 #if defined(FEAT_CLIENTSERVER)
 static void remote_common __ARGS((typval_T *argvars, typval_T *rettv, int expr));
 
@@ -15438,11 +14973,6 @@ remote_common(argvars, rettv, expr)
 
     if (check_restricted() || check_secure())
         return;
-
-#if defined(FEAT_X11)
-    if (check_connection() == FAIL)
-        return;
-#endif
 
     server_name = get_tv_string_chk(&argvars[0]);
     if (server_name == NULL)
@@ -16231,11 +15761,9 @@ f_screenchar(argvars, rettv)
     else
     {
         off = LineOffset[row] + col;
-#if defined(FEAT_MBYTE)
         if (enc_utf8 && ScreenLinesUC[off] != 0)
             c = ScreenLinesUC[off];
         else
-#endif
             c = ScreenLines[off];
     }
     rettv->vval.v_number = c;
@@ -16625,10 +16153,6 @@ f_server2client(argvars, rettv)
         return;
     if (check_restricted() || check_secure())
         return;
-#if defined(FEAT_X11)
-    if (check_connection() == FAIL)
-        return;
-#endif
 
     if (serverSendReply(server, reply) < 0)
     {
@@ -17853,11 +17377,7 @@ f_split(argvars, rettv)
             else
             {
                 /* Don't get stuck at the same match. */
-#if defined(FEAT_MBYTE)
                 col = (*mb_ptr2len)(regmatch.endp[0]);
-#else
-                col = 1;
-#endif
             }
             str = regmatch.endp[0];
         }
@@ -17959,7 +17479,6 @@ f_strftime(argvars, rettv)
         rettv->vval.v_string = vim_strsave((char_u *)_("(Invalid)"));
     else
     {
-#if defined(FEAT_MBYTE)
         vimconv_T   conv;
         char_u      *enc;
 
@@ -17968,28 +17487,23 @@ f_strftime(argvars, rettv)
         convert_setup(&conv, p_enc, enc);
         if (conv.vc_type != CONV_NONE)
             p = string_convert(&conv, p, NULL);
-#endif
         if (p != NULL)
             (void)strftime((char *)result_buf, sizeof(result_buf),
                                                           (char *)p, curtime);
         else
             result_buf[0] = NUL;
 
-#if defined(FEAT_MBYTE)
         if (conv.vc_type != CONV_NONE)
             vim_free(p);
         convert_setup(&conv, enc, p_enc);
         if (conv.vc_type != CONV_NONE)
             rettv->vval.v_string = string_convert(&conv, result_buf, NULL);
         else
-#endif
             rettv->vval.v_string = vim_strsave(result_buf);
 
-#if defined(FEAT_MBYTE)
         /* Release conversion descriptors */
         convert_setup(&conv, NULL, NULL);
         vim_free(enc);
-#endif
     }
 }
 #endif
@@ -18070,7 +17584,6 @@ f_strchars(argvars, rettv)
     typval_T    *rettv;
 {
     char_u              *s = get_tv_string(&argvars[0]);
-#if defined(FEAT_MBYTE)
     varnumber_T         len = 0;
 
     while (*s != NUL)
@@ -18079,9 +17592,6 @@ f_strchars(argvars, rettv)
         ++len;
     }
     rettv->vval.v_number = len;
-#else
-    rettv->vval.v_number = (varnumber_T)(STRLEN(s));
-#endif
 }
 
 /*
@@ -18112,11 +17622,7 @@ f_strwidth(argvars, rettv)
     char_u      *s = get_tv_string(&argvars[0]);
 
     rettv->vval.v_number = (varnumber_T)(
-#if defined(FEAT_MBYTE)
             mb_string2cells(s, -1)
-#else
-            STRLEN(s)
-#endif
             );
 }
 
@@ -18343,11 +17849,6 @@ f_synIDattr(argvars, rettv)
     }
     else
     {
-#if defined(FEAT_GUI)
-        if (gui.in_use)
-            modec = 'g';
-        else
-#endif
             if (t_colors > 1)
             modec = 'c';
         else
@@ -18471,11 +17972,9 @@ f_synconcealed(argvars, rettv)
                     cchar = lcs_conceal;
                 if (cchar != NUL)
                 {
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                         (*mb_char2bytes)(cchar, str);
                     else
-#endif
                         str[0] = cchar;
                 }
             }
@@ -19010,7 +18509,6 @@ f_tolower(argvars, rettv)
     if (p != NULL)
         while (*p != NUL)
         {
-#if defined(FEAT_MBYTE)
             int         l;
 
             if (enc_utf8)
@@ -19028,7 +18526,6 @@ f_tolower(argvars, rettv)
             else if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
                 p += l;         /* skip multi-byte character */
             else
-#endif
             {
                 *p = TOLOWER_LOC(*p); /* note that tolower() can be a macro */
                 ++p;
@@ -19060,7 +18557,6 @@ f_tr(argvars, rettv)
     char_u      *fromstr;
     char_u      *tostr;
     char_u      *p;
-#if defined(FEAT_MBYTE)
     int         inlen;
     int         fromlen;
     int         tolen;
@@ -19068,7 +18564,6 @@ f_tr(argvars, rettv)
     char_u      *cpstr;
     int         cplen;
     int         first = TRUE;
-#endif
     char_u      buf[NUMBUFLEN];
     char_u      buf2[NUMBUFLEN];
     garray_T    ga;
@@ -19084,15 +18579,11 @@ f_tr(argvars, rettv)
             return;             /* type error; errmsg already given */
     ga_init2(&ga, (int)sizeof(char), 80);
 
-#if defined(FEAT_MBYTE)
     if (!has_mbyte)
-#endif
         /* not multi-byte: fromstr and tostr must be the same length */
         if (STRLEN(fromstr) != STRLEN(tostr))
         {
-#if defined(FEAT_MBYTE)
 error:
-#endif
             EMSG2(_(e_invarg2), fromstr);
             ga_clear(&ga);
             return;
@@ -19101,7 +18592,6 @@ error:
     /* fromstr and tostr have to contain the same number of chars */
     while (*in_str != NUL)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             inlen = (*mb_ptr2len)(in_str);
@@ -19152,7 +18642,6 @@ error:
             in_str += inlen;
         }
         else
-#endif
         {
             /* When not using multi-byte chars we can do it faster. */
             p = vim_strchr(fromstr, *in_str);
@@ -20184,11 +19673,9 @@ set_vim_var_char(c)
 {
     char_u      buf[MB_MAXBYTES + 1];
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         buf[(*mb_char2bytes)(c, buf)] = NUL;
     else
-#endif
     {
         buf[0] = c;
         buf[1] = NUL;
@@ -20336,12 +19823,10 @@ set_cmdarg(eap, oldarg)
 
     if (eap->force_ff != 0)
         len += (unsigned)STRLEN(eap->cmd + eap->force_ff) + 6;
-#if defined(FEAT_MBYTE)
     if (eap->force_enc != 0)
         len += (unsigned)STRLEN(eap->cmd + eap->force_enc) + 7;
     if (eap->bad_char != 0)
         len += 7 + 4;  /* " ++bad=" + "keep" or "drop" */
-#endif
 
     newval = alloc(len + 1);
     if (newval == NULL)
@@ -20360,7 +19845,6 @@ set_cmdarg(eap, oldarg)
     if (eap->force_ff != 0)
         sprintf((char *)newval + STRLEN(newval), " ++ff=%s",
                                                 eap->cmd + eap->force_ff);
-#if defined(FEAT_MBYTE)
     if (eap->force_enc != 0)
         sprintf((char *)newval + STRLEN(newval), " ++enc=%s",
                                                eap->cmd + eap->force_enc);
@@ -20370,7 +19854,6 @@ set_cmdarg(eap, oldarg)
         STRCPY(newval + STRLEN(newval), " ++bad=drop");
     else if (eap->bad_char != 0)
         sprintf((char *)newval + STRLEN(newval), " ++bad=%c", eap->bad_char);
-#endif
     vimvars[VV_CMDARG].vv_str = newval;
     return oldval;
 }
@@ -21603,7 +21086,6 @@ ex_echo(eap)
                     }
                     else
                     {
-#if defined(FEAT_MBYTE)
                         if (has_mbyte)
                         {
                             int i = (*mb_ptr2len)(p);
@@ -21612,7 +21094,6 @@ ex_echo(eap)
                             p += i - 1;
                         }
                         else
-#endif
                             (void)msg_outtrans_len_attr(p, 1, echo_attr);
                     }
                 }
@@ -24339,10 +23820,6 @@ ex_oldfiles(eap)
     }
 }
 
-#endif
-
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL)
-
 /*
  * Adjust a filename, according to a string of modifiers.
  * *fnamep must be NUL terminated when called.  When returning, the length is
@@ -24375,16 +23852,7 @@ repeat:
         *usedlen += 2;
 
         /* Expand "~/path" for all systems and "~user/path" for Unix and VMS */
-        if ((*fnamep)[0] == '~'
-#if !defined(UNIX) && (1)
-                && ((*fnamep)[1] == '/'
-#if defined(BACKSLASH_IN_FILENAME)
-                    || (*fnamep)[1] == '\\'
-#endif
-                    || (*fnamep)[1] == NUL)
-
-#endif
-           )
+        if ((*fnamep)[0] == '~')
         {
             *fnamep = expand_env_save(*fnamep);
             vim_free(*bufp);    /* free any allocated file name */
@@ -24744,5 +24212,3 @@ do_string_sub(str, pat, sub, flags)
 
     return ret;
 }
-
-#endif

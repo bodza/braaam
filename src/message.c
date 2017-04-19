@@ -16,9 +16,7 @@ static char_u *get_emsg_lnum __ARGS((void));
 static void add_msg_hist __ARGS((char_u *s, int len, int attr));
 static void hit_return_msg __ARGS((void));
 static void msg_home_replace_attr __ARGS((char_u *fname, int attr));
-#if defined(FEAT_MBYTE)
 static char_u *screen_puts_mbyte __ARGS((char_u *s, int l, int attr));
-#endif
 static void msg_puts_attr_len __ARGS((char_u *str, int maxlen, int attr));
 static void msg_puts_display __ARGS((char_u *str, int maxlen, int attr, int recurse));
 static void msg_scroll_up __ARGS((void));
@@ -99,7 +97,6 @@ msg(s)
     return msg_attr_keep(s, 0, FALSE);
 }
 
-#if defined(FEAT_EVAL) || defined(FEAT_X11) || defined(USE_XSMP) || defined(FEAT_GUI_GTK)
 /*
  * Like msg() but keep it silent when 'verbosefile' is set.
  */
@@ -115,7 +112,6 @@ verb_msg(s)
 
     return n;
 }
-#endif
 
     int
 msg_attr(s, attr)
@@ -135,10 +131,8 @@ msg_attr_keep(s, attr, keep)
     int         retval;
     char_u      *buf = NULL;
 
-#if defined(FEAT_EVAL)
     if (attr == 0)
         set_vim_var_string(VV_STATUSMSG, s, -1);
-#endif
 
     /*
      * It is possible that displaying a messages causes a problem (e.g.,
@@ -208,7 +202,6 @@ msg_strtrunc(s, force)
             room = (int)(Rows - msg_row - 1) * Columns + sc_col - 1;
         if (len > room && room > 0)
         {
-#if defined(FEAT_MBYTE)
             if (enc_utf8)
                 /* may have up to 18 bytes per cell (6 per char, up to two
                  * composing chars) */
@@ -217,7 +210,6 @@ msg_strtrunc(s, force)
                 /* may have up to 2 bytes per cell for euc-jp */
                 len = (room + 2) * 2;
             else
-#endif
                 len = room + 2;
             buf = alloc(len);
             if (buf != NULL)
@@ -262,7 +254,6 @@ trunc_string(s, buf, room, buflen)
             break;
         len += n;
         buf[e] = s[e];
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             for (n = (*mb_ptr2len)(s + e); --n > 0; )
             {
@@ -270,12 +261,10 @@ trunc_string(s, buf, room, buflen)
                     break;
                 buf[e] = s[e];
             }
-#endif
     }
 
     /* Last part: End of the string. */
     i = e;
-#if defined(FEAT_MBYTE)
     if (enc_dbcs != 0)
     {
         /* For DBCS going backwards in a string is slow, but
@@ -305,7 +294,6 @@ trunc_string(s, buf, room, buflen)
         }
     }
     else
-#endif
     {
         for (i = (int)STRLEN(s); len + (n = ptr2cells(s + i - 1)) <= room; --i)
             len += n;
@@ -332,7 +320,6 @@ trunc_string(s, buf, room, buflen)
  * Note: Caller of smgs() and smsg_attr() must check the resulting string is
  * shorter than IOSIZE!!!
  */
-#if (1)
 #if !defined(HAVE_STDARG_H)
 
 int
@@ -398,7 +385,6 @@ smsg_attr(int attr, char_u *s, ...)
     return msg_attr(IObuff, attr);
 }
 
-#endif
 #endif
 
 /*
@@ -530,9 +516,7 @@ emsg_not_now()
 {
     if ((emsg_off > 0 && vim_strchr(p_debug, 'm') == NULL
                                           && vim_strchr(p_debug, 't') == NULL)
-#if defined(FEAT_EVAL)
             || emsg_skip > 0
-#endif
             )
         return TRUE;
     return FALSE;
@@ -552,10 +536,8 @@ emsg(s)
 {
     int         attr;
     char_u      *p;
-#if defined(FEAT_EVAL)
     int         ignore = FALSE;
     int         severe;
-#endif
 
     /* Skip this if not giving error messages at the moment. */
     if (emsg_not_now())
@@ -568,14 +550,11 @@ emsg(s)
      * If "emsg_severe" is TRUE: When an error exception is to be thrown,
      * prefer this message over previous messages for the same command.
      */
-#if defined(FEAT_EVAL)
     severe = emsg_severe;
     emsg_severe = FALSE;
-#endif
 
     if (!emsg_off || vim_strchr(p_debug, 't') != NULL)
     {
-#if defined(FEAT_EVAL)
         /*
          * Cause a throw of an error exception if appropriate.  Don't display
          * the error message in this case.  (If no matching catch clause will
@@ -592,7 +571,6 @@ emsg(s)
 
         /* set "v:errmsg", also when using ":silent! cmd" */
         set_vim_var_string(VV_ERRMSG, s, -1);
-#endif
 
         /*
          * When using ":silent! cmd" ignore error messages.
@@ -718,7 +696,6 @@ msg_may_trunc(force, s)
     if ((force || (shortmess(SHM_TRUNC) && !exmode_active))
             && (n = (int)STRLEN(s) - room) > 0)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             int size = vim_strsize(s);
@@ -734,7 +711,6 @@ msg_may_trunc(force, s)
             }
             --n;
         }
-#endif
         s += n;
         *s = '<';
     }
@@ -1001,9 +977,6 @@ wait_return(redraw)
             }
         } while ((had_got_int && c == Ctrl_C)
                                 || c == K_IGNORE
-#if defined(FEAT_GUI)
-                                || c == K_VER_SCROLLBAR || c == K_HOR_SCROLLBAR
-#endif
 #if defined(FEAT_MOUSE)
                                 || c == K_LEFTDRAG   || c == K_LEFTRELEASE
                                 || c == K_MIDDLEDRAG || c == K_MIDDLERELEASE
@@ -1064,13 +1037,11 @@ wait_return(redraw)
 #endif
     msg_check();
 
-#if defined(UNIX)
     /*
      * When switching screens, we need to output an extra newline on exit.
      */
     if (swapping_screen() && !termcap_active)
         newline_on_exit = TRUE;
-#endif
 
     need_wait_return = FALSE;
     did_wait_return = TRUE;
@@ -1162,7 +1133,6 @@ msg_start()
         keep_msg = NULL;                /* don't display old message now */
     }
 
-#if defined(FEAT_EVAL)
     if (need_clr_eos)
     {
         /* Halfway an ":echo" command and getting an (error) message: clear
@@ -1170,7 +1140,6 @@ msg_start()
         need_clr_eos = FALSE;
         msg_clr_eos();
     }
-#endif
 
     if (!msg_scroll && full_screen)     /* overwrite last message */
     {
@@ -1223,11 +1192,7 @@ msg_putchar_attr(c, attr)
     int         c;
     int         attr;
 {
-#if defined(FEAT_MBYTE)
     char_u      buf[MB_MAXBYTES + 1];
-#else
-    char_u      buf[4];
-#endif
 
     if (IS_SPECIAL(c))
     {
@@ -1238,12 +1203,7 @@ msg_putchar_attr(c, attr)
     }
     else
     {
-#if defined(FEAT_MBYTE)
         buf[(*mb_char2bytes)(c, buf)] = NUL;
-#else
-        buf[0] = c;
-        buf[1] = NUL;
-#endif
     }
     msg_puts_attr(buf, attr);
 }
@@ -1325,7 +1285,6 @@ msg_outtrans_one(p, attr)
     char_u      *p;
     int         attr;
 {
-#if defined(FEAT_MBYTE)
     int         l;
 
     if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
@@ -1333,7 +1292,6 @@ msg_outtrans_one(p, attr)
         msg_outtrans_len_attr(p, l, attr);
         return p + l;
     }
-#endif
     msg_puts_attr(transchar_byte(*p), attr);
     return p + 1;
 }
@@ -1348,10 +1306,8 @@ msg_outtrans_len_attr(msgstr, len, attr)
     char_u      *str = msgstr;
     char_u      *plain_start = msgstr;
     char_u      *s;
-#if defined(FEAT_MBYTE)
     int         mb_l;
     int         c;
-#endif
 
     /* if MSG_HIST flag set, add message to history */
     if (attr & MSG_HIST)
@@ -1360,12 +1316,10 @@ msg_outtrans_len_attr(msgstr, len, attr)
         attr &= ~MSG_HIST;
     }
 
-#if defined(FEAT_MBYTE)
     /* If the string starts with a composing character first draw a space on
      * which the composing char can be drawn. */
     if (enc_utf8 && utf_iscomposing(utf_ptr2char(msgstr)))
         msg_puts_attr((char_u *)" ", attr);
-#endif
 
     /*
      * Go over the string.  Special characters are translated and printed.
@@ -1373,7 +1327,6 @@ msg_outtrans_len_attr(msgstr, len, attr)
      */
     while (--len >= 0)
     {
-#if defined(FEAT_MBYTE)
         if (enc_utf8)
             /* Don't include composing chars after the end. */
             mb_l = utfc_ptr2len_len(str, len + 1);
@@ -1402,7 +1355,6 @@ msg_outtrans_len_attr(msgstr, len, attr)
             str += mb_l;
         }
         else
-#endif
         {
             s = transchar_byte(*str);
             if (s[1] != NUL)
@@ -1489,16 +1441,13 @@ msg_outtrans_special(strstart, from)
         len = vim_strsize(string);
         /* Highlight special keys */
         msg_puts_attr(string, len > 1
-#if defined(FEAT_MBYTE)
                 && (*mb_ptr2len)(string) <= 1
-#endif
                 ? attr : 0);
         retval += len;
     }
     return retval;
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Return the lhs or rhs of a mapping, with the key codes turned into printable
  * strings, in an allocated string.
@@ -1517,7 +1466,6 @@ str2special_save(str, is_lhs)
     ga_append(&ga, NUL);
     return (char_u *)ga.ga_data;
 }
-#endif
 
 /*
  * Return the printable string for the key codes at "*sp".
@@ -1535,7 +1483,6 @@ str2special(sp, from)
     int                 modifiers = 0;
     int                 special = FALSE;
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         char_u  *p;
@@ -1546,7 +1493,6 @@ str2special(sp, from)
         if (p != NULL)
             return p;
     }
-#endif
 
     c = *str;
     if (c == K_SPECIAL && str[1] != NUL && str[2] != NUL)
@@ -1568,7 +1514,6 @@ str2special(sp, from)
             special = TRUE;
     }
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte && !IS_SPECIAL(c))
     {
         int len = (*mb_ptr2len)(str);
@@ -1586,7 +1531,6 @@ str2special(sp, from)
         *sp = str + len;
     }
     else
-#endif
         *sp = str + 1;
 
     /* Make unprintable characters in <> form, also <M-Space> and <Tab>.
@@ -1634,10 +1578,8 @@ msg_prt_line(s, list)
     int         n;
     int         attr = 0;
     char_u      *trail = NULL;
-#if defined(FEAT_MBYTE)
     int         l;
     char_u      buf[MB_MAXBYTES + 1];
-#endif
 
     if (curwin->w_p_list)
         list = TRUE;
@@ -1665,7 +1607,6 @@ msg_prt_line(s, list)
             else
                 c = *p_extra++;
         }
-#if defined(FEAT_MBYTE)
         else if (has_mbyte && (l = (*mb_ptr2len)(s)) > 1)
         {
             col += (*mb_ptr2cells)(s);
@@ -1683,7 +1624,6 @@ msg_prt_line(s, list)
             s += l;
             continue;
         }
-#endif
         else
         {
             attr = 0;
@@ -1744,7 +1684,6 @@ msg_prt_line(s, list)
     msg_clr_eos();
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Use screen_puts() to output one multi-byte character.
  * Return the pointer "s" advanced to the next character.
@@ -1793,7 +1732,6 @@ screen_puts_mbyte(s, l, attr)
     }
     return s + l;
 }
-#endif
 
 /*
  * Output a string to the screen at position msg_row, msg_col.
@@ -1922,10 +1860,8 @@ msg_puts_display(str, maxlen, attr, recurse)
     char_u      *s = str;
     char_u      *t_s = str;     /* string from "t_s" to "s" is still todo */
     int         t_col = 0;      /* screen cells todo, 0 when "t_s" not used */
-#if defined(FEAT_MBYTE)
     int         l;
     int         cw;
-#endif
     char_u      *sb_str = str;
     int         sb_col = msg_col;
     int         wrap;
@@ -1945,18 +1881,14 @@ msg_puts_display(str, maxlen, attr, recurse)
                     ? (
                         msg_col <= 1
                         || (*s == TAB && msg_col <= 7)
-#if defined(FEAT_MBYTE)
                         || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col <= 2)
-#endif
                       )
                     :
 #endif
                       (msg_col + t_col >= Columns - 1
                        || (*s == TAB && msg_col + t_col >= ((Columns - 1) & ~7))
-#if defined(FEAT_MBYTE)
                        || (has_mbyte && (*mb_ptr2cells)(s) > 1
                                             && msg_col + t_col >= Columns - 2)
-#endif
                       ))))
         {
             /*
@@ -1986,7 +1918,6 @@ msg_puts_display(str, maxlen, attr, recurse)
 #endif
                )
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     if (enc_utf8 && maxlen >= 0)
@@ -1997,7 +1928,6 @@ msg_puts_display(str, maxlen, attr, recurse)
                     s = screen_puts_mbyte(s, l, attr);
                 }
                 else
-#endif
                     msg_screen_putchar(*s++, attr);
                 did_last_char = TRUE;
             }
@@ -2043,10 +1973,8 @@ msg_puts_display(str, maxlen, attr, recurse)
 
         wrap = *s == '\n'
                     || msg_col + t_col >= Columns
-#if defined(FEAT_MBYTE)
                     || (has_mbyte && (*mb_ptr2cells)(s) > 1
                                             && msg_col + t_col >= Columns - 1)
-#endif
                     ;
         if (t_col > 0 && (wrap || *s == '\r' || *s == '\b'
                                                  || *s == '\t' || *s == BELL))
@@ -2088,7 +2016,6 @@ msg_puts_display(str, maxlen, attr, recurse)
             vim_beep();
         else
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 cw = (*mb_ptr2cells)(s);
@@ -2103,42 +2030,29 @@ msg_puts_display(str, maxlen, attr, recurse)
                 cw = 1;
                 l = 1;
             }
-#endif
             /* When drawing from right to left or when a double-wide character
              * doesn't fit, draw a single character here.  Otherwise collect
              * characters and draw them all at once later. */
-#if defined(FEAT_RIGHTLEFT) || defined(FEAT_MBYTE)
             if (
 #if defined(FEAT_RIGHTLEFT)
                     cmdmsg_rl
-#if defined(FEAT_MBYTE)
                     ||
 #endif
-#endif
-#if defined(FEAT_MBYTE)
                     (cw > 1 && msg_col + t_col >= Columns - 1)
-#endif
                     )
             {
-#if defined(FEAT_MBYTE)
                 if (l > 1)
                     s = screen_puts_mbyte(s, l, attr) - 1;
                 else
-#endif
                     msg_screen_putchar(*s, attr);
             }
             else
-#endif
             {
                 /* postpone this character until later */
                 if (t_col == 0)
                     t_s = s;
-#if defined(FEAT_MBYTE)
                 t_col += cw;
                 s += l - 1;
-#else
-                ++t_col;
-#endif
             }
         }
         ++s;
@@ -2159,12 +2073,6 @@ msg_puts_display(str, maxlen, attr, recurse)
     static void
 msg_scroll_up()
 {
-#if defined(FEAT_GUI)
-    /* Remove the cursor before scrolling, ScreenLines[] is going
-     * to become invalid. */
-    if (gui.in_use)
-        gui_undraw_cursor();
-#endif
     /* scrolling up always works */
     screen_del_lines(0, 0, 1, (int)Rows, TRUE, NULL);
 
@@ -2189,7 +2097,6 @@ msg_scroll_up()
     static void
 inc_msg_scrolled()
 {
-#if defined(FEAT_EVAL)
     if (*get_vim_var_str(VV_SCROLLSTART) == NUL)
     {
         char_u      *p = sourcing_name;
@@ -2214,7 +2121,6 @@ inc_msg_scrolled()
         set_vim_var_string(VV_SCROLLSTART, p, -1);
         vim_free(tofree);
     }
-#endif
     ++msg_scrolled;
 }
 
@@ -2402,12 +2308,10 @@ t_puts(t_col, t_s, s, attr)
     screen_puts_len(t_s, (int)(s - t_s), msg_row, msg_col, attr);
     msg_col += *t_col;
     *t_col = 0;
-#if defined(FEAT_MBYTE)
     /* If the string starts with a composing character don't increment the
      * column position for it. */
     if (enc_utf8 && utf_iscomposing(utf_ptr2char(t_s)))
         --msg_col;
-#endif
     if (msg_col >= Columns)
     {
         msg_col = 0;
@@ -2426,12 +2330,7 @@ t_puts(t_col, t_s, s, attr)
     int
 msg_use_printf()
 {
-    return (!msg_check_screen()
-#if (0) && !defined(FEAT_GUI_MSWIN)
-            || !termcap_active
-#endif
-            || (swapping_screen() && !termcap_active)
-               );
+    return (!msg_check_screen() || (swapping_screen() && !termcap_active));
 }
 
 /*
@@ -2446,10 +2345,6 @@ msg_puts_printf(str, maxlen)
     char_u      buf[4];
     char_u      *p;
 
-#if (0)
-    if (!(silent_mode && p_verbose == 0))
-        mch_settmode(TMODE_COOK);       /* handle '\r' and '\n' correctly */
-#endif
     while (*s != NUL && (maxlen < 0 || (int)(s - str) < maxlen))
     {
         if (!(silent_mode && p_verbose == 0))
@@ -2459,7 +2354,7 @@ msg_puts_printf(str, maxlen)
             p = &buf[0];
             if (*s == '\n' && !info_message)
                 *p++ = '\r';
-#if defined(USE_CR) && !defined(MACOS_X_UNIX)
+#if defined(USE_CR)
             else
 #endif
                 *p++ = *s;
@@ -2490,11 +2385,6 @@ msg_puts_printf(str, maxlen)
         ++s;
     }
     msg_didout = TRUE;      /* assume that line is not empty */
-
-#if (0)
-    if (!(silent_mode && p_verbose == 0))
-        mch_settmode(TMODE_RAW);
-#endif
 }
 
 /*
@@ -2546,24 +2436,6 @@ do_more_prompt(typed_char)
         }
         else
             c = get_keystroke();
-
-#if defined(FEAT_MENU) && defined(FEAT_GUI)
-        if (c == K_MENU)
-        {
-            int idx = get_menu_index(current_menu, ASKMORE);
-
-            /* Used a menu.  If it starts with CTRL-Y, it must
-             * be a "Copy" for the clipboard.  Otherwise
-             * assume that we end */
-            if (idx == MENU_INDEX_INVALID)
-                continue;
-            c = *current_menu->strings[idx];
-            if (c != NUL && current_menu->strings[idx][1] != NUL)
-                ins_typebuf(current_menu->strings[idx] + 1,
-                                current_menu->noremap[idx], 0, TRUE,
-                                                   current_menu->silent[idx]);
-        }
-#endif
 
         toscroll = 0;
         switch (c)
@@ -2784,24 +2656,11 @@ mch_errmsg(str)
 {
     int         len;
 
-#if (defined(UNIX) || defined(FEAT_GUI)) && !defined(ALWAYS_USE_GUI)
+#if !defined(ALWAYS_USE_GUI)
     /* On Unix use stderr if it's a tty.
      * When not going to start the GUI also use stderr.
      * On Mac, when started from Finder, stderr is the console. */
-    if (
-#if defined(UNIX)
-#if defined(MACOS_X_UNIX)
-            (isatty(2) && strcmp("/dev/console", ttyname(2)) != 0)
-#else
-            isatty(2)
-#endif
-#if defined(FEAT_GUI)
-            ||
-#endif
-#endif
-#if defined(FEAT_GUI)
-            !(gui.in_use || gui.starting)
-#endif
+    if (isatty(2)
             )
     {
         fprintf(stderr, "%s", str);
@@ -2822,7 +2681,6 @@ mch_errmsg(str)
     {
         mch_memmove((char_u *)error_ga.ga_data + error_ga.ga_len,
                                                           (char_u *)str, len);
-#if defined(UNIX)
         /* remove CR characters, they are displayed */
         {
             char_u      *p;
@@ -2836,7 +2694,6 @@ mch_errmsg(str)
                 *p = ' ';
             }
         }
-#endif
         --len;          /* don't count the NUL at the end */
         error_ga.ga_len += len;
     }
@@ -2851,25 +2708,12 @@ mch_errmsg(str)
 mch_msg(str)
     char        *str;
 {
-#if (defined(UNIX) || defined(FEAT_GUI)) && !defined(ALWAYS_USE_GUI)
+#if !defined(ALWAYS_USE_GUI)
     /* On Unix use stdout if we have a tty.  This allows "vim -h | more" and
      * uses mch_errmsg() when started from the desktop.
      * When not going to start the GUI also use stdout.
      * On Mac, when started from Finder, stderr is the console. */
-    if (
-#if defined(UNIX)
-#if defined(MACOS_X_UNIX)
-            (isatty(2) && strcmp("/dev/console", ttyname(2)) != 0)
-#else
-            isatty(2)
-#endif
-#if defined(FEAT_GUI)
-            ||
-#endif
-#endif
-#if defined(FEAT_GUI)
-            !(gui.in_use || gui.starting)
-#endif
+    if (isatty(2)
             )
     {
         printf("%s", str);
@@ -3106,13 +2950,11 @@ redir_write(str, maxlen)
         {
             while (cur_col < msg_col)
             {
-#if defined(FEAT_EVAL)
                 if (redir_reg)
                     write_reg_contents(redir_reg, (char_u *)" ", -1, TRUE);
                 else if (redir_vname)
                     var_redir_str((char_u *)" ", -1);
                 else
-#endif
                     if (redir_fd != NULL)
                     fputs(" ", redir_fd);
                 if (verbose_fd != NULL)
@@ -3121,19 +2963,15 @@ redir_write(str, maxlen)
             }
         }
 
-#if defined(FEAT_EVAL)
         if (redir_reg)
             write_reg_contents(redir_reg, s, maxlen, TRUE);
         if (redir_vname)
             var_redir_str(s, maxlen);
-#endif
 
         /* Write and adjust the current column. */
         while (*s != NUL && (maxlen < 0 || (int)(s - str) < maxlen))
         {
-#if defined(FEAT_EVAL)
             if (!redir_reg && !redir_vname)
-#endif
                 if (redir_fd != NULL)
                     putc(*s, redir_fd);
             if (verbose_fd != NULL)
@@ -3156,9 +2994,7 @@ redir_write(str, maxlen)
 redirecting()
 {
     return redir_fd != NULL || *p_vfile != NUL
-#if defined(FEAT_EVAL)
                           || redir_reg || redir_vname
-#endif
                                        ;
 }
 
@@ -3265,9 +3101,7 @@ give_warning(message, hl)
     /* Don't want a hit-enter prompt here. */
     ++no_wait_return;
 
-#if defined(FEAT_EVAL)
     set_vim_var_string(VV_WARNINGMSG, message, -1);
-#endif
     vim_free(keep_msg);
     keep_msg = NULL;
     if (hl)
@@ -3414,7 +3248,6 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
                 retval = 1;
                 for (i = 0; hotkeys[i]; ++i)
                 {
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                     {
                         if ((*mb_ptr2char)(hotkeys + i) == c)
@@ -3422,7 +3255,6 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
                         i += (*mb_ptr2len)(hotkeys + i) - 1;
                     }
                     else
-#endif
                         if (hotkeys[i] == c)
                             break;
                     ++retval;
@@ -3460,7 +3292,6 @@ copy_char(from, to, lowercase)
     char_u      *to;
     int         lowercase;      /* make character lower case */
 {
-#if defined(FEAT_MBYTE)
     int         len;
     int         c;
 
@@ -3479,7 +3310,6 @@ copy_char(from, to, lowercase)
         }
     }
     else
-#endif
     {
         if (lowercase)
             *to = (char_u)TOLOWER_LOC(*from);
@@ -3505,11 +3335,7 @@ msg_show_console_dialog(message, buttons, dfltbutton)
     int         dfltbutton;
 {
     int         len = 0;
-#if defined(FEAT_MBYTE)
 #define HOTK_LEN (has_mbyte ? MB_MAXBYTES : 1)
-#else
-#define HOTK_LEN 1
-#endif
     int         lenhotkey = HOTK_LEN;   /* count first button */
     char_u      *hotk = NULL;
     char_u      *msgp = NULL;
@@ -3541,11 +3367,9 @@ msg_show_console_dialog(message, buttons, dfltbutton)
                     *msgp++ = ' ';          /* '\n' -> ', ' */
 
                     /* advance to next hotkey and set default hotkey */
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                         hotkp += STRLEN(hotkp);
                     else
-#endif
                         ++hotkp;
                     hotkp[copy_char(r + 1, hotkp, TRUE)] = NUL;
                     if (dfltbutton)
@@ -3812,52 +3636,6 @@ do_browse(flags, title, dflt, ext, initdir, filter, buf)
          * default already, leave initdir empty. */
     }
 
-#if defined(FEAT_GUI)
-    if (gui.in_use)             /* when this changes, also adjust f_has()! */
-    {
-        if (filter == NULL
-#if defined(FEAT_EVAL)
-                && (filter = get_var_value((char_u *)"b:browsefilter")) == NULL
-                && (filter = get_var_value((char_u *)"g:browsefilter")) == NULL
-#endif
-        )
-            filter = BROWSE_FILTER_DEFAULT;
-        if (flags & BROWSE_DIR)
-        {
-#if defined(FEAT_GUI_GTK)
-            /* For systems that have a directory dialog. */
-            fname = gui_mch_browsedir(title, initdir);
-#else
-            /* Generic solution for selecting a directory: select a file and
-             * remove the file name. */
-            fname = gui_mch_browse(0, title, dflt, ext, initdir, (char_u *)"");
-#endif
-#if !defined(FEAT_GUI_GTK)
-            /* Win32 adds a dummy file name, others return an arbitrary file
-             * name.  GTK+ 2 returns only the directory, */
-            if (fname != NULL && *fname != NUL && !mch_isdir(fname))
-            {
-                /* Remove the file name. */
-                char_u      *tail = gettail_sep(fname);
-
-                if (tail == fname)
-                    *tail++ = '.';      /* use current dir */
-                *tail = NUL;
-            }
-#endif
-        }
-        else
-            fname = gui_mch_browse(flags & BROWSE_SAVE,
-                                           title, dflt, ext, initdir, filter);
-
-        /* We hang around in the dialog for a while, the user might do some
-         * things to our files.  The Win32 dialog allows deleting or renaming
-         * a file, check timestamps. */
-        need_check_timestamps = TRUE;
-        did_check_timestamps = FALSE;
-    }
-    else
-#endif
     {
         /* TODO: non-GUI file selector here */
         EMSG(_("E338: Sorry, no file browser in console mode"));
@@ -3890,7 +3668,7 @@ do_browse(flags, title, dflt, ext, initdir, filter, buf)
 }
 #endif
 
-#if defined(HAVE_STDARG_H) && defined(FEAT_EVAL)
+#if defined(HAVE_STDARG_H)
 static char *e_printf = N_("E766: Insufficient arguments for printf()");
 
 static long tv_nr __ARGS((typval_T *tvs, int *idxp));
@@ -4194,9 +3972,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                     get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                     tvs != NULL ? tv_nr(tvs, &arg_idx) :
-#endif
                         va_arg(ap, int);
 #endif
                 if (j >= 0)
@@ -4231,9 +4007,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                         get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                         tvs != NULL ? tv_nr(tvs, &arg_idx) :
-#endif
                             va_arg(ap, int);
 #endif
                     p++;
@@ -4307,9 +4081,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                             get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                             tvs != NULL ? tv_nr(tvs, &arg_idx) :
-#endif
                                 va_arg(ap, int);
 #endif
                         /* standard demands unsigned char */
@@ -4324,9 +4096,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                                 (char *)get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                                 tvs != NULL ? tv_str(tvs, &arg_idx) :
-#endif
                                     va_arg(ap, char *);
 #endif
                     if (str_arg == NULL)
@@ -4345,18 +4115,13 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                     {
                         /* Don't put the #if inside memchr(), it can be a
                          * macro. */
-#if VIM_SIZEOF_INT <= 2
-                        char *q = memchr(str_arg, '\0', precision);
-#else
                         /* memchr on HP does not like n > 2^31  !!! */
                         char *q = memchr(str_arg, '\0',
                                   precision <= (size_t)0x7fffffffL ? precision
                                                        : (size_t)0x7fffffffL);
-#endif
                         str_arg_l = (q == NULL) ? precision
                                                       : (size_t)(q - str_arg);
                     }
-#if defined(FEAT_MBYTE)
                     if (fmt_spec == 'S')
                     {
                         if (min_field_width != 0)
@@ -4373,7 +4138,6 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                             str_arg_l = precision = p1 - (char_u *)str_arg;
                         }
                     }
-#endif
                     break;
 
                 default:
@@ -4413,9 +4177,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                                  (void *)get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                                  tvs != NULL ? (void *)tv_str(tvs, &arg_idx) :
-#endif
                                         va_arg(ap, void *);
 #endif
                         if (ptr_arg != NULL)
@@ -4433,9 +4195,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                                         get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                                         tvs != NULL ? tv_nr(tvs, &arg_idx) :
-#endif
                                             va_arg(ap, int);
 #endif
                             if (int_arg > 0)
@@ -4448,9 +4208,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                                         get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                                         tvs != NULL ? tv_nr(tvs, &arg_idx) :
-#endif
                                             va_arg(ap, long int);
 #endif
                             if (long_arg > 0)
@@ -4471,10 +4229,8 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                                             get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                                             tvs != NULL ? (unsigned)
                                                         tv_nr(tvs, &arg_idx) :
-#endif
                                                 va_arg(ap, unsigned int);
 #endif
                                 if (uint_arg != 0)
@@ -4485,10 +4241,8 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                                             get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                                             tvs != NULL ? (unsigned long)
                                                         tv_nr(tvs, &arg_idx) :
-#endif
                                                 va_arg(ap, unsigned long int);
 #endif
                                 if (ulong_arg != 0)
@@ -4655,9 +4409,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 #if !defined(HAVE_STDARG_H)
                         get_a_arg(arg_idx);
 #else
-#if defined(FEAT_EVAL)
                         tvs != NULL ? tv_float(tvs, &arg_idx) :
-#endif
                             va_arg(ap, double);
 #endif
                     abs_f = f < 0 ? -f : f;
@@ -4666,21 +4418,14 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                     {
                         /* Would be nice to use %g directly, but it prints
                          * "1.0" as "1", we don't want that. */
-                        if ((abs_f >= 0.001 && abs_f < 10000000.0)
-                                                              || abs_f == 0.0)
+                        if ((abs_f >= 0.001 && abs_f < 10000000.0) || abs_f == 0.0)
                             fmt_spec = 'f';
                         else
                             fmt_spec = fmt_spec == 'g' ? 'e' : 'E';
                         remove_trailing_zeroes = TRUE;
                     }
 
-                    if (fmt_spec == 'f' &&
-#if (0)
-                            abs_f > 1.0e38
-#else
-                            abs_f > 1.0e307
-#endif
-                            )
+                    if (fmt_spec == 'f' && abs_f > 1.0e307)
                     {
                         /* Avoid a buffer overflow */
                         strcpy(tmp, "inf");

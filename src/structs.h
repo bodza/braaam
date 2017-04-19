@@ -6,11 +6,6 @@
  * There is something wrong in the SAS compiler that makes typedefs not
  * valid in include files.  Has been fixed in version 6.58.
  */
-#if defined(SASC) && SASC < 658
-typedef long            linenr_T;
-typedef int             colnr_T;
-typedef unsigned short  short_u;
-#endif
 
 /*
  * position in file or buffer
@@ -70,14 +65,10 @@ typedef struct file_buffer      buf_T;  /* forward declaration */
  * This is here because gui.h needs the pos_T and win_T, and win_T needs gui.h
  * for scrollbar_T.
  */
-#if defined(FEAT_GUI)
-#include "gui.h"
-#else
 #if defined(FEAT_XCLIPBOARD)
 #include <X11/Intrinsic.h>
 #endif
 #define guicolor_T int         /* avoid error in prototypes */
-#endif
 
 /*
  * marks: positions in a file
@@ -152,12 +143,10 @@ typedef struct
 #define w_p_fml w_onebuf_opt.wo_fml    /* 'foldminlines' */
     long        wo_fdn;
 #define w_p_fdn w_onebuf_opt.wo_fdn    /* 'foldnestmax' */
-#if defined(FEAT_EVAL)
     char_u      *wo_fde;
 #define w_p_fde w_onebuf_opt.wo_fde    /* 'foldexpr' */
     char_u      *wo_fdt;
 #define w_p_fdt w_onebuf_opt.wo_fdt   /* 'foldtext' */
-#endif
     char_u      *wo_fmr;
 #define w_p_fmr w_onebuf_opt.wo_fmr    /* 'foldmarker' */
 #endif
@@ -236,10 +225,8 @@ typedef struct
 #define w_p_crb_save w_onebuf_opt.wo_crb_save
 #endif
 
-#if defined(FEAT_EVAL)
     int         wo_scriptID[WV_COUNT];  /* SIDs for window-local options */
 #define w_p_scriptID w_onebuf_opt.wo_scriptID
-#endif
 } winopt_T;
 
 /*
@@ -353,12 +340,8 @@ struct u_header
 /*
  * structures used in undo.c
  */
-#if VIM_SIZEOF_INT > 2
 #define ALIGN_LONG     /* longword alignment and use filler byte */
 #define ALIGN_SIZE (sizeof(long))
-#else
-#define ALIGN_SIZE (sizeof(short))
-#endif
 
 #define ALIGN_MASK (ALIGN_SIZE - 1)
 
@@ -491,7 +474,7 @@ typedef struct expand
     int         xp_context;             /* type of expansion */
     char_u      *xp_pattern;            /* start of item to expand */
     int         xp_pattern_len;         /* bytes in xp_pattern before cursor */
-#if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL) && defined(FEAT_CMDL_COMPL)
+#if defined(FEAT_USR_CMDS) && defined(FEAT_CMDL_COMPL)
     char_u      *xp_arg;                /* completion function */
     int         xp_scriptID;            /* SID for completion function */
 #endif
@@ -645,9 +628,6 @@ struct signlist
     linenr_T    lnum;           /* line number which has this sign */
     int         typenr;         /* typenr of sign */
     signlist_T  *next;          /* next signlist entry */
-#if defined(FEAT_NETBEANS_INTG)
-    signlist_T  *prev;          /* previous entry -- for easy reordering */
-#endif
 };
 
 /* type argument for buf_getsigntype() */
@@ -896,18 +876,6 @@ typedef struct attr_entry
             short_u         fg_color;   /* foreground color number */
             short_u         bg_color;   /* background color number */
         } cterm;
-#if defined(FEAT_GUI)
-        struct
-        {
-            guicolor_T      fg_color;   /* foreground color handle */
-            guicolor_T      bg_color;   /* background color handle */
-            guicolor_T      sp_color;   /* special color handle */
-            GuiFont         font;       /* font handle */
-#if defined(FEAT_XFONTSET)
-            GuiFontset      fontset;    /* fontset handle */
-#endif
-        } gui;
-#endif
     } ae_u;
 } attrentry_T;
 
@@ -915,22 +883,7 @@ typedef struct attr_entry
 #if defined(HAVE_ICONV_H)
 #include <iconv.h>
 #else
-#if defined(MACOS_X)
-#include <sys/errno.h>
-#define EILSEQ ENOENT /* MacOS X does not have EILSEQ */
-typedef struct _iconv_t *iconv_t;
-#else
-#if defined(MACOS_CLASSIC)
-typedef struct _iconv_t *iconv_t;
-#define EINVAL      22
-#define E2BIG       7
-#define ENOENT      2
-#define EFAULT      14
-#define EILSEQ      123
-#else
 #include <errno.h>
-#endif
-#endif
 typedef void *iconv_t;
 #endif
 #endif
@@ -985,9 +938,7 @@ typedef struct
 {
     char_u      *vir_line;      /* text of the current line */
     FILE        *vir_fd;        /* file descriptor */
-#if defined(FEAT_MBYTE)
     vimconv_T   vir_conv;       /* encoding conversion */
-#endif
 } vir_T;
 
 #define CONV_NONE               0
@@ -996,12 +947,6 @@ typedef struct
 #define CONV_TO_LATIN1          3
 #define CONV_TO_LATIN9          4
 #define CONV_ICONV              5
-#if defined(MACOS_X)
-#define CONV_MAC_LATIN1        20
-#define CONV_LATIN1_MAC        21
-#define CONV_MAC_UTF8          22
-#define CONV_UTF8_MAC          23
-#endif
 
 /*
  * Structure used for mappings and abbreviations.
@@ -1018,10 +963,8 @@ struct mapblock
     int         m_noremap;      /* if non-zero no re-mapping for m_str */
     char        m_silent;       /* <silent> used, don't echo commands */
     char        m_nowait;       /* <nowait> used */
-#if defined(FEAT_EVAL)
     char        m_expr;         /* <expr> used, m_str is an expression */
     scid_T      m_script_ID;    /* ID of script where map was defined */
-#endif
 };
 
 /*
@@ -1075,11 +1018,7 @@ typedef struct hashtable_S
 
 typedef long_u hash_T;          /* Type for hi_hash */
 
-#if VIM_SIZEOF_INT <= 3 /* use long if int is smaller than 32 bits */
-typedef long    varnumber_T;
-#else
 typedef int     varnumber_T;
-#endif
 typedef double  float_T;
 
 typedef struct listvar_S list_T;
@@ -1320,16 +1259,12 @@ typedef struct {
     /* for spell checking */
     garray_T    b_langp;        /* list of pointers to slang_T, see spell.c */
     char_u      b_spell_ismw[256];/* flags: is midword char */
-#if defined(FEAT_MBYTE)
     char_u      *b_spell_ismw_mb; /* multi-byte midword chars */
-#endif
     char_u      *b_p_spc;       /* 'spellcapcheck' */
     regprog_T   *b_cap_prog;    /* program for 'spellcapcheck' */
     char_u      *b_p_spf;       /* 'spellfile' */
     char_u      *b_p_spl;       /* 'spelllang' */
-#if defined(FEAT_MBYTE)
     int         b_cjk;          /* all CJK letters as OK */
-#endif
 #endif
 #if !defined(FEAT_SYN_HL) && !defined(FEAT_SPELL)
     int         dummy;
@@ -1370,16 +1305,11 @@ struct file_buffer
     char_u      *b_sfname;      /* short file name */
     char_u      *b_fname;       /* current file name */
 
-#if defined(UNIX)
     int         b_dev_valid;    /* TRUE when b_dev has a valid number */
     dev_t       b_dev;          /* device number */
     ino_t       b_ino;          /* inode number */
-#endif
 #if defined(FEAT_CW_EDITOR)
     FSSpec      b_FSSpec;       /* MacOS File Identification */
-#endif
-#if defined(FEAT_SNIFF)
-    int         b_sniff;        /* file was loaded through Sniff */
 #endif
 
     int         b_fnum;         /* buffer number for this file. */
@@ -1414,9 +1344,7 @@ struct file_buffer
 
     /* These variables are set when VIsual_active becomes FALSE */
     visualinfo_T b_visual;
-#if defined(FEAT_EVAL)
     int         b_visual_mode_eval;  /* b_visual.vi_mode for visualmode() */
-#endif
 
     pos_T       b_last_cursor;  /* cursor position when last unloading this
                                    buffer */
@@ -1513,9 +1441,7 @@ struct file_buffer
      */
     int         b_p_initialized;        /* set when options initialized */
 
-#if defined(FEAT_EVAL)
     int         b_p_scriptID[BV_COUNT]; /* SIDs for buffer-local options */
-#endif
 
     int         b_p_ai;         /* 'autoindent' */
     int         b_p_ai_nopaste; /* b_p_ai saved for paste mode */
@@ -1523,9 +1449,7 @@ struct file_buffer
     unsigned    b_bkc_flags;    /* flags for 'backupcopy' */
     int         b_p_ci;         /* 'copyindent' */
     int         b_p_bin;        /* 'binary' */
-#if defined(FEAT_MBYTE)
     int         b_p_bomb;       /* 'bomb' */
-#endif
 #if defined(FEAT_QUICKFIX)
     char_u      *b_p_bh;        /* 'bufhidden' */
     char_u      *b_p_bt;        /* 'buftype' */
@@ -1555,9 +1479,7 @@ struct file_buffer
     int         b_p_eol;        /* 'endofline' */
     int         b_p_et;         /* 'expandtab' */
     int         b_p_et_nobin;   /* b_p_et saved for binary mode */
-#if defined(FEAT_MBYTE)
     char_u      *b_p_fenc;      /* 'fileencoding' */
-#endif
     char_u      *b_p_ff;        /* 'fileformat' */
 #if defined(FEAT_AUTOCMD)
     char_u      *b_p_ft;        /* 'filetype' */
@@ -1569,20 +1491,16 @@ struct file_buffer
 #if defined(FEAT_FIND_ID)
     char_u      *b_p_def;       /* 'define' local value */
     char_u      *b_p_inc;       /* 'include' */
-#if defined(FEAT_EVAL)
     char_u      *b_p_inex;      /* 'includeexpr' */
     long_u      b_p_inex_flags; /* flags for 'includeexpr' */
 #endif
-#endif
-#if defined(FEAT_CINDENT) && defined(FEAT_EVAL)
+#if defined(FEAT_CINDENT)
     char_u      *b_p_inde;      /* 'indentexpr' */
     long_u      b_p_inde_flags; /* flags for 'indentexpr' */
     char_u      *b_p_indk;      /* 'indentkeys' */
 #endif
-#if defined(FEAT_EVAL)
     char_u      *b_p_fex;       /* 'formatexpr' */
     long_u      b_p_fex_flags;  /* flags for 'formatexpr' */
-#endif
 #if defined(FEAT_CRYPT)
     char_u      *b_p_key;       /* 'key' */
 #endif
@@ -1697,21 +1615,13 @@ struct file_buffer
 
     int         b_start_eol;    /* last line had eol when it was read */
     int         b_start_ffc;    /* first char of 'ff' when edit started */
-#if defined(FEAT_MBYTE)
     char_u      *b_start_fenc;  /* 'fileencoding' when edit started or NULL */
     int         b_bad_char;     /* "++bad=" argument when edit started or 0 */
     int         b_start_bomb;   /* 'bomb' when it was read */
-#endif
 
-#if defined(FEAT_EVAL)
     dictitem_T  b_bufvar;       /* variable for "b:" Dictionary */
     dict_T      *b_vars;        /* internal variables, local to buffer */
-#endif
 
-#if defined(FEAT_BEVAL) && defined(FEAT_EVAL)
-    char_u      *b_p_bexpr;     /* 'balloonexpr' local value */
-    long_u      b_p_bexpr_flags;/* flags for 'balloonexpr' */
-#endif
 #if defined(FEAT_CRYPT)
     char_u      *b_p_cm;        /* 'cryptmethod' */
 #endif
@@ -1741,30 +1651,6 @@ struct file_buffer
     int         b_shortname;    /* this file has an 8.3 file name */
 #endif
 
-#if defined(FEAT_MZSCHEME)
-    void        *b_mzscheme_ref; /* The MzScheme reference to this buffer */
-#endif
-
-#if defined(FEAT_PERL)
-    void        *b_perl_private;
-#endif
-
-#if defined(FEAT_PYTHON)
-    void        *b_python_ref;  /* The Python reference to this buffer */
-#endif
-
-#if defined(FEAT_PYTHON3)
-    void        *b_python3_ref; /* The Python3 reference to this buffer */
-#endif
-
-#if defined(FEAT_TCL)
-    void        *b_tcl_ref;
-#endif
-
-#if defined(FEAT_RUBY)
-    void        *b_ruby_ref;
-#endif
-
 #if defined(FEAT_SYN_HL) || defined(FEAT_SPELL)
     synblock_T  b_s;            /* Info related to syntax highlighting.  w_s
                                  * normally points to this, but some windows
@@ -1773,16 +1659,6 @@ struct file_buffer
 
 #if defined(FEAT_SIGNS)
     signlist_T  *b_signlist;    /* list of signs to draw */
-#if defined(FEAT_NETBEANS_INTG)
-    int         b_has_sign_column; /* Flag that is set when a first sign is
-                                    * added and remains set until the end of
-                                    * the netbeans session. */
-#endif
-#endif
-
-#if defined(FEAT_NETBEANS_INTG)
-    int         b_netbeans_file;    /* TRUE when buffer is owned by NetBeans */
-    int         b_was_netbeans_file;/* TRUE if b_netbeans_file was once set */
 #endif
 
 #if defined(FEAT_CRYPT)
@@ -1849,28 +1725,15 @@ struct tabpage_S
     long            tp_old_Columns; /* Columns when Tab page was left */
     long            tp_ch_used;     /* value of 'cmdheight' when frame size
                                        was set */
-#if defined(FEAT_GUI)
-    int             tp_prev_which_scrollbars[3];
-                                    /* previous value of which_scrollbars */
-#endif
 #if defined(FEAT_DIFF)
     diff_T          *tp_first_diff;
     buf_T           *(tp_diffbuf[DB_COUNT]);
     int             tp_diff_invalid;    /* list of diffs is outdated */
 #endif
     frame_T         *(tp_snapshot[SNAP_COUNT]);  /* window layout snapshots */
-#if defined(FEAT_EVAL)
     dictitem_T      tp_winvar;      /* variable for "t:" Dictionary */
     dict_T          *tp_vars;       /* internal variables, local to tab page */
-#endif
 
-#if defined(FEAT_PYTHON)
-    void            *tp_python_ref;     /* The Python value for this tab page */
-#endif
-
-#if defined(FEAT_PYTHON3)
-    void            *tp_python3_ref;    /* The Python value for this tab page */
-#endif
 };
 
 /*
@@ -2200,10 +2063,8 @@ struct window_S
 #if defined(FEAT_STL_OPT)
     long_u      w_p_stl_flags;      /* flags for 'statusline' */
 #endif
-#if defined(FEAT_EVAL)
     long_u      w_p_fde_flags;      /* flags for 'foldexpr' */
     long_u      w_p_fdt_flags;      /* flags for 'foldtext' */
-#endif
 #if defined(FEAT_SYN_HL)
     int         *w_p_cc_cols;       /* array of columns to highlight or NULL */
 #endif
@@ -2220,10 +2081,8 @@ struct window_S
     long        w_scbind_pos;
 #endif
 
-#if defined(FEAT_EVAL)
     dictitem_T  w_winvar;       /* variable for "w:" Dictionary */
     dict_T      *w_vars;        /* internal variables, local to window */
-#endif
 
     /*
      * The w_prev_pcmark field is used to check whether we really did jump to
@@ -2268,9 +2127,6 @@ struct window_S
     int         w_fraction;
     int         w_prev_fraction_row;
 
-#if defined(FEAT_GUI)
-    scrollbar_T w_scrollbars[2];        /* vert. Scrollbars for this window */
-#endif
 #if defined(FEAT_LINEBREAK)
     linenr_T    w_nrwidth_line_count;   /* line count when ml_nrwidth_width
                                          * was computed. */
@@ -2287,29 +2143,6 @@ struct window_S
     qf_info_T   *w_llist_ref;
 #endif
 
-#if defined(FEAT_MZSCHEME)
-    void        *w_mzscheme_ref;        /* The MzScheme value for this window */
-#endif
-
-#if defined(FEAT_PERL)
-    void        *w_perl_private;
-#endif
-
-#if defined(FEAT_PYTHON)
-    void        *w_python_ref;          /* The Python value for this window */
-#endif
-
-#if defined(FEAT_PYTHON3)
-    void        *w_python3_ref;         /* The Python value for this window */
-#endif
-
-#if defined(FEAT_TCL)
-    void        *w_tcl_ref;
-#endif
-
-#if defined(FEAT_RUBY)
-    void        *w_ruby_ref;
-#endif
 };
 
 /*
@@ -2354,10 +2187,8 @@ typedef struct cmdarg_S
     int         prechar;        /* prefix character (optional, always 'g') */
     int         cmdchar;        /* command character */
     int         nchar;          /* next command character (optional) */
-#if defined(FEAT_MBYTE)
     int         ncharC1;        /* first composing character (optional) */
     int         ncharC2;        /* second composing character (optional) */
-#endif
     int         extra_char;     /* yet another character (optional) */
     long        opcount;        /* count before an operator */
     long        count0;         /* count before command, default 0 */
@@ -2455,18 +2286,9 @@ struct VimMenu
     int         enabled;            /* for which modes the menu is enabled */
     char_u      *name;              /* Name of menu, possibly translated */
     char_u      *dname;             /* Displayed Name ("name" without '&') */
-#if defined(FEAT_MULTI_LANG)
-    char_u      *en_name;           /* "name" untranslated, NULL when "name"
-                                     * was not translated */
-    char_u      *en_dname;          /* "dname" untranslated, NULL when "dname"
-                                     * was not translated */
-#endif
     int         mnemonic;           /* mnemonic key (after '&') */
     char_u      *actext;            /* accelerator text (after TAB) */
     int         priority;           /* Menu order priority */
-#if defined(FEAT_GUI)
-    void        (*cb) __ARGS((vimmenu_T *));        /* Call-back routine */
-#endif
 #if defined(FEAT_TOOLBAR)
     char_u      *iconfile;          /* name of file for icon or NULL */
     int         iconidx;            /* icon index (-1 if not set) */
@@ -2478,49 +2300,6 @@ struct VimMenu
     vimmenu_T   *children;          /* Children of sub-menu */
     vimmenu_T   *parent;            /* Parent of menu */
     vimmenu_T   *next;              /* Next item in menu */
-#if defined(FEAT_GUI_X11)
-    Widget      id;                 /* Manage this to enable item */
-    Widget      submenu_id;         /* If this is submenu, add children here */
-#endif
-#if defined(FEAT_GUI_GTK)
-    GtkWidget   *id;                /* Manage this to enable item */
-    GtkWidget   *submenu_id;        /* If this is submenu, add children here */
-    GtkWidget   *tearoff_handle;
-    GtkWidget   *label;             /* Used by "set wak=" code. */
-#endif
-#if defined(FEAT_GUI_MOTIF)
-    int         sensitive;          /* turn button on/off */
-    char        **xpm;              /* pixmap data */
-    char        *xpm_fname;         /* file with pixmap data */
-#endif
-#if defined(FEAT_GUI_ATHENA)
-    Pixmap      image;              /* Toolbar image */
-#endif
-#if defined(FEAT_BEVAL_TIP)
-    BalloonEval *tip;               /* tooltip for this menu item */
-#endif
-#if defined(FEAT_GUI_W16)
-    UINT        id;                 /* Id of menu item */
-    HMENU       submenu_id;         /* If this is submenu, add children here */
-#endif
-#if defined(FEAT_GUI_W32)
-    UINT        id;                 /* Id of menu item */
-    HMENU       submenu_id;         /* If this is submenu, add children here */
-    HWND        tearoff_handle;     /* hWnd of tearoff if created */
-#endif
-#if defined(FEAT_GUI_MAC)
-/*  MenuHandle  id; */
-/*  short       index;  */          /* the item index within the father menu */
-    short       menu_id;            /* the menu id to which this item belong */
-    short       submenu_id;         /* the menu id of the children (could be
-                                       get through some tricks) */
-    MenuHandle  menu_handle;
-    MenuHandle  submenu_handle;
-#endif
-#if defined(FEAT_GUI_PHOTON)
-    PtWidget_t  *id;
-    PtWidget_t  *submenu_id;
-#endif
 };
 #else
 /* For generating prototypes when FEAT_MENU isn't defined. */

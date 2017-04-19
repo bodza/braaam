@@ -9,11 +9,6 @@
 
 #if defined(FEAT_CLIENTSERVER)
 
-#if defined(FEAT_X11)
-#include <X11/Intrinsic.h>
-#include <X11/Xatom.h>
-#endif
-
 /*
  * This file provides procedures that implement the command server
  * functionality of Vim when in contact with an X11 server.
@@ -291,9 +286,7 @@ DoRegisterName(dpy, name)
 
     if (!got_x_error)
     {
-#if defined(FEAT_EVAL)
         set_vim_var_string(VV_SEND_SERVER, name, -1);
-#endif
         serverName = vim_strsave(name);
 #if defined(FEAT_TITLE)
         need_maketitle = TRUE;
@@ -302,43 +295,6 @@ DoRegisterName(dpy, name)
     }
     return -2;
 }
-
-#if defined(FEAT_GUI)
-/*
- * Clean out new ID from registry and set it as comm win.
- * Change any registered window ID.
- */
-    void
-serverChangeRegisteredWindow(dpy, newwin)
-    Display     *dpy;           /* Display to register with */
-    Window      newwin;         /* Re-register to this ID */
-{
-    char_u      propInfo[MAX_NAME_LENGTH + 20];
-
-    commWindow = newwin;
-
-    /* Always call SendInit() here, to make sure commWindow is marked as a Vim
-     * window. */
-    if (SendInit(dpy) < 0)
-        return;
-
-    /* WARNING: Do not step through this while debugging, it will hangup the X
-     * server! */
-    XGrabServer(dpy);
-    DeleteAnyLingerer(dpy, newwin);
-    if (serverName != NULL)
-    {
-        /* Reinsert name if we was already registered */
-        (void)LookupName(dpy, serverName, /*delete=*/TRUE, NULL);
-        sprintf((char *)propInfo, "%x %.*s",
-                (int_u)newwin, MAX_NAME_LENGTH, serverName);
-        XChangeProperty(dpy, RootWindow(dpy, 0), registryProperty, XA_STRING, 8,
-                        PropModeAppend, (char_u *)propInfo,
-                        STRLEN(propInfo) + 1);
-    }
-    XUngrabServer(dpy);
-}
-#endif
 
 /*
  * Send to an instance of Vim via the X display.
@@ -439,20 +395,11 @@ serverSendToVim(dpy, name, cmd,  result, server, asExpr, localLoop, silent)
      * comm window in the communication window.
      * Length must be computed exactly!
      */
-#if defined(FEAT_MBYTE)
     length = STRLEN(name) + STRLEN(p_enc) + STRLEN(cmd) + 14;
-#else
-    length = STRLEN(name) + STRLEN(cmd) + 10;
-#endif
     property = (char_u *)alloc((unsigned)length + 30);
 
-#if defined(FEAT_MBYTE)
     sprintf((char *)property, "%c%c%c-n %s%c-E %s%c-s %s",
                       0, asExpr ? 'c' : 'k', 0, name, 0, p_enc, 0, cmd);
-#else
-    sprintf((char *)property, "%c%c%c-n %s%c-s %s",
-                      0, asExpr ? 'c' : 'k', 0, name, 0, cmd);
-#endif
     if (name == loosename)
         vim_free(loosename);
     /* Add a back reference to our comm window */
@@ -759,20 +706,11 @@ serverSendReply(name, str)
     if (!WindowValid(dpy, win))
         return -1;
 
-#if defined(FEAT_MBYTE)
     length = STRLEN(p_enc) + STRLEN(str) + 14;
-#else
-    length = STRLEN(str) + 10;
-#endif
     if ((property = (char_u *)alloc((unsigned)length + 30)) != NULL)
     {
-#if defined(FEAT_MBYTE)
         sprintf((char *)property, "%cn%c-E %s%c-n %s%c-w %x",
                             0, 0, p_enc, 0, str, 0, (unsigned int)commWindow);
-#else
-        sprintf((char *)property, "%cn%c-n %s%c-w %x",
-                            0, 0, str, 0, (unsigned int)commWindow);
-#endif
         /* Add length of what "%x" resulted in. */
         length += STRLEN(property + length);
         res = AppendPropCarefully(dpy, win, commProperty, property, length + 1);
@@ -1254,17 +1192,10 @@ serverEventProc(dpy, eventPtr)
 
                         /* Initialize the result property. */
                         ga_init2(&reply, 1, 100);
-#if defined(FEAT_MBYTE)
                         ga_grow(&reply, 50 + STRLEN(p_enc));
                         sprintf(reply.ga_data, "%cr%c-E %s%c-s %s%c-r ",
                                                    0, 0, p_enc, 0, serial, 0);
                         reply.ga_len = 14 + STRLEN(p_enc) + STRLEN(serial);
-#else
-                        ga_grow(&reply, 50);
-                        sprintf(reply.ga_data, "%cr%c-s %s%c-r ",
-                                                             0, 0, serial, 0);
-                        reply.ga_len = 10 + STRLEN(serial);
-#endif
 
                         /* Evaluate the expression and return the result. */
                         if (res != NULL)

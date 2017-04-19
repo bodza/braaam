@@ -671,11 +671,9 @@ open_line(dir, flags, second_line_indent)
         p = saved_line + curwin->w_cursor.col;
         while (*p != NUL)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 p += replace_push_mb(p);
             else
-#endif
                 replace_push(*p++);
         }
         saved_line[curwin->w_cursor.col] = NUL;
@@ -1124,7 +1122,7 @@ open_line(dir, flags, second_line_indent)
                             ;
                         ++p;
 
-#if defined(FEAT_MBYTE)
+#if (1)
                         /* Compute the length of the replaced characters in
                          * screen characters, not bytes. */
                         {
@@ -1158,7 +1156,6 @@ open_line(dir, flags, second_line_indent)
                         /* blank-out any other chars from the old leader. */
                         while (--p >= leader)
                         {
-#if defined(FEAT_MBYTE)
                             int l = mb_head_off(leader, p);
 
                             if (l > 1)
@@ -1175,7 +1172,6 @@ open_line(dir, flags, second_line_indent)
                                 *p = ' ';
                             }
                             else
-#endif
                             if (!vim_iswhite(*p))
                                 *p = ' ';
                         }
@@ -1183,7 +1179,6 @@ open_line(dir, flags, second_line_indent)
                     else                    /* left adjusted leader */
                     {
                         p = skipwhite(leader);
-#if defined(FEAT_MBYTE)
                         /* Compute the length of the replaced characters in
                          * screen characters, not bytes. Move the part that is
                          * not to be overwritten. */
@@ -1206,7 +1201,6 @@ open_line(dir, flags, second_line_indent)
                                 lead_len += lead_repl_len - i;
                             }
                         }
-#endif
                         mch_memmove(p, lead_repl, (size_t)lead_repl_len);
 
                         /* Replace any remaining non-white chars in the old
@@ -1224,7 +1218,6 @@ open_line(dir, flags, second_line_indent)
                                 }
                                 else
                                 {
-#if defined(FEAT_MBYTE)
                                     int     l = (*mb_ptr2len)(p);
 
                                     if (l > 1)
@@ -1240,7 +1233,6 @@ open_line(dir, flags, second_line_indent)
                                                      (leader + lead_len) - p);
                                         lead_len -= l - 1;
                                     }
-#endif
                                     *p = ' ';
                                 }
                             }
@@ -1359,10 +1351,8 @@ open_line(dir, flags, second_line_indent)
         if (curbuf->b_p_ai || (flags & OPENLINE_DELSPACES))
         {
             while ((*p_extra == ' ' || *p_extra == '\t')
-#if defined(FEAT_MBYTE)
                     && (!enc_utf8
                                || !utf_iscomposing(utf_ptr2char(p_extra + 1)))
-#endif
                     )
             {
                 if (REPLACE_NORMAL(State))
@@ -1585,9 +1575,7 @@ open_line(dir, flags, second_line_indent)
      */
     if (!p_paste
             && (curbuf->b_p_cin
-#if defined(FEAT_EVAL)
                     || *curbuf->b_p_inde != NUL
-#endif
                 )
             && in_cinkeys(dir == FORWARD
                 ? KEY_OPEN_FORW
@@ -2142,7 +2130,6 @@ ins_bytes(p)
 }
 #endif
 
-#if defined(FEAT_VREPLACE) || defined(FEAT_INS_EXPAND) || defined(FEAT_COMMENTS) || defined(FEAT_MBYTE)
 /*
  * Insert string "p" with length "len" at the cursor position.
  * Handles Replace mode and multi-byte characters.
@@ -2153,7 +2140,6 @@ ins_bytes_len(p, len)
     int         len;
 {
     int         i;
-#if defined(FEAT_MBYTE)
     int         n;
 
     if (has_mbyte)
@@ -2167,11 +2153,9 @@ ins_bytes_len(p, len)
             ins_char_bytes(p + i, n);
         }
     else
-#endif
         for (i = 0; i < len; ++i)
             ins_char(p[i]);
 }
-#endif
 
 /*
  * Insert or replace a single character at the cursor position.
@@ -2184,7 +2168,6 @@ ins_bytes_len(p, len)
 ins_char(c)
     int         c;
 {
-#if defined(FEAT_MBYTE)
     char_u      buf[MB_MAXBYTES + 1];
     int         n;
 
@@ -2204,7 +2187,6 @@ ins_char_bytes(buf, charlen)
     int         charlen;
 {
     int         c = buf[0];
-#endif
     int         newlen;         /* nr of bytes inserted */
     int         oldlen;         /* nr of bytes deleted (0 when not replacing) */
     char_u      *p;
@@ -2227,11 +2209,7 @@ ins_char_bytes(buf, charlen)
 
     /* The lengths default to the values for when not replacing. */
     oldlen = 0;
-#if defined(FEAT_MBYTE)
     newlen = charlen;
-#else
-    newlen = 1;
-#endif
 
     if (State & REPLACE_FLAG)
     {
@@ -2241,9 +2219,6 @@ ins_char_bytes(buf, charlen)
             colnr_T     new_vcol = 0;   /* init for GCC */
             colnr_T     vcol;
             int         old_list;
-#if !defined(FEAT_MBYTE)
-            char_u      buf[2];
-#endif
 
             /*
              * Disable 'list' temporarily, unless 'cpo' contains the 'L' flag.
@@ -2261,10 +2236,6 @@ ins_char_bytes(buf, charlen)
              * cells.  May result in adding spaces to fill a gap.
              */
             getvcol(curwin, &curwin->w_cursor, NULL, &vcol, NULL);
-#if !defined(FEAT_MBYTE)
-            buf[0] = c;
-            buf[1] = NUL;
-#endif
             new_vcol = vcol + chartabsize(buf, vcol);
             while (oldp[col + oldlen] != NUL && vcol < new_vcol)
             {
@@ -2273,11 +2244,7 @@ ins_char_bytes(buf, charlen)
                  * position. */
                 if (vcol > new_vcol && oldp[col + oldlen] == TAB)
                     break;
-#if defined(FEAT_MBYTE)
                 oldlen += (*mb_ptr2len)(oldp + col + oldlen);
-#else
-                ++oldlen;
-#endif
                 /* Deleted a bit too much, insert spaces. */
                 if (vcol > new_vcol)
                     newlen += vcol - new_vcol;
@@ -2289,11 +2256,7 @@ ins_char_bytes(buf, charlen)
             if (oldp[col] != NUL)
         {
             /* normal replace */
-#if defined(FEAT_MBYTE)
             oldlen = (*mb_ptr2len)(oldp + col);
-#else
-            oldlen = 1;
-#endif
         }
 
         /* Push the replaced bytes onto the replace stack, so that they can be
@@ -2303,11 +2266,9 @@ ins_char_bytes(buf, charlen)
         replace_push(NUL);
         for (i = 0; i < oldlen; ++i)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 i += replace_push_mb(oldp + col + i) - 1;
             else
-#endif
                 replace_push(oldp[col + i]);
         }
     }
@@ -2326,7 +2287,7 @@ ins_char_bytes(buf, charlen)
                                             (size_t)(linelen - col - oldlen));
 
     /* Insert or overwrite the new character. */
-#if defined(FEAT_MBYTE)
+#if (1)
     mch_memmove(p, buf, charlen);
     i = charlen;
 #else
@@ -2355,11 +2316,9 @@ ins_char_bytes(buf, charlen)
 #endif
        )
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             showmatch(mb_ptr2char(buf));
         else
-#endif
             showmatch(c);
     }
 
@@ -2368,11 +2327,7 @@ ins_char_bytes(buf, charlen)
 #endif
     {
         /* Normal insert: move cursor right */
-#if defined(FEAT_MBYTE)
         curwin->w_cursor.col += charlen;
-#else
-        ++curwin->w_cursor.col;
-#endif
     }
     /*
      * TODO: should try to update w_row here, to avoid recomputing it later.
@@ -2426,7 +2381,6 @@ ins_str(s)
 del_char(fixpos)
     int         fixpos;
 {
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         /* Make sure the cursor is at the start of a character. */
@@ -2435,11 +2389,9 @@ del_char(fixpos)
             return FAIL;
         return del_chars(1L, fixpos);
     }
-#endif
     return del_bytes(1L, fixpos, TRUE);
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Like del_bytes(), but delete characters instead of bytes.
  */
@@ -2462,7 +2414,6 @@ del_chars(count, fixpos)
     }
     return del_bytes(bytes, fixpos, TRUE);
 }
-#endif
 
 /*
  * Delete "count" bytes under the cursor.
@@ -2494,7 +2445,6 @@ del_bytes(count, fixpos_arg, use_delcombine)
     if (col >= oldlen)
         return FAIL;
 
-#if defined(FEAT_MBYTE)
     /* If 'delcombine' is set and deleting (less than) one character, only
      * delete the last combining character. */
     if (p_deco && use_delcombine && enc_utf8
@@ -2517,7 +2467,6 @@ del_bytes(count, fixpos_arg, use_delcombine)
             fixpos = 0;
         }
     }
-#endif
 
     /*
      * When count is too big, reduce it.
@@ -2540,11 +2489,9 @@ del_bytes(count, fixpos_arg, use_delcombine)
 #if defined(FEAT_VIRTUALEDIT)
             curwin->w_cursor.coladd = 0;
 #endif
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 curwin->w_cursor.col -=
                             (*mb_head_off)(oldp, oldp + curwin->w_cursor.col);
-#endif
         }
         count = oldlen - col;
         movelen = 1;
@@ -2557,11 +2504,6 @@ del_bytes(count, fixpos_arg, use_delcombine)
      * netbeans_removed(), which deallocates the line.  Let ml_replace() take
      * care of notifying Netbeans.
      */
-#if defined(FEAT_NETBEANS_INTG)
-    if (netbeans_active())
-        was_alloced = FALSE;
-    else
-#endif
         was_alloced = ml_line_alloced();    /* check if oldp was allocated */
     if (was_alloced)
         newp = oldp;                        /* use same allocated memory */
@@ -2665,20 +2607,16 @@ gchar_pos(pos)
 {
     char_u      *ptr = ml_get_pos(pos);
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         return (*mb_ptr2char)(ptr);
-#endif
     return (int)*ptr;
 }
 
     int
 gchar_cursor()
 {
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         return (*mb_ptr2char)(ml_get_cursor());
-#endif
     return (int)*ml_get_cursor();
 }
 
@@ -2740,14 +2678,6 @@ skip_to_option_part(p)
     void
 changed()
 {
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-    /* The text of the preediting area is inserted, but this doesn't
-     * mean a change of the buffer yet.  That is delayed until the
-     * text is committed. (this means preedit becomes empty) */
-    if (im_is_preediting() && !xim_changed_while_preediting)
-        return;
-    xim_changed_while_preediting = FALSE;
-#endif
 
     if (!curbuf->b_changed)
     {
@@ -3218,9 +3148,6 @@ unchanged(buf, ff)
 #endif
     }
     ++buf->b_changedtick;
-#if defined(FEAT_NETBEANS_INTG)
-    netbeans_unmodified(buf);
-#endif
 }
 
 #if defined(FEAT_WINDOWS)
@@ -3282,9 +3209,7 @@ change_warning(col)
             msg_col = col;
         msg_source(hl_attr(HLF_W));
         MSG_PUTS_ATTR(_(w_readonly), hl_attr(HLF_W) | MSG_HIST);
-#if defined(FEAT_EVAL)
         set_vim_var_string(VV_WARNINGMSG, (char_u *)_(w_readonly), -1);
-#endif
         msg_clr_eos();
         (void)msg_end();
         if (msg_silent == 0 && !silent_mode)
@@ -3477,10 +3402,6 @@ get_keystroke()
 #if defined(FEAT_MOUSE)
                     || (is_mouse_key(n) && n != K_LEFTMOUSE)
 #endif
-#if defined(FEAT_GUI)
-                    || n == K_VER_SCROLLBAR
-                    || n == K_HOR_SCROLLBAR
-#endif
                )
             {
                 if (buf[1] == KS_MODIFIER)
@@ -3492,7 +3413,6 @@ get_keystroke()
             }
             break;
         }
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             if (MB_BYTE2LEN(n) > len)
@@ -3500,11 +3420,8 @@ get_keystroke()
             buf[len >= buflen ? buflen - 1 : len] = NUL;
             n = (*mb_ptr2char)(buf);
         }
-#endif
-#if defined(UNIX)
         if (n == intr_char)
             n = ESC;
-#endif
         break;
     }
     vim_free(buf);
@@ -3699,33 +3616,13 @@ vim_beep()
     if (emsg_silent == 0)
     {
         if (p_vb
-#if defined(FEAT_GUI)
-                /* While the GUI is starting up the termcap is set for the GUI
-                 * but the output still goes to a terminal. */
-                && !(gui.in_use && gui.starting)
-#endif
                 )
         {
             out_str(T_VB);
         }
         else
         {
-#if (0)
-            /*
-             * The number of beeps outputted is reduced to avoid having to wait
-             * for all the beeps to finish. This is only a problem on systems
-             * where the beeps don't overlap.
-             */
-            if (beep_count == 0 || beep_count == 10)
-            {
-                out_char(BELL);
-                beep_count = 1;
-            }
-            else
-                ++beep_count;
-#else
             out_char(BELL);
-#endif
         }
 
         /* When 'verbose' is set and we are sourcing a script or executing a
@@ -3758,111 +3655,24 @@ init_homedir()
     vim_free(homedir);
     homedir = NULL;
 
-#if (0)
-    var = mch_getenv((char_u *)"SYS$LOGIN");
-#else
     var = mch_getenv((char_u *)"HOME");
-#endif
 
     if (var != NULL && *var == NUL)     /* empty is same as not set */
         var = NULL;
 
-#if (0)
-    /*
-     * Weird but true: $HOME may contain an indirect reference to another
-     * variable, esp. "%USERPROFILE%".  Happens when $USERPROFILE isn't set
-     * when $HOME is being set.
-     */
-    if (var != NULL && *var == '%')
-    {
-        char_u  *p;
-        char_u  *exp;
-
-        p = vim_strchr(var + 1, '%');
-        if (p != NULL)
-        {
-            vim_strncpy(NameBuff, var + 1, p - (var + 1));
-            exp = mch_getenv(NameBuff);
-            if (exp != NULL && *exp != NUL
-                                        && STRLEN(exp) + STRLEN(p) < MAXPATHL)
-            {
-                vim_snprintf((char *)NameBuff, MAXPATHL, "%s%s", exp, p + 1);
-                var = NameBuff;
-                /* Also set $HOME, it's needed for _viminfo. */
-                vim_setenv((char_u *)"HOME", NameBuff);
-            }
-        }
-    }
-
-    /*
-     * Typically, $HOME is not defined on Windows, unless the user has
-     * specifically defined it for Vim's sake.  However, on Windows NT
-     * platforms, $HOMEDRIVE and $HOMEPATH are automatically defined for
-     * each user.  Try constructing $HOME from these.
-     */
-    if (var == NULL)
-    {
-        char_u *homedrive, *homepath;
-
-        homedrive = mch_getenv((char_u *)"HOMEDRIVE");
-        homepath = mch_getenv((char_u *)"HOMEPATH");
-        if (homepath == NULL || *homepath == NUL)
-            homepath = "\\";
-        if (homedrive != NULL
-                           && STRLEN(homedrive) + STRLEN(homepath) < MAXPATHL)
-        {
-            sprintf((char *)NameBuff, "%s%s", homedrive, homepath);
-            if (NameBuff[0] != NUL)
-            {
-                var = NameBuff;
-                /* Also set $HOME, it's needed for _viminfo. */
-                vim_setenv((char_u *)"HOME", NameBuff);
-            }
-        }
-    }
-
-#if defined(FEAT_MBYTE)
-    if (enc_utf8 && var != NULL)
-    {
-        int     len;
-        char_u  *pp = NULL;
-
-        /* Convert from active codepage to UTF-8.  Other conversions are
-         * not done, because they would fail for non-ASCII characters. */
-        acp_to_enc(var, (int)STRLEN(var), &pp, &len);
-        if (pp != NULL)
-        {
-            homedir = pp;
-            return;
-        }
-    }
-#endif
-#endif
-
-#if (0)
-    /*
-     * Default home dir is C:/
-     * Best assumption we can make in such a situation.
-     */
-    if (var == NULL)
-        var = "C:/";
-#endif
     if (var != NULL)
     {
-#if defined(UNIX)
         /*
          * Change to the directory and get the actual path.  This resolves
          * links.  Don't do it when we can't return.
          */
-        if (mch_dirname(NameBuff, MAXPATHL) == OK
-                                          && mch_chdir((char *)NameBuff) == 0)
+        if (mch_dirname(NameBuff, MAXPATHL) == OK && mch_chdir((char *)NameBuff) == 0)
         {
             if (!mch_chdir((char *)var) && mch_dirname(IObuff, IOSIZE) == OK)
                 var = IObuff;
             if (mch_chdir((char *)NameBuff) != 0)
                 EMSG(_(e_prev_dir));
         }
-#endif
         homedir = vim_strsave(var);
     }
 }
@@ -3967,7 +3777,6 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                 var = dst;
                 c = dstlen - 1;
 
-#if defined(UNIX)
                 /* Unix has ${var-name} type environment vars */
                 if (*tail == '{' && !vim_isIDc('{'))
                 {
@@ -3976,40 +3785,20 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                         *var++ = *tail++;
                 }
                 else
-#endif
                 {
                     while (c-- > 0 && *tail != NUL && (vim_isIDc(*tail)))
-                    {
-#if (0) /* env vars only in uppercase */
-                        *var++ = TOUPPER_LOC(*tail);
-                        tail++;     /* toupper() may be a macro! */
-#else
                         *var++ = *tail++;
-#endif
-                    }
                 }
 
-#if defined(UNIX)
-#if defined(UNIX)
                 if (src[1] == '{' && *tail != '}')
-#else
-                if (*src == '%' && *tail != '%')
-#endif
                     var = NULL;
                 else
                 {
-#if defined(UNIX)
                     if (src[1] == '{')
-#else
-                    if (*src == '%')
-#endif
                         ++tail;
-#endif
                     *var = NUL;
                     var = vim_getenv(dst, &mustfree);
-#if defined(UNIX)
                 }
-#endif
             }
                                                         /* home directory */
             else if (  src[1] == NUL
@@ -4021,7 +3810,6 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
             }
             else                                        /* user directory */
             {
-#if defined(UNIX) || (0)
                 /*
                  * Copy ~user to dst[], so we can put a NUL after it.
                  */
@@ -4034,7 +3822,6 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                         && !vim_ispathsep(*tail))
                     *var++ = *tail++;
                 *var = NUL;
-#if defined(UNIX)
                 /*
                  * If the system supports getpwnam(), use it.
                  * Otherwise, or if getpwnam() fails, the shell is used to
@@ -4064,43 +3851,6 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                                 WILD_ADD_SLASH|WILD_SILENT, WILD_EXPAND_FREE);
                     mustfree = TRUE;
                 }
-
-#else
-                /*
-                 * USER_HOME is a comma-separated list of
-                 * directories to search for the user account in.
-                 */
-                {
-                    char_u      test[MAXPATHL], paths[MAXPATHL];
-                    char_u      *path, *next_path, *ptr;
-                    struct stat st;
-
-                    STRCPY(paths, USER_HOME);
-                    next_path = paths;
-                    while (*next_path)
-                    {
-                        for (path = next_path; *next_path && *next_path != ',';
-                                next_path++);
-                        if (*next_path)
-                            *next_path++ = NUL;
-                        STRCPY(test, path);
-                        STRCAT(test, "/");
-                        STRCAT(test, dst + 1);
-                        if (mch_stat(test, &st) == 0)
-                        {
-                            var = alloc(STRLEN(test) + 1);
-                            STRCPY(var, test);
-                            mustfree = TRUE;
-                            break;
-                        }
-                    }
-                }
-#endif
-#else
-                /* cannot expand user's home directory, so don't try */
-                var = NULL;
-                tail = (char_u *)"";    /* for gcc */
-#endif
             }
 
 #if defined(BACKSLASH_IN_FILENAME)
@@ -4200,34 +3950,12 @@ vim_getenv(name, mustfree)
     char_u      *pend;
     int         vimruntime;
 
-#if (0)
-    /* use "C:/" when $HOME is not set */
-    if (STRCMP(name, "HOME") == 0)
-        return homedir;
-#endif
-
     p = mch_getenv(name);
     if (p != NULL && *p == NUL)     /* empty is the same as not set */
         p = NULL;
 
     if (p != NULL)
     {
-#if defined(FEAT_MBYTE) && (0)
-        if (enc_utf8)
-        {
-            int     len;
-            char_u  *pp = NULL;
-
-            /* Convert from active codepage to UTF-8.  Other conversions are
-             * not done, because they would fail for non-ASCII characters. */
-            acp_to_enc(p, (int)STRLEN(p), &pp, &len);
-            if (pp != NULL)
-            {
-                p = pp;
-                *mustfree = TRUE;
-            }
-        }
-#endif
         return p;
     }
 
@@ -4255,26 +3983,6 @@ vim_getenv(name, mustfree)
                 *mustfree = TRUE;
             else
                 p = mch_getenv((char_u *)"VIM");
-
-#if defined(FEAT_MBYTE) && (0)
-            if (enc_utf8)
-            {
-                int     len;
-                char_u  *pp = NULL;
-
-                /* Convert from active codepage to UTF-8.  Other conversions
-                 * are not done, because they would fail for non-ASCII
-                 * characters. */
-                acp_to_enc(p, (int)STRLEN(p), &pp, &len);
-                if (pp != NULL)
-                {
-                    if (*mustfree)
-                        vim_free(p);
-                    p = pp;
-                    *mustfree = TRUE;
-                }
-            }
-#endif
         }
     }
 
@@ -4304,27 +4012,6 @@ vim_getenv(name, mustfree)
                 pend = remove_tail(p, pend, (char_u *)"doc");
 
 #if defined(USE_EXE_NAME)
-#if defined(MACOS_X)
-            /* remove "MacOS" from exe_name and add "Resources/vim" */
-            if (p == exe_name)
-            {
-                char_u  *pend1;
-                char_u  *pnew;
-
-                pend1 = remove_tail(p, pend, (char_u *)"MacOS");
-                if (pend1 != pend)
-                {
-                    pnew = alloc((unsigned)(pend1 - p) + 15);
-                    if (pnew != NULL)
-                    {
-                        STRNCPY(pnew, p, (pend1 - p));
-                        STRCPY(pnew + (pend1 - p), "Resources/vim");
-                        p = pnew;
-                        pend = p + STRLEN(p);
-                    }
-                }
-            }
-#endif
             /* remove "src/" from exe_name, if present */
             if (p == exe_name)
                 pend = remove_tail(p, pend, (char_u *)"src");
@@ -4338,16 +4025,11 @@ vim_getenv(name, mustfree)
             }
 
             /* remove trailing path separator */
-#if !defined(MACOS_CLASSIC)
             /* With MacOS path (with  colons) the final colon is required */
             /* to avoid confusion between absolute and relative path */
             if (pend > p && after_pathsep(p, pend))
                 --pend;
-#endif
 
-#if defined(MACOS_X)
-            if (p == exe_name || p == p_hf)
-#endif
                 /* check that the result is a directory name */
                 p = vim_strnsave(p, (int)(pend - p));
 
@@ -4656,16 +4338,11 @@ home_replace(buf, src, dst, dstlen, one)
     if (homedir != NULL)
         dirlen = STRLEN(homedir);
 
-#if (0)
-    homedir_env_orig = homedir_env = mch_getenv((char_u *)"SYS$LOGIN");
-#else
     homedir_env_orig = homedir_env = mch_getenv((char_u *)"HOME");
-#endif
     /* Empty is the same as not set. */
     if (homedir_env != NULL && *homedir_env == NUL)
         homedir_env = NULL;
 
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL)
     if (homedir_env != NULL && vim_strchr(homedir_env, '~') != NULL)
     {
         int     usedlen = 0;
@@ -4680,7 +4357,6 @@ home_replace(buf, src, dst, dstlen, one)
             /* Remove the trailing / that is added to a directory. */
             homedir_env[flen - 1] = NUL;
     }
-#endif
 
     if (homedir_env != NULL)
         envlen = STRLEN(homedir_env);
@@ -4775,7 +4451,6 @@ fullpathcmp(s1, s2, checkname)
     char_u *s1, *s2;
     int     checkname;          /* when both don't exist, check file names */
 {
-#if defined(UNIX)
     char_u          exp1[MAXPATHL];
     char_u          full1[MAXPATHL];
     char_u          full2[MAXPATHL];
@@ -4804,41 +4479,6 @@ fullpathcmp(s1, s2, checkname)
     if (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino)
         return FPC_SAME;
     return FPC_DIFF;
-#else
-    char_u  *exp1;              /* expanded s1 */
-    char_u  *full1;             /* full path of s1 */
-    char_u  *full2;             /* full path of s2 */
-    int     retval = FPC_DIFF;
-    int     r1, r2;
-
-    /* allocate one buffer to store three paths (alloc()/free() is slow!) */
-    if ((exp1 = alloc(MAXPATHL * 3)) != NULL)
-    {
-        full1 = exp1 + MAXPATHL;
-        full2 = full1 + MAXPATHL;
-
-        expand_env(s1, exp1, MAXPATHL);
-        r1 = vim_FullName(exp1, full1, MAXPATHL, FALSE);
-        r2 = vim_FullName(s2, full2, MAXPATHL, FALSE);
-
-        /* If vim_FullName() fails, the file probably doesn't exist. */
-        if (r1 != OK && r2 != OK)
-        {
-            if (checkname && fnamecmp(exp1, s2) == 0)
-                retval = FPC_SAMEX;
-            else
-                retval = FPC_NOTX;
-        }
-        else if (r1 != OK || r2 != OK)
-            retval = FPC_DIFFX;
-        else if (fnamecmp(full1, full2))
-            retval = FPC_DIFF;
-        else
-            retval = FPC_SAME;
-        vim_free(exp1);
-    }
-    return retval;
-#endif
 }
 
 /*
@@ -4919,10 +4559,6 @@ gettail_sep(fname)
     t = gettail(fname);
     while (t > p && after_pathsep(fname, t))
         --t;
-#if (0)
-    /* path separator is part of the path */
-    ++t;
-#endif
     return t;
 }
 
@@ -4951,22 +4587,7 @@ get_past_head(path)
 {
     char_u  *retval;
 
-#if (0)
-    /* may skip "c:" */
-    if (isalpha(path[0]) && path[1] == ':')
-        retval = path + 2;
-    else
-        retval = path;
-#else
-#if (0)
-    /* may skip "label:" */
-    retval = vim_strchr(path, ':');
-    if (retval == NULL)
-        retval = path;
-#else
     retval = path;
-#endif
-#endif
 
     while (vim_ispathsep(*retval))
         ++retval;
@@ -4982,21 +4603,7 @@ get_past_head(path)
 vim_ispathsep(c)
     int c;
 {
-#if defined(UNIX)
     return (c == '/');      /* UNIX has ':' inside file names */
-#else
-#if defined(BACKSLASH_IN_FILENAME)
-    return (c == ':' || c == '/' || c == '\\');
-#else
-#if (0)
-    /* server"user passwd"::device:[full.path.name]fname.extension;version" */
-    return (c == ':' || c == '[' || c == ']' || c == '/'
-            || c == '<' || c == '>' || c == '"' );
-#else
-    return (c == ':' || c == '/');
-#endif
-#endif
-#endif
 }
 
 /*
@@ -5021,15 +4628,10 @@ vim_ispathsep_nocolon(c)
 vim_ispathlistsep(c)
     int c;
 {
-#if defined(UNIX)
     return (c == ':');
-#else
-    return (c == ';');  /* might not be right for every system... */
-#endif
 }
 #endif
 
-#if defined(FEAT_GUI_TABLINE) || defined(FEAT_WINDOWS) || defined(FEAT_EVAL)
 /*
  * Shorten the path of a file from "~/foo/../.bar/fname" to "~/f/../.b/fname"
  * It's done in-place.
@@ -5061,7 +4663,6 @@ shorten_dir(str)
             *d++ = *s;              /* copy next char */
             if (*s != '~' && *s != '.') /* and leading "~" and "." */
                 skip = TRUE;
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 int l = mb_ptr2len(s);
@@ -5069,11 +4670,9 @@ shorten_dir(str)
                 while (--l > 0)
                     *d++ = *++s;
             }
-#endif
         }
     }
 }
-#endif
 
 /*
  * Return TRUE if the directory of "fname" exists, FALSE otherwise.
@@ -5342,11 +4941,9 @@ skip_string(p)
     void
 do_c_expr_indent()
 {
-#if defined(FEAT_EVAL)
     if (*curbuf->b_p_inde != NUL)
         fixthisline(get_expr_indent);
     else
-#endif
         fixthisline(get_c_indent);
 }
 
@@ -9070,7 +8667,6 @@ find_match(lookfor, ourscope)
     return FAIL;
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Get indent level from 'indentexpr'.
  */
@@ -9116,7 +8712,6 @@ get_expr_indent()
 
     return indent;
 }
-#endif
 
 #endif
 
@@ -9354,14 +8949,6 @@ prepare_to_exit()
     signal(SIGHUP, SIG_IGN);
 #endif
 
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        gui.dying = TRUE;
-        out_trash();    /* trash any pending output */
-    }
-    else
-#endif
     {
         windgoto((int)Rows - 1, 0);
 
@@ -9439,11 +9026,7 @@ vim_fexists(fname)
  */
 
 #if !defined(BREAKCHECK_SKIP)
-#if defined(FEAT_GUI) /* assume the GUI only runs on fast computers */
-#define BREAKCHECK_SKIP 200
-#else
 #define BREAKCHECK_SKIP 32
-#endif
 #endif
 
 static int      breakcheck_count = 0;
@@ -9635,347 +9218,6 @@ static int vim_backtick __ARGS((char_u *p));
 static int expand_backtick __ARGS((garray_T *gap, char_u *pat, int flags));
 #endif
 
-#if defined(FEAT_GUI_W16)
-/*
- * File name expansion code for MS-DOS, Win16 and Win32.  It's here because
- * it's shared between these systems.
- */
-#if defined(DJGPP)
-#define _cdecl            /* DJGPP doesn't have this */
-#else
-#endif
-
-/*
- * comparison function for qsort in dos_expandpath()
- */
-    static int _cdecl
-pstrcmp(const void *a, const void *b)
-{
-    return (pathcmp(*(char **)a, *(char **)b, -1));
-}
-
-#if (1)
-    static void
-namelowcpy(
-    char_u *d,
-    char_u *s)
-{
-#if defined(DJGPP)
-    if (USE_LONG_FNAME)     /* don't lower case on Windows 95/NT systems */
-        while (*s)
-            *d++ = *s++;
-    else
-#endif
-        while (*s)
-            *d++ = TOLOWER_LOC(*s++);
-    *d = NUL;
-}
-#endif
-
-/*
- * Recursively expand one path component into all matching files and/or
- * directories.  Adds matches to "gap".  Handles "*", "?", "[a-z]", "**", etc.
- * Return the number of matches found.
- * "path" has backslashes before chars that are not to be expanded, starting
- * at "path[wildoff]".
- * Return the number of matches found.
- * NOTE: much of this is identical to unix_expandpath(), keep in sync!
- */
-    static int
-dos_expandpath(
-    garray_T    *gap,
-    char_u      *path,
-    int         wildoff,
-    int         flags,          /* EW_* flags */
-    int         didstar)        /* expanded "**" once already */
-{
-    char_u      *buf;
-    char_u      *path_end;
-    char_u      *p, *s, *e;
-    int         start_len = gap->ga_len;
-    char_u      *pat;
-    regmatch_T  regmatch;
-    int         starts_with_dot;
-    int         matches;
-    int         len;
-    int         starstar = FALSE;
-    static int  stardepth = 0;      /* depth for "**" expansion */
-#if (0)
-    WIN32_FIND_DATA     fb;
-    HANDLE              hFind = (HANDLE)0;
-#if defined(FEAT_MBYTE)
-    WIN32_FIND_DATAW    wfb;
-    WCHAR               *wn = NULL;     /* UCS-2 name, NULL when not used. */
-#endif
-#else
-    struct ffblk        fb;
-#endif
-    char_u              *matchname;
-    int                 ok;
-
-    /* Expanding "**" may take a long time, check for CTRL-C. */
-    if (stardepth > 0)
-    {
-        ui_breakcheck();
-        if (got_int)
-            return 0;
-    }
-
-    /* make room for file name */
-    buf = alloc((int)STRLEN(path) + BASENAMELEN + 5);
-    if (buf == NULL)
-        return 0;
-
-    /*
-     * Find the first part in the path name that contains a wildcard or a ~1.
-     * Copy it into buf, including the preceding characters.
-     */
-    p = buf;
-    s = buf;
-    e = NULL;
-    path_end = path;
-    while (*path_end != NUL)
-    {
-        /* May ignore a wildcard that has a backslash before it; it will
-         * be removed by rem_backslash() or file_pat_to_reg_pat() below. */
-        if (path_end >= path + wildoff && rem_backslash(path_end))
-            *p++ = *path_end++;
-        else if (*path_end == '\\' || *path_end == ':' || *path_end == '/')
-        {
-            if (e != NULL)
-                break;
-            s = p + 1;
-        }
-        else if (path_end >= path + wildoff
-                         && vim_strchr((char_u *)"*?[~", *path_end) != NULL)
-            e = p;
-#if defined(FEAT_MBYTE)
-        if (has_mbyte)
-        {
-            len = (*mb_ptr2len)(path_end);
-            STRNCPY(p, path_end, len);
-            p += len;
-            path_end += len;
-        }
-        else
-#endif
-            *p++ = *path_end++;
-    }
-    e = p;
-    *e = NUL;
-
-    /* now we have one wildcard component between s and e */
-    /* Remove backslashes between "wildoff" and the start of the wildcard
-     * component. */
-    for (p = buf + wildoff; p < s; ++p)
-        if (rem_backslash(p))
-        {
-            STRMOVE(p, p + 1);
-            --e;
-            --s;
-        }
-
-    /* Check for "**" between "s" and "e". */
-    for (p = s; p < e; ++p)
-        if (p[0] == '*' && p[1] == '*')
-            starstar = TRUE;
-
-    starts_with_dot = (*s == '.');
-    pat = file_pat_to_reg_pat(s, e, NULL, FALSE);
-    if (pat == NULL)
-    {
-        vim_free(buf);
-        return 0;
-    }
-
-    /* compile the regexp into a program */
-    if (flags & (EW_NOERROR | EW_NOTWILD))
-        ++emsg_silent;
-    regmatch.rm_ic = TRUE;              /* Always ignore case */
-    regmatch.regprog = vim_regcomp(pat, RE_MAGIC);
-    if (flags & (EW_NOERROR | EW_NOTWILD))
-        --emsg_silent;
-    vim_free(pat);
-
-    if (regmatch.regprog == NULL && (flags & EW_NOTWILD) == 0)
-    {
-        vim_free(buf);
-        return 0;
-    }
-
-    /* remember the pattern or file name being looked for */
-    matchname = vim_strsave(s);
-
-    /* If "**" is by itself, this is the first time we encounter it and more
-     * is following then find matches without any directory. */
-    if (!didstar && stardepth < 100 && starstar && e - s == 2
-                                                          && *path_end == '/')
-    {
-        STRCPY(s, path_end + 1);
-        ++stardepth;
-        (void)dos_expandpath(gap, buf, (int)(s - buf), flags, TRUE);
-        --stardepth;
-    }
-
-    /* Scan all files in the directory with "dir/ *.*" */
-    STRCPY(s, "*.*");
-#if (0)
-#if defined(FEAT_MBYTE)
-    if (enc_codepage >= 0 && (int)GetACP() != enc_codepage)
-    {
-        /* The active codepage differs from 'encoding'.  Attempt using the
-         * wide function.  If it fails because it is not implemented fall back
-         * to the non-wide version (for Windows 98) */
-        wn = enc_to_utf16(buf, NULL);
-        if (wn != NULL)
-        {
-            hFind = FindFirstFileW(wn, &wfb);
-            if (hFind == INVALID_HANDLE_VALUE
-                              && GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
-            {
-                vim_free(wn);
-                wn = NULL;
-            }
-        }
-    }
-
-    if (wn == NULL)
-#endif
-        hFind = FindFirstFile(buf, &fb);
-    ok = (hFind != INVALID_HANDLE_VALUE);
-#else
-    /* If we are expanding wildcards we try both files and directories */
-    ok = (findfirst((char *)buf, &fb,
-                (*path_end != NUL || (flags & EW_DIR)) ? FA_DIREC : 0) == 0);
-#endif
-
-    while (ok)
-    {
-#if (0)
-#if defined(FEAT_MBYTE)
-        if (wn != NULL)
-            p = utf16_to_enc(wfb.cFileName, NULL);   /* p is allocated here */
-        else
-#endif
-            p = (char_u *)fb.cFileName;
-#else
-        p = (char_u *)fb.ff_name;
-#endif
-        /* Ignore entries starting with a dot, unless when asked for.  Accept
-         * all entries found with "matchname". */
-        if ((p[0] != '.' || starts_with_dot)
-                && (matchname == NULL
-                  || (regmatch.regprog != NULL
-                                     && vim_regexec(&regmatch, p, (colnr_T)0))
-                  || ((flags & EW_NOTWILD)
-                     && fnamencmp(path + (s - buf), p, e - s) == 0)))
-        {
-#if (0)
-            STRCPY(s, p);
-#else
-            namelowcpy(s, p);
-#endif
-            len = (int)STRLEN(buf);
-
-            if (starstar && stardepth < 100)
-            {
-                /* For "**" in the pattern first go deeper in the tree to
-                 * find matches. */
-                STRCPY(buf + len, "/**");
-                STRCPY(buf + len + 3, path_end);
-                ++stardepth;
-                (void)dos_expandpath(gap, buf, len + 1, flags, TRUE);
-                --stardepth;
-            }
-
-            STRCPY(buf + len, path_end);
-            if (mch_has_exp_wildcard(path_end))
-            {
-                /* need to expand another component of the path */
-                /* remove backslashes for the remaining components only */
-                (void)dos_expandpath(gap, buf, len + 1, flags, FALSE);
-            }
-            else
-            {
-                /* no more wildcards, check if there is a match */
-                /* remove backslashes for the remaining components only */
-                if (*path_end != 0)
-                    backslash_halve(buf + len + 1);
-                if (mch_getperm(buf) >= 0)      /* add existing file */
-                    addfile(gap, buf, flags);
-            }
-        }
-
-#if (0)
-#if defined(FEAT_MBYTE)
-        if (wn != NULL)
-        {
-            vim_free(p);
-            ok = FindNextFileW(hFind, &wfb);
-        }
-        else
-#endif
-            ok = FindNextFile(hFind, &fb);
-#else
-        ok = (findnext(&fb) == 0);
-#endif
-
-        /* If no more matches and no match was used, try expanding the name
-         * itself.  Finds the long name of a short filename. */
-        if (!ok && matchname != NULL && gap->ga_len == start_len)
-        {
-            STRCPY(s, matchname);
-#if (0)
-            FindClose(hFind);
-#if defined(FEAT_MBYTE)
-            if (wn != NULL)
-            {
-                vim_free(wn);
-                wn = enc_to_utf16(buf, NULL);
-                if (wn != NULL)
-                    hFind = FindFirstFileW(wn, &wfb);
-            }
-            if (wn == NULL)
-#endif
-                hFind = FindFirstFile(buf, &fb);
-            ok = (hFind != INVALID_HANDLE_VALUE);
-#else
-            ok = (findfirst((char *)buf, &fb,
-                 (*path_end != NUL || (flags & EW_DIR)) ? FA_DIREC : 0) == 0);
-#endif
-            vim_free(matchname);
-            matchname = NULL;
-        }
-    }
-
-#if (0)
-    FindClose(hFind);
-#if defined(FEAT_MBYTE)
-    vim_free(wn);
-#endif
-#endif
-    vim_free(buf);
-    vim_regfree(regmatch.regprog);
-    vim_free(matchname);
-
-    matches = gap->ga_len - start_len;
-    if (matches > 0)
-        qsort(((char_u **)gap->ga_data) + start_len, (size_t)matches,
-                                                   sizeof(char_u *), pstrcmp);
-    return matches;
-}
-
-    int
-mch_expandpath(
-    garray_T    *gap,
-    char_u      *path,
-    int         flags)          /* EW_* flags */
-{
-    return dos_expandpath(gap, path, 0, flags, FALSE);
-}
-#endif
-
-#if defined(UNIX) || defined(USE_UNIXFILENAME)
 /*
  * Unix style wildcard expansion code.
  * It's here because it's used both for Unix and Mac.
@@ -10059,7 +9301,6 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
                              || (!p_fic && (flags & EW_ICASE)
                                              && isalpha(PTR2CHAR(path_end)))))
             e = p;
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             len = (*mb_ptr2len)(path_end);
@@ -10068,7 +9309,6 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
             path_end += len;
         }
         else
-#endif
             *p++ = *path_end++;
     }
     e = p;
@@ -10119,8 +9359,7 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
 
     /* If "**" is by itself, this is the first time we encounter it and more
      * is following then find matches without any directory. */
-    if (!didstar && stardepth < 100 && starstar && e - s == 2
-                                                          && *path_end == '/')
+    if (!didstar && stardepth < 100 && starstar && e - s == 2 && *path_end == '/')
     {
         STRCPY(s, path_end + 1);
         ++stardepth;
@@ -10208,7 +9447,6 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
                                                    sizeof(char_u *), pstrcmp);
     return matches;
 }
-#endif
 
 #if defined(FEAT_SEARCHPATH)
 static int find_previous_pathsep __ARGS((char_u *path, char_u **psep));
@@ -10342,14 +9580,6 @@ expand_path_option(curdir, gap)
 
         if (ga_grow(gap, 1) == FAIL)
             break;
-
-#if (0)
-        /* Avoid the path ending in a backslash, it fails when a comma is
-         * appended. */
-        len = (int)STRLEN(buf);
-        if (buf[len - 1] == '\\')
-            buf[len - 1] = '/';
-#endif
 
         p = vim_strsave(buf);
         if (p == NULL)
@@ -10501,15 +9731,7 @@ uniquefy_paths(gap, pattern)
              *      c:\file.txt           c:\           .\file.txt
              */
             short_name = shorten_fname(path, curdir);
-            if (short_name != NULL && short_name > path + 1
-#if (0)
-                    /* On windows,
-                     *      shorten_fname("c:\a\a.txt", "c:\a\b")
-                     * returns "\a\a.txt", which is not really the short
-                     * name, hence: */
-                    && !vim_ispathsep(*short_name)
-#endif
-                )
+            if (short_name != NULL && short_name > path + 1)
             {
                 STRCPY(path, ".");
                 add_pathsep(path);
@@ -10643,13 +9865,7 @@ has_env_var(p)
     {
         if (*p == '\\' && p[1] != NUL)
             ++p;
-        else if (vim_strchr((char_u *)
-#if (0)
-                                    "$%"
-#else
-                                    "$"
-#endif
-                                        , *p) != NULL)
+        else if (vim_strchr((char_u *)"$", *p) != NULL)
             return TRUE;
     }
     return FALSE;
@@ -10762,7 +9978,6 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
                 p = expand_env_save_opt(p, TRUE);
                 if (p == NULL)
                     p = pat[i];
-#if defined(UNIX)
                 /*
                  * On Unix, if expand_env() can't expand an environment
                  * variable, use the shell to do that.  Discard previously
@@ -10777,7 +9992,6 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
                     recursive = FALSE;
                     return i;
                 }
-#endif
             }
 
             /*
@@ -10814,9 +10028,6 @@ gen_expand_wildcards(num_pat, pat, num_file, file, flags)
         {
             char_u      *t = backslash_halve_save(p);
 
-#if defined(MACOS_CLASSIC)
-            slash_to_colon(t);
-#endif
             /* When EW_NOTFOUND is used, always add files and dirs.  Makes
              * "vim c:/" work. */
             if (flags & EW_NOTFOUND)
@@ -10876,11 +10087,9 @@ expand_backtick(gap, pat, flags)
     if (cmd == NULL)
         return 0;
 
-#if defined(FEAT_EVAL)
     if (*cmd == '=')        /* `={expr}`: Expand expression */
         buffer = eval_to_string(cmd + 1, &p, TRUE);
     else
-#endif
         buffer = get_cmd_output(cmd, NULL,
                                 (flags & EW_SILENT) ? SHELL_SILENT : 0, NULL);
     vim_free(cmd);
@@ -10976,8 +10185,6 @@ addfile(gap, f, flags)
 }
 #endif
 
-#if defined(VIM_BACKTICK) || defined(FEAT_EVAL)
-
 #if !defined(SEEK_SET)
 #define SEEK_SET 0
 #endif
@@ -11033,12 +10240,7 @@ get_cmd_output(cmd, infile, flags, ret_len)
     /*
      * read the names from the file into memory
      */
-#if (0)
-    /* created temporary file is not always readable as binary */
-    fd = mch_fopen((char *)tempname, "r");
-#else
     fd = mch_fopen((char *)tempname, READBIN);
-#endif
 
     if (fd == NULL)
     {
@@ -11079,7 +10281,6 @@ done:
     vim_free(tempname);
     return buffer;
 }
-#endif
 
 /*
  * Free the list of files returned by expand_wildcards() or other expansion

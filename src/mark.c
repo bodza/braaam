@@ -1646,22 +1646,18 @@ copy_viminfo_marks(virp, fp_out, count, eof, flags)
     char_u      *p;
     char_u      *name_buf;
     pos_T       pos;
-#if defined(FEAT_EVAL)
     list_T      *list = NULL;
-#endif
 
     if ((name_buf = alloc(LSIZE)) == NULL)
         return;
     *name_buf = NUL;
 
-#if defined(FEAT_EVAL)
     if (fp_out == NULL && (flags & (VIF_GET_OLDFILES | VIF_FORCEIT)))
     {
         list = list_alloc();
         if (list != NULL)
             set_vim_var_list(VV_OLDFILES, list);
     }
-#endif
 
     num_marked_files = get_viminfo_parameter('\'');
     while (!eof && (count < num_marked_files || fp_out == NULL))
@@ -1693,10 +1689,8 @@ copy_viminfo_marks(virp, fp_out, count, eof, flags)
             p++;
         *p = NUL;
 
-#if defined(FEAT_EVAL)
         if (list != NULL)
             list_append_string(list, str, -1);
-#endif
 
         /*
          * If fp_out == NULL, load marks for current buffer.

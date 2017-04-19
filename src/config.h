@@ -4,9 +4,6 @@
  * manually changed after that.
  */
 
-/* Define unless no X support found */
-/* #undef HAVE_X11 */
-
 /* Define when terminfo support found */
 #define TERMINFO 1
 
@@ -30,9 +27,6 @@
 
 /* Define when __attribute__((unused)) can be used */
 #define HAVE_ATTRIBUTE_UNUSED 1
-
-/* defined always when using configure */
-#define UNIX 1
 
 /* Defined to the size of an int */
 #define VIM_SIZEOF_INT 4
@@ -138,9 +132,6 @@
 
 /* Define if touuper/tolower only work on lower/upercase characters */
 /* #undef BROKEN_TOUPPER */
-
-/* Define if stat() ignores a trailing slash */
-/* #undef STAT_IGNORES_SLASH */
 
 /* Define if tgetstr() has a second argument that is (char *) */
 /* #undef TGETSTR_CHAR_P */
@@ -301,50 +292,11 @@
 /* Define if strings.h cannot be included when strings.h already is */
 /* #undef NO_STRINGS_WITH_STRING_H */
 
-/* Define if you want to include the Lua interpreter. */
-/* #undef FEAT_LUA */
-
-/* Define for linking via dlopen() or LoadLibrary() */
-/* #undef DYNAMIC_LUA */
-
-/* Define if you want to include the MzScheme interpreter. */
-/* #undef FEAT_MZSCHEME */
-
-/* Define if you want to include the Perl interpreter. */
-/* #undef FEAT_PERL */
-
-/* Define for linking via dlopen() or LoadLibrary() */
-/* #undef DYNAMIC_PERL */
-
-/* Define if you want to include the Python interpreter. */
-/* #undef FEAT_PYTHON */
-
-/* Define if you want to include the Python3 interpreter. */
-/* #undef FEAT_PYTHON3 */
-
-/* Define for linking via dlopen() or LoadLibrary() */
-/* #undef DYNAMIC_PYTHON */
-
-/* Define for linking via dlopen() or LoadLibrary() */
-/* #undef DYNAMIC_PYTHON3 */
-
 /* Define if dynamic python does not require RTLD_GLOBAL */
 /* #undef PY_NO_RTLD_GLOBAL */
 
 /* Define if dynamic python3 does not require RTLD_GLOBAL */
 /* #undef PY3_NO_RTLD_GLOBAL */
-
-/* Define if you want to include the Ruby interpreter. */
-/* #undef FEAT_RUBY */
-
-/* Define for linking via dlopen() or LoadLibrary() */
-/* #undef DYNAMIC_RUBY */
-
-/* Define if you want to include the Tcl interpreter. */
-/* #undef FEAT_TCL */
-
-/* Define if you want to include the Sniff interface. */
-/* #undef FEAT_SNIFF */
 
 /* Define if you want to add support for ACL */
 /* #undef HAVE_POSIX_ACL */
@@ -360,27 +312,6 @@
 
 /* Define if you want to include the Cscope interface. */
 /* #undef FEAT_CSCOPE */
-
-/* Define if you want to include multibyte support. */
-/* #undef FEAT_MBYTE */
-
-/* Define if you want to include fontset support. */
-/* #undef FEAT_XFONTSET */
-
-/* Define if you want to include XIM support. */
-/* #undef FEAT_XIM */
-
-/* Define if you want to include Hangul input support. */
-/* #undef FEAT_HANGULIN */
-
-/* Define if you use GTK and want GNOME support. */
-/* #undef FEAT_GUI_GNOME */
-
-/* Define if you use KDE and want KDE Toolbar support. */
-/* #undef FEAT_KDETOOLBAR */
-
-/* Define if GTK+ multihead support is available (requires GTK+ >= 2.1.1). */
-/* #undef HAVE_GTK_MULTIHEAD */
 
 /* Define if your X has own locale library */
 /* #undef X_LOCALE */
@@ -406,20 +337,11 @@
 /* Define if we have shl_load() */
 /* #undef HAVE_SHL_LOAD */
 
-/* Define if you want to include Sun Visual Workshop support. */
-/* #undef FEAT_SUN_WORKSHOP */
-
-/* Define if you want to include NetBeans integration. */
-/* #undef FEAT_NETBEANS_INTG */
-
 /* Define default global runtime path */
 /* #undef RUNTIME_GLOBAL */
 
 /* Define name of who modified a released Vim */
 /* #undef MODIFIED_BY */
-
-/* Define if you want XSMP interaction as well as vanilla swapfile safety */
-#define USE_XSMP_INTERACT 1
 
 /* Define if fcntl()'s F_SETFD command knows about FD_CLOEXEC */
 #define HAVE_FD_CLOEXEC 1

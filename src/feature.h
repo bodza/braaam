@@ -201,7 +201,7 @@
 /*
  * +cscope              Unix only: Cscope support.
  */
-#if defined(UNIX) && defined(FEAT_UNSURE) && !defined(FEAT_CSCOPE) && !defined(MACOS_X)
+#if defined(FEAT_UNSURE) && !defined(FEAT_CSCOPE)
 #define FEAT_CSCOPE
 #endif
 
@@ -210,29 +210,26 @@
  *                      ":let", ":if", etc.
  * +float               Floating point variables.
  */
-#define FEAT_EVAL
-#if defined(HAVE_FLOAT_FUNCS) || defined(MACOS)
+#if defined(HAVE_FLOAT_FUNCS)
 #define FEAT_FLOAT
 #endif
 
 /*
  * +reltime             reltime() function
  */
-#if defined(FEAT_EVAL) && ((defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)))
+#if ((defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)))
 #define FEAT_RELTIME
 #endif
 
 /*
  * +textobjects         Text objects: "vaw", "das", etc.
  */
-#if defined(FEAT_EVAL)
 #define FEAT_TEXTOBJ
-#endif
 
 /*
  *                      Insert mode completion with 'completefunc'.
  */
-#if defined(FEAT_INS_EXPAND) && defined(FEAT_EVAL)
+#if defined(FEAT_INS_EXPAND)
 #define FEAT_COMPL_FUNC
 #endif
 
@@ -245,10 +242,8 @@
  * +printer             ":hardcopy" command
  * +postscript          Printing uses PostScript file output.
  */
-#if defined(FEAT_EVAL)
 #define FEAT_PRINTER
-#endif
-#if defined(FEAT_PRINTER) && defined(FEAT_EVAL)
+#if defined(FEAT_PRINTER)
 #define FEAT_POSTSCRIPT
 #endif
 
@@ -278,9 +273,7 @@
  *                      and byte2line().
  *                      Note: Required for Macintosh.
  */
-#if (1)
 #define FEAT_TITLE
-#endif
 
 #define FEAT_STL_OPT
 #if !defined(FEAT_CMDL_INFO)
@@ -351,7 +344,7 @@
 /* #define NO_BUILTIN_TCAPS */
 #endif
 
-#if !defined(NO_BUILTIN_TCAPS) && !defined(FEAT_GUI_W16)
+#if !defined(NO_BUILTIN_TCAPS)
 #if defined(FEAT_UNSURE)
 #define ALL_BUILTIN_TCAPS
 #else
@@ -392,79 +385,13 @@
 #define FEAT_SESSION
 #endif
 
-/*
- * +multi_lang          Multi language support. ":menutrans", ":language", etc.
- * +gettext             Message translations (requires +multi_lang)
- *                      (only when "lang" archive unpacked)
- */
-#define FEAT_MULTI_LANG
-#if defined(HAVE_GETTEXT) && defined(FEAT_MULTI_LANG) && (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
-#define FEAT_GETTEXT
-#endif
-
-/*
- * +multi_byte          Generic multi-byte character handling.  Doesn't work
- *                      with 16 bit ints.  Required for GTK+ 2.
- */
-#if !defined(FEAT_MBYTE) && VIM_SIZEOF_INT >= 4
-#define FEAT_MBYTE
-#endif
-
 /* Define this if you want to use 16 bit Unicode only, reduces memory used for
  * the screen structures. */
 /* #define UNICODE16 */
 
-#if defined(FEAT_MBYTE) && VIM_SIZEOF_INT < 4
-        Error: Can only handle multi-byte feature with 32 bit int or larger
-#endif
-
 /* Use iconv() when it's available. */
-#if defined(FEAT_MBYTE) && ((defined(HAVE_ICONV_H) && defined(HAVE_ICONV)) || defined(DYNAMIC_ICONV))
+#if ((defined(HAVE_ICONV_H) && defined(HAVE_ICONV)) || defined(DYNAMIC_ICONV))
 #define USE_ICONV
-#endif
-
-/*
- * +xim                 X Input Method.  For entering special languages like
- *                      chinese and Japanese.
- * +hangul_input        Internal Hangul input method.  Must be included
- *                      through configure: "--enable-hangulin"
- * Both are for Unix and VMS only.
- */
-#if !defined(FEAT_XIM)
-/* #define FEAT_XIM */
-#endif
-
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-#define USE_XIM 1              /* needed for GTK include files */
-#endif
-
-#if defined(FEAT_HANGULIN)
-#define HANGUL_DEFAULT_KEYBOARD 2      /* 2 or 3 bulsik keyboard */
-#define ESC_CHG_TO_ENG_MODE            /* if defined, when ESC pressed,
-                                         * turn to english mode
-                                         */
-#if !defined(FEAT_XFONTSET) && defined(HAVE_X11) && !defined(FEAT_GUI_GTK)
-#define FEAT_XFONTSET                 /* Hangul input requires xfontset */
-#endif
-#if defined(FEAT_XIM) && !defined(LINT)
-        Error: You should select only ONE of XIM and HANGUL INPUT
-#endif
-#endif
-#if defined(FEAT_HANGULIN) || defined(FEAT_XIM)
-/* # define X_LOCALE */                 /* for OS with incomplete locale
-                                           support, like old linux versions. */
-/* # define SLOW_XSERVER */             /* for extremely slow X server */
-#endif
-
-/*
- * +xfontset            X fontset support.  For outputting wide characters.
- */
-#if !defined(FEAT_XFONTSET)
-#if defined(FEAT_MBYTE) && defined(HAVE_X11) && !defined(FEAT_GUI_GTK)
-#define FEAT_XFONTSET
-#else
-/* #  define FEAT_XFONTSET */
-#endif
 #endif
 
 /*
@@ -474,7 +401,7 @@
 #if defined(HAVE_DLOPEN) && defined(HAVE_DLSYM)
 #define USE_DLOPEN
 #endif
-#if defined(FEAT_EVAL) && (defined(UNIX) && (defined(USE_DLOPEN) || defined(HAVE_SHL_LOAD)))
+#if ((defined(USE_DLOPEN) || defined(HAVE_SHL_LOAD)))
 #define FEAT_LIBCALL
 #endif
 
@@ -496,12 +423,9 @@
  * +menu                ":menu" command
  */
 #define FEAT_MENU
-#if defined(FEAT_GUI_W32)
-#define FEAT_TEAROFF
-#endif
 
 /* There are two ways to use XPM. */
-#if (defined(HAVE_XM_XPMP_H) && defined(FEAT_GUI_MOTIF)) || defined(HAVE_X11_XPM_H)
+#if defined(HAVE_X11_XPM_H)
 #define HAVE_XPM 1
 #endif
 
@@ -509,19 +433,8 @@
  * +toolbar             Include code for a toolbar (for the Win32 GUI, GTK
  *                      always has it).  But only if menus are enabled.
  */
-#if defined(FEAT_MENU) && (defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MSWIN) || ((defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA)) && defined(HAVE_XPM)) || defined(FEAT_GUI_PHOTON))
-#define FEAT_TOOLBAR
-#endif
-
 #if defined(FEAT_TOOLBAR) && !defined(FEAT_MENU)
 #define FEAT_MENU
-#endif
-
-/*
- * GUI tabline
- */
-#if defined(FEAT_WINDOWS) && (defined(FEAT_GUI_GTK) || (defined(FEAT_GUI_MOTIF) && defined(HAVE_XM_NOTEBOOK_H)) || defined(FEAT_GUI_MAC) || (defined(FEAT_GUI_MSWIN) && (!defined(_MSC_VER) || _MSC_VER > 1020)))
-#define FEAT_GUI_TABLINE
 #endif
 
 /*
@@ -529,45 +442,21 @@
  *                      or just the ":browse" command modifier
  */
 #define FEAT_BROWSE_CMD
-#if defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC)
-#define FEAT_BROWSE
-#endif
 
 /*
  * On some systems, when we compile with the GUI, we always use it.  On Mac
  * there is no terminal version, and on Windows we can't figure out how to
  * fork one off with :gui.
  */
-#if defined(FEAT_GUI_MSWIN) || (defined(FEAT_GUI_MAC) && !defined(MACOS_X_UNIX))
-#define ALWAYS_USE_GUI
-#endif
 
 /*
  * +dialog_gui          Use GUI dialog.
  * +dialog_con          May use Console dialog.
  *                      When none of these defined there is no dialog support.
  */
-#if ((defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MOTIF)) && defined(HAVE_X11_XPM_H)) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MAC)
 #define FEAT_CON_DIALOG
-#define FEAT_GUI_DIALOG
-#else
-#define FEAT_CON_DIALOG
-#endif
-#if !defined(FEAT_GUI_DIALOG) && (defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_W32))
-/* need a dialog to show error messages when starting from the desktop */
-#define FEAT_GUI_DIALOG
-#endif
-#if defined(FEAT_GUI_DIALOG) && (defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC))
-#define FEAT_GUI_TEXTDIALOG
-#if !defined(ALWAYS_USE_GUI)
-#define FEAT_CON_DIALOG
-#endif
-#endif
 
 /* Mac specific thing: Codewarrior interface. */
-#if defined(FEAT_GUI_MAC)
-#define FEAT_CW_EDITOR
-#endif
 
 /*
  * Preferences:
@@ -581,13 +470,8 @@
  *                      is strongly discouraged: You can lose all your
  *                      changes when the computer crashes while writing the
  *                      file.
- *                      VMS note: It does work on VMS as well, but because of
- *                      version handling it does not have any purpose.
- *                      Overwrite will write to the new version.
  */
-#if (1)
 #define FEAT_WRITEBACKUP
-#endif
 
 /*
  * +xterm_save          The t_ti and t_te entries for the builtin xterm will
@@ -739,35 +623,6 @@
  */
 
 /*
- * +fork                Unix only: fork() support (detected by configure)
- * +system              Use system() instead of fork/exec for starting a
- *                      shell.  Doesn't work for the GUI!
- */
-/* #define USE_SYSTEM */
-
-/*
- * +X11                 Unix only.  Include code for xterm title saving and X
- *                      clipboard.  Only works if HAVE_X11 is also defined.
- */
-#define WANT_X11
-
-/*
- * XSMP - X11 Session Management Protocol
- * It may be preferred to disable this if the GUI supports it (e.g.,
- * GNOME/KDE) and implement save-yourself etc. through that, but it may also
- * be cleaner to have all SM-aware vims do the same thing (libSM does not
- * depend upon X11).
- * If your GUI wants to support SM itself, change this ifdef.
- * I'm assuming that any X11 implementation will cope with this for now.
- */
-#if defined(HAVE_X11) && defined(WANT_X11) && defined(HAVE_X11_SM_SMLIB_H)
-#define USE_XSMP
-#endif
-#if defined(USE_XSMP_INTERACT) && !defined(USE_XSMP)
-#undef USE_XSMP_INTERACT
-#endif
-
-/*
  * +mouse_xterm         Unix only: Include code for xterm mouse handling.
  * +mouse_dec           idem, for Dec mouse handling.
  * +mouse_jsbterm       idem, for Jsbterm mouse handling.
@@ -783,13 +638,11 @@
  * +mouse               Any mouse support (any of the above enabled).
  */
 /* OS/2 and Amiga console have no mouse support */
-#if (1)
 #define FEAT_MOUSE_XTERM
 #undef FEAT_MOUSE_NET
 #undef FEAT_MOUSE_DEC
 #undef FEAT_MOUSE_URXVT
 #undef FEAT_MOUSE_SGR
-#endif
 
 /*
  * Note: Only one of the following may be defined:
@@ -820,7 +673,7 @@
 #if !defined(FEAT_MOUSE_TTY) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_NET) || defined(FEAT_MOUSE_DEC) || defined(DOS_MOUSE) || defined(FEAT_MOUSE_GPM) || defined(FEAT_MOUSE_JSB) || defined(FEAT_MOUSE_PTERM) || defined(FEAT_SYSMOUSE) || defined(FEAT_MOUSE_URXVT) || defined(FEAT_MOUSE_SGR))
 #define FEAT_MOUSE_TTY         /* include non-GUI mouse support */
 #endif
-#if !defined(FEAT_MOUSE) && (defined(FEAT_MOUSE_TTY) || defined(FEAT_GUI))
+#if !defined(FEAT_MOUSE) && defined(FEAT_MOUSE_TTY)
 #define FEAT_MOUSE             /* include generic mouse support */
 #endif
 
@@ -834,32 +687,11 @@
 #define FEAT_CLIPBOARD
 #endif
 
-#if defined(FEAT_GUI)
-#if !defined(FEAT_CLIPBOARD)
-#define FEAT_CLIPBOARD
-#endif
-#endif
-
-#if defined(UNIX) && defined(WANT_X11) && defined(HAVE_X11)
-#define FEAT_XCLIPBOARD
-#if !defined(FEAT_CLIPBOARD)
-#define FEAT_CLIPBOARD
-#endif
-#endif
-
 /*
  * +dnd         Drag'n'drop support.  Always used for the GTK+ GUI.
  */
-#if defined(FEAT_CLIPBOARD) && defined(FEAT_GUI_GTK)
-#define FEAT_DND
-#endif
 
-#if defined(FEAT_GUI_MSWIN)
-#define MSWIN_FIND_REPLACE     /* include code for find/replace dialog */
-#define MSWIN_FR_BUFSIZE 256
-#endif
-
-#if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MOTIF) || defined(MSWIN_FIND_REPLACE)
+#if defined(MSWIN_FIND_REPLACE)
 #define FIND_REPLACE_DIALOG 1
 #endif
 
@@ -867,7 +699,7 @@
  * +clientserver        Remote control via the remote_send() function
  *                      and the --remote argument
  */
-#if defined(FEAT_XCLIPBOARD) && defined(FEAT_EVAL)
+#if defined(FEAT_XCLIPBOARD)
 #define FEAT_CLIENTSERVER
 #endif
 
@@ -885,24 +717,15 @@
  * mouse shape          Adjust the shape of the mouse pointer to the mode.
  */
 /* MS-DOS console and Win32 console can change cursor shape */
-#if defined(FEAT_GUI_W32) || defined(FEAT_GUI_W16) || defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON)
-#define FEAT_MOUSESHAPE
-#endif
 
 /* GUI and some consoles can change the shape of the cursor.  The code is also
  * needed for the 'mouseshape' and 'concealcursor' options. */
-#if defined(FEAT_GUI) || defined(MCH_CURSOR_SHAPE) || defined(FEAT_MOUSESHAPE) || defined(FEAT_CONCEAL) || defined(UNIX)
 #define CURSOR_SHAPE
-#endif
-
-#if defined(FEAT_MZSCHEME) && (defined(FEAT_GUI_W32) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MAC))
-#define MZSCHEME_GUI_THREADS
-#endif
 
 /*
  * +ARP                 Amiga only. Use arp.library, DOS 2.0 is not required.
  */
-#if !defined(NO_ARP) && !defined(__amigaos4__)
+#if !defined(NO_ARP)
 #define FEAT_ARP
 #endif
 
@@ -937,81 +760,25 @@
 /*
  * The Sun Workshop features currently only work with Motif.
  */
-#if !defined(FEAT_GUI_MOTIF) && defined(FEAT_SUN_WORKSHOP)
-#undef FEAT_SUN_WORKSHOP
-#endif
 
 /*
  * The Netbeans feature requires +listcmds and +eval.
  */
-#if (!defined(FEAT_LISTCMDS) || !defined(FEAT_EVAL)) && defined(FEAT_NETBEANS_INTG)
-#undef FEAT_NETBEANS_INTG
-#endif
 
 /*
  * +signs               Allow signs to be displayed to the left of text lines.
  *                      Adds the ":sign" command.
  */
-#if defined(FEAT_SUN_WORKSHOP) || defined(FEAT_NETBEANS_INTG)
-#define FEAT_SIGNS
-#if ((defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA)) && defined(HAVE_X11_XPM_H)) || defined(FEAT_GUI_GTK) || (0)
-#define FEAT_SIGN_ICONS
-#endif
-#endif
 
 /*
  * +balloon_eval        Allow balloon expression evaluation. Used with a
  *                      debugger and for tooltips.
  *                      Only for GUIs where it was implemented.
  */
-#if (defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_W32)) && ( ((defined(FEAT_TOOLBAR) || defined(FEAT_GUI_TABLINE)) && !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_W32)) || defined(FEAT_SUN_WORKSHOP) || defined(FEAT_NETBEANS_INTG) || defined(FEAT_EVAL))
-#define FEAT_BEVAL
-#if !defined(FEAT_XFONTSET) && !defined(FEAT_GUI_GTK) && !defined(FEAT_GUI_W32)
-#define FEAT_XFONTSET
-#endif
-#endif
-
-#if defined(FEAT_BEVAL) && (defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA))
-#define FEAT_BEVAL_TIP         /* balloon eval used for toolbar tooltip */
-#endif
-
-/* both Motif and Athena are X11 and share some code */
-#if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_ATHENA)
-#define FEAT_GUI_X11
-#endif
-
-#if defined(FEAT_SUN_WORKSHOP) || defined(FEAT_NETBEANS_INTG)
-/*
- * The following features are (currently) only used by Sun Visual WorkShop 6
- * and NetBeans. These features could be used with other integrations with
- * debuggers so I've used separate feature defines.
- */
-#if !defined(FEAT_MENU)
-#define FEAT_MENU
-#endif
-#endif
-
-#if defined(FEAT_SUN_WORKSHOP)
-/*
- *                      Use an alternative method of X input for a secondary
- *                      command input.
- */
-#define ALT_X_INPUT
-
-/*
- * +footer              Motif only: Add a message area at the bottom of the
- *                      main window area.
- */
-#define FEAT_FOOTER
-
-#endif
 
 /*
  * +autochdir           'autochdir' option.
  */
-#if defined(FEAT_SUN_WORKSHOP) || defined(FEAT_NETBEANS_INTG)
-#define FEAT_AUTOCHDIR
-#endif
 
 /*
  * +persistent_undo     'undofile', 'undodir' options, :wundo and :rundo, and
@@ -1022,6 +789,4 @@
 /*
  * +filterpipe
  */
-#if (defined(UNIX) && !defined(USE_SYSTEM)) || (0)
 #define FEAT_FILTERPIPE
-#endif

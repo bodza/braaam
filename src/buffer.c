@@ -18,20 +18,14 @@
 
 #include "vim.h"
 
-#if defined(FEAT_CMDL_COMPL) || defined(FEAT_LISTCMDS) || defined(FEAT_EVAL) || defined(FEAT_PERL)
 static char_u   *buflist_match __ARGS((regmatch_T *rmp, buf_T *buf, int ignore_case));
 #define HAVE_BUFLIST_MATCH
 static char_u   *fname_match __ARGS((regmatch_T *rmp, char_u *name, int ignore_case));
-#endif
 static void     buflist_setfpos __ARGS((buf_T *buf, win_T *win, linenr_T lnum, colnr_T col, int copy_options));
 static wininfo_T *find_wininfo __ARGS((buf_T *buf, int skip_diff_buffer));
-#if defined(UNIX)
 static buf_T    *buflist_findname_stat __ARGS((char_u *ffname, struct stat *st));
 static int      otherfile_buf __ARGS((buf_T *buf, char_u *ffname, struct stat *stp));
 static int      buf_same_ino __ARGS((buf_T *buf, struct stat *stp));
-#else
-static int      otherfile_buf __ARGS((buf_T *buf, char_u *ffname));
-#endif
 #if defined(FEAT_TITLE)
 static int      ti_change __ARGS((char_u *str, char_u **last));
 #endif
@@ -40,11 +34,7 @@ static void     free_buffer __ARGS((buf_T *));
 static void     free_buffer_stuff __ARGS((buf_T *buf, int free_options));
 static void     clear_wininfo __ARGS((buf_T *buf));
 
-#if defined(UNIX)
 #define dev_T dev_t
-#else
-#define dev_T unsigned
-#endif
 
 #if defined(FEAT_SIGNS)
 static void insert_sign __ARGS((buf_T *buf, signlist_T *prev, signlist_T *next, int id, linenr_T lnum, int typenr));
@@ -125,22 +115,11 @@ open_buffer(read_stdin, eap, flags)
     curwin->w_valid = 0;
 
     if (curbuf->b_ffname != NULL
-#if defined(FEAT_NETBEANS_INTG)
-            && netbeansReadFile
-#endif
        )
     {
-#if defined(FEAT_NETBEANS_INTG)
-        int oldFire = netbeansFireChanges;
-
-        netbeansFireChanges = 0;
-#endif
         retval = readfile(curbuf->b_ffname, curbuf->b_fname,
                   (linenr_T)0, (linenr_T)0, (linenr_T)MAXLNUM, eap,
                   flags | READ_NEW);
-#if defined(FEAT_NETBEANS_INTG)
-        netbeansFireChanges = oldFire;
-#endif
         /* Help buffer is filtered. */
         if (curbuf->b_help)
             fix_help_buffer();
@@ -190,12 +169,7 @@ open_buffer(read_stdin, eap, flags)
             else if (retval != FAIL)
                 unchanged(curbuf, FALSE);
 #if defined(FEAT_AUTOCMD)
-#if defined(FEAT_EVAL)
-            apply_autocmds_retval(EVENT_STDINREADPOST, NULL, NULL, FALSE,
-                                                        curbuf, &retval);
-#else
-            apply_autocmds(EVENT_STDINREADPOST, NULL, NULL, FALSE, curbuf);
-#endif
+            apply_autocmds_retval(EVENT_STDINREADPOST, NULL, NULL, FALSE, curbuf, &retval);
 #endif
         }
     }
@@ -220,9 +194,7 @@ open_buffer(read_stdin, eap, flags)
     if ((got_int && vim_strchr(p_cpo, CPO_INTMOD) != NULL)
 #if defined(FEAT_AUTOCMD)
                 || modified_was_set     /* ":set modified" used in autocmd */
-#if defined(FEAT_EVAL)
                 || (aborting() && vim_strchr(p_cpo, CPO_INTMOD) != NULL)
-#endif
 #endif
        )
         changed();
@@ -231,11 +203,7 @@ open_buffer(read_stdin, eap, flags)
     save_file_ff(curbuf);               /* keep this fileformat */
 
     /* require "!" to overwrite the file, because it wasn't read completely */
-#if defined(FEAT_EVAL)
     if (aborting())
-#else
-    if (got_int)
-#endif
         curbuf->b_flags |= BF_READERR;
 
 #if defined(FEAT_FOLDING)
@@ -253,11 +221,7 @@ open_buffer(read_stdin, eap, flags)
         curwin->w_topfill = 0;
 #endif
     }
-#if defined(FEAT_EVAL)
     apply_autocmds_retval(EVENT_BUFENTER, NULL, NULL, FALSE, curbuf, &retval);
-#else
-    apply_autocmds(EVENT_BUFENTER, NULL, NULL, FALSE, curbuf);
-#endif
 #endif
 
     if (retval != FAIL)
@@ -278,12 +242,7 @@ open_buffer(read_stdin, eap, flags)
             curbuf->b_flags &= ~(BF_CHECK_RO | BF_NEVERLOADED);
 
 #if defined(FEAT_AUTOCMD)
-#if defined(FEAT_EVAL)
-            apply_autocmds_retval(EVENT_BUFWINENTER, NULL, NULL, FALSE, curbuf,
-                                                                    &retval);
-#else
-            apply_autocmds(EVENT_BUFWINENTER, NULL, NULL, FALSE, curbuf);
-#endif
+            apply_autocmds_retval(EVENT_BUFWINENTER, NULL, NULL, FALSE, curbuf, &retval);
 
             /* restore curwin/curbuf and a few other things */
             aucmd_restbuf(&aco);
@@ -413,10 +372,8 @@ aucmd_abort:
                 /* Autocommands made this the only window. */
                 goto aucmd_abort;
         }
-#if defined(FEAT_EVAL)
         if (aborting())     /* autocmds may abort script processing */
             return;
-#endif
     }
     nwindows = buf->b_nwindows;
 #endif
@@ -459,10 +416,8 @@ aucmd_abort:
     /* Autocommands may have deleted the buffer. */
     if (!buf_valid(buf))
         return;
-#if defined(FEAT_EVAL)
     if (aborting())         /* autocmds may abort script processing */
         return;
-#endif
 
     /* Autocommands may have opened or closed windows for this buffer.
      * Decrement the count for the close we do here. */
@@ -488,11 +443,6 @@ aucmd_abort:
      */
     if (wipe_buf)
     {
-#if defined(FEAT_SUN_WORKSHOP)
-        if (usingSunWorkShop)
-            workshop_file_closed_lineno((char *)buf->b_ffname,
-                        (int)buf->b_last_cursor.lnum);
-#endif
         vim_free(buf->b_ffname);
         vim_free(buf->b_sfname);
         if (buf->b_prev == NULL)
@@ -539,15 +489,10 @@ buf_clear_file(buf)
 #endif
     buf->b_p_eol = TRUE;
     buf->b_start_eol = TRUE;
-#if defined(FEAT_MBYTE)
     buf->b_p_bomb = FALSE;
     buf->b_start_bomb = FALSE;
-#endif
     buf->b_ml.ml_mfp = NULL;
     buf->b_ml.ml_flags = ML_EMPTY;              /* empty buffer */
-#if defined(FEAT_NETBEANS_INTG)
-    netbeans_deleted_all_lines(buf);
-#endif
 }
 
 /*
@@ -583,10 +528,8 @@ buf_freeall(buf, flags)
             return;
     }
     buf->b_closing = FALSE;
-#if defined(FEAT_EVAL)
     if (aborting())         /* autocmds may abort script processing */
         return;
-#endif
 
     /*
      * It's possible that autocommands change curbuf to the one being deleted.
@@ -623,9 +566,6 @@ buf_freeall(buf, flags)
 #endif
 #endif
 
-#if defined(FEAT_TCL)
-    tcl_buffer_free(buf);
-#endif
     ml_close(buf, TRUE);            /* close and delete the memline/memfile */
     buf->b_ml.ml_line_count = 0;    /* no lines in buffer */
     if ((flags & BFA_KEEP_UNDO) == 0)
@@ -648,27 +588,7 @@ free_buffer(buf)
     buf_T       *buf;
 {
     free_buffer_stuff(buf, TRUE);
-#if defined(FEAT_EVAL)
     unref_var_dict(buf->b_vars);
-#endif
-#if defined(FEAT_LUA)
-    lua_buffer_free(buf);
-#endif
-#if defined(FEAT_MZSCHEME)
-    mzscheme_buffer_free(buf);
-#endif
-#if defined(FEAT_PERL)
-    perl_buf_free(buf);
-#endif
-#if defined(FEAT_PYTHON)
-    python_buffer_free(buf);
-#endif
-#if defined(FEAT_PYTHON3)
-    python3_buffer_free(buf);
-#endif
-#if defined(FEAT_RUBY)
-    ruby_buffer_free(buf);
-#endif
 #if defined(FEAT_AUTOCMD)
     aubuflocal_remove(buf);
     if (autocmd_busy)
@@ -699,27 +619,20 @@ free_buffer_stuff(buf, free_options)
         ga_clear(&buf->b_s.b_langp);
 #endif
     }
-#if defined(FEAT_EVAL)
     vars_clear(&buf->b_vars->dv_hashtab); /* free all internal variables */
     hash_init(&buf->b_vars->dv_hashtab);
-#endif
 #if defined(FEAT_USR_CMDS)
     uc_clear(&buf->b_ucmds);            /* clear local user commands */
 #endif
 #if defined(FEAT_SIGNS)
     buf_delete_signs(buf);              /* delete any signs */
 #endif
-#if defined(FEAT_NETBEANS_INTG)
-    netbeans_file_killed(buf);
-#endif
 #if defined(FEAT_LOCALMAP)
     map_clear_int(buf, MAP_ALL_MODES, TRUE, FALSE);  /* clear local mappings */
     map_clear_int(buf, MAP_ALL_MODES, TRUE, TRUE);   /* clear local abbrevs */
 #endif
-#if defined(FEAT_MBYTE)
     vim_free(buf->b_start_fenc);
     buf->b_start_fenc = NULL;
-#endif
 }
 
 /*
@@ -767,7 +680,7 @@ goto_buffer(eap, start, dir, count)
 #if defined(FEAT_WINDOWS) && defined(HAS_SWAP_EXISTS_ACTION)
     if (swap_exists_action == SEA_QUIT && *eap->cmd == 's')
     {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         cleanup_T   cs;
 
         /* Reset the error/interrupt/exception state here so that
@@ -780,7 +693,7 @@ goto_buffer(eap, start, dir, count)
         swap_exists_action = SEA_NONE;
         swap_exists_did_quit = TRUE;
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* Restore the error/interrupt/exception state if not discarded by a
          * new aborting error, interrupt, or uncaught exception. */
         leave_cleanup(&cs);
@@ -801,7 +714,7 @@ goto_buffer(eap, start, dir, count)
 handle_swap_exists(old_curbuf)
     buf_T       *old_curbuf;
 {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
     cleanup_T   cs;
 #endif
 #if defined(FEAT_SYN_HL)
@@ -810,7 +723,7 @@ handle_swap_exists(old_curbuf)
 
     if (swap_exists_action == SEA_QUIT)
     {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* Reset the error/interrupt/exception state here so that
          * aborting() returns FALSE when closing a buffer. */
         enter_cleanup(&cs);
@@ -834,7 +747,7 @@ handle_swap_exists(old_curbuf)
         }
         /* If "old_curbuf" is NULL we are in big trouble here... */
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* Restore the error/interrupt/exception state if not discarded by a
          * new aborting error, interrupt, or uncaught exception. */
         leave_cleanup(&cs);
@@ -842,7 +755,7 @@ handle_swap_exists(old_curbuf)
     }
     else if (swap_exists_action == SEA_RECOVER)
     {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* Reset the error/interrupt/exception state here so that
          * aborting() returns FALSE when closing a buffer. */
         enter_cleanup(&cs);
@@ -855,7 +768,7 @@ handle_swap_exists(old_curbuf)
         cmdline_row = msg_row;
         do_modelines(0);
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* Restore the error/interrupt/exception state if not discarded by a
          * new aborting error, interrupt, or uncaught exception. */
         leave_cleanup(&cs);
@@ -993,7 +906,7 @@ do_bufdel(command, arg, addr_count, start_bnr, end_bnr, forceit)
 }
 #endif
 
-#if defined(FEAT_LISTCMDS) || defined(FEAT_PYTHON) || defined(FEAT_PYTHON3)
+#if defined(FEAT_LISTCMDS)
 
 static int      empty_curbuf __ARGS((int close_others, int forceit, int action));
 
@@ -1147,10 +1060,6 @@ do_buffer(action, start, dir, count, forceit)
             EMSG(_("E88: Cannot go before first buffer"));
         return FAIL;
     }
-
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
 
 #if defined(FEAT_LISTCMDS)
     /*
@@ -1397,7 +1306,7 @@ do_buffer(action, start, dir, count, forceit)
     }
 #endif
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
     if (aborting())         /* autocmds may abort script processing */
         return FAIL;
 #endif
@@ -1440,11 +1349,7 @@ set_curbuf(buf, action)
 
 #if defined(FEAT_AUTOCMD)
     apply_autocmds(EVENT_BUFLEAVE, NULL, NULL, FALSE, curbuf);
-#if defined(FEAT_EVAL)
     if (buf_valid(prevbuf) && !aborting())
-#else
-    if (buf_valid(prevbuf))
-#endif
 #endif
     {
 #if defined(FEAT_SYN_HL)
@@ -1455,7 +1360,7 @@ set_curbuf(buf, action)
         if (unload)
             close_windows(prevbuf, FALSE);
 #endif
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         if (buf_valid(prevbuf) && !aborting())
 #else
         if (buf_valid(prevbuf))
@@ -1482,9 +1387,7 @@ set_curbuf(buf, action)
      * it did ":bunload") or aborted the script processing!
      * If curwin->w_buffer is null, enter_buffer() will make it valid again */
     if ((buf_valid(buf) && buf != curbuf
-#if defined(FEAT_EVAL)
             && !aborting()
-#endif
 #if defined(FEAT_WINDOWS)
          ) || curwin->w_buffer == NULL
 #endif
@@ -1590,11 +1493,6 @@ enter_buffer(buf)
 #endif
         scroll_cursor_halfway(FALSE);   /* redisplay at correct position */
 
-#if defined(FEAT_NETBEANS_INTG)
-    /* Send fileOpened event because we've changed buffers. */
-    netbeans_file_activated(curbuf);
-#endif
-
     /* Change directories when the 'acd' option is set. */
     DO_AUTOCHDIR
 
@@ -1647,27 +1545,19 @@ buflist_new(ffname, sfname, lnum, flags)
     int         flags;          /* BLN_ defines */
 {
     buf_T       *buf;
-#if defined(UNIX)
     struct stat st;
-#endif
 
     fname_expand(curbuf, &ffname, &sfname);     /* will allocate ffname */
 
     /*
      * If file name already exists in the list, update the entry.
      */
-#if defined(UNIX)
     /* On Unix we can use inode numbers when the file exists.  Works better
      * for hard links. */
     if (sfname == NULL || mch_stat((char *)sfname, &st) < 0)
         st.st_dev = (dev_T)-1;
-#endif
     if (ffname != NULL && !(flags & BLN_DUMMY) && (buf =
-#if defined(UNIX)
                 buflist_findname_stat(ffname, &st)
-#else
-                buflist_findname(ffname)
-#endif
                 ) != NULL)
     {
         vim_free(ffname);
@@ -1714,10 +1604,8 @@ buflist_new(ffname, sfname, lnum, flags)
             apply_autocmds(EVENT_BUFDELETE, NULL, NULL, FALSE, curbuf);
         if (buf == curbuf)
             apply_autocmds(EVENT_BUFWIPEOUT, NULL, NULL, FALSE, curbuf);
-#if defined(FEAT_EVAL)
         if (aborting())         /* autocmds may abort script processing */
             return NULL;
-#endif
 #endif
 #if defined(FEAT_QUICKFIX)
 #if defined(FEAT_AUTOCMD)
@@ -1738,7 +1626,6 @@ buflist_new(ffname, sfname, lnum, flags)
             vim_free(ffname);
             return NULL;
         }
-#if defined(FEAT_EVAL)
         /* init b: variables */
         buf->b_vars = dict_alloc();
         if (buf->b_vars == NULL)
@@ -1748,7 +1635,6 @@ buflist_new(ffname, sfname, lnum, flags)
             return NULL;
         }
         init_var_dict(buf->b_vars, &buf->b_bufvar, VAR_SCOPE);
-#endif
     }
 
     if (ffname != NULL)
@@ -1778,7 +1664,7 @@ buflist_new(ffname, sfname, lnum, flags)
         buf_freeall(buf, 0);
         if (buf != curbuf)       /* autocommands deleted the buffer! */
             return NULL;
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         if (aborting())         /* autocmds may abort script processing */
             return NULL;
 #endif
@@ -1838,7 +1724,6 @@ buflist_new(ffname, sfname, lnum, flags)
 #endif
 
     buf->b_fname = buf->b_sfname;
-#if defined(UNIX)
     if (st.st_dev == (dev_T)-1)
         buf->b_dev_valid = FALSE;
     else
@@ -1847,7 +1732,6 @@ buflist_new(ffname, sfname, lnum, flags)
         buf->b_dev = st.st_dev;
         buf->b_ino = st.st_ino;
     }
-#endif
     buf->b_u_synced = TRUE;
     buf->b_flags = BF_CHECK_RO | BF_NEVERLOADED;
     if (flags & BLN_DUMMY)
@@ -1871,10 +1755,8 @@ buflist_new(ffname, sfname, lnum, flags)
             if (!buf_valid(buf))
                 return NULL;
         }
-#if defined(FEAT_EVAL)
         if (aborting())         /* autocmds may abort script processing */
             return NULL;
-#endif
     }
 #endif
 
@@ -1893,9 +1775,7 @@ free_buf_options(buf, free_p_ff)
 {
     if (free_p_ff)
     {
-#if defined(FEAT_MBYTE)
         clear_string_option(&buf->b_p_fenc);
-#endif
         clear_string_option(&buf->b_p_ff);
 #if defined(FEAT_QUICKFIX)
         clear_string_option(&buf->b_p_bh);
@@ -1905,23 +1785,16 @@ free_buf_options(buf, free_p_ff)
 #if defined(FEAT_FIND_ID)
     clear_string_option(&buf->b_p_def);
     clear_string_option(&buf->b_p_inc);
-#if defined(FEAT_EVAL)
     clear_string_option(&buf->b_p_inex);
 #endif
-#endif
-#if defined(FEAT_CINDENT) && defined(FEAT_EVAL)
+#if defined(FEAT_CINDENT)
     clear_string_option(&buf->b_p_inde);
     clear_string_option(&buf->b_p_indk);
-#endif
-#if defined(FEAT_BEVAL) && defined(FEAT_EVAL)
-    clear_string_option(&buf->b_p_bexpr);
 #endif
 #if defined(FEAT_CRYPT)
     clear_string_option(&buf->b_p_cm);
 #endif
-#if defined(FEAT_EVAL)
     clear_string_option(&buf->b_p_fex);
-#endif
 #if defined(FEAT_CRYPT)
     clear_string_option(&buf->b_p_key);
 #endif
@@ -2124,7 +1997,6 @@ buflist_getfpos()
     }
 }
 
-#if defined(FEAT_QUICKFIX) || defined(FEAT_EVAL)
 /*
  * Find file in buffer list by name (it has to be for the current window).
  * Returns NULL if not found.
@@ -2138,11 +2010,7 @@ buflist_findname_exp(fname)
 
     /* First make the name into a full path name */
     ffname = FullName_save(fname,
-#if defined(UNIX)
             TRUE            /* force expansion, get rid of symbolic links */
-#else
-            FALSE
-#endif
             );
     if (ffname != NULL)
     {
@@ -2151,7 +2019,6 @@ buflist_findname_exp(fname)
     }
     return buf;
 }
-#endif
 
 /*
  * Find file in buffer list by name (it has to be for the current window).
@@ -2163,7 +2030,6 @@ buflist_findname_exp(fname)
 buflist_findname(ffname)
     char_u      *ffname;
 {
-#if defined(UNIX)
     struct stat st;
 
     if (mch_stat((char *)ffname, &st) < 0)
@@ -2181,20 +2047,16 @@ buflist_findname_stat(ffname, stp)
     char_u      *ffname;
     struct stat *stp;
 {
-#endif
     buf_T       *buf;
 
     for (buf = firstbuf; buf != NULL; buf = buf->b_next)
         if ((buf->b_flags & BF_DUMMY) == 0 && !otherfile_buf(buf, ffname
-#if defined(UNIX)
                     , stp
-#endif
                     ))
             return buf;
     return NULL;
 }
 
-#if defined(FEAT_LISTCMDS) || defined(FEAT_EVAL) || defined(FEAT_PERL)
 /*
  * Find file in buffer list by a regexp pattern.
  * Return fnum of the found buffer.
@@ -2321,7 +2183,6 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode, curtab_only)
         EMSG2(_("E94: No matching buffer for %s"), pattern);
     return match;
 }
-#endif
 
 #if defined(FEAT_CMDL_COMPL)
 
@@ -2816,9 +2677,7 @@ setfname(buf, ffname, sfname, message)
     int         message;        /* give message when buffer already exists */
 {
     buf_T       *obuf = NULL;
-#if defined(UNIX)
     struct stat st;
-#endif
 
     if (ffname == NULL || *ffname == NUL)
     {
@@ -2827,9 +2686,7 @@ setfname(buf, ffname, sfname, message)
         vim_free(buf->b_sfname);
         buf->b_ffname = NULL;
         buf->b_sfname = NULL;
-#if defined(UNIX)
         st.st_dev = (dev_T)-1;
-#endif
     }
     else
     {
@@ -2842,16 +2699,10 @@ setfname(buf, ffname, sfname, message)
          * - if the buffer is loaded, fail
          * - if the buffer is not loaded, delete it from the list
          */
-#if defined(UNIX)
         if (mch_stat((char *)ffname, &st) < 0)
             st.st_dev = (dev_T)-1;
-#endif
         if (!(buf->b_flags & BF_DUMMY))
-#if defined(UNIX)
             obuf = buflist_findname_stat(ffname, &st);
-#else
-            obuf = buflist_findname(ffname);
-#endif
         if (obuf != NULL && obuf != buf)
         {
             if (obuf->b_ml.ml_mfp != NULL)      /* it's loaded, fail */
@@ -2883,7 +2734,6 @@ setfname(buf, ffname, sfname, message)
         buf->b_sfname = sfname;
     }
     buf->b_fname = buf->b_sfname;
-#if defined(UNIX)
     if (st.st_dev == (dev_T)-1)
         buf->b_dev_valid = FALSE;
     else
@@ -2892,7 +2742,6 @@ setfname(buf, ffname, sfname, message)
         buf->b_dev = st.st_dev;
         buf->b_ino = st.st_ino;
     }
-#endif
 
 #if !defined(SHORT_FNAME)
     buf->b_shortname = FALSE;
@@ -3052,30 +2901,23 @@ otherfile(ffname)
     char_u      *ffname;
 {
     return otherfile_buf(curbuf, ffname
-#if defined(UNIX)
             , NULL
-#endif
             );
 }
 
     static int
 otherfile_buf(buf, ffname
-#if defined(UNIX)
         , stp
-#endif
         )
     buf_T       *buf;
     char_u      *ffname;
-#if defined(UNIX)
     struct stat *stp;
-#endif
 {
     /* no name is different */
     if (ffname == NULL || *ffname == NUL || buf->b_ffname == NULL)
         return TRUE;
     if (fnamecmp(ffname, buf->b_ffname) == 0)
         return FALSE;
-#if defined(UNIX)
     {
         struct stat     st;
 
@@ -3102,11 +2944,9 @@ otherfile_buf(buf, ffname
                 return FALSE;
         }
     }
-#endif
     return TRUE;
 }
 
-#if defined(UNIX)
 /*
  * Set inode and device number for a buffer.
  * Must always be called when b_fname is changed!.
@@ -3139,7 +2979,6 @@ buf_same_ino(buf, stp)
             && stp->st_dev == buf->b_dev
             && stp->st_ino == buf->b_ino);
 }
-#endif
 
 /*
  * Print info about the current buffer.
@@ -3326,9 +3165,7 @@ maketitle()
                 int     use_sandbox = FALSE;
                 int     save_called_emsg = called_emsg;
 
-#if defined(FEAT_EVAL)
                 use_sandbox = was_set_insecurely((char_u *)"titlestring", 0);
-#endif
                 called_emsg = FALSE;
                 build_stl_str_hl(curwin, t_str, sizeof(buf),
                                               p_titlestring, use_sandbox,
@@ -3443,9 +3280,7 @@ maketitle()
                 int     use_sandbox = FALSE;
                 int     save_called_emsg = called_emsg;
 
-#if defined(FEAT_EVAL)
                 use_sandbox = was_set_insecurely((char_u *)"iconstring", 0);
-#endif
                 called_emsg = FALSE;
                 build_stl_str_hl(curwin, i_str, sizeof(buf),
                                                     p_iconstring, use_sandbox,
@@ -3471,10 +3306,8 @@ maketitle()
             if (len > 100)
             {
                 len -= 100;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     len += (*mb_tail_off)(i_name, i_name + len) + 1;
-#endif
                 i_name += len;
             }
             STRCPY(i_str, i_name);
@@ -3563,10 +3396,8 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
     char_u      *s;
     char_u      *t;
     int         byteval;
-#if defined(FEAT_EVAL)
     win_T       *o_curwin;
     buf_T       *o_curbuf;
-#endif
     int         empty_line;
     colnr_T     virtcol;
     long        l;
@@ -3608,7 +3439,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
     char_u      *usefmt = fmt;
     struct stl_hlrec *sp;
 
-#if defined(FEAT_EVAL)
     /*
      * When the format starts with "%!" then evaluate it as an expression and
      * use the result as the actual format string.
@@ -3619,15 +3449,12 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
         if (usefmt == NULL)
             usefmt = fmt;
     }
-#endif
 
     if (fillchar == 0)
         fillchar = ' ';
-#if defined(FEAT_MBYTE)
     /* Can't handle a multi-byte fill character yet. */
     else if (mb_char2len(fillchar) > 1)
         fillchar = '-';
-#endif
 
     /* Get line & check if empty (cursorpos will show "0-1").  Note that
      * p will become invalid when getting another buffer line. */
@@ -3639,11 +3466,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
     if (wp->w_cursor.col > (colnr_T)STRLEN(p))
         byteval = 0;
     else
-#if defined(FEAT_MBYTE)
         byteval = (*mb_ptr2char)(p + wp->w_cursor.col);
-#else
-        byteval = p[wp->w_cursor.col];
-#endif
 
     groupdepth = 0;
     p = out;
@@ -3731,7 +3554,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
             if (l > item[groupitem[groupdepth]].maxwid)
             {
                 /* truncate, remove n bytes of text at the start */
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     /* Find the first character that should be included. */
@@ -3743,17 +3565,14 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
                     }
                 }
                 else
-#endif
                     n = (long)(p - t) - item[groupitem[groupdepth]].maxwid + 1;
 
                 *t = '<';
                 mch_memmove(t + 1, t + n, (size_t)(p - (t + n)));
                 p = p - n + 1;
-#if defined(FEAT_MBYTE)
                 /* Fill up space left over by half a double-wide char. */
                 while (++l < item[groupitem[groupdepth]].minwid)
                     *p++ = fillchar;
-#endif
 
                 /* correct the start of the items for the truncation */
                 for (l = groupitem[groupdepth] + 1; l < curitem; l++)
@@ -3912,7 +3731,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
             *p = 0;
             p = t;
 
-#if defined(FEAT_EVAL)
             vim_snprintf((char *)tmp, sizeof(tmp), "%d", curbuf->b_fnum);
             set_internal_string_var((char_u *)"actual_curbuf", tmp);
 
@@ -3937,7 +3755,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
                     itemisflag = FALSE;
                 }
             }
-#endif
             break;
 
         case STL_LINE:
@@ -4136,14 +3953,12 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
             if (l > maxwid)
             {
                 while (l >= maxwid)
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                     {
                         l -= ptr2cells(t);
                         t += (*mb_ptr2len)(t);
                     }
                     else
-#endif
                         l -= byte2cells(*t++);
                 if (p + 1 >= out + outlen)
                     break;
@@ -4231,10 +4046,8 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
     *p = NUL;
     itemcnt = curitem;
 
-#if defined(FEAT_EVAL)
     if (usefmt != fmt)
         vim_free(usefmt);
-#endif
 
     width = vim_strsize(out);
     if (maxwidth > 0 && width > maxwidth)
@@ -4263,7 +4076,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
         if (width - vim_strsize(s) >= maxwidth)
         {
             /* Truncation mark is beyond max length */
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 s = out;
@@ -4280,7 +4092,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
                     *s++ = fillchar;
             }
             else
-#endif
                 s = out + maxwidth - 1;
             for (l = 0; l < itemcnt; l++)
                 if (item[l].start > s)
@@ -4291,7 +4102,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
         }
         else
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 n = 0;
@@ -4302,7 +4112,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar,
                 }
             }
             else
-#endif
                 n = width - maxwidth + 1;
             p = s + n;
             STRMOVE(s + 1, p);
@@ -4464,35 +4273,7 @@ fix_fname(fname)
      * Similarly "c:/src//file" is equal to "c:/src/file".
      * For MS-Windows also expand names like "longna~1" to "longname".
      */
-#if defined(UNIX)
     return FullName_save(fname, TRUE);
-#else
-    if (!vim_isAbsName(fname)
-            || strstr((char *)fname, "..") != NULL
-            || strstr((char *)fname, "//") != NULL
-#if defined(BACKSLASH_IN_FILENAME)
-            || strstr((char *)fname, "\\\\") != NULL
-#endif
-#if defined(DJGPP)
-            || vim_strchr(fname, '~') != NULL
-#endif
-            )
-        return FullName_save(fname, FALSE);
-
-    fname = vim_strsave(fname);
-
-#if defined(USE_FNAME_CASE)
-#if defined(USE_LONG_FNAME)
-    if (USE_LONG_FNAME)
-#endif
-    {
-        if (fname != NULL)
-            fname_case(fname, 0);       /* set correct case for file name */
-    }
-#endif
-
-    return fname;
-#endif
 }
 
 /*
@@ -4596,10 +4377,6 @@ do_arg_all(count, forceit, keep_tabs)
 
     old_curwin = curwin;
     old_curtab = curtab;
-
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
 
     /*
      * Try closing all windows that are not in the argument list.
@@ -4873,10 +4650,6 @@ ex_buffer_all(eap)
 
     setpcmark();
 
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
-
     /*
      * Close superfluous windows (two windows for the same buffer).
      * Also close windows that are not full-width.
@@ -4995,7 +4768,7 @@ ex_buffer_all(eap)
 #if defined(HAS_SWAP_EXISTS_ACTION)
             if (swap_exists_action == SEA_QUIT)
             {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
                 cleanup_T   cs;
 
                 /* Reset the error/interrupt/exception state here so that
@@ -5009,7 +4782,7 @@ ex_buffer_all(eap)
                 swap_exists_action = SEA_NONE;
                 swap_exists_did_quit = TRUE;
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
                 /* Restore the error/interrupt/exception state if not
                  * discarded by a new aborting error, interrupt, or uncaught
                  * exception. */
@@ -5027,11 +4800,9 @@ ex_buffer_all(eap)
             (void)vgetc();      /* only break the file loading, not the rest */
             break;
         }
-#if defined(FEAT_EVAL)
         /* Autocommands deleted the buffer or aborted script processing!!! */
         if (aborting())
             break;
-#endif
 #if defined(FEAT_WINDOWS)
         /* When ":tab" was used open a new tab for a new window repeatedly. */
         if (had_tab > 0 && tabpage_index(NULL) <= p_tpm)
@@ -5139,9 +4910,7 @@ chk_modeline(lnum, flags)
     int         retval = OK;
     char_u      *save_sourcing_name;
     linenr_T    save_sourcing_lnum;
-#if defined(FEAT_EVAL)
     scid_T      save_SID;
-#endif
 
     prev = -1;
     for (s = ml_get(lnum); *s != NUL; ++s)
@@ -5224,14 +4993,10 @@ chk_modeline(lnum, flags)
 
             if (*s != NUL)              /* skip over an empty "::" */
             {
-#if defined(FEAT_EVAL)
                 save_SID = current_SID;
                 current_SID = SID_MODELINE;
-#endif
                 retval = do_set(s, OPT_MODELINE | OPT_LOCAL | flags);
-#if defined(FEAT_EVAL)
                 current_SID = save_SID;
-#endif
                 if (retval == FAIL)             /* stop if error found */
                     break;
             }
@@ -5395,7 +5160,7 @@ buf_spname(buf)
     return NULL;
 }
 
-#if (defined(FEAT_QUICKFIX) && defined(FEAT_WINDOWS)) || defined(FEAT_PYTHON) || defined(FEAT_PYTHON3)
+#if (defined(FEAT_QUICKFIX) && defined(FEAT_WINDOWS))
 /*
  * Find a window for buffer "buf".
  * If found OK is returned and "wp" and "tp" are set to the window and tabpage.
@@ -5438,11 +5203,6 @@ insert_sign(buf, prev, next, id, lnum, typenr)
         newsign->lnum = lnum;
         newsign->typenr = typenr;
         newsign->next = next;
-#if defined(FEAT_NETBEANS_INTG)
-        newsign->prev = prev;
-        if (next != NULL)
-            next->prev = newsign;
-#endif
 
         if (prev == NULL)
         {
@@ -5456,10 +5216,6 @@ insert_sign(buf, prev, next, id, lnum, typenr)
 
             /* first sign in signlist */
             buf->b_signlist = newsign;
-#if defined(FEAT_NETBEANS_INTG)
-            if (netbeans_active())
-                buf->b_has_sign_column = TRUE;
-#endif
         }
         else
             prev->next = newsign;
@@ -5487,38 +5243,13 @@ buf_addsign(buf, id, lnum, typenr)
             sign->typenr = typenr;
             return;
         }
-        else if (
-#if !defined(FEAT_NETBEANS_INTG) /* keep signs sorted by lnum */
-                   id < 0 &&
-#endif
-                             lnum < sign->lnum)
+        else if (id < 0 && lnum < sign->lnum) /* keep signs sorted by lnum */
         {
-#if defined(FEAT_NETBEANS_INTG) /* insert new sign at head of list for this lnum */
-            /* XXX - GRP: Is this because of sign slide problem? Or is it
-             * really needed? Or is it because we allow multiple signs per
-             * line? If so, should I add that feature to FEAT_SIGNS?
-             */
-            while (prev != NULL && prev->lnum == lnum)
-                prev = prev->prev;
-            if (prev == NULL)
-                sign = buf->b_signlist;
-            else
-                sign = prev->next;
-#endif
             insert_sign(buf, prev, sign, id, lnum, typenr);
             return;
         }
         prev = sign;
     }
-#if defined(FEAT_NETBEANS_INTG) /* insert new sign at head of list for this lnum */
-    /* XXX - GRP: See previous comment */
-    while (prev != NULL && prev->lnum == lnum)
-        prev = prev->prev;
-    if (prev == NULL)
-        sign = buf->b_signlist;
-    else
-        sign = prev->next;
-#endif
     insert_sign(buf, prev, sign, id, lnum, typenr);
 
     return;
@@ -5589,10 +5320,6 @@ buf_delsign(buf, id)
         if (sign->id == id)
         {
             *lastp = next;
-#if defined(FEAT_NETBEANS_INTG)
-            if (next != NULL)
-                next->prev = sign->prev;
-#endif
             lnum = sign->lnum;
             vim_free(sign);
             break;
@@ -5644,43 +5371,6 @@ buf_findsign_id(buf, lnum)
 
     return 0;
 }
-
-#if defined(FEAT_NETBEANS_INTG)
-/* see if a given type of sign exists on a specific line */
-    int
-buf_findsigntype_id(buf, lnum, typenr)
-    buf_T       *buf;           /* buffer whose sign we are searching for */
-    linenr_T    lnum;           /* line number of sign */
-    int         typenr;         /* sign type number */
-{
-    signlist_T  *sign;          /* a sign in the signlist */
-
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-        if (sign->lnum == lnum && sign->typenr == typenr)
-            return sign->id;
-
-    return 0;
-}
-
-#if defined(FEAT_SIGN_ICONS)
-/* return the number of icons on the given line */
-    int
-buf_signcount(buf, lnum)
-    buf_T       *buf;
-    linenr_T    lnum;
-{
-    signlist_T  *sign;          /* a sign in the signlist */
-    int         count = 0;
-
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-        if (sign->lnum == lnum)
-            if (sign_get_image(sign->typenr) != NULL)
-                count++;
-
-    return count;
-}
-#endif
-#endif
 
 /*
  * Delete signs in buffer "buf".

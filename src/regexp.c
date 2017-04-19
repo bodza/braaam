@@ -522,7 +522,7 @@ init_class_tab()
     done = TRUE;
 }
 
-#if defined(FEAT_MBYTE)
+#if (1)
 #define ri_digit(c)    (c < 0x100 && (class_tab[c] & RI_DIGIT))
 #define ri_hex(c)      (c < 0x100 && (class_tab[c] & RI_HEX))
 #define ri_octal(c)    (c < 0x100 && (class_tab[c] & RI_OCTAL))
@@ -657,13 +657,11 @@ static char_u   *regconcat __ARGS((int *flagp));
 static char_u   *regpiece __ARGS((int *));
 static char_u   *regatom __ARGS((int *));
 static char_u   *regnode __ARGS((int));
-#if defined(FEAT_MBYTE)
 static int      use_multibytecode __ARGS((int c));
-#endif
 static int      prog_magic_wrong __ARGS((void));
 static char_u   *regnext __ARGS((char_u *));
 static void     regc __ARGS((int b));
-#if defined(FEAT_MBYTE)
+#if (1)
 static void     regmbc __ARGS((int c));
 #define REGMBC(x) regmbc(x);
 #define CASEMBC(x) case x:
@@ -719,17 +717,13 @@ get_equi_class(pp)
 
     if (p[1] == '=')
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             l = (*mb_ptr2len)(p + 2);
-#endif
         if (p[l + 2] == '=' && p[l + 3] == ']')
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 c = mb_ptr2char(p + 2);
             else
-#endif
                 c = p[2];
             *pp += l + 4;
             return c;
@@ -747,9 +741,7 @@ get_equi_class(pp)
 reg_equi_class(c)
     int     c;
 {
-#if defined(FEAT_MBYTE)
     if (enc_utf8 || STRCMP(p_enc, "latin1") == 0 || STRCMP(p_enc, "iso-8859-15") == 0)
-#endif
     {
         switch (c)
         {
@@ -1065,17 +1057,13 @@ get_coll_element(pp)
 
     if (p[1] == '.')
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             l = (*mb_ptr2len)(p + 2);
-#endif
         if (p[l + 2] == '.' && p[l + 3] == ']')
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 c = mb_ptr2char(p + 2);
             else
-#endif
                 c = p[2];
             *pp += l + 4;
             return c;
@@ -1104,9 +1092,7 @@ get_cpo_flags()
 skip_anyof(p)
     char_u      *p;
 {
-#if defined(FEAT_MBYTE)
     int         l;
-#endif
 
     if (*p == '^')      /* Complement of range. */
         ++p;
@@ -1114,11 +1100,9 @@ skip_anyof(p)
         ++p;
     while (*p != NUL && *p != ']')
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
             p += l;
         else
-#endif
             if (*p == '-')
             {
                 ++p;
@@ -1309,11 +1293,9 @@ bt_regcomp(expr, re_flags)
 
         if (OP(scan) == EXACTLY)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 r->regstart = (*mb_ptr2char)(OPERAND(scan));
             else
-#endif
                 r->regstart = *OPERAND(scan);
         }
         else if ((OP(scan) == BOW
@@ -1323,11 +1305,9 @@ bt_regcomp(expr, re_flags)
                     || OP(scan) == MCLOSE + 0 || OP(scan) == NCLOSE)
                  && OP(regnext(scan)) == EXACTLY)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 r->regstart = (*mb_ptr2char)(OPERAND(regnext(scan)));
             else
-#endif
                 r->regstart = *OPERAND(regnext(scan));
         }
 
@@ -1609,9 +1589,7 @@ regconcat(flagp)
                             cont = FALSE;
                             break;
             case Magic('Z'):
-#if defined(FEAT_MBYTE)
                             regflags |= RF_ICOMBINE;
-#endif
                             skipchr_keepstart();
                             break;
             case Magic('c'):
@@ -1925,7 +1903,6 @@ regatom(flagp)
         p = vim_strchr(classchars, no_Magic(c));
         if (p == NULL)
             EMSG_RET_NULL(_("E63: invalid use of \\_"));
-#if defined(FEAT_MBYTE)
         /* When '.' is followed by a composing char ignore the dot, so that
          * the composing char is matched here. */
         if (enc_utf8 && c == Magic('.') && utf_iscomposing(peekchr()))
@@ -1933,7 +1910,6 @@ regatom(flagp)
             c = getchr();
             goto do_multibyte;
         }
-#endif
         ret = regnode(classcodes[p - classchars] + extra);
         *flagp |= HASWIDTH | SIMPLE;
         break;
@@ -2203,20 +2179,14 @@ regatom(flagp)
                                   EMSG2_RET_NULL(
                                         _("E678: Invalid character after %s%%[dxouU]"),
                                         reg_magic == MAGIC_ALL);
-#if defined(FEAT_MBYTE)
                               if (use_multibytecode(i))
                                   ret = regnode(MULTIBYTECODE);
                               else
-#endif
                                   ret = regnode(EXACTLY);
                               if (i == 0)
                                   regc(0x0a);
                               else
-#if defined(FEAT_MBYTE)
                                   regmbc(i);
-#else
-                                  regc(i);
-#endif
                               regc(NUL);
                               *flagp |= HASWIDTH;
                               break;
@@ -2334,11 +2304,9 @@ collection:
                                 endc = get_coll_element(&regparse);
                             if (endc == 0)
                             {
-#if defined(FEAT_MBYTE)
                                 if (has_mbyte)
                                     endc = mb_ptr2char_adv(&regparse);
                                 else
-#endif
                                     endc = *regparse++;
                             }
 
@@ -2348,7 +2316,6 @@ collection:
 
                             if (startc > endc)
                                 EMSG_RET_NULL(_(e_invrange));
-#if defined(FEAT_MBYTE)
                             if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
                             {
                                 /* Limit to a range of 256 chars */
@@ -2358,7 +2325,6 @@ collection:
                                     regmbc(startc);
                             }
                             else
-#endif
                             {
                                 while (++startc <= endc)
                                     regc(startc);
@@ -2407,11 +2373,7 @@ collection:
                             if (startc == 0)
                                 regc(0x0a);
                             else
-#if defined(FEAT_MBYTE)
                                 regmbc(startc);
-#else
-                                regc(startc);
-#endif
                         }
                         else
                         {
@@ -2524,7 +2486,6 @@ collection:
                     }
                     else
                     {
-#if defined(FEAT_MBYTE)
                         if (has_mbyte)
                         {
                             int len;
@@ -2539,7 +2500,6 @@ collection:
                                 regc(*regparse++);
                         }
                         else
-#endif
                         {
                             startc = *regparse++;
                             regc(startc);
@@ -2563,7 +2523,6 @@ collection:
         {
             int         len;
 
-#if defined(FEAT_MBYTE)
             /* A multi-byte character is handled as a separate atom if it's
              * before a multi and when it's a composing char. */
             if (use_multibytecode(c))
@@ -2574,7 +2533,6 @@ do_multibyte:
                 *flagp |= HASWIDTH | SIMPLE;
                 break;
             }
-#endif
 
             ret = regnode(EXACTLY);
 
@@ -2593,7 +2551,6 @@ do_multibyte:
                             && !is_Magic(c))); ++len)
             {
                 c = no_Magic(c);
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     regmbc(c);
@@ -2613,7 +2570,6 @@ do_multibyte:
                     }
                 }
                 else
-#endif
                     regc(c);
                 c = getchr();
             }
@@ -2630,7 +2586,6 @@ do_multibyte:
     return ret;
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Return TRUE if MULTIBYTECODE should be used instead of EXACTLY for
  * character "c".
@@ -2643,7 +2598,6 @@ use_multibytecode(c)
                      && (re_multi_type(peekchr()) != NOT_MULTI
                              || (enc_utf8 && utf_iscomposing(c)));
 }
-#endif
 
 /*
  * Emit a node.
@@ -2680,7 +2634,6 @@ regc(b)
         *regcode++ = b;
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Emit (if appropriate) a multi-byte character of code
  */
@@ -2695,7 +2648,6 @@ regmbc(c)
     else
         regcode += (*mb_char2bytes)(c, regcode);
 }
-#endif
 
 /*
  * Insert an operator in front of already-emitted operand
@@ -3072,21 +3024,17 @@ peekchr()
                      * Next character can never be (made) magic?
                      * Then backslashing it won't do anything.
                      */
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                         curchr = (*mb_ptr2char)(regparse + 1);
                     else
-#endif
                         curchr = c;
                 }
                 break;
             }
 
-#if defined(FEAT_MBYTE)
         default:
             if (has_mbyte)
                 curchr = (*mb_ptr2char)(regparse);
-#endif
         }
     }
 
@@ -3106,14 +3054,12 @@ skipchr()
         prevchr_len = 0;
     if (regparse[prevchr_len] != NUL)
     {
-#if defined(FEAT_MBYTE)
         if (enc_utf8)
             /* exclude composing chars that mb_ptr2len does include */
             prevchr_len += utf_ptr2len(regparse + prevchr_len);
         else if (has_mbyte)
             prevchr_len += (*mb_ptr2len)(regparse + prevchr_len);
         else
-#endif
             ++prevchr_len;
     }
     regparse += prevchr_len;
@@ -3443,13 +3389,11 @@ int             regnarrate = 0;
  */
 static int      ireg_ic;
 
-#if defined(FEAT_MBYTE)
 /*
  * Similar to ireg_ic, but only for 'combining' characters.  Set with \Z flag
  * in the regexp.  Defaults to false, always.
  */
 static int      ireg_icombine;
-#endif
 
 /*
  * Copy of "rmm_maxcol": maximum column to search for a match.  Zero when
@@ -3642,9 +3586,7 @@ bt_regexec_nl(rmp, line, col, line_lbr)
     reg_buf = curbuf;
     reg_win = NULL;
     ireg_ic = rmp->rm_ic;
-#if defined(FEAT_MBYTE)
     ireg_icombine = FALSE;
-#endif
     ireg_maxcol = 0;
 
     return bt_regexec_both(line, col, NULL);
@@ -3677,9 +3619,7 @@ bt_regexec_multi(rmp, win, buf, lnum, col, tm)
     reg_maxline = reg_buf->b_ml.ml_line_count - lnum;
     reg_line_lbr = FALSE;
     ireg_ic = rmp->rmm_ic;
-#if defined(FEAT_MBYTE)
     ireg_icombine = FALSE;
-#endif
     ireg_maxcol = rmp->rmm_maxcol;
 
     return bt_regexec_both(NULL, col, tm);
@@ -3755,22 +3695,18 @@ bt_regexec_both(line, col, tm)
     else if (prog->regflags & RF_NOICASE)
         ireg_ic = FALSE;
 
-#if defined(FEAT_MBYTE)
     /* If pattern contains "\Z" overrule value of ireg_icombine */
     if (prog->regflags & RF_ICOMBINE)
         ireg_icombine = TRUE;
-#endif
 
     /* If there is a "must appear" string, look for it. */
     if (prog->regmust != NULL)
     {
         int c;
 
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             c = (*mb_ptr2char)(prog->regmust);
         else
-#endif
             c = *prog->regmust;
         s = line + col;
 
@@ -3779,9 +3715,7 @@ bt_regexec_both(line, col, tm)
          * the loop to avoid overhead of conditions.
          */
         if (!ireg_ic
-#if defined(FEAT_MBYTE)
                 && !has_mbyte
-#endif
                 )
             while ((s = vim_strbyte(s, c)) != NULL)
             {
@@ -3789,7 +3723,6 @@ bt_regexec_both(line, col, tm)
                     break;              /* Found it. */
                 ++s;
             }
-#if defined(FEAT_MBYTE)
         else if (!ireg_ic || (!enc_utf8 && mb_char2len(c) > 1))
             while ((s = vim_strchr(s, c)) != NULL)
             {
@@ -3797,7 +3730,6 @@ bt_regexec_both(line, col, tm)
                     break;              /* Found it. */
                 mb_ptr_adv(s);
             }
-#endif
         else
             while ((s = cstrchr(s, c)) != NULL)
             {
@@ -3818,19 +3750,15 @@ bt_regexec_both(line, col, tm)
     {
         int     c;
 
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             c = (*mb_ptr2char)(regline + col);
         else
-#endif
             c = regline[col];
         if (prog->regstart == NUL
                 || prog->regstart == c
                 || (ireg_ic && ((
-#if defined(FEAT_MBYTE)
                         (enc_utf8 && utf_fold(prog->regstart) == utf_fold(c)))
                         || (c < 255 && prog->regstart < 255 &&
-#endif
                             MB_TOLOWER(prog->regstart) == MB_TOLOWER(c)))))
             retval = regtry(prog, col);
         else
@@ -3849,9 +3777,7 @@ bt_regexec_both(line, col, tm)
                 /* Skip until the char we know it must start with.
                  * Used often, do some work to avoid call overhead. */
                 if (!ireg_ic
-#if defined(FEAT_MBYTE)
                             && !has_mbyte
-#endif
                             )
                     s = vim_strbyte(regline + col, prog->regstart);
                 else
@@ -3883,11 +3809,9 @@ bt_regexec_both(line, col, tm)
             }
             if (regline[col] == NUL)
                 break;
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 col += (*mb_ptr2len)(regline + col);
             else
-#endif
                 ++col;
 #if defined(FEAT_RELTIME)
             /* Check for timeout once in a twenty times to avoid overhead. */
@@ -4046,7 +3970,6 @@ regtry(prog, col)
     return 1 + reglnum;
 }
 
-#if defined(FEAT_MBYTE)
 static int reg_prev_class __ARGS((void));
 
 /*
@@ -4060,7 +3983,6 @@ reg_prev_class()
                             - (*mb_head_off)(regline, reginput - 1), reg_buf);
     return -1;
 }
-#endif
 
 static int reg_match_visual __ARGS((void));
 
@@ -4254,11 +4176,9 @@ regmatch(scan)
         {
           if (WITH_NL(op))
               op -= ADD_NL;
-#if defined(FEAT_MBYTE)
           if (has_mbyte)
               c = (*mb_ptr2char)(reginput);
           else
-#endif
               c = *reginput;
           switch (op)
           {
@@ -4344,7 +4264,6 @@ regmatch(scan)
           case BOW:     /* \<word; reginput points to w */
             if (c == NUL)       /* Can't match at end of line */
                 status = RA_NOMATCH;
-#if defined(FEAT_MBYTE)
             else if (has_mbyte)
             {
                 int this_class;
@@ -4356,7 +4275,6 @@ regmatch(scan)
                 else if (reg_prev_class() == this_class)
                     status = RA_NOMATCH;  /* previous char is in same word */
             }
-#endif
             else
             {
                 if (!vim_iswordc_buf(c, reg_buf) || (reginput > regline
@@ -4368,7 +4286,6 @@ regmatch(scan)
           case EOW:     /* word\>; reginput points after d */
             if (reginput == regline)    /* Can't match at start of line */
                 status = RA_NOMATCH;
-#if defined(FEAT_MBYTE)
             else if (has_mbyte)
             {
                 int this_class, prev_class;
@@ -4380,7 +4297,6 @@ regmatch(scan)
                         || prev_class == 0 || prev_class == 1)
                     status = RA_NOMATCH;
             }
-#endif
             else
             {
                 if (!vim_iswordc_buf(reginput[-1], reg_buf)
@@ -4588,9 +4504,7 @@ regmatch(scan)
                 /* Inline the first byte, for speed. */
                 if (*opnd != *reginput
                         && (!ireg_ic || (
-#if defined(FEAT_MBYTE)
                             !enc_utf8 &&
-#endif
                             MB_TOLOWER(*opnd) != MB_TOLOWER(*reginput))))
                     status = RA_NOMATCH;
                 else if (*opnd == NUL)
@@ -4601,9 +4515,7 @@ regmatch(scan)
                 else
                 {
                     if (opnd[1] == NUL
-#if defined(FEAT_MBYTE)
                             && !(enc_utf8 && ireg_ic)
-#endif
                         )
                     {
                         len = 1;        /* matched a single byte above */
@@ -4615,7 +4527,6 @@ regmatch(scan)
                         if (cstrncmp(opnd, reginput, &len) != 0)
                             status = RA_NOMATCH;
                     }
-#if defined(FEAT_MBYTE)
                     /* Check for following composing character, unless %C
                      * follows (skips over all composing chars). */
                     if (status != RA_NOMATCH
@@ -4629,7 +4540,6 @@ regmatch(scan)
                          * for voweled Hebrew texts. */
                         status = RA_NOMATCH;
                     }
-#endif
                     if (status != RA_NOMATCH)
                         reginput += len;
                 }
@@ -4646,7 +4556,6 @@ regmatch(scan)
                 ADVANCE_REGINPUT();
             break;
 
-#if defined(FEAT_MBYTE)
           case MULTIBYTECODE:
             if (has_mbyte)
             {
@@ -4699,16 +4608,13 @@ regmatch(scan)
             else
                 status = RA_NOMATCH;
             break;
-#endif
           case RE_COMPOSING:
-#if defined(FEAT_MBYTE)
             if (enc_utf8)
             {
                 /* Skip composing characters. */
                 while (utf_iscomposing(utf_ptr2char(reginput)))
                     mb_cptr_adv(reginput);
             }
-#endif
             break;
 
           case NOTHING:
@@ -5468,13 +5374,11 @@ regmatch(scan)
                     }
                     else
                     {
-#if defined(FEAT_MBYTE)
                         if (has_mbyte)
                             rp->rs_un.regsave.rs_u.pos.col -=
                                 (*mb_head_off)(regline, regline
                                     + rp->rs_un.regsave.rs_u.pos.col - 1) + 1;
                         else
-#endif
                             --rp->rs_un.regsave.rs_u.pos.col;
                     }
                 }
@@ -5859,9 +5763,7 @@ regrepeat(p, maxcount)
 do_class:
         while (count < maxcount)
         {
-#if defined(FEAT_MBYTE)
             int         l;
-#endif
             if (*scan == NUL)
             {
                 if (!REG_MULTI || !WITH_NL(OP(p)) || reglnum > reg_maxline
@@ -5872,14 +5774,12 @@ do_class:
                 if (got_int)
                     break;
             }
-#if defined(FEAT_MBYTE)
             else if (has_mbyte && (l = (*mb_ptr2len)(scan)) > 1)
             {
                 if (testval != 0)
                     break;
                 scan += l;
             }
-#endif
             else if ((class_tab[*scan] & mask) == testval)
                 ++scan;
             else if (reg_line_lbr && *scan == '\n' && WITH_NL(OP(p)))
@@ -5988,7 +5888,6 @@ do_class:
             break;
         }
 
-#if defined(FEAT_MBYTE)
       case MULTIBYTECODE:
         {
             int         i, len, cf = 0;
@@ -6013,7 +5912,6 @@ do_class:
             }
         }
         break;
-#endif
 
       case ANYOF:
       case ANYOF + ADD_NL:
@@ -6024,9 +5922,7 @@ do_class:
       case ANYBUT + ADD_NL:
         while (count < maxcount)
         {
-#if defined(FEAT_MBYTE)
             int len;
-#endif
             if (*scan == NUL)
             {
                 if (!REG_MULTI || !WITH_NL(OP(p)) || reglnum > reg_maxline
@@ -6039,14 +5935,12 @@ do_class:
             }
             else if (reg_line_lbr && *scan == '\n' && WITH_NL(OP(p)))
                 ++scan;
-#if defined(FEAT_MBYTE)
             else if (has_mbyte && (len = (*mb_ptr2len)(scan)) > 1)
             {
                 if ((cstrchr(opnd, (*mb_ptr2char)(scan)) == NULL) == testval)
                     break;
                 scan += len;
             }
-#endif
             else
             {
                 if ((cstrchr(opnd, *scan) == NULL) == testval)
@@ -6878,11 +6772,9 @@ regprop(op)
         sprintf(buf + STRLEN(buf), "BRACE_COMPLEX%d", OP(op) - BRACE_COMPLEX);
         p = NULL;
         break;
-#if defined(FEAT_MBYTE)
       case MULTIBYTECODE:
         p = "MULTIBYTECODE";
         break;
-#endif
       case NEWL:
         p = "NEWL";
         break;
@@ -6909,7 +6801,6 @@ re_mult_next(what)
     return OK;
 }
 
-#if defined(FEAT_MBYTE)
 static void mb_decompose __ARGS((int c, int *c1, int *c2, int *c3));
 
 typedef struct
@@ -6989,7 +6880,6 @@ mb_decompose(c, c1, c2, c3)
         *c2 = *c3 = 0;
     }
 }
-#endif
 
 /*
  * Compare two strings, ignore case if ireg_ic set.
@@ -7008,7 +6898,6 @@ cstrncmp(s1, s2, n)
     else
         result = MB_STRNICMP(s1, s2, *n);
 
-#if defined(FEAT_MBYTE)
     /* if it failed and it's utf8 and we want to combineignore: */
     if (result != 0 && enc_utf8 && ireg_icombine)
     {
@@ -7044,7 +6933,6 @@ cstrncmp(s1, s2, n)
         if (result == 0)
             *n = (int)(str2 - s2);
     }
-#endif
 
     return result;
 }
@@ -7061,20 +6949,16 @@ cstrchr(s, c)
     int         cc;
 
     if (!ireg_ic
-#if defined(FEAT_MBYTE)
             || (!enc_utf8 && mb_char2len(c) > 1)
-#endif
             )
         return vim_strchr(s, c);
 
     /* tolower() and toupper() can be slow, comparing twice should be a lot
      * faster (esp. when using MS Visual C++!).
      * For UTF-8 need to use folded case. */
-#if defined(FEAT_MBYTE)
     if (enc_utf8 && c > 0x80)
         cc = utf_fold(c);
     else
-#endif
          if (MB_ISUPPER(c))
         cc = MB_TOLOWER(c);
     else if (MB_ISLOWER(c))
@@ -7082,7 +6966,6 @@ cstrchr(s, c)
     else
         return vim_strchr(s, c);
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         for (p = s; *p != NUL; p += (*mb_ptr2len)(p))
@@ -7097,7 +6980,6 @@ cstrchr(s, c)
         }
     }
     else
-#endif
         /* Faster version for when there are no multi-byte characters. */
         for (p = s; *p != NUL; ++p)
             if (*p == c || *p == cc)
@@ -7231,10 +7113,8 @@ regtilde(source, magic)
         {
             if (*p == '\\' && p[1])             /* skip escaped characters */
                 ++p;
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 p += (*mb_ptr2len)(p) - 1;
-#endif
         }
     }
 
@@ -7246,7 +7126,6 @@ regtilde(source, magic)
     return newsub;
 }
 
-#if defined(FEAT_EVAL)
 static int can_f_submatch = FALSE;      /* TRUE when submatch() can be used */
 
 /* These pointers are used instead of reg_match and reg_mmatch for
@@ -7257,9 +7136,7 @@ static regmmatch_T      *submatch_mmatch;
 static linenr_T         submatch_firstlnum;
 static linenr_T         submatch_maxline;
 static int              submatch_line_lbr;
-#endif
 
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL)
 /*
  * vim_regsub() - perform substitutions after a vim_regexec() or
  * vim_regexec_multi() match.
@@ -7294,7 +7171,6 @@ vim_regsub(rmp, source, dest, copy, magic, backslash)
     reg_line_lbr = TRUE;
     return vim_regsub_both(source, dest, copy, magic, backslash);
 }
-#endif
 
     int
 vim_regsub_multi(rmp, lnum, source, dest, copy, magic, backslash)
@@ -7333,9 +7209,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
     fptr_T      func_one = (fptr_T)NULL;
     linenr_T    clnum = 0;      /* init for GCC */
     int         len = 0;        /* init for GCC */
-#if defined(FEAT_EVAL)
     static char_u *eval_result = NULL;
-#endif
 
     /* Be paranoid... */
     if (source == NULL || dest == NULL)
@@ -7352,12 +7226,9 @@ vim_regsub_both(source, dest, copy, magic, backslash)
      * When the substitute part starts with "\=" evaluate it as an expression.
      */
     if (source[0] == '\\' && source[1] == '='
-#if defined(FEAT_EVAL)
             && !can_f_submatch      /* can't do this recursively */
-#endif
             )
     {
-#if defined(FEAT_EVAL)
         /* To make sure that the length doesn't change between checking the
          * length and copying the string, and to speed up things, the
          * resulting string is saved from the call with "copy" == FALSE to the
@@ -7441,7 +7312,6 @@ vim_regsub_both(source, dest, copy, magic, backslash)
             ireg_ic = save_ireg_ic;
             can_f_submatch = FALSE;
         }
-#endif
     }
     else
       while ((c = *src++) != NUL)
@@ -7519,10 +7389,8 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                                 c = *src++;
                 }
             }
-#if defined(FEAT_MBYTE)
             else if (has_mbyte)
                 c = mb_ptr2char(src - 1);
-#endif
 
             /* Write to buffer, if copy is set. */
             if (func_one != (fptr_T)NULL)
@@ -7534,7 +7402,6 @@ vim_regsub_both(source, dest, copy, magic, backslash)
             else /* just copy */
                 cc = c;
 
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 int totlen = mb_ptr2len(src - 1);
@@ -7559,7 +7426,6 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                 src += totlen - 1;
             }
             else
-#endif
                 if (copy)
                     *dst = cc;
             dst++;
@@ -7636,11 +7502,9 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                         }
                         else
                         {
-#if defined(FEAT_MBYTE)
                             if (has_mbyte)
                                 c = mb_ptr2char(s);
                             else
-#endif
                                 c = *s;
 
                             if (func_one != (fptr_T)NULL)
@@ -7652,7 +7516,6 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                             else /* just copy */
                                 cc = c;
 
-#if defined(FEAT_MBYTE)
                             if (has_mbyte)
                             {
                                 int l;
@@ -7671,7 +7534,6 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                                 dst += mb_char2len(cc) - 1;
                             }
                             else
-#endif
                                 if (copy)
                                     *dst = cc;
                             dst++;
@@ -7692,7 +7554,6 @@ exit:
     return (int)((dst - dest) + 1);
 }
 
-#if defined(FEAT_EVAL)
 static char_u *reg_getline_submatch __ARGS((linenr_T lnum));
 
 /*
@@ -7889,7 +7750,6 @@ reg_submatch_list(no)
     }
     return list;
 }
-#endif
 
 static regengine_T bt_regengine =
 {
@@ -8025,7 +7885,6 @@ vim_regfree(prog)
         prog->engine->regfree(prog);
 }
 
-#if defined(FEAT_EVAL)
 static void report_re_switch __ARGS((char_u *pat));
 
     static void
@@ -8040,7 +7899,6 @@ report_re_switch(pat)
         verbose_leave();
     }
 }
-#endif
 
 static int vim_regexec_both __ARGS((regmatch_T *rmp, char_u *line, colnr_T col, int nl));
 
@@ -8074,9 +7932,7 @@ vim_regexec_both(rmp, line, col, nl)
         vim_regfree(rmp->regprog);
         if (pat != NULL)
         {
-#if defined(FEAT_EVAL)
             report_re_switch(pat);
-#endif
             rmp->regprog = vim_regcomp(pat, re_flags);
             if (rmp->regprog != NULL)
                 result = rmp->regprog->engine->regexec_nl(rmp, line, col, nl);
@@ -8122,7 +7978,6 @@ vim_regexec(rmp, line, col)
     return vim_regexec_both(rmp, line, col, FALSE);
 }
 
-#if defined(FEAT_MODIFY_FNAME) || defined(FEAT_EVAL) || defined(FIND_REPLACE_DIALOG)
 /*
  * Like vim_regexec(), but consider a "\n" in "line" to be a line break.
  * Note: "rmp->regprog" may be freed and changed.
@@ -8136,7 +7991,6 @@ vim_regexec_nl(rmp, line, col)
 {
     return vim_regexec_both(rmp, line, col, TRUE);
 }
-#endif
 
 /*
  * Match a regexp against multiple lines.
@@ -8171,9 +8025,7 @@ vim_regexec_multi(rmp, win, buf, lnum, col, tm)
         vim_regfree(rmp->regprog);
         if (pat != NULL)
         {
-#if defined(FEAT_EVAL)
             report_re_switch(pat);
-#endif
             rmp->regprog = vim_regcomp(pat, re_flags);
             if (rmp->regprog != NULL)
                 result = rmp->regprog->engine->regexec_multi(

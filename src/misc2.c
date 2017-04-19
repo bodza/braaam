@@ -317,11 +317,9 @@ coladvance2(pos, addspaces, finetune, wcol)
     }
 #endif
 
-#if defined(FEAT_MBYTE)
     /* prevent from moving onto a trail byte */
     if (has_mbyte)
         mb_adjustpos(curbuf, pos);
-#endif
 
     if (col < wcol)
         return FAIL;
@@ -352,7 +350,6 @@ inc(lp)
 
     if (*p != NUL)      /* still within line, move to next char (may be NUL) */
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             int l = (*mb_ptr2len)(p);
@@ -360,7 +357,6 @@ inc(lp)
             lp->col += l;
             return ((p[l] != NUL) ? 0 : 2);
         }
-#endif
         lp->col++;
 #if defined(FEAT_VIRTUALEDIT)
         lp->coladd = 0;
@@ -417,13 +413,11 @@ dec(lp)
     if (lp->col > 0)            /* still within line */
     {
         lp->col--;
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             p = ml_get(lp->lnum);
             lp->col -= (*mb_head_off)(p, p + lp->col);
         }
-#endif
         return 0;
     }
     if (lp->lnum > 1)           /* there is a prior line */
@@ -431,10 +425,8 @@ dec(lp)
         lp->lnum--;
         p = ml_get(lp->lnum);
         lp->col = (colnr_T)STRLEN(p);
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             lp->col -= (*mb_head_off)(p, p + lp->col);
-#endif
         return 1;
     }
     return -1;                  /* at start of file */
@@ -566,11 +558,9 @@ check_cursor_col_win(win)
         else
         {
             win->w_cursor.col = len - 1;
-#if defined(FEAT_MBYTE)
             /* Move the cursor to the head byte. */
             if (has_mbyte)
                 mb_adjustpos(win->w_buffer, &win->w_cursor);
-#endif
         }
     }
     else if (win->w_cursor.col < 0)
@@ -828,15 +818,6 @@ alloc_clear(size)
 alloc_check(size)
     unsigned        size;
 {
-#if !defined(UNIX)
-    if (sizeof(int) == 2 && size > 0x7fff)
-    {
-        /* Don't hide this message */
-        emsg_silent = 0;
-        EMSG(_("E340: Line is becoming too long"));
-        return NULL;
-    }
-#endif
     return (lalloc((long_u)size, TRUE));
 }
 
@@ -932,9 +913,7 @@ lalloc(size, message)
 
         clear_sb_text();              /* free any scrollback text */
         try_again = mf_release_all(); /* release as many blocks as possible */
-#if defined(FEAT_EVAL)
         try_again |= garbage_collect(); /* cleanup recursive lists/dicts */
-#endif
 
         releasing = FALSE;
         if (!try_again)
@@ -1046,9 +1025,6 @@ free_all_mem()
 #if defined(FEAT_MENU)
     /* Clear menus. */
     do_cmdline_cmd((char_u *)"aunmenu *");
-#if defined(FEAT_MULTI_LANG)
-    do_cmdline_cmd((char_u *)"menutranslate clear");
-#endif
 #endif
 
     /* Clear mappings, abbreviations, breakpoints. */
@@ -1057,9 +1033,7 @@ free_all_mem()
     do_cmdline_cmd((char_u *)"mapclear");
     do_cmdline_cmd((char_u *)"mapclear!");
     do_cmdline_cmd((char_u *)"abclear");
-#if defined(FEAT_EVAL)
     do_cmdline_cmd((char_u *)"breakdel *");
-#endif
 #if defined(FEAT_PROFILE)
     do_cmdline_cmd((char_u *)"profdel *");
 #endif
@@ -1096,9 +1070,7 @@ free_all_mem()
 #if defined(FEAT_SIGNS)
     free_signs();
 #endif
-#if defined(FEAT_EVAL)
     set_expr_line(NULL);
-#endif
 #if defined(FEAT_DIFF)
     diff_clear(curtab);
 #endif
@@ -1162,10 +1134,6 @@ free_all_mem()
     ResetRedobuff();
     ResetRedobuff();
 
-#if defined(FEAT_CLIENTSERVER) && defined(FEAT_X11)
-    vim_free(serverDelayedStartName);
-#endif
-
     /* highlight info */
     free_highlight();
 
@@ -1176,31 +1144,21 @@ free_all_mem()
     first_tabpage = NULL;
 #endif
 
-#if defined(UNIX)
     /* Machine-specific free. */
     mch_free_mem();
-#endif
 
     /* message history */
     for (;;)
         if (delete_first_msg() == FAIL)
             break;
 
-#if defined(FEAT_EVAL)
     eval_clear();
-#endif
 
     free_termoptions();
 
     /* screenlines (can't display anything now!) */
     free_screenlines();
 
-#if defined(USE_XSMP)
-    xsmp_close();
-#endif
-#if defined(FEAT_GUI_GTK)
-    gui_mch_free_all();
-#endif
     clear_hl_tables();
 
     vim_free(IObuff);
@@ -1275,9 +1233,7 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
     char_u      *p2;
     char_u      *escaped_string;
     unsigned    length;
-#if defined(FEAT_MBYTE)
     int         l;
-#endif
 
     /*
      * First count the number of backslashes required.
@@ -1286,14 +1242,12 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
     length = 1;                         /* count the trailing NUL */
     for (p = string; *p; p++)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
         {
             length += l;                /* count a multibyte char */
             p += l - 1;
             continue;
         }
-#endif
         if (vim_strchr(esc_chars, *p) != NULL || (bsl && rem_backslash(p)))
             ++length;                   /* count a backslash */
         ++length;                       /* count an ordinary char */
@@ -1304,7 +1258,6 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
         p2 = escaped_string;
         for (p = string; *p; p++)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
             {
                 mch_memmove(p2, p, (size_t)l);
@@ -1312,7 +1265,6 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
                 p += l - 1;             /* skip multibyte char  */
                 continue;
             }
-#endif
             if (vim_strchr(esc_chars, *p) != NULL || (bsl && rem_backslash(p)))
                 *p2++ = cc;
             *p2++ = *p;
@@ -1508,7 +1460,6 @@ vim_strup(p)
     }
 }
 
-#if defined(FEAT_EVAL) || defined(FEAT_SPELL)
 /*
  * Make string "s" all upper-case and return it in allocated memory.
  * Handles multi-byte characters as well as possible.
@@ -1526,7 +1477,6 @@ strup_save(orig)
     if (res != NULL)
         while (*p != NUL)
         {
-#if defined(FEAT_MBYTE)
             int         l;
 
             if (enc_utf8)
@@ -1560,7 +1510,6 @@ strup_save(orig)
             else if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
                 p += l;         /* skip multi-byte character */
             else
-#endif
             {
                 *p = TOUPPER_LOC(*p); /* note that toupper() can be a macro */
                 p++;
@@ -1569,7 +1518,6 @@ strup_save(orig)
 
     return res;
 }
-#endif
 
 /*
  * copy a space a number of times
@@ -1852,7 +1800,6 @@ vim_strchr(string, c)
     int         b;
 
     p = string;
-#if defined(FEAT_MBYTE)
     if (enc_utf8 && c >= 0x80)
     {
         while (*p != NUL)
@@ -1886,7 +1833,6 @@ vim_strchr(string, c)
         }
         return NULL;
     }
-#endif
     while ((b = *p) != NUL)
     {
         if (b == c)
@@ -1943,7 +1889,6 @@ vim_strrchr(string, c)
  * Vim's version of strpbrk(), in case it's missing.
  * Don't generate a prototype for this, causes problems when it's not used.
  */
-#if (1)
 #if !defined(HAVE_STRPBRK)
 #if defined(vim_strpbrk)
 #undef vim_strpbrk
@@ -1961,7 +1906,6 @@ vim_strpbrk(s, charset)
     }
     return NULL;
 }
-#endif
 #endif
 
 /*
@@ -2129,7 +2073,6 @@ ga_append(gap, c)
     }
 }
 
-#if (defined(UNIX) && !defined(USE_SYSTEM))
 /*
  * Append the text in "gap" below the cursor line and clear "gap".
  */
@@ -2146,7 +2089,6 @@ append_ga_line(gap)
     ml_append(curwin->w_cursor.lnum++, gap->ga_data, 0, FALSE);
     gap->ga_len = 0;
 }
-#endif
 
 /************************************************************************
  * functions that use lookup tables for various things, generally to do with
@@ -2171,9 +2113,6 @@ static struct modmasktable
     {MOD_MASK_MULTI_CLICK,      MOD_MASK_2CLICK,        (char_u)'2'},
     {MOD_MASK_MULTI_CLICK,      MOD_MASK_3CLICK,        (char_u)'3'},
     {MOD_MASK_MULTI_CLICK,      MOD_MASK_4CLICK,        (char_u)'4'},
-#if defined(MACOS)
-    {MOD_MASK_CMD,              MOD_MASK_CMD,           (char_u)'D'},
-#endif
     /* 'A' must be the last one */
     {MOD_MASK_ALT,              MOD_MASK_ALT,           (char_u)'A'},
     {0, 0, NUL}
@@ -2438,9 +2377,7 @@ static struct key_name_entry
     {K_X2RELEASE,               (char_u *)"X2Release"},
     {K_DROP,            (char_u *)"Drop"},
     {K_ZERO,            (char_u *)"Nul"},
-#if defined(FEAT_EVAL)
     {K_SNR,             (char_u *)"SNR"},
-#endif
     {K_PLUG,            (char_u *)"Plug"},
     {K_CURSORHOLD,      (char_u *)"CursorHold"},
     {0,                 NULL}
@@ -2458,14 +2395,8 @@ static struct mousetable
 } mouse_table[] =
 {
     {(int)KE_LEFTMOUSE,         MOUSE_LEFT,     TRUE,   FALSE},
-#if defined(FEAT_GUI)
-    {(int)KE_LEFTMOUSE_NM,      MOUSE_LEFT,     TRUE,   FALSE},
-#endif
     {(int)KE_LEFTDRAG,          MOUSE_LEFT,     FALSE,  TRUE},
     {(int)KE_LEFTRELEASE,       MOUSE_LEFT,     FALSE,  FALSE},
-#if defined(FEAT_GUI)
-    {(int)KE_LEFTRELEASE_NM,    MOUSE_LEFT,     FALSE,  FALSE},
-#endif
     {(int)KE_MIDDLEMOUSE,       MOUSE_MIDDLE,   TRUE,   FALSE},
     {(int)KE_MIDDLEDRAG,        MOUSE_MIDDLE,   FALSE,  TRUE},
     {(int)KE_MIDDLERELEASE,     MOUSE_MIDDLE,   FALSE,  FALSE},
@@ -2615,9 +2546,7 @@ get_special_key_name(c, modifiers)
      * extract modifiers.
      */
     if (c > 0
-#if defined(FEAT_MBYTE)
             && (*mb_char2len)(c) == 1
-#endif
        )
     {
         if (table_idx < 0
@@ -2657,11 +2586,9 @@ get_special_key_name(c, modifiers)
         /* Not a special key, only modifiers, output directly */
         else
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte && (*mb_char2len)(c) > 1)
                 idx += (*mb_char2bytes)(c, string + idx);
             else
-#endif
             if (vim_isprintc(c))
                 string[idx++] = c;
             else
@@ -2716,10 +2643,8 @@ trans_special(srcp, dst, keycode)
         dst[dlen++] = KEY2TERMCAP0(key);
         dst[dlen++] = KEY2TERMCAP1(key);
     }
-#if defined(FEAT_MBYTE)
     else if (has_mbyte && !keycode)
         dlen += (*mb_char2bytes)(key, dst + dlen);
-#endif
     else if (keycode)
         dlen = (int)(add_char2buf(key, dst + dlen) - dst);
     else
@@ -2763,11 +2688,9 @@ find_special_key(srcp, modp, keycode, keep_x_key)
             last_dash = bp;
             if (bp[1] != NUL)
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     l = mb_ptr2len(bp + 1);
                 else
-#endif
                     l = 1;
                 if (bp[l + 1] == '>')
                     bp += l;    /* anything accepted, like <C-?> */
@@ -2817,11 +2740,9 @@ find_special_key(srcp, modp, keycode, keep_x_key)
                 /*
                  * Modifier with single letter, or special key name.
                  */
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     l = mb_ptr2len(last_dash + 1);
                 else
-#endif
                     l = 1;
                 if (modifiers != 0 && last_dash[l + 1] == '>')
                     key = PTR2CHAR(last_dash + 1);
@@ -2880,10 +2801,6 @@ extract_modifiers(key, modp)
 {
     int modifiers = *modp;
 
-#if defined(MACOS)
-    /* Command-key really special, no fancynest */
-    if (!(modifiers & MOD_MASK_CMD))
-#endif
     if ((modifiers & MOD_MASK_SHIFT) && ASCII_ISALPHA(key))
     {
         key = TOUPPER_ASC(key);
@@ -2897,14 +2814,8 @@ extract_modifiers(key, modp)
         if (key == 0)
             key = K_ZERO;
     }
-#if defined(MACOS)
-    /* Command-key really special, no fancynest */
-    if (!(modifiers & MOD_MASK_CMD))
-#endif
     if ((modifiers & MOD_MASK_ALT) && key < 0x80
-#if defined(FEAT_MBYTE)
             && !enc_dbcs                /* avoid creating a lead byte */
-#endif
             )
     {
         key |= 0x80;
@@ -3024,22 +2935,6 @@ get_pseudo_mouse_code(button, is_click, is_drag)
             && is_click == mouse_table[i].is_click
             && is_drag == mouse_table[i].is_drag)
         {
-#if defined(FEAT_GUI)
-            /* Trick: a non mappable left click and release has mouse_col -1
-             * or added MOUSE_COLOFF.  Used for 'mousefocus' in
-             * gui_mouse_moved() */
-            if (mouse_col < 0 || mouse_col > MOUSE_COLOFF)
-            {
-                if (mouse_col < 0)
-                    mouse_col = 0;
-                else
-                    mouse_col -= MOUSE_COLOFF;
-                if (mouse_table[i].pseudo_code == (int)KE_LEFTMOUSE)
-                    return (int)KE_LEFTMOUSE_NM;
-                if (mouse_table[i].pseudo_code == (int)KE_LEFTRELEASE)
-                    return (int)KE_LEFTRELEASE_NM;
-            }
-#endif
             return mouse_table[i].pseudo_code;
         }
     return (int)KE_IGNORE;          /* not recognized, ignore it */
@@ -3180,13 +3075,6 @@ call_shell(cmd, opt)
     }
     else
     {
-#if defined(FEAT_GUI_MSWIN)
-        /* Don't hide the pointer while executing a shell command. */
-        gui_mch_mousehide(FALSE);
-#endif
-#if defined(FEAT_GUI)
-        ++hold_gui_events;
-#endif
         /* The external command may update a tags file, clear cached tags. */
         tag_freematch();
 
@@ -3220,9 +3108,6 @@ call_shell(cmd, opt)
             if (ecmd != cmd)
                 vim_free(ecmd);
         }
-#if defined(FEAT_GUI)
-        --hold_gui_events;
-#endif
         /*
          * Check the window size, in case it changed while executing the
          * external command.
@@ -3230,12 +3115,10 @@ call_shell(cmd, opt)
         shell_resized_check();
     }
 
-#if defined(FEAT_EVAL)
     set_vim_var_nr(VV_SHELL_ERROR, (long)retval);
 #if defined(FEAT_PROFILE)
     if (do_profiling == PROF_YES)
         prof_child_exit(&wait_time);
-#endif
 #endif
 
     return retval;
@@ -3262,7 +3145,6 @@ get_real_state()
     return State;
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Return TRUE if "p" points to just after a path separator.
  * Takes care of multi-byte characters.
@@ -3276,7 +3158,6 @@ after_pathsep(b, p)
     return p > b && vim_ispathsep(p[-1])
                              && (!has_mbyte || (*mb_head_off)(b, p - 1) == 0);
 }
-#endif
 
 /*
  * Return TRUE if file names "f1" and "f2" are in the same directory.
@@ -3302,7 +3183,7 @@ same_directory(f1, f2)
              && pathcmp((char *)ffname, (char *)f2, (int)(t1 - ffname)) == 0);
 }
 
-#if defined(FEAT_SESSION) || defined(FEAT_GUI_MAC) || (defined(FEAT_GUI_GTK) && ( defined(FEAT_WINDOWS) || defined(FEAT_DND)) ) || defined(FEAT_SUN_WORKSHOP) || defined(FEAT_NETBEANS_INTG)
+#if defined(FEAT_SESSION)
 /*
  * Change to a file's directory.
  * Caller must call shorten_fnames()!
@@ -3317,26 +3198,6 @@ vim_chdirfile(fname)
     vim_strncpy(dir, fname, MAXPATHL - 1);
     *gettail_sep(dir) = NUL;
     return mch_chdir((char *)dir) == 0 ? OK : FAIL;
-}
-#endif
-
-#if defined(STAT_IGNORES_SLASH)
-/*
- * Check if "name" ends in a slash and is not a directory.
- * Used for systems where stat() ignores a trailing slash on a file name.
- * The Vim code assumes a trailing slash is only ignored for a directory.
- */
-    int
-illegal_slash(name)
-    char *name;
-{
-    if (name[0] == NUL)
-        return FALSE;       /* no file name is not illegal */
-    if (name[strlen(name) - 1] != '/')
-        return FALSE;       /* no trailing slash */
-    if (mch_isdir((char_u *)name))
-        return FALSE;       /* trailing slash for a directory */
-    return TRUE;
 }
 #endif
 
@@ -3643,7 +3504,7 @@ parse_shape_opt(what)
     return NULL;
 }
 
-#if defined(MCH_CURSOR_SHAPE) || defined(FEAT_GUI) || defined(FEAT_MOUSESHAPE)
+#if defined(MCH_CURSOR_SHAPE) || defined(FEAT_MOUSESHAPE)
 /*
  * Return the index into shape_table[] for the current mode.
  * When "mouse" is TRUE, consider indexes valid for the mouse pointer.
@@ -3655,12 +3516,6 @@ get_shape_idx(mouse)
 #if defined(FEAT_MOUSESHAPE)
     if (mouse && (State == HITRETURN || State == ASKMORE))
     {
-#if defined(FEAT_GUI)
-        int x, y;
-        gui_mch_getmouse(&x, &y);
-        if (Y_2_ROW(y) == Rows - 1)
-            return SHAPE_IDX_MOREL;
-#endif
         return SHAPE_IDX_MORE;
     }
     if (mouse && drag_status_line)
@@ -3853,11 +3708,9 @@ typedef struct ff_visited
     /* for unix use inode etc for comparison (needed because of links), else
      * use filename.
      */
-#if defined(UNIX)
     int                 ffv_dev_valid;  /* ffv_dev and ffv_ino were set */
     dev_t               ffv_dev;        /* device number */
     ino_t               ffv_ino;        /* inode number */
-#endif
     /* The memory for this struct is allocated according to the length of
      * ffv_fname.
      */
@@ -5086,28 +4939,20 @@ ff_check_visited(visited_list, fname
 #endif
 {
     ff_visited_T        *vp;
-#if defined(UNIX)
     struct stat         st;
     int                 url = FALSE;
-#endif
 
     /* For an URL we only compare the name, otherwise we compare the
      * device/inode (unix) or the full path name (not Unix). */
     if (path_with_url(fname))
     {
         vim_strncpy(ff_expand_buffer, fname, MAXPATHL - 1);
-#if defined(UNIX)
         url = TRUE;
-#endif
     }
     else
     {
         ff_expand_buffer[0] = NUL;
-#if defined(UNIX)
         if (mch_stat((char *)fname, &st) < 0)
-#else
-        if (vim_FullName(fname, ff_expand_buffer, MAXPATHL, TRUE) == FAIL)
-#endif
             return FAIL;
     }
 
@@ -5115,11 +4960,9 @@ ff_check_visited(visited_list, fname
     for (vp = *visited_list; vp != NULL; vp = vp->ffv_next)
     {
         if (
-#if defined(UNIX)
                 !url ? (vp->ffv_dev_valid && vp->ffv_dev == st.st_dev
                                                   && vp->ffv_ino == st.st_ino)
                      :
-#endif
                 fnamecmp(vp->ffv_fname, ff_expand_buffer) == 0
            )
         {
@@ -5140,7 +4983,6 @@ ff_check_visited(visited_list, fname
 
     if (vp != NULL)
     {
-#if defined(UNIX)
         if (!url)
         {
             vp->ffv_dev_valid = TRUE;
@@ -5151,11 +4993,8 @@ ff_check_visited(visited_list, fname
         else
         {
             vp->ffv_dev_valid = FALSE;
-#endif
             STRCPY(vp->ffv_fname, ff_expand_buffer);
-#if defined(UNIX)
         }
-#endif
 #if defined(FEAT_PATH_EXTRA)
         if (wc_path != NULL)
             vp->ffv_wc_path = vim_strsave(wc_path);
@@ -5858,9 +5697,7 @@ pathcmp(p, q, maxlen)
 #define EXTRASIZE 5             /* increment to add to env. size */
 
 static int  envsize = -1;       /* current size of environment */
-#if !defined(MACOS_CLASSIC)
 extern
-#endif
        char **environ;          /* the global which is your env. */
 
 static int  findenv __ARGS((char *name)); /* look for a name in the env. */
@@ -5935,19 +5772,13 @@ newenv()
     char    **env, *elem;
     int     i, esize;
 
-#if defined(MACOS)
-    /* for Mac a new, empty environment is created */
-    i = 0;
-#else
     for (i = 0; environ[i]; i++)
         ;
-#endif
     esize = i + EXTRASIZE + 1;
     env = (char **)alloc((unsigned)(esize * sizeof (elem)));
     if (env == NULL)
         return -1;
 
-#if !defined(MACOS)
     for (i = 0; environ[i]; i++)
     {
         elem = (char *)alloc((unsigned)(strlen(environ[i]) + 1));
@@ -5956,7 +5787,6 @@ newenv()
         env[i] = elem;
         strcpy(elem, environ[i]);
     }
-#endif
 
     env[i] = 0;
     environ = env;
@@ -6002,7 +5832,6 @@ vimpty_getenv(string)
 
 #endif
 
-#if defined(FEAT_EVAL) || defined(FEAT_SPELL)
 /*
  * Return 0 for not writable, 1 for writable file, 2 for a dir which we have
  * rights to write into.
@@ -6012,21 +5841,13 @@ filewritable(fname)
     char_u      *fname;
 {
     int         retval = 0;
-#if defined(UNIX)
     int         perm = 0;
-#endif
 
-#if defined(UNIX)
     perm = mch_getperm(fname);
-#endif
-#if !defined(MACOS_CLASSIC) /* TODO: get either mch_writable or mch_access */
     if (
-#if defined(UNIX)
             (perm & 0222) &&
-#endif
             mch_access((char *)fname, W_OK) == 0
        )
-#endif
     {
         ++retval;
         if (mch_isdir(fname))
@@ -6034,7 +5855,6 @@ filewritable(fname)
     }
     return retval;
 }
-#endif
 
 /*
  * Print an error message with one or two "%s" and one or two string arguments.
@@ -6249,7 +6069,7 @@ time_to_bytes(the_time, buf)
 
 #endif
 
-#if (defined(FEAT_MBYTE) && defined(FEAT_QUICKFIX)) || defined(FEAT_SPELL)
+#if defined(FEAT_QUICKFIX) || defined(FEAT_SPELL)
 /*
  * Return TRUE if string "s" contains a non-ASCII character (128 or higher).
  * When "s" is NULL FALSE is returned.

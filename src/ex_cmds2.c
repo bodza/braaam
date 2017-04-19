@@ -7,18 +7,15 @@
 
 static void     cmd_source __ARGS((char_u *fname, exarg_T *eap));
 
-#if defined(FEAT_EVAL)
 /* Growarray to store info about already sourced scripts.
  * For Unix also store the dev/ino, so that we don't have to stat() each
  * script when going through the list. */
 typedef struct scriptitem_S
 {
     char_u      *sn_name;
-#if defined(UNIX)
     int         sn_dev_valid;
     dev_t       sn_dev;
     ino_t       sn_ino;
-#endif
 #if defined(FEAT_PROFILE)
     int         sn_prof_on;     /* TRUE when script is/was profiled */
     int         sn_pr_force;    /* forceit: profile functions in this script */
@@ -54,9 +51,7 @@ typedef struct sn_prl_S
 
 #define PRL_ITEM(si, idx)     (((sn_prl_T *)(si)->sn_prl_ga.ga_data)[(idx)])
 #endif
-#endif
 
-#if defined(FEAT_EVAL)
 static int debug_greedy = FALSE;        /* batch mode debugging: don't save
                                            and restore typeahead. */
 
@@ -117,9 +112,6 @@ do_debug(cmd)
     redir_off = TRUE;           /* don't redirect debug commands */
 
     State = NORMAL;
-#if defined(FEAT_SNIFF)
-    want_sniff_request = 0;    /* No K_SNIFF wanted */
-#endif
 
     if (!debug_did_msg)
         MSG(_("Entering Debug mode.  Type \"cont\" to continue."));
@@ -137,9 +129,6 @@ do_debug(cmd)
     {
         msg_scroll = TRUE;
         need_wait_return = FALSE;
-#if defined(FEAT_SNIFF)
-        ProcessSniffRequests();
-#endif
         /* Save the current typeahead buffer and replace it with an empty one.
          * This makes sure we get input from the user here and don't interfere
          * with the commands being executed.  Reset "ex_normal_busy" to avoid
@@ -1308,7 +1297,6 @@ prof_def_func()
 }
 
 #endif
-#endif
 
 /*
  * If 'autowrite' option set, try to write the file.
@@ -1837,7 +1825,7 @@ get_arglist_exp(str, fcountp, fnamesp, wig)
 }
 #endif
 
-#if defined(FEAT_GUI) || defined(FEAT_CLIENTSERVER)
+#if defined(FEAT_CLIENTSERVER)
 /*
  * Redefine the argument list.
  */
@@ -2178,9 +2166,6 @@ do_argfile(eap, argn)
     else
     {
         setpcmark();
-#if defined(FEAT_GUI)
-        need_mouse_correct = TRUE;
-#endif
 
 #if defined(FEAT_WINDOWS)
         /* split window or create new tab page first */
@@ -2604,7 +2589,6 @@ alist_add_list(count, files, after)
 
 #endif
 
-#if defined(FEAT_EVAL)
 /*
  * ":compiler[!] {name}"
  */
@@ -2677,7 +2661,6 @@ ex_compiler(eap)
         }
     }
 }
-#endif
 
 /*
  * ":runtime {name}"
@@ -2816,7 +2799,7 @@ do_in_runtimepath(name, all, callback, cookie)
     return did_one ? OK : FAIL;
 }
 
-#if defined(FEAT_EVAL) && defined(FEAT_AUTOCMD)
+#if defined(FEAT_AUTOCMD)
 /*
  * ":options"
  */
@@ -2871,9 +2854,7 @@ cmd_source(fname, eap)
          * - inside a loop
          */
         openscript(fname, global_busy || listcmd_busy || eap->nextcmd != NULL
-#if defined(FEAT_EVAL)
                                                  || eap->cstack->cs_idx >= 0
-#endif
                                                  );
 
     /* ":source" read ex commands */
@@ -2899,18 +2880,13 @@ struct source_cookie
     int         fileformat;     /* EOL_UNKNOWN, EOL_UNIX or EOL_DOS */
     int         error;          /* TRUE if LF found after CR-LF */
 #endif
-#if defined(FEAT_EVAL)
     linenr_T    breakpoint;     /* next line with breakpoint or zero */
     char_u      *fname;         /* name of sourced file */
     int         dbg_tick;       /* debug_tick when breakpoint was set */
     int         level;          /* top nesting level of sourced file */
-#endif
-#if defined(FEAT_MBYTE)
     vimconv_T   conv;           /* type of conversion */
-#endif
 };
 
-#if defined(FEAT_EVAL)
 /*
  * Return the address holding the next breakpoint line for a source cookie.
  */
@@ -2940,7 +2916,6 @@ source_level(cookie)
 {
     return ((struct source_cookie *)cookie)->level;
 }
-#endif
 
 static char_u *get_one_sourceline __ARGS((struct source_cookie *sp));
 
@@ -2993,17 +2968,13 @@ do_source(fname, check_other, is_vimrc)
     char_u                  *fname_exp;
     char_u                  *firstline = NULL;
     int                     retval = FAIL;
-#if defined(FEAT_EVAL)
     scid_T                  save_current_SID;
     static scid_T           last_current_SID = 0;
     void                    *save_funccalp;
     int                     save_debug_break_level = debug_break_level;
     scriptitem_T            *si = NULL;
-#if defined(UNIX)
     struct stat             st;
     int                     stat_ok;
-#endif
-#endif
 #if defined(STARTUPTIME)
     struct timeval          tv_rel;
     struct timeval          tv_start;
@@ -3031,11 +3002,7 @@ do_source(fname, check_other, is_vimrc)
             && apply_autocmds(EVENT_SOURCECMD, fname_exp, fname_exp,
                                                                FALSE, curbuf))
     {
-#if defined(FEAT_EVAL)
         retval = aborting() ? FAIL : OK;
-#else
-        retval = OK;
-#endif
         goto theend;
     }
 
@@ -3128,7 +3095,6 @@ do_source(fname, check_other, is_vimrc)
     cookie.nextline = NULL;
     cookie.finished = FALSE;
 
-#if defined(FEAT_EVAL)
     /*
      * Check if this script has a breakpoint.
      */
@@ -3137,7 +3103,6 @@ do_source(fname, check_other, is_vimrc)
     cookie.dbg_tick = debug_tick;
 
     cookie.level = ex_nesting_level;
-#endif
 
     /*
      * Keep the sourcing name/lnum, for recursive calls.
@@ -3147,7 +3112,6 @@ do_source(fname, check_other, is_vimrc)
     save_sourcing_lnum = sourcing_lnum;
     sourcing_lnum = 0;
 
-#if defined(FEAT_MBYTE)
     cookie.conv.vc_type = CONV_NONE;            /* no conversion */
 
     /* Read the first line so we can check for a UTF-8 BOM. */
@@ -3166,14 +3130,12 @@ do_source(fname, check_other, is_vimrc)
             firstline = p;
         }
     }
-#endif
 
 #if defined(STARTUPTIME)
     if (time_fd != NULL)
         time_push(&tv_rel, &tv_start);
 #endif
 
-#if defined(FEAT_EVAL)
 #if defined(FEAT_PROFILE)
     if (do_profiling == PROF_YES)
         prof_child_enter(&wait_start);          /* entering a child now */
@@ -3188,22 +3150,18 @@ do_source(fname, check_other, is_vimrc)
      * If it's new, generate a new SID.
      */
     save_current_SID = current_SID;
-#if defined(UNIX)
     stat_ok = (mch_stat((char *)fname_exp, &st) >= 0);
-#endif
     for (current_SID = script_items.ga_len; current_SID > 0; --current_SID)
     {
         si = &SCRIPT_ITEM(current_SID);
         if (si->sn_name != NULL
                 && (
-#if defined(UNIX)
                     /* Compare dev/ino when possible, it catches symbolic
                      * links.  Also compare file names, the inode may change
                      * when the file was edited. */
                     ((stat_ok && si->sn_dev_valid)
                         && (si->sn_dev == st.st_dev
                             && si->sn_ino == st.st_ino)) ||
-#endif
                 fnamecmp(si->sn_name, fname_exp) == 0))
             break;
     }
@@ -3224,7 +3182,6 @@ do_source(fname, check_other, is_vimrc)
         si = &SCRIPT_ITEM(current_SID);
         si->sn_name = fname_exp;
         fname_exp = NULL;
-#if defined(UNIX)
         if (stat_ok)
         {
             si->sn_dev_valid = TRUE;
@@ -3233,7 +3190,6 @@ do_source(fname, check_other, is_vimrc)
         }
         else
             si->sn_dev_valid = FALSE;
-#endif
 
         /* Allocate the local script variables to use for this script. */
         new_script_vars(current_SID);
@@ -3257,7 +3213,6 @@ do_source(fname, check_other, is_vimrc)
             profile_zero(&si->sn_pr_children);
         }
     }
-#endif
 #endif
 
     /*
@@ -3304,7 +3259,6 @@ do_source(fname, check_other, is_vimrc)
     }
 #endif
 
-#if defined(FEAT_EVAL)
     /*
      * After a "finish" in debug mode, need to break at first command of next
      * sourced file.
@@ -3312,9 +3266,7 @@ do_source(fname, check_other, is_vimrc)
     if (save_debug_break_level > ex_nesting_level
             && debug_break_level == ex_nesting_level)
         ++debug_break_level;
-#endif
 
-#if defined(FEAT_EVAL)
 almosttheend:
     current_SID = save_current_SID;
     restore_funccal(save_funccalp);
@@ -3322,20 +3274,15 @@ almosttheend:
     if (do_profiling == PROF_YES)
         prof_child_exit(&wait_start);           /* leaving a child now */
 #endif
-#endif
     fclose(cookie.fp);
     vim_free(cookie.nextline);
     vim_free(firstline);
-#if defined(FEAT_MBYTE)
     convert_setup(&cookie.conv, NULL, NULL);
-#endif
 
 theend:
     vim_free(fname_exp);
     return retval;
 }
-
-#if defined(FEAT_EVAL)
 
 /*
  * ":scriptnames"
@@ -3400,8 +3347,6 @@ free_scriptnames()
         vim_free(SCRIPT_ITEM(i).sn_name);
     ga_clear(&script_items);
 }
-#endif
-
 #endif
 
 #if defined(USE_CR)
@@ -3480,7 +3425,6 @@ getsourceline(c, cookie, indent)
     char_u              *line;
     char_u              *p;
 
-#if defined(FEAT_EVAL)
     /* If breakpoints have been added/deleted need to check for it. */
     if (sp->dbg_tick < debug_tick)
     {
@@ -3490,7 +3434,6 @@ getsourceline(c, cookie, indent)
 #if defined(FEAT_PROFILE)
     if (do_profiling == PROF_YES)
         script_line_end();
-#endif
 #endif
     /*
      * Get current line.  If there is a read-ahead line, use it, otherwise get
@@ -3555,7 +3498,6 @@ getsourceline(c, cookie, indent)
         }
     }
 
-#if defined(FEAT_MBYTE)
     if (line != NULL && sp->conv.vc_type != CONV_NONE)
     {
         char_u  *s;
@@ -3568,9 +3510,7 @@ getsourceline(c, cookie, indent)
             line = s;
         }
     }
-#endif
 
-#if defined(FEAT_EVAL)
     /* Did we encounter a breakpoint? */
     if (sp->breakpoint != 0 && sp->breakpoint <= sourcing_lnum)
     {
@@ -3579,7 +3519,6 @@ getsourceline(c, cookie, indent)
         sp->breakpoint = dbg_find_breakpoint(TRUE, sp->fname, sourcing_lnum);
         sp->dbg_tick = debug_tick;
     }
-#endif
 
     return line;
 }
@@ -3826,7 +3765,6 @@ script_line_end()
 ex_scriptencoding(eap)
     exarg_T     *eap UNUSED;
 {
-#if defined(FEAT_MBYTE)
     struct source_cookie        *sp;
     char_u                      *name;
 
@@ -3851,10 +3789,8 @@ ex_scriptencoding(eap)
 
     if (name != eap->arg)
         vim_free(name);
-#endif
 }
 
-#if defined(FEAT_EVAL)
 /*
  * ":finish": Mark a sourced file as finished.
  */
@@ -3915,7 +3851,6 @@ source_finished(fgetline, cookie)
             && ((struct source_cookie *)getline_cookie(
                                                 fgetline, cookie))->finished);
 }
-#endif
 
 #if defined(FEAT_LISTCMDS)
 /*
@@ -3941,7 +3876,7 @@ ex_checktime(eap)
 }
 #endif
 
-#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && (defined(FEAT_EVAL) || defined(FEAT_MULTI_LANG))
+#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
 #define HAVE_GET_LOCALE_VAL
 static char *get_locale_val __ARGS((int what));
 
@@ -3959,41 +3894,8 @@ get_locale_val(what)
 }
 #endif
 
-#if defined(FEAT_MULTI_LANG)
-/*
- * Obtain the current messages language.  Used to set the default for
- * 'helplang'.  May return NULL or an empty string.
- */
-    char_u *
-get_mess_lang()
-{
-    char_u *p;
-
-#if defined(HAVE_GET_LOCALE_VAL)
-#if defined(LC_MESSAGES)
-    p = (char_u *)get_locale_val(LC_MESSAGES);
-#else
-    /* This is necessary for Win32, where LC_MESSAGES is not defined and $LANG
-     * may be set to the LCID number.  LC_COLLATE is the best guess, LC_TIME
-     * and LC_MONETARY may be set differently for a Japanese working in the
-     * US. */
-    p = (char_u *)get_locale_val(LC_COLLATE);
-#endif
-#else
-    p = mch_getenv((char_u *)"LC_ALL");
-    if (p == NULL || *p == NUL)
-    {
-        p = mch_getenv((char_u *)"LC_MESSAGES");
-        if (p == NULL || *p == NUL)
-            p = mch_getenv((char_u *)"LANG");
-    }
-#endif
-    return p;
-}
-#endif
-
 /* Complicated #if; matches with where get_mess_env() is used below. */
-#if (defined(FEAT_EVAL) && !((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && defined(LC_MESSAGES))) || ((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && (defined(FEAT_GETTEXT) || defined(FEAT_MBYTE)) && !defined(LC_MESSAGES))
+#if (!((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && defined(LC_MESSAGES))) || ((defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && !defined(LC_MESSAGES))
 static char_u *get_mess_env __ARGS((void));
 
 /*
@@ -4022,8 +3924,6 @@ get_mess_env()
     return p;
 }
 #endif
-
-#if defined(FEAT_EVAL)
 
 /*
  * Set the "v:lang" variable according to the current locale setting.
@@ -4056,9 +3956,8 @@ set_lang_var()
 #endif
     set_vim_var_string(VV_LC_TIME, loc, -1);
 }
-#endif
 
-#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && (defined(FEAT_GETTEXT) || defined(FEAT_MBYTE))
+#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
 /*
  * ":language":  Set the language (locale).
  */
@@ -4163,16 +4062,11 @@ ex_language(eap)
                     char_u      *mname;
                     mname = name;
                     vim_setenv((char_u *)"LC_MESSAGES", mname);
-#if defined(FEAT_MULTI_LANG)
-                    set_helplang_default(mname);
-#endif
                 }
             }
 
-#if defined(FEAT_EVAL)
             /* Set v:lang, v:lc_time and v:ctype to the final result. */
             set_lang_var();
-#endif
 #if defined(FEAT_TITLE)
             maketitle();
 #endif

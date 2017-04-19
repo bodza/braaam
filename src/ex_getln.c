@@ -25,10 +25,8 @@ struct cmdline_info
     expand_T    *xpc;           /* struct being used for expansion, xp_pattern
                                    may point into cmdbuff */
     int         xp_context;     /* type of expansion */
-#if defined(FEAT_EVAL)
     char_u      *xp_arg;        /* user-defined expansion arg */
     int         input_fn;       /* when TRUE Invoked for input() function */
-#endif
 };
 
 /* The current cmdline_info.  It is initialized in getcmdline() and after that
@@ -39,9 +37,7 @@ static struct cmdline_info ccline;
 
 static int      cmd_showtail;           /* Only show path tail in lists ? */
 
-#if defined(FEAT_EVAL)
 static int      new_cmdpos;     /* position set by set_cmdline_pos() */
-#endif
 
 #if defined(FEAT_CMDHIST)
 typedef struct hist_entry
@@ -60,9 +56,7 @@ static int      hislen = 0;             /* actual length of history tables */
 static int      hist_char2type __ARGS((int c));
 
 static int      in_history __ARGS((int, char_u *, int, int, int));
-#if defined(FEAT_EVAL)
 static int      calc_hist_idx __ARGS((int histype, int num));
-#endif
 #endif
 
 #if defined(FEAT_RIGHTLEFT)
@@ -72,18 +66,13 @@ static int      cmd_hkmap = 0;  /* Hebrew mapping during command line */
 static int      cmdline_charsize __ARGS((int idx));
 static void     set_cmdspos __ARGS((void));
 static void     set_cmdspos_cursor __ARGS((void));
-#if defined(FEAT_MBYTE)
 static void     correct_cmdspos __ARGS((int idx, int cells));
-#endif
 static void     alloc_cmdbuff __ARGS((int len));
 static int      realloc_cmdbuff __ARGS((int len));
 static void     draw_cmdline __ARGS((int start, int len));
 static void     save_cmdline __ARGS((struct cmdline_info *ccp));
 static void     restore_cmdline __ARGS((struct cmdline_info *ccp));
 static int      cmdline_paste __ARGS((int regname, int literally, int remcr));
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-static void     redrawcmd_preedit __ARGS((void));
-#endif
 #if defined(FEAT_WILDMENU)
 static void     cmdline_del __ARGS((int from));
 #endif
@@ -102,7 +91,7 @@ static int      ExpandRTDir __ARGS((char_u *pat, int *num_file, char_u ***file, 
 #if defined(FEAT_CMDHIST)
 static char_u   *get_history_arg __ARGS((expand_T *xp, int idx));
 #endif
-#if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL)
+#if defined(FEAT_USR_CMDS)
 static int      ExpandUserDefined __ARGS((expand_T *xp, regmatch_T *regmatch, int *num_file, char_u ***file));
 static int      ExpandUserList __ARGS((expand_T *xp, int *num_file, char_u ***file));
 #endif
@@ -178,28 +167,19 @@ getcmdline(firstc, count, indent)
      * preceded with a mouse down event */
     int         ignore_drag_release = TRUE;
 #endif
-#if defined(FEAT_EVAL)
     int         break_ctrl_c = FALSE;
-#endif
     expand_T    xpc;
     long        *b_im_ptr = NULL;
-#if defined(FEAT_WILDMENU) || defined(FEAT_EVAL) || defined(FEAT_SEARCH_EXTRA)
     /* Everything that may work recursively should save and restore the
      * current command line in save_ccline.  That includes update_screen(), a
      * custom status line may invoke ":normal". */
     struct cmdline_info save_ccline;
-#endif
 
-#if defined(FEAT_SNIFF)
-    want_sniff_request = 0;
-#endif
-#if defined(FEAT_EVAL)
     if (firstc == -1)
     {
         firstc = NUL;
         break_ctrl_c = TRUE;
     }
-#endif
 #if defined(FEAT_RIGHTLEFT)
     /* start without Hebrew mapping for a command line */
     if (firstc == ':' || firstc == '=' || firstc == '>')
@@ -268,7 +248,6 @@ getcmdline(firstc, count, indent)
     xpc.xp_shell = FALSE;
 #endif
 
-#if defined(FEAT_EVAL)
     if (ccline.input_fn)
     {
         xpc.xp_context = ccline.xp_context;
@@ -277,7 +256,6 @@ getcmdline(firstc, count, indent)
         xpc.xp_arg = ccline.xp_arg;
 #endif
     }
-#endif
 
     /*
      * Avoid scrolling when called by a recursive do_cmdline(), e.g. when
@@ -386,16 +364,10 @@ getcmdline(firstc, count, indent)
          * Don't ignore it for the input() function.
          */
         if ((c == Ctrl_C
-#if defined(UNIX)
                 || c == intr_char
-#endif
                                 )
-#if defined(FEAT_EVAL) || defined(FEAT_CRYPT)
                 && firstc != '@'
-#endif
-#if defined(FEAT_EVAL)
                 && !break_ctrl_c
-#endif
                 && !global_busy)
             got_int = FALSE;
 
@@ -572,10 +544,8 @@ getcmdline(firstc, count, indent)
                 i = (int)(xpc.xp_pattern - ccline.cmdbuff);
                 while (--j > i)
                 {
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                         j -= (*mb_head_off)(ccline.cmdbuff, ccline.cmdbuff + j);
-#endif
                     if (vim_ispathsep(ccline.cmdbuff[j]))
                     {
                         found = TRUE;
@@ -600,10 +570,8 @@ getcmdline(firstc, count, indent)
                 i = (int)(xpc.xp_pattern - ccline.cmdbuff);
                 while (--j > i)
                 {
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                         j -= (*mb_head_off)(ccline.cmdbuff, ccline.cmdbuff + j);
-#endif
                     if (vim_ispathsep(ccline.cmdbuff[j])
 #if defined(BACKSLASH_IN_FILENAME)
                             && vim_strchr(" *?[{`$%#", ccline.cmdbuff[j + 1])
@@ -666,7 +634,6 @@ getcmdline(firstc, count, indent)
                 vungetc(c);
                 c = Ctrl_BSL;
             }
-#if defined(FEAT_EVAL)
             else if (c == 'e')
             {
                 char_u  *p = NULL;
@@ -725,7 +692,6 @@ getcmdline(firstc, count, indent)
                 redrawcmd();
                 goto cmdline_not_changed;
             }
-#endif
             else
             {
                 if (c == Ctrl_G && p_im && restart_edit == 0)
@@ -930,18 +896,15 @@ getcmdline(firstc, count, indent)
                  */
                 if (c == K_DEL && ccline.cmdpos != ccline.cmdlen)
                     ++ccline.cmdpos;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte && c == K_DEL)
                     ccline.cmdpos += mb_off_next(ccline.cmdbuff,
                                               ccline.cmdbuff + ccline.cmdpos);
-#endif
                 if (ccline.cmdpos > 0)
                 {
                     char_u *p;
 
                     j = ccline.cmdpos;
                     p = ccline.cmdbuff + j;
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                     {
                         p = mb_prevptr(ccline.cmdbuff, p);
@@ -957,7 +920,6 @@ getcmdline(firstc, count, indent)
                         }
                     }
                     else
-#endif
                         if (c == Ctrl_W)
                     {
                         while (p > ccline.cmdbuff && vim_isspace(p[-1]))
@@ -984,9 +946,7 @@ getcmdline(firstc, count, indent)
                 {
                     /* In ex and debug mode it doesn't make sense to return. */
                     if (exmode_active
-#if defined(FEAT_EVAL)
                             || ccline.cmdfirstc == '>'
-#endif
                             )
                         goto cmdline_not_changed;
 
@@ -1120,7 +1080,6 @@ getcmdline(firstc, count, indent)
                 if (i == Ctrl_R)
                     c = plain_vgetc();  /* CTRL-R CTRL-R <char> */
                 --no_mapping;
-#if defined(FEAT_EVAL)
                 /*
                  * Insert the result of an expression.
                  * Need to save the current command line, to be able to enter
@@ -1141,12 +1100,10 @@ getcmdline(firstc, count, indent)
                         restore_cmdline(&save_ccline);
                     }
                 }
-#endif
                 if (c != ESC)       /* use ESC to cancel inserting register */
                 {
                     cmdline_paste(c, i == Ctrl_R, FALSE);
 
-#if defined(FEAT_EVAL)
                     /* When there was a serious error abort getting the
                      * command line. */
                     if (aborting())
@@ -1155,9 +1112,7 @@ getcmdline(firstc, count, indent)
                                            putting it in history */
                         goto returncmd; /* back to cmd mode */
                     }
-#endif
                     KeyTyped = FALSE;   /* Don't do p_wc completion. */
-#if defined(FEAT_EVAL)
                     if (new_cmdpos >= 0)
                     {
                         /* set_cmdline_pos() was used */
@@ -1166,7 +1121,6 @@ getcmdline(firstc, count, indent)
                         else
                             ccline.cmdpos = new_cmdpos;
                     }
-#endif
                 }
                 redrawcmd();
                 goto cmdline_changed;
@@ -1189,21 +1143,17 @@ getcmdline(firstc, count, indent)
                     if (KeyTyped && ccline.cmdspos + i >= Columns * Rows)
                         break;
                     ccline.cmdspos += i;
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                         ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff
                                                              + ccline.cmdpos);
                     else
-#endif
                         ++ccline.cmdpos;
                 }
                 while ((c == K_S_RIGHT || c == K_C_RIGHT
                                || (mod_mask & (MOD_MASK_SHIFT|MOD_MASK_CTRL)))
                         && ccline.cmdbuff[ccline.cmdpos] != ' ');
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     set_cmdspos_cursor();
-#endif
                 goto cmdline_not_changed;
 
         case K_LEFT:
@@ -1214,38 +1164,22 @@ getcmdline(firstc, count, indent)
                 do
                 {
                     --ccline.cmdpos;
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)      /* move to first byte of char */
                         ccline.cmdpos -= (*mb_head_off)(ccline.cmdbuff,
                                               ccline.cmdbuff + ccline.cmdpos);
-#endif
                     ccline.cmdspos -= cmdline_charsize(ccline.cmdpos);
                 }
                 while (ccline.cmdpos > 0
                         && (c == K_S_LEFT || c == K_C_LEFT
                                || (mod_mask & (MOD_MASK_SHIFT|MOD_MASK_CTRL)))
                         && ccline.cmdbuff[ccline.cmdpos - 1] != ' ');
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     set_cmdspos_cursor();
-#endif
                 goto cmdline_not_changed;
 
         case K_IGNORE:
                 /* Ignore mouse event or ex_window() result. */
                 goto cmdline_not_changed;
-
-#if defined(FEAT_GUI_W32)
-            /* On Win32 ignore <M-F4>, we get it when closing the window was
-             * cancelled. */
-        case K_F4:
-            if (mod_mask == MOD_MASK_ALT)
-            {
-                redrawcmd();        /* somehow the cmdline is cleared */
-                goto cmdline_not_changed;
-            }
-            break;
-#endif
 
 #if defined(FEAT_MOUSE)
         case K_MIDDLEDRAG:
@@ -1253,10 +1187,6 @@ getcmdline(firstc, count, indent)
                 goto cmdline_not_changed;       /* Ignore mouse */
 
         case K_MIDDLEMOUSE:
-#if defined(FEAT_GUI)
-                /* When GUI is active, also paste when 'mouse' is empty */
-                if (!gui.in_use)
-#endif
                     if (!mouse_has(MOUSE_COMMAND))
                         goto cmdline_not_changed;   /* Ignore mouse */
 #if defined(FEAT_CLIPBOARD)
@@ -1290,10 +1220,6 @@ getcmdline(firstc, count, indent)
                     ignore_drag_release = TRUE;
                 else
                     ignore_drag_release = FALSE;
-#if defined(FEAT_GUI)
-                /* When GUI is active, also move when 'mouse' is empty */
-                if (!gui.in_use)
-#endif
                     if (!mouse_has(MOUSE_COMMAND))
                         goto cmdline_not_changed;   /* Ignore mouse */
 #if defined(FEAT_CLIPBOARD)
@@ -1326,7 +1252,6 @@ getcmdline(firstc, count, indent)
                     if (mouse_row <= cmdline_row + ccline.cmdspos / Columns
                                   && mouse_col < ccline.cmdspos % Columns + i)
                         break;
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                     {
                         /* Count ">" for double-wide char that doesn't fit. */
@@ -1334,7 +1259,6 @@ getcmdline(firstc, count, indent)
                         ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff
                                                          + ccline.cmdpos) - 1;
                     }
-#endif
                     ccline.cmdspos += i;
                 }
                 goto cmdline_not_changed;
@@ -1355,27 +1279,6 @@ getcmdline(firstc, count, indent)
 
 #endif
 
-#if defined(FEAT_GUI)
-        case K_LEFTMOUSE_NM:    /* mousefocus click, ignored */
-        case K_LEFTRELEASE_NM:
-                goto cmdline_not_changed;
-
-        case K_VER_SCROLLBAR:
-                if (msg_scrolled == 0)
-                {
-                    gui_do_scroll();
-                    redrawcmd();
-                }
-                goto cmdline_not_changed;
-
-        case K_HOR_SCROLLBAR:
-                if (msg_scrolled == 0)
-                {
-                    gui_do_horiz_scroll(scrollbar_value, FALSE);
-                    redrawcmd();
-                }
-                goto cmdline_not_changed;
-#endif
 #if defined(FEAT_GUI_TABLINE)
         case K_TABLINE:
         case K_TABMENU:
@@ -1611,7 +1514,6 @@ getcmdline(firstc, count, indent)
                 putcmdline('^', TRUE);
                 c = get_literal();          /* get next (two) character(s) */
                 do_abbr = FALSE;            /* don't do abbreviation now */
-#if defined(FEAT_MBYTE)
                 /* may need to remove ^ when composing char was typed */
                 if (enc_utf8 && utf_iscomposing(c) && !cmd_silent)
                 {
@@ -1619,7 +1521,6 @@ getcmdline(firstc, count, indent)
                     msg_putchar(' ');
                     cursorcmd();
                 }
-#endif
                 break;
 
 #if defined(FEAT_DIGRAPHS)
@@ -1648,14 +1549,12 @@ getcmdline(firstc, count, indent)
 #endif
 
         default:
-#if defined(UNIX)
                 if (c == intr_char)
                 {
                     gotesc = TRUE;      /* will free ccline.cmdbuff after
                                            putting it in history */
                     goto returncmd;     /* back to Normal mode */
                 }
-#endif
                 /*
                  * Normal character with no special meaning.  Just set mod_mask
                  * to 0x0 so that typing Shift-Space in the GUI doesn't enter
@@ -1671,11 +1570,9 @@ getcmdline(firstc, count, indent)
          */
 
         if (do_abbr && (IS_SPECIAL(c) || !vim_iswordc(c)) && (ccheck_abbr(
-#if defined(FEAT_MBYTE)
                         /* Add ABBR_OFF for characters above 0x100, this is
                          * what check_abbr() expects. */
                         (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) :
-#endif
                                                          c) || c == Ctrl_RSB))
             goto cmdline_changed;
 
@@ -1686,7 +1583,6 @@ getcmdline(firstc, count, indent)
             put_on_cmdline(get_special_key_name(c, mod_mask), -1, TRUE);
         else
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 j = (*mb_char2bytes)(c, IObuff);
@@ -1694,7 +1590,6 @@ getcmdline(firstc, count, indent)
                 put_on_cmdline(IObuff, j, TRUE);
             }
             else
-#endif
             {
                 IObuff[0] = c;
                 put_on_cmdline(IObuff, 1, TRUE);
@@ -1932,7 +1827,6 @@ returncmd:
     }
 }
 
-#if (defined(FEAT_CRYPT) || defined(FEAT_EVAL))
 /*
  * Get a command line with a prompt.
  * This is prepared to be called recursively from getcmdline() (e.g. by
@@ -1954,11 +1848,9 @@ getcmdline_prompt(firstc, prompt, attr, xp_context, xp_arg)
     save_cmdline(&save_ccline);
     ccline.cmdprompt = prompt;
     ccline.cmdattr = attr;
-#if defined(FEAT_EVAL)
     ccline.xp_context = xp_context;
     ccline.xp_arg = xp_arg;
     ccline.input_fn = (firstc == '@');
-#endif
     s = getcmdline(firstc, 1L, 0);
     restore_cmdline(&save_ccline);
     /* Restore msg_col, the prompt from input() may have changed it.
@@ -1970,7 +1862,6 @@ getcmdline_prompt(firstc, prompt, attr, xp_context, xp_arg)
 
     return s;
 }
-#endif
 
 /*
  * Return TRUE when the text must not be changed and we can't switch to
@@ -2038,10 +1929,8 @@ allbuf_locked()
 cmdline_charsize(idx)
     int         idx;
 {
-#if defined(FEAT_CRYPT) || defined(FEAT_EVAL)
     if (cmdline_star > 0)           /* showing '*', always 1 position */
         return 1;
-#endif
     return ptr2cells(ccline.cmdbuff + idx);
 }
 
@@ -2078,11 +1967,9 @@ set_cmdspos_cursor()
     for (i = 0; i < ccline.cmdlen && i < ccline.cmdpos; ++i)
     {
         c = cmdline_charsize(i);
-#if defined(FEAT_MBYTE)
         /* Count ">" for double-wide multi-byte char that doesn't fit. */
         if (has_mbyte)
             correct_cmdspos(i, c);
-#endif
         /* If the cmdline doesn't fit, show cursor on last visible char.
          * Don't move the cursor itself, so we can still append. */
         if ((ccline.cmdspos += c) >= m)
@@ -2090,14 +1977,11 @@ set_cmdspos_cursor()
             ccline.cmdspos -= c;
             break;
         }
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             i += (*mb_ptr2len)(ccline.cmdbuff + i) - 1;
-#endif
     }
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Check if the character at "idx", which is "cells" wide, is a multi-byte
  * character that doesn't fit, so that a ">" must be displayed.
@@ -2112,7 +1996,6 @@ correct_cmdspos(idx, cells)
                 && ccline.cmdspos % Columns + cells > Columns)
         ccline.cmdspos++;
 }
-#endif
 
 /*
  * Get an Ex command line for the ":" command.
@@ -2230,7 +2113,6 @@ getexmodeline(promptc, cookie, indent)
             {
                 if (line_ga.ga_len > 0)
                 {
-#if defined(FEAT_MBYTE)
                     if (has_mbyte)
                     {
                         p = (char_u *)line_ga.ga_data;
@@ -2239,7 +2121,6 @@ getexmodeline(promptc, cookie, indent)
                         line_ga.ga_len -= len;
                     }
                     else
-#endif
                         --line_ga.ga_len;
                     goto redraw;
                 }
@@ -2343,12 +2224,10 @@ redraw:
 
         if (IS_SPECIAL(c1))
             c1 = '?';
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             len = (*mb_char2bytes)(c1,
                                   (char_u *)line_ga.ga_data + line_ga.ga_len);
         else
-#endif
         {
             len = 1;
             ((char_u *)line_ga.ga_data)[line_ga.ga_len] = c1;
@@ -2419,7 +2298,7 @@ redraw:
     return (char_u *)line_ga.ga_data;
 }
 
-#if defined(MCH_CURSOR_SHAPE) || defined(FEAT_GUI) || defined(FEAT_MOUSESHAPE)
+#if defined(MCH_CURSOR_SHAPE) || defined(FEAT_MOUSESHAPE)
 /*
  * Return TRUE if ccline.overstrike is on.
  */
@@ -2436,106 +2315,6 @@ cmdline_overstrike()
 cmdline_at_end()
 {
     return (ccline.cmdpos >= ccline.cmdlen);
-}
-#endif
-
-#if (defined(FEAT_XIM) && defined(FEAT_GUI_GTK))
-/*
- * Return the virtual column number at the current cursor position.
- * This is used by the IM code to obtain the start of the preedit string.
- */
-    colnr_T
-cmdline_getvcol_cursor()
-{
-    if (ccline.cmdbuff == NULL || ccline.cmdpos > ccline.cmdlen)
-        return MAXCOL;
-
-#if defined(FEAT_MBYTE)
-    if (has_mbyte)
-    {
-        colnr_T col;
-        int     i = 0;
-
-        for (col = 0; i < ccline.cmdpos; ++col)
-            i += (*mb_ptr2len)(ccline.cmdbuff + i);
-
-        return col;
-    }
-    else
-#endif
-        return ccline.cmdpos;
-}
-#endif
-
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-/*
- * If part of the command line is an IM preedit string, redraw it with
- * IM feedback attributes.  The cursor position is restored after drawing.
- */
-    static void
-redrawcmd_preedit()
-{
-    if ((State & CMDLINE)
-            && xic != NULL
-            /* && im_get_status()  doesn't work when using SCIM */
-            && !p_imdisable
-            && im_is_preediting())
-    {
-        int     cmdpos = 0;
-        int     cmdspos;
-        int     old_row;
-        int     old_col;
-        colnr_T col;
-
-        old_row = msg_row;
-        old_col = msg_col;
-        cmdspos = ((ccline.cmdfirstc != NUL) ? 1 : 0) + ccline.cmdindent;
-
-#if defined(FEAT_MBYTE)
-        if (has_mbyte)
-        {
-            for (col = 0; col < preedit_start_col
-                          && cmdpos < ccline.cmdlen; ++col)
-            {
-                cmdspos += (*mb_ptr2cells)(ccline.cmdbuff + cmdpos);
-                cmdpos  += (*mb_ptr2len)(ccline.cmdbuff + cmdpos);
-            }
-        }
-        else
-#endif
-        {
-            cmdspos += preedit_start_col;
-            cmdpos  += preedit_start_col;
-        }
-
-        msg_row = cmdline_row + (cmdspos / (int)Columns);
-        msg_col = cmdspos % (int)Columns;
-        if (msg_row >= Rows)
-            msg_row = Rows - 1;
-
-        for (col = 0; cmdpos < ccline.cmdlen; ++col)
-        {
-            int char_len;
-            int char_attr;
-
-            char_attr = im_get_feedback_attr(col);
-            if (char_attr < 0)
-                break; /* end of preedit string */
-
-#if defined(FEAT_MBYTE)
-            if (has_mbyte)
-                char_len = (*mb_ptr2len)(ccline.cmdbuff + cmdpos);
-            else
-#endif
-                char_len = 1;
-
-            msg_outtrans_len_attr(ccline.cmdbuff + cmdpos, char_len, char_attr);
-            cmdpos += char_len;
-        }
-
-        msg_row = old_row;
-        msg_col = old_col;
-    }
 }
 #endif
 
@@ -2611,20 +2390,16 @@ draw_cmdline(start, len)
     int         start;
     int         len;
 {
-#if defined(FEAT_CRYPT) || defined(FEAT_EVAL)
     int         i;
 
     if (cmdline_star > 0)
         for (i = 0; i < len; ++i)
         {
             msg_putchar('*');
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 i += (*mb_ptr2len)(ccline.cmdbuff + start + i) - 1;
-#endif
         }
     else
-#endif
         msg_outtrans_len(ccline.cmdbuff + start, len);
 }
 
@@ -2659,11 +2434,9 @@ unputcmdline()
     msg_no_more = TRUE;
     if (ccline.cmdlen == ccline.cmdpos)
         msg_putchar(' ');
-#if defined(FEAT_MBYTE)
     else if (has_mbyte)
         draw_cmdline(ccline.cmdpos,
                                (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos));
-#endif
     else
         draw_cmdline(ccline.cmdpos, 1);
     msg_no_more = FALSE;
@@ -2708,7 +2481,6 @@ put_on_cmdline(str, len, redraw)
         }
         else
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 /* Count nr of characters in the new string. */
@@ -2730,14 +2502,12 @@ put_on_cmdline(str, len, redraw)
                     ccline.cmdlen = ccline.cmdpos + len;
             }
             else
-#endif
             if (ccline.cmdpos + len > ccline.cmdlen)
                 ccline.cmdlen = ccline.cmdpos + len;
         }
         mch_memmove(ccline.cmdbuff + ccline.cmdpos, str, (size_t)len);
         ccline.cmdbuff[ccline.cmdlen] = NUL;
 
-#if defined(FEAT_MBYTE)
         if (enc_utf8)
         {
             /* When the inserted text starts with a composing character,
@@ -2766,7 +2536,6 @@ put_on_cmdline(str, len, redraw)
                 }
             }
         }
-#endif
 
         if (redraw && !cmd_silent)
         {
@@ -2791,17 +2560,14 @@ put_on_cmdline(str, len, redraw)
             for (i = 0; i < len; ++i)
             {
                 c = cmdline_charsize(ccline.cmdpos);
-#if defined(FEAT_MBYTE)
                 /* count ">" for a double-wide char that doesn't fit. */
                 if (has_mbyte)
                     correct_cmdspos(ccline.cmdpos, c);
-#endif
                 /* Stop cursor at the end of the screen, but do increment the
                  * insert position, so that entering a very long command
                  * works, even though you can't see it. */
                 if (ccline.cmdspos + c < m)
                     ccline.cmdspos += c;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     c = (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos) - 1;
@@ -2810,7 +2576,6 @@ put_on_cmdline(str, len, redraw)
                     ccline.cmdpos += c;
                     i += c;
                 }
-#endif
                 ++ccline.cmdpos;
             }
         }
@@ -2855,7 +2620,6 @@ restore_cmdline(ccp)
     prev_ccline = *ccp;
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Save the command line into allocated memory.  Returns a pointer to be
  * passed to restore_cmdline_alloc() later.
@@ -2885,7 +2649,6 @@ restore_cmdline_alloc(p)
         vim_free(p);
     }
 }
-#endif
 
 /*
  * paste a yank register into the command line.
@@ -2948,7 +2711,6 @@ cmdline_paste(regname, literally, remcr)
             /* Locate start of last word in the cmd buffer. */
             for (w = ccline.cmdbuff + ccline.cmdpos; w > ccline.cmdbuff; )
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     len = (*mb_head_off)(ccline.cmdbuff, w - 1) + 1;
@@ -2957,7 +2719,6 @@ cmdline_paste(regname, literally, remcr)
                     w -= len;
                 }
                 else
-#endif
                 {
                     if (!vim_iswordc(w[-1]))
                         break;
@@ -2999,17 +2760,13 @@ cmdline_paste_str(s, literally)
             cv = *s;
             if (cv == Ctrl_V && s[1])
                 ++s;
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 c = mb_cptr2char_adv(&s);
             else
-#endif
                 c = *s++;
             if (cv == Ctrl_V || c == ESC || c == Ctrl_C
                     || c == CAR || c == NL || c == Ctrl_L
-#if defined(UNIX)
                     || c == intr_char
-#endif
                     || (c == Ctrl_BSL && *s == Ctrl_N))
                 stuffcharReadbuff(Ctrl_V);
             stuffcharReadbuff(c);
@@ -3142,9 +2899,6 @@ cursorcmd()
     }
 
     windgoto(msg_row, msg_col);
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-    redrawcmd_preedit();
-#endif
 #if defined(MCH_CURSOR_SHAPE)
     mch_update_cursor();
 #endif
@@ -3581,7 +3335,7 @@ ExpandInit(xp)
 #endif
     xp->xp_numfiles = -1;
     xp->xp_files = NULL;
-#if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL) && defined(FEAT_CMDL_COMPL)
+#if defined(FEAT_USR_CMDS) && defined(FEAT_CMDL_COMPL)
     xp->xp_arg = NULL;
 #endif
     xp->xp_line = NULL;
@@ -4212,10 +3966,8 @@ set_expand_context(xp)
 {
     /* only expansion for ':', '>' and '=' command-lines */
     if (ccline.cmdfirstc != ':'
-#if defined(FEAT_EVAL)
             && ccline.cmdfirstc != '>' && ccline.cmdfirstc != '='
             && !ccline.input_fn
-#endif
             )
     {
         xp->xp_context = EXPAND_NOTHING;
@@ -4243,7 +3995,6 @@ set_cmd_context(xp, str, len, col)
     str[col] = NUL;
     nextcomm = str;
 
-#if defined(FEAT_EVAL)
     if (ccline.cmdfirstc == '=')
     {
 #if defined(FEAT_CMDL_COMPL)
@@ -4260,7 +4011,6 @@ set_cmd_context(xp, str, len, col)
 #endif
     }
     else
-#endif
         while (nextcomm != NULL)
             nextcomm = set_one_cmd_context(xp, nextcomm);
 
@@ -4324,39 +4074,6 @@ expand_cmdline(xp, str, col, matchcount, matches)
 
     return EXPAND_OK;
 }
-
-#if defined(FEAT_MULTI_LANG)
-/*
- * Cleanup matches for help tags: remove "@en" if "en" is the only language.
- */
-static void     cleanup_help_tags __ARGS((int num_file, char_u **file));
-
-    static void
-cleanup_help_tags(num_file, file)
-    int         num_file;
-    char_u      **file;
-{
-    int         i, j;
-    int         len;
-
-    for (i = 0; i < num_file; ++i)
-    {
-        len = (int)STRLEN(file[i]) - 3;
-        if (len > 0 && STRCMP(file[i] + len, "@en") == 0)
-        {
-            /* Sorting on priority means the same item in another language may
-             * be anywhere.  Search all items for a match up to the "@en". */
-            for (j = 0; j < num_file; ++j)
-                if (j != i
-                        && (int)STRLEN(file[j]) == len + 3
-                        && STRNCMP(file[i], file[j], len + 1) == 0)
-                    break;
-            if (j == num_file)
-                file[i][len] = NUL;
-        }
-    }
-}
-#endif
 
 /*
  * Do the expansion based on xp->xp_context and "pat".
@@ -4442,9 +4159,6 @@ ExpandFromContext(xp, pat, num_file, file, options)
         if (find_help_tags(*pat == NUL ? (char_u *)"help" : pat,
                                                  num_file, file, FALSE) == OK)
         {
-#if defined(FEAT_MULTI_LANG)
-            cleanup_help_tags(*num_file, *file);
-#endif
             return OK;
         }
         return FAIL;
@@ -4482,7 +4196,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
         char *directories[] = {"syntax", "indent", "ftplugin", NULL};
         return ExpandRTDir(pat, num_file, file, directories);
     }
-#if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL)
+#if defined(FEAT_USR_CMDS)
     if (xp->xp_context == EXPAND_USER_LIST)
         return ExpandUserList(xp, num_file, file);
 #endif
@@ -4499,7 +4213,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
         ret = ExpandSettings(xp, &regmatch, num_file, file);
     else if (xp->xp_context == EXPAND_MAPPINGS)
         ret = ExpandMappings(&regmatch, num_file, file);
-#if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL)
+#if defined(FEAT_USR_CMDS)
     else if (xp->xp_context == EXPAND_USER_DEFINED)
         ret = ExpandUserDefined(xp, &regmatch, num_file, file);
 #endif
@@ -4525,12 +4239,10 @@ ExpandFromContext(xp, pat, num_file, file, options)
             {EXPAND_USER_NARGS, get_user_cmd_nargs, FALSE, TRUE},
             {EXPAND_USER_COMPLETE, get_user_cmd_complete, FALSE, TRUE},
 #endif
-#if defined(FEAT_EVAL)
             {EXPAND_USER_VARS, get_user_var_name, FALSE, TRUE},
             {EXPAND_FUNCTIONS, get_function_name, FALSE, TRUE},
             {EXPAND_USER_FUNC, get_user_func_name, FALSE, TRUE},
             {EXPAND_EXPRESSION, get_expr_name, FALSE, TRUE},
-#endif
 #if defined(FEAT_MENU)
             {EXPAND_MENUS, get_menu_name, FALSE, TRUE},
             {EXPAND_MENUNAMES, get_menu_names, FALSE, TRUE},
@@ -4555,7 +4267,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #if defined(FEAT_PROFILE)
             {EXPAND_PROFILE, get_profile_name, TRUE, TRUE},
 #endif
-#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE)) && (defined(FEAT_GETTEXT) || defined(FEAT_MBYTE))
+#if (defined(HAVE_LOCALE_H) || defined(X_LOCALE))
             {EXPAND_LANGUAGE, get_lang_arg, TRUE, FALSE},
             {EXPAND_LOCALES, get_locales, TRUE, FALSE},
 #endif
@@ -4801,7 +4513,7 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
     return OK;
 }
 
-#if defined(FEAT_USR_CMDS) && defined(FEAT_EVAL)
+#if defined(FEAT_USR_CMDS)
 static void * call_user_expand_func __ARGS((void *(*user_expand_func) __ARGS((char_u *, int, char_u **, int)), expand_T *xp, int *num_file, char_u ***file));
 
 /*
@@ -5015,7 +4727,6 @@ ExpandRTDir(pat, num_file, file, dirnames)
 
 #endif
 
-#if defined(FEAT_CMDL_COMPL) || defined(FEAT_EVAL)
 /*
  * Expand "file" for all comma-separated directories in "path".
  * Adds the matches to "ga".  Caller must init "ga".
@@ -5070,8 +4781,6 @@ globpath(path, file, ga, expand_options)
 
     vim_free(buf);
 }
-
-#endif
 
 #if defined(FEAT_CMDHIST)
 
@@ -5378,8 +5087,6 @@ add_to_history(histype, new_entry, in_map, sep)
     }
 }
 
-#if defined(FEAT_EVAL)
-
 /*
  * Get identifier of newest history entry.
  * "histype" may be one of the HIST_ values.
@@ -5664,8 +5371,6 @@ del_history_idx(histype, idx)
     hisidx[histype] = i;
     return TRUE;
 }
-
-#endif
 
 #if defined(FEAT_CRYPT)
 /*
@@ -6163,9 +5868,7 @@ ex_window()
 
     /* Can't do this recursively.  Can't do it when typing a password. */
     if (cmdwin_type != 0
-#if defined(FEAT_CRYPT) || defined(FEAT_EVAL)
             || cmdline_star > 0
-#endif
             )
     {
         beep_flush();
@@ -6324,7 +6027,7 @@ ex_window()
     }
     else
     {
-#if defined(FEAT_AUTOCMD) && defined(FEAT_EVAL)
+#if defined(FEAT_AUTOCMD)
         /* autocmds may abort script processing */
         if (aborting() && cmdwin_result != K_IGNORE)
             cmdwin_result = Ctrl_C;
@@ -6446,9 +6149,7 @@ script_get(eap, cmd)
     for (;;)
     {
         theline = eap->getline(
-#if defined(FEAT_EVAL)
             eap->cstack->cs_looplevel > 0 ? -1 :
-#endif
             NUL, eap->cookie, 0);
 
         if (theline == NULL || STRCMP(end_pattern, theline) == 0)

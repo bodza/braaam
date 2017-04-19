@@ -20,20 +20,10 @@ ui_write(s, len)
     char_u  *s;
     int     len;
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use && !gui.dying && !gui.starting)
-    {
-        gui_write(s, len);
-        if (p_wd)
-            gui_wait_for_chars(p_wd);
-        return;
-    }
-#endif
 #if !defined(NO_CONSOLE)
     /* Don't output anything in silent mode ("ex -s") unless 'verbose' set */
     if (!(silent_mode && p_verbose == 0))
     {
-#if defined(FEAT_MBYTE)
         char_u  *tofree = NULL;
 
         if (output_conv.vc_type != CONV_NONE)
@@ -43,19 +33,15 @@ ui_write(s, len)
             if (tofree != NULL)
                 s = tofree;
         }
-#endif
 
         mch_write(s, len);
 
-#if defined(FEAT_MBYTE)
         if (output_conv.vc_type != CONV_NONE)
             vim_free(tofree);
-#endif
     }
 #endif
 }
 
-#if defined(UNIX)
 /*
  * When executing an external program, there may be some typed characters that
  * are not consumed by it.  Give them back to ui_inchar() and they are stored
@@ -92,7 +78,6 @@ ui_inchar_undo(s, len)
         ta_off = 0;
     }
 }
-#endif
 
 /*
  * ui_inchar(): low level input function.
@@ -115,25 +100,6 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
     int         tb_change_cnt;
 {
     int         retval = 0;
-
-#if defined(FEAT_GUI) && defined(UNIX)
-    /*
-     * Use the typeahead if there is any.
-     */
-    if (ta_str != NULL)
-    {
-        if (maxlen >= ta_len - ta_off)
-        {
-            mch_memmove(buf, ta_str + ta_off, (size_t)ta_len);
-            vim_free(ta_str);
-            ta_str = NULL;
-            return ta_len;
-        }
-        mch_memmove(buf, ta_str + ta_off, (size_t)maxlen);
-        ta_off += maxlen;
-        return maxlen;
-    }
-#endif
 
 #if defined(FEAT_PROFILE)
     if (do_profiling == PROF_YES && wtime != 0)
@@ -175,17 +141,7 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
             ctrl_c_interrupts = FALSE;
     }
 
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        if (gui_wait_for_chars(wtime) && !typebuf_changed(tb_change_cnt))
-            retval = read_from_input_buf(buf, (long)maxlen);
-    }
-#endif
 #if !defined(NO_CONSOLE)
-#if defined(FEAT_GUI)
-    else
-#endif
     {
         retval = mch_inchar(buf, maxlen, wtime, tb_change_cnt);
     }
@@ -213,13 +169,6 @@ theend:
     int
 ui_char_avail()
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        gui_mch_update();
-        return input_available();
-    }
-#endif
 #if !defined(NO_CONSOLE)
 #if defined(NO_CONSOLE_INPUT)
     if (no_console_input())
@@ -240,11 +189,6 @@ ui_delay(msec, ignoreinput)
     long        msec;
     int         ignoreinput;
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use && !ignoreinput)
-        gui_wait_for_chars(msec);
-    else
-#endif
         mch_delay(msec, ignoreinput);
 }
 
@@ -256,17 +200,10 @@ ui_delay(msec, ignoreinput)
     void
 ui_suspend()
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        gui_mch_iconify();
-        return;
-    }
-#endif
     mch_suspend();
 }
 
-#if !defined(UNIX) || !defined(SIGTSTP)
+#if !defined(SIGTSTP)
 /*
  * When the OS can't really suspend, call this function to start a shell.
  * This is never called in the GUI.
@@ -294,11 +231,6 @@ ui_get_shellsize()
 {
     int     retval;
 
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        retval = gui_get_shellsize();
-    else
-#endif
         retval = mch_get_shellsize();
 
     check_shellsize();
@@ -321,11 +253,6 @@ ui_get_shellsize()
 ui_set_shellsize(mustset)
     int         mustset UNUSED; /* set by the user */
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        gui_set_shellsize(mustset, TRUE, RESIZE_BOTH);
-    else
-#endif
         mch_set_shellsize();
 }
 
@@ -338,11 +265,6 @@ ui_new_shellsize()
 {
     if (full_screen && !exiting)
     {
-#if defined(FEAT_GUI)
-        if (gui.in_use)
-            gui_new_shellsize();
-        else
-#endif
             mch_new_shellsize();
     }
 }
@@ -350,11 +272,6 @@ ui_new_shellsize()
     void
 ui_breakcheck()
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        gui_mch_update();
-    else
-#endif
         mch_breakcheck();
 }
 
@@ -428,10 +345,8 @@ clip_update_selection(clip)
         {
             start = VIsual;
             end = curwin->w_cursor;
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 end.col += (*mb_ptr2len)(ml_get_cursor()) - 1;
-#endif
         }
         else
         {
@@ -461,29 +376,7 @@ clip_own_selection(cbd)
      * Also want to check somehow that we are reading from the keyboard rather
      * than a mapping etc.
      */
-#if defined(FEAT_X11)
-    /* Always own the selection, we might have lost it without being
-     * notified, e.g. during a ":sh" command. */
-    if (cbd->available)
-    {
-        int was_owned = cbd->owned;
-
-        cbd->owned = (clip_gen_own_selection(cbd) == OK);
-        if (!was_owned && (cbd == &clip_star || cbd == &clip_plus))
-        {
-            /* May have to show a different kind of highlighting for the
-             * selected area.  There is no specific redraw command for this,
-             * just redraw all windows on the current buffer. */
-            if (cbd->owned
-                    && (get_real_state() == VISUAL
-                                            || get_real_state() == SELECTMODE)
-                    && (cbd == &clip_star ? clip_isautosel_star()
-                                                      : clip_isautosel_plus())
-                    && hl_attr(HLF_V) != hl_attr(HLF_VNC))
-                redraw_curbuf_later(INVERTED_ALL);
-        }
-    }
-#else
+#if (1)
     /* Only own the clipboard when we didn't own it yet. */
     if (!cbd->owned && cbd->available)
         cbd->owned = (clip_gen_own_selection(cbd) == OK);
@@ -494,9 +387,6 @@ clip_own_selection(cbd)
 clip_lose_selection(cbd)
     VimClipboard        *cbd;
 {
-#if defined(FEAT_X11)
-    int     was_owned = cbd->owned;
-#endif
     int     visual_selection = FALSE;
 
     if (cbd == &clip_star || cbd == &clip_plus)
@@ -507,30 +397,6 @@ clip_lose_selection(cbd)
     if (visual_selection)
         clip_clear_selection(cbd);
     clip_gen_lose_selection(cbd);
-#if defined(FEAT_X11)
-    if (visual_selection)
-    {
-        /* May have to show a different kind of highlighting for the selected
-         * area.  There is no specific redraw command for this, just redraw all
-         * windows on the current buffer. */
-        if (was_owned
-                && (get_real_state() == VISUAL
-                                            || get_real_state() == SELECTMODE)
-                && (cbd == &clip_star ?
-                                clip_isautosel_star() : clip_isautosel_plus())
-                && hl_attr(HLF_V) != hl_attr(HLF_VNC))
-        {
-            update_curbuf(INVERTED_ALL);
-            setcursor();
-            cursor_on();
-            out_flush();
-#if defined(FEAT_GUI)
-            if (gui.in_use)
-                gui_update_cursor(TRUE, FALSE);
-#endif
-        }
-    }
-#endif
 }
 
     static void
@@ -626,9 +492,6 @@ clip_auto_select()
 clip_isautosel_star()
 {
     return (
-#if defined(FEAT_GUI)
-            gui.in_use ? (vim_strchr(p_go, GO_ASEL) != NULL) :
-#endif
             clip_autoselect_star);
 }
 
@@ -640,9 +503,6 @@ clip_isautosel_star()
 clip_isautosel_plus()
 {
     return (
-#if defined(FEAT_GUI)
-            gui.in_use ? (vim_strchr(p_go, GO_ASELPLUS) != NULL) :
-#endif
             clip_autoselect_plus);
 }
 
@@ -734,9 +594,7 @@ clip_start_selection(col, row, repeated_click)
 
     row = check_row(row);
     col = check_col(col);
-#if defined(FEAT_MBYTE)
     col = mb_fix_col(col, row);
-#endif
 
     cb->start.lnum  = row;
     cb->start.col   = col;
@@ -751,12 +609,6 @@ clip_start_selection(col, row, repeated_click)
     }
     else
         cb->mode = SELECT_MODE_CHAR;
-
-#if defined(FEAT_GUI)
-    /* clear the cursor until the selection is made */
-    if (gui.in_use)
-        gui_undraw_cursor();
-#endif
 
     switch (cb->mode)
     {
@@ -810,10 +662,6 @@ clip_process_selection(button, col, row, repeated_click)
         /* Check to make sure we have something selected */
         if (cb->start.lnum == cb->end.lnum && cb->start.col == cb->end.col)
         {
-#if defined(FEAT_GUI)
-            if (gui.in_use)
-                gui_update_cursor(FALSE, FALSE);
-#endif
             cb->state = SELECT_CLEARED;
             return;
         }
@@ -824,15 +672,8 @@ clip_process_selection(button, col, row, repeated_click)
 #endif
         if (clip_isautosel_star()
                 || (
-#if defined(FEAT_GUI)
-                    gui.in_use ? (vim_strchr(p_go, GO_ASELML) != NULL) :
-#endif
                     clip_autoselectml))
             clip_copy_modeless_selection(FALSE);
-#if defined(FEAT_GUI)
-        if (gui.in_use)
-            gui_update_cursor(FALSE, FALSE);
-#endif
 
         cb->state = SELECT_DONE;
         return;
@@ -840,9 +681,7 @@ clip_process_selection(button, col, row, repeated_click)
 
     row = check_row(row);
     col = check_col(col);
-#if defined(FEAT_MBYTE)
     col = mb_fix_col(col, row);
-#endif
 
     if (col == (int)cb->prev.col && row == cb->prev.lnum && !repeated_click)
         return;
@@ -908,21 +747,17 @@ clip_process_selection(button, col, row, repeated_click)
                             cb->origin_start_col, row, (int)Columns);
                 else
                 {
-#if defined(FEAT_MBYTE)
                     if (has_mbyte && mb_lefthalve(row, col))
                         slen = 2;
-#endif
                     clip_update_modeless_selection(cb, cb->origin_row,
                             cb->origin_start_col, row, col + slen);
                 }
             }
             else
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte
                         && mb_lefthalve(cb->origin_row, cb->origin_start_col))
                     slen = 2;
-#endif
                 if (col >= (int)cb->word_end_col)
                     clip_update_modeless_selection(cb, row, cb->word_end_col,
                             cb->origin_row, cb->origin_start_col + slen);
@@ -973,33 +808,6 @@ clip_process_selection(button, col, row, repeated_click)
                 cb->start.col, cb->end.lnum, cb->end.col);
 #endif
 }
-
-#if defined(FEAT_GUI)
-/*
- * Redraw part of the selection if character at "row,col" is inside of it.
- * Only used for the GUI.
- */
-    void
-clip_may_redraw_selection(row, col, len)
-    int         row, col;
-    int         len;
-{
-    int         start = col;
-    int         end = col + len;
-
-    if (clip_star.state != SELECT_CLEARED
-            && row >= clip_star.start.lnum
-            && row <= clip_star.end.lnum)
-    {
-        if (row == clip_star.start.lnum && start < (int)clip_star.start.col)
-            start = clip_star.start.col;
-        if (row == clip_star.end.lnum && end > (int)clip_star.end.col)
-            end = clip_star.end.col;
-        if (end > start)
-            clip_invert_area(row, start, row, end, 0);
-    }
-}
-#endif
 
 /*
  * Called from outside to clear selected region from the display
@@ -1136,11 +944,6 @@ clip_invert_rectangle(row, col, height, width, invert)
     int         width;
     int         invert;
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        gui_mch_invert_rectangle(row, col, height, width);
-    else
-#endif
         screen_draw_rectangle(row, col, height, width, invert);
 }
 
@@ -1161,9 +964,7 @@ clip_copy_modeless_selection(both)
     int         line_end_col;
     int         add_newline_flag = FALSE;
     int         len;
-#if defined(FEAT_MBYTE)
     char_u      *p;
-#endif
     int         row1 = clip_star.start.lnum;
     int         col1 = clip_star.start.col;
     int         row2 = clip_star.end.lnum;
@@ -1185,23 +986,19 @@ clip_copy_modeless_selection(both)
     {
         row = col1; col1 = col2; col2 = row;
     }
-#if defined(FEAT_MBYTE)
     /* correct starting point for being on right halve of double-wide char */
     p = ScreenLines + LineOffset[row1];
     if (enc_dbcs != 0)
         col1 -= (*mb_head_off)(p, p + col1);
     else if (enc_utf8 && p[col1] == 0)
         --col1;
-#endif
 
     /* Create a temporary buffer for storing the text */
     len = (row2 - row1 + 1) * Columns + 1;
-#if defined(FEAT_MBYTE)
     if (enc_dbcs != 0)
         len *= 2;       /* max. 2 bytes per display cell */
     else if (enc_utf8)
         len *= MB_MAXBYTES;
-#endif
     buffer = lalloc((long_u)len, TRUE);
     if (buffer == NULL)     /* out of memory */
         return;
@@ -1240,7 +1037,6 @@ clip_copy_modeless_selection(both)
 
         if (row < screen_Rows && end_col <= screen_Columns)
         {
-#if defined(FEAT_MBYTE)
             if (enc_dbcs != 0)
             {
                 int     i;
@@ -1291,7 +1087,6 @@ clip_copy_modeless_selection(both)
                 }
             }
             else
-#endif
             {
                 STRNCPY(bufp, ScreenLines + LineOffset[row] + start_col,
                                                          end_col - start_col);
@@ -1314,16 +1109,6 @@ clip_copy_modeless_selection(both)
     /* Make the register contents available to the outside world. */
     clip_gen_set_selection(&clip_star);
 
-#if defined(FEAT_X11)
-    if (both)
-    {
-        /* Do the same for the '+' register. */
-        clip_free_selection(&clip_plus);
-        clip_own_selection(&clip_plus);
-        clip_yank_selection(MCHAR, buffer, (long)(bufp - buffer), &clip_plus);
-        clip_gen_set_selection(&clip_plus);
-    }
-#endif
     vim_free(buffer);
 }
 
@@ -1342,50 +1127,38 @@ clip_get_word_boundaries(cb, row, col)
     int         start_class;
     int         temp_col;
     char_u      *p;
-#if defined(FEAT_MBYTE)
     int         mboff;
-#endif
 
     if (row >= screen_Rows || col >= screen_Columns || ScreenLines == NULL)
         return;
 
     p = ScreenLines + LineOffset[row];
-#if defined(FEAT_MBYTE)
     /* Correct for starting in the right halve of a double-wide char */
     if (enc_dbcs != 0)
         col -= dbcs_screen_head_off(p, p + col);
     else if (enc_utf8 && p[col] == 0)
         --col;
-#endif
     start_class = CHAR_CLASS(p[col]);
 
     temp_col = col;
     for ( ; temp_col > 0; temp_col--)
-#if defined(FEAT_MBYTE)
         if (enc_dbcs != 0
                    && (mboff = dbcs_screen_head_off(p, p + temp_col - 1)) > 0)
             temp_col -= mboff;
         else
-#endif
         if (CHAR_CLASS(p[temp_col - 1]) != start_class
-#if defined(FEAT_MBYTE)
                 && !(enc_utf8 && p[temp_col - 1] == 0)
-#endif
                 )
             break;
     cb->word_start_col = temp_col;
 
     temp_col = col;
     for ( ; temp_col < screen_Columns; temp_col++)
-#if defined(FEAT_MBYTE)
         if (enc_dbcs != 0 && dbcs_ptr2cells(p + temp_col) == 2)
             ++temp_col;
         else
-#endif
         if (CHAR_CLASS(p[temp_col]) != start_class
-#if defined(FEAT_MBYTE)
                 && !(enc_utf8 && p[temp_col] == 0)
-#endif
                 )
             break;
     cb->word_end_col = temp_col;
@@ -1445,11 +1218,6 @@ clip_gen_own_selection(cbd)
     VimClipboard        *cbd;
 {
 #if defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        return clip_mch_own_selection(cbd);
-    else
-#endif
         return clip_xterm_own_selection(cbd);
 #else
     return clip_mch_own_selection(cbd);
@@ -1461,11 +1229,6 @@ clip_gen_lose_selection(cbd)
     VimClipboard        *cbd;
 {
 #if defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        clip_mch_lose_selection(cbd);
-    else
-#endif
         clip_xterm_lose_selection(cbd);
 #else
     clip_mch_lose_selection(cbd);
@@ -1488,11 +1251,6 @@ clip_gen_set_selection(cbd)
         }
     }
 #if defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        clip_mch_set_selection(cbd);
-    else
-#endif
         clip_xterm_set_selection(cbd);
 #else
     clip_mch_set_selection(cbd);
@@ -1504,11 +1262,6 @@ clip_gen_request_selection(cbd)
     VimClipboard        *cbd;
 {
 #if defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        clip_mch_request_selection(cbd);
-    else
-#endif
         clip_xterm_request_selection(cbd);
 #else
     clip_mch_request_selection(cbd);
@@ -1520,11 +1273,6 @@ clip_gen_owner_exists(cbd)
     VimClipboard        *cbd UNUSED;
 {
 #if defined(FEAT_XCLIPBOARD)
-#if defined(FEAT_GUI_GTK)
-    if (gui.in_use)
-        return clip_gtk_owner_exists(cbd);
-    else
-#endif
         return clip_x11_owner_exists(cbd);
 #else
     return TRUE;
@@ -1552,7 +1300,7 @@ clip_gen_owner_exists(cbd)
  * descriptions which would otherwise overflow.  The buffer is considered full
  * when only this extra space (or part of it) remains.
  */
-#if defined(FEAT_SUN_WORKSHOP) || defined(FEAT_NETBEANS_INTG) || defined(FEAT_CLIENTSERVER)
+#if defined(FEAT_CLIENTSERVER)
    /*
     * Sun WorkShop and NetBeans stuff debugger commands into the input buffer.
     * This requires a larger buffer...
@@ -1584,23 +1332,6 @@ vim_is_input_buf_empty()
     return (inbufcount == 0);
 }
 
-#if defined(FEAT_OLE)
-    int
-vim_free_in_input_buf()
-{
-    return (INBUFLEN - inbufcount);
-}
-#endif
-
-#if defined(FEAT_GUI_GTK)
-    int
-vim_used_in_input_buf()
-{
-    return inbufcount;
-}
-#endif
-
-#if defined(FEAT_EVAL) || defined(FEAT_EX_EXTRA)
 /*
  * Return the current contents of the input buffer and make it empty.
  * The returned pointer must be passed to set_input_buf() later.
@@ -1645,9 +1376,8 @@ set_input_buf(p)
         vim_free(gap);
     }
 }
-#endif
 
-#if defined(FEAT_GUI) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE) || defined(FEAT_XCLIPBOARD) || defined(FEAT_SNIFF) || defined(FEAT_CLIENTSERVER)
+#if defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE) || defined(FEAT_XCLIPBOARD) || defined(FEAT_CLIENTSERVER)
 /*
  * Add the given bytes to the input buffer
  * Special keys start with CSI.  A real CSI must have been translated to
@@ -1661,60 +1391,17 @@ add_to_input_buf(s, len)
     if (inbufcount + len > INBUFLEN + MAX_KEY_CODE_LEN)
         return;     /* Shouldn't ever happen! */
 
-#if defined(FEAT_HANGULIN)
-    if ((State & (INSERT|CMDLINE)) && hangul_input_state_get())
-        if ((len = hangul_input_process(s, len)) == 0)
-            return;
-#endif
-
     while (len--)
         inbuf[inbufcount++] = *s++;
 }
 #endif
 
-#if ((defined(FEAT_XIM) || defined(FEAT_DND)) && defined(FEAT_GUI_GTK)) || defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MAC) || (defined(FEAT_GUI) && (!defined(USE_ON_FLY_SCROLL) || defined(FEAT_MENU)))
-/*
- * Add "str[len]" to the input buffer while escaping CSI bytes.
- */
-    void
-add_to_input_buf_csi(char_u *str, int len)
-{
-    int         i;
-    char_u      buf[2];
-
-    for (i = 0; i < len; ++i)
-    {
-        add_to_input_buf(str + i, 1);
-        if (str[i] == CSI)
-        {
-            /* Turn CSI into K_CSI. */
-            buf[0] = KS_EXTRA;
-            buf[1] = (int)KE_CSI;
-            add_to_input_buf(buf, 2);
-        }
-    }
-}
-#endif
-
-#if defined(FEAT_HANGULIN)
-    void
-push_raw_key(s, len)
-    char_u  *s;
-    int     len;
-{
-    while (len--)
-        inbuf[inbufcount++] = *s++;
-}
-#endif
-
-#if defined(FEAT_GUI) || defined(FEAT_EVAL) || defined(FEAT_EX_EXTRA)
 /* Remove everything from the input buffer.  Called when ^C is found */
     void
 trash_input_buf()
 {
     inbufcount = 0;
 }
-#endif
 
 /*
  * Read as much data from the input buffer as possible up to maxlen, and store
@@ -1741,31 +1428,13 @@ read_from_input_buf(buf, maxlen)
 fill_input_buf(exit_on_error)
     int exit_on_error UNUSED;
 {
-#if defined(UNIX) || defined(MACOS_X_UNIX)
     int         len;
     int         try;
     static int  did_read_something = FALSE;
-#if defined(FEAT_MBYTE)
     static char_u *rest = NULL;     /* unconverted rest of previous read */
     static int  restlen = 0;
     int         unconverted;
-#endif
-#endif
 
-#if defined(FEAT_GUI)
-    if (gui.in_use
-#if defined(NO_CONSOLE_INPUT)
-    /* Don't use the GUI input when the window hasn't been opened yet.
-     * We get here from ui_inchar() when we should try reading from stdin. */
-            && !no_console_input()
-#endif
-       )
-    {
-        gui_mch_update();
-        return;
-    }
-#endif
-#if defined(UNIX) || defined(MACOS_X_UNIX)
     if (vim_is_input_buf_full())
         return;
     /*
@@ -1774,28 +1443,7 @@ fill_input_buf(exit_on_error)
      * If we can't get any, and there isn't any in the buffer, we give up and
      * exit Vim.
      */
-#if (0)
-    /*
-     * On the BeBox version (for now), all input is secretly performed within
-     * beos_select() which is called from RealWaitForChar().
-     */
-    while (!vim_is_input_buf_full() && RealWaitForChar(read_cmd_fd, 0, NULL))
-            ;
-    len = inbufcount;
-    inbufcount = 0;
-#else
 
-#if defined(FEAT_SNIFF)
-    if (sniff_request_waiting)
-    {
-        add_to_input_buf((char_u *)"\233sniff",6); /* results in K_SNIFF */
-        sniff_request_waiting = 0;
-        want_sniff_request = 0;
-        return;
-    }
-#endif
-
-#if defined(FEAT_MBYTE)
     if (rest != NULL)
     {
         /* Use remainder of previous call, starts with an invalid character
@@ -1819,24 +1467,13 @@ fill_input_buf(exit_on_error)
     }
     else
         unconverted = 0;
-#endif
 
     len = 0;    /* to avoid gcc warning */
     for (try = 0; try < 100; ++try)
     {
-#if (0)
-        len = vms_read(
-#else
-        len = read(read_cmd_fd,
-#endif
-            (char *)inbuf + inbufcount, (size_t)((INBUFLEN - inbufcount)
-#if defined(FEAT_MBYTE)
+        len = read(read_cmd_fd, (char *)inbuf + inbufcount, (size_t)((INBUFLEN - inbufcount)
                 / input_conv.vc_factor
-#endif
                 ));
-#if 0
-                )       /* avoid syntax highlight error */
-#endif
 
         if (len > 0 || got_int)
             break;
@@ -1864,7 +1501,6 @@ fill_input_buf(exit_on_error)
         if (!exit_on_error)
             return;
     }
-#endif
     if (len <= 0 && !got_int)
         read_error_exit();
     if (len > 0)
@@ -1877,7 +1513,6 @@ fill_input_buf(exit_on_error)
     }
     else
     {
-#if defined(FEAT_MBYTE)
         /*
          * May perform conversion on the input characters.
          * Include the unconverted rest of the previous call.
@@ -1893,7 +1528,6 @@ fill_input_buf(exit_on_error)
                                      len + unconverted, INBUFLEN - inbufcount,
                                        rest == NULL ? &rest : NULL, &restlen);
         }
-#endif
         while (len-- > 0)
         {
             /*
@@ -1909,7 +1543,6 @@ fill_input_buf(exit_on_error)
             ++inbufcount;
         }
     }
-#endif
 }
 #endif
 
@@ -1932,11 +1565,6 @@ read_error_exit()
     void
 ui_cursor_shape()
 {
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        gui_update_cursor_later();
-    else
-#endif
         term_cursor_shape();
 
 #if defined(MCH_CURSOR_SHAPE)
@@ -1949,7 +1577,6 @@ ui_cursor_shape()
 }
 #endif
 
-#if defined(FEAT_CLIPBOARD) || defined(FEAT_GUI) || defined(FEAT_RIGHTLEFT) || defined(FEAT_MBYTE)
 /*
  * Check bounds for column number
  */
@@ -1977,13 +1604,12 @@ check_row(row)
         return (int)screen_Rows - 1;
     return row;
 }
-#endif
 
 /*
  * Stuff for the X clipboard.  Shared between VMS and Unix.
  */
 
-#if defined(FEAT_XCLIPBOARD) || defined(FEAT_GUI_X11)
+#if defined(FEAT_XCLIPBOARD)
 #include <X11/Xatom.h>
 #include <X11/Intrinsic.h>
 
@@ -2002,10 +1628,8 @@ open_app_context()
 }
 
 static Atom     vim_atom;       /* Vim's own special selection format */
-#if defined(FEAT_MBYTE)
 static Atom     vimenc_atom;    /* Vim's extended selection format */
 static Atom     utf8_atom;
-#endif
 static Atom     compound_text_atom;
 static Atom     text_atom;
 static Atom     targets_atom;
@@ -2016,10 +1640,8 @@ x11_setup_atoms(dpy)
     Display     *dpy;
 {
     vim_atom           = XInternAtom(dpy, VIM_ATOM_NAME,   False);
-#if defined(FEAT_MBYTE)
     vimenc_atom        = XInternAtom(dpy, VIMENC_ATOM_NAME,False);
     utf8_atom          = XInternAtom(dpy, "UTF8_STRING",   False);
-#endif
     compound_text_atom = XInternAtom(dpy, "COMPOUND_TEXT", False);
     text_atom          = XInternAtom(dpy, "TEXT",          False);
     targets_atom       = XInternAtom(dpy, "TARGETS",       False);
@@ -2110,9 +1732,7 @@ clip_x11_request_selection_cb(w, success, sel_atom, type, value, length,
     char_u      *p;
     char        **text_list = NULL;
     VimClipboard        *cbd;
-#if defined(FEAT_MBYTE)
     char_u      *tmpbuf = NULL;
-#endif
 
     if (*sel_atom == clip_plus.sel_atom)
         cbd = &clip_plus;
@@ -2133,7 +1753,6 @@ clip_x11_request_selection_cb(w, success, sel_atom, type, value, length,
         len--;
     }
 
-#if defined(FEAT_MBYTE)
     else if (*type == vimenc_atom)
     {
         char_u          *enc;
@@ -2161,16 +1780,11 @@ clip_x11_request_selection_cb(w, success, sel_atom, type, value, length,
             convert_setup(&conv, NULL, NULL);
         }
     }
-#endif
 
     else if (*type == compound_text_atom
-#if defined(FEAT_MBYTE)
             || *type == utf8_atom
-#endif
             || (
-#if defined(FEAT_MBYTE)
                 enc_dbcs != 0 &&
-#endif
                 *type == text_atom))
     {
         XTextProperty   text_prop;
@@ -2181,7 +1795,7 @@ clip_x11_request_selection_cb(w, success, sel_atom, type, value, length,
         text_prop.encoding = *type;
         text_prop.format = *format;
         text_prop.nitems = len;
-#if defined(FEAT_MBYTE) && defined(X_HAVE_UTF8_STRING)
+#if defined(X_HAVE_UTF8_STRING)
         if (*type == utf8_atom)
             status = Xutf8TextPropertyToTextList(X_DISPLAY, &text_prop,
                                                          &text_list, &n_text);
@@ -2201,9 +1815,7 @@ clip_x11_request_selection_cb(w, success, sel_atom, type, value, length,
 
     if (text_list != NULL)
         XFreeStringList(text_list);
-#if defined(FEAT_MBYTE)
     vim_free(tmpbuf);
-#endif
     XtFree((char *)value);
     *(int *)success = TRUE;
 }
@@ -2222,27 +1834,18 @@ clip_x11_request_selection(myShell, dpy, cbd)
     int         timed_out = FALSE;
 
     for (i =
-#if defined(FEAT_MBYTE)
             0
-#else
-            1
-#endif
             ; i < 6; i++)
     {
         switch (i)
         {
-#if defined(FEAT_MBYTE)
             case 0:  type = vimenc_atom;        break;
-#endif
             case 1:  type = vim_atom;           break;
-#if defined(FEAT_MBYTE)
             case 2:  type = utf8_atom;          break;
-#endif
             case 3:  type = compound_text_atom; break;
             case 4:  type = text_atom;          break;
             default: type = XA_STRING;
         }
-#if defined(FEAT_MBYTE)
         if (type == utf8_atom
 #if defined(X_HAVE_UTF8_STRING)
                 && !enc_utf8
@@ -2251,7 +1854,6 @@ clip_x11_request_selection(myShell, dpy, cbd)
             /* Only request utf-8 when 'encoding' is utf8 and
              * Xutf8TextPropertyToTextList is available. */
             continue;
-#endif
         success = MAYBE;
         XtGetSelectionValue(myShell, cbd->sel_atom, type,
             clip_x11_request_selection_cb, (XtPointer)&success, CurrentTime);
@@ -2347,14 +1949,10 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
         *value = (XtPointer)array;
         i = 0;
         array[i++] = targets_atom;
-#if defined(FEAT_MBYTE)
         array[i++] = vimenc_atom;
-#endif
         array[i++] = vim_atom;
-#if defined(FEAT_MBYTE)
         if (enc_utf8)
             array[i++] = utf8_atom;
-#endif
         array[i++] = XA_STRING;
         array[i++] = text_atom;
         array[i++] = compound_text_atom;
@@ -2368,10 +1966,8 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
     }
 
     if (       *target != XA_STRING
-#if defined(FEAT_MBYTE)
             && *target != vimenc_atom
             && (*target != utf8_atom || !enc_utf8)
-#endif
             && *target != vim_atom
             && *target != text_atom
             && *target != compound_text_atom)
@@ -2386,11 +1982,9 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
     if (*target == vim_atom)
         (*length)++;
 
-#if defined(FEAT_MBYTE)
     /* Our own format with encoding: motion 'encoding' NUL text */
     if (*target == vimenc_atom)
         *length += STRLEN(p_enc) + 2;
-#endif
 
     *value = XtMalloc((Cardinal)*length);
     result = (char_u *)*value;
@@ -2401,9 +1995,7 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
     }
 
     if (*target == XA_STRING
-#if defined(FEAT_MBYTE)
             || (*target == utf8_atom && enc_utf8)
-#endif
             )
     {
         mch_memmove(result, string, (size_t)(*length));
@@ -2432,7 +2024,6 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
         *type = compound_text_atom;
     }
 
-#if defined(FEAT_MBYTE)
     else if (*target == vimenc_atom)
     {
         int l = STRLEN(p_enc);
@@ -2442,7 +2033,6 @@ clip_x11_convert_selection_cb(w, sel_atom, target, type, value, length, format)
         mch_memmove(result + l + 2, string, (size_t)(*length - l - 2));
         *type = vimenc_atom;
     }
-#endif
 
     else
     {
@@ -2484,17 +2074,6 @@ clip_x11_own_selection(myShell, cbd)
      * event.  When in the console we don't get events (the terminal gets
      * them), Get the time by a zero-length append, clip_x11_timestamp_cb will
      * be called with the current timestamp.  */
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        if (XtOwnSelection(myShell, cbd->sel_atom,
-               XtLastTimestampProcessed(XtDisplay(myShell)),
-               clip_x11_convert_selection_cb, clip_x11_lose_ownership_cb,
-               NULL) == False)
-            return FAIL;
-    }
-    else
-#endif
     {
         if (!XChangeProperty(XtDisplay(myShell), XtWindow(myShell),
                   cbd->sel_atom, timestamp_atom, 32, PropModeAppend, NULL, 0))
@@ -2523,7 +2102,7 @@ clip_x11_owner_exists(cbd)
 }
 #endif
 
-#if defined(FEAT_XCLIPBOARD) || defined(FEAT_GUI_X11) || defined(FEAT_GUI_GTK)
+#if defined(FEAT_XCLIPBOARD)
 /*
  * Get the contents of the X CUT_BUFFER0 and put it in "cbd".
  */
@@ -2537,7 +2116,6 @@ yank_cut_buffer0(dpy, cbd)
 
     if (nbytes > 0)
     {
-#if defined(FEAT_MBYTE)
         int  done = FALSE;
 
         /* CUT_BUFFER0 is supposed to be always latin1.  Convert to 'enc' when
@@ -2563,7 +2141,6 @@ yank_cut_buffer0(dpy, cbd)
             }
         }
         if (!done)  /* use the text without conversion */
-#endif
             clip_yank_selection(MCHAR, buffer, (long)nbytes, cbd);
         XFree((void *)buffer);
         if (p_verbose > 0)
@@ -2804,13 +2381,6 @@ retnomove:
 #endif
 
         curwin->w_cursor.lnum = curwin->w_topline;
-#if defined(FEAT_GUI)
-        /* remember topline, needed for double click */
-        gui_prev_topline = curwin->w_topline;
-#if defined(FEAT_DIFF)
-        gui_prev_topfill = curwin->w_topfill;
-#endif
-#endif
     }
     else if (on_status_line && which_button == MOUSE_LEFT)
     {
@@ -3089,9 +2659,6 @@ mouse_comp_pos(win, rowp, colp, lnump)
     col -= win_col_off(win);
     if (col < 0)
     {
-#if defined(FEAT_NETBEANS_INTG)
-        netbeans_gutter_click(lnum);
-#endif
         col = 0;
     }
 
@@ -3144,149 +2711,6 @@ mouse_find_win(rowp, colp)
 }
 #endif
 
-#if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_PHOTON)
-/*
- * Translate window coordinates to buffer position without any side effects
- */
-    int
-get_fpos_of_mouse(mpos)
-    pos_T       *mpos;
-{
-    win_T       *wp;
-    int         row = mouse_row;
-    int         col = mouse_col;
-
-    if (row < 0 || col < 0)             /* check if it makes sense */
-        return IN_UNKNOWN;
-
-#if defined(FEAT_WINDOWS)
-    /* find the window where the row is in */
-    wp = mouse_find_win(&row, &col);
-#else
-    wp = firstwin;
-#endif
-    /*
-     * winpos and height may change in win_enter()!
-     */
-    if (row >= wp->w_height)    /* In (or below) status line */
-        return IN_STATUS_LINE;
-#if defined(FEAT_VERTSPLIT)
-    if (col >= wp->w_width)     /* In vertical separator line */
-        return IN_SEP_LINE;
-#endif
-
-    if (wp != curwin)
-        return IN_UNKNOWN;
-
-    /* compute the position in the buffer line from the posn on the screen */
-    if (mouse_comp_pos(curwin, &row, &col, &mpos->lnum))
-        return IN_STATUS_LINE; /* past bottom */
-
-    mpos->col = vcol2col(wp, mpos->lnum, col);
-
-    if (mpos->col > 0)
-        --mpos->col;
-#if defined(FEAT_VIRTUALEDIT)
-    mpos->coladd = 0;
-#endif
-    return IN_BUFFER;
-}
-
-/*
- * Convert a virtual (screen) column to a character column.
- * The first column is one.
- */
-    int
-vcol2col(wp, lnum, vcol)
-    win_T       *wp;
-    linenr_T    lnum;
-    int         vcol;
-{
-    /* try to advance to the specified column */
-    int         count = 0;
-    char_u      *ptr;
-    char_u      *line;
-
-    line = ptr = ml_get_buf(wp->w_buffer, lnum, FALSE);
-    while (count < vcol && *ptr != NUL)
-    {
-        count += win_lbr_chartabsize(wp, line, ptr, count, NULL);
-        mb_ptr_adv(ptr);
-    }
-    return (int)(ptr - line);
-}
-#endif
-
-#endif
-
-#if defined(FEAT_GUI)
-/*
- * Called when focus changed.  Used for the GUI or for systems where this can
- * be done in the console (Win32).
- */
-    void
-ui_focus_change(in_focus)
-    int         in_focus;       /* TRUE if focus gained. */
-{
-    static time_t       last_time = (time_t)0;
-    int                 need_redraw = FALSE;
-
-    /* When activated: Check if any file was modified outside of Vim.
-     * Only do this when not done within the last two seconds (could get
-     * several events in a row). */
-    if (in_focus && last_time + 2 < time(NULL))
-    {
-        need_redraw = check_timestamps(
-#if defined(FEAT_GUI)
-                gui.in_use
-#else
-                FALSE
-#endif
-                );
-        last_time = time(NULL);
-    }
-
-#if defined(FEAT_AUTOCMD)
-    /*
-     * Fire the focus gained/lost autocommand.
-     */
-    need_redraw |= apply_autocmds(in_focus ? EVENT_FOCUSGAINED
-                                : EVENT_FOCUSLOST, NULL, NULL, FALSE, curbuf);
-#endif
-
-    if (need_redraw)
-    {
-        /* Something was executed, make sure the cursor is put back where it
-         * belongs. */
-        need_wait_return = FALSE;
-
-        if (State & CMDLINE)
-            redrawcmdline();
-        else if (State == HITRETURN || State == SETWSIZE || State == ASKMORE
-                || State == EXTERNCMD || State == CONFIRM || exmode_active)
-            repeat_message();
-        else if ((State & NORMAL) || (State & INSERT))
-        {
-            if (must_redraw != 0)
-                update_screen(0);
-            setcursor();
-        }
-        cursor_on();        /* redrawing may have switched it off */
-        out_flush();
-#if defined(FEAT_GUI)
-        if (gui.in_use)
-        {
-            gui_update_cursor(FALSE, TRUE);
-            gui_update_scrollbars(FALSE);
-        }
-#endif
-    }
-#if defined(FEAT_TITLE)
-    /* File may have been changed from 'readonly' to 'noreadonly' */
-    if (need_maketitle)
-        maketitle();
-#endif
-}
 #endif
 
 #if defined(USE_IM_CONTROL)
@@ -3305,12 +2729,6 @@ im_save_status(psave)
      * And don't save when the GUI is running but our window doesn't have
      * input focus (e.g., when a find dialog is open). */
     if (!p_imdisable && KeyTyped && !KeyStuffed
-#if defined(FEAT_XIM)
-            && xic != NULL
-#endif
-#if defined(FEAT_GUI)
-            && (!gui.in_use || gui.in_focus)
-#endif
         )
     {
         /* Do save when IM is on, or IM is off and saved status is on. */

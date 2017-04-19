@@ -35,13 +35,11 @@
 #endif
 #endif
 
-#if defined(FEAT_MBYTE)
 /* Possible values for 'encoding' */
 #define ENC_UCSBOM     "ucs-bom"       /* check for BOM at start of file */
 
 /* default value for 'encoding' */
 #define ENC_DFLT       "latin1"
-#endif
 
 /* end-of-line style */
 #define EOL_UNKNOWN     -1      /* not defined yet */
@@ -276,12 +274,7 @@ EXTERN long     p_aleph;        /* 'aleph' */
 #if defined(FEAT_AUTOCHDIR)
 EXTERN int      p_acd;          /* 'autochdir' */
 #endif
-#if defined(FEAT_MBYTE)
 EXTERN char_u   *p_ambw;        /* 'ambiwidth' */
-#endif
-#if defined(FEAT_GUI) && defined(MACOS_X)
-EXTERN int      *p_antialias;   /* 'antialias' */
-#endif
 EXTERN int      p_ar;           /* 'autoread' */
 EXTERN int      p_aw;           /* 'autowrite' */
 EXTERN int      p_awa;          /* 'autowriteall' */
@@ -306,20 +299,12 @@ EXTERN char_u   *p_bsk;         /* 'backupskip' */
 #if defined(FEAT_CRYPT)
 EXTERN char_u   *p_cm;          /* 'cryptmethod' */
 #endif
-#if defined(FEAT_BEVAL)
-EXTERN long     p_bdlay;        /* 'balloondelay' */
-EXTERN int      p_beval;        /* 'ballooneval' */
-#if defined(FEAT_EVAL)
-EXTERN char_u   *p_bexpr;
-#endif
-#endif
 #if defined(FEAT_BROWSE)
 EXTERN char_u   *p_bsdir;       /* 'browsedir' */
 #endif
 #if defined(FEAT_LINEBREAK)
 EXTERN char_u   *p_breakat;     /* 'breakat' */
 #endif
-#if defined(FEAT_MBYTE)
 EXTERN char_u   *p_cmp;         /* 'casemap' */
 EXTERN unsigned cmp_flags;
 #if defined(IN_OPTION_C)
@@ -327,14 +312,9 @@ static char *(p_cmp_values[]) = {"internal", "keepascii", NULL};
 #endif
 #define CMP_INTERNAL           0x001
 #define CMP_KEEPASCII          0x002
-#endif
-#if defined(FEAT_MBYTE)
 EXTERN char_u   *p_enc;         /* 'encoding' */
 EXTERN int      p_deco;         /* 'delcombine' */
-#if defined(FEAT_EVAL)
 EXTERN char_u   *p_ccv;         /* 'charconvert' */
-#endif
-#endif
 #if defined(FEAT_CMDWIN)
 EXTERN char_u   *p_cedit;       /* 'cedit' */
 EXTERN long     p_cwh;          /* 'cmdwinheight' */
@@ -372,9 +352,7 @@ EXTERN char_u   *p_inc;
 #endif
 #if defined(FEAT_DIFF)
 EXTERN char_u   *p_dip;         /* 'diffopt' */
-#if defined(FEAT_EVAL)
 EXTERN char_u   *p_dex;         /* 'diffexpr' */
-#endif
 #endif
 #if defined(FEAT_INS_EXPAND)
 EXTERN char_u   *p_dict;        /* 'dictionary' */
@@ -408,9 +386,7 @@ EXTERN char_u   *p_ei;          /* 'eventignore' */
 #endif
 EXTERN int      p_ek;           /* 'esckeys' */
 EXTERN int      p_exrc;         /* 'exrc' */
-#if defined(FEAT_MBYTE)
 EXTERN char_u   *p_fencs;       /* 'fileencodings' */
-#endif
 EXTERN char_u   *p_ffs;         /* 'fileformats' */
 EXTERN long     p_fic;          /* 'fileignorecase' */
 #if defined(FEAT_FOLDING)
@@ -445,37 +421,19 @@ EXTERN char_u   *p_pdev;        /* 'printdevice' */
 #if defined(FEAT_POSTSCRIPT)
 EXTERN char_u   *p_penc;        /* 'printencoding' */
 EXTERN char_u   *p_pexpr;       /* 'printexpr' */
-#if defined(FEAT_MBYTE)
 EXTERN char_u   *p_pmfn;        /* 'printmbfont' */
 EXTERN char_u   *p_pmcs;        /* 'printmbcharset' */
-#endif
 #endif
 EXTERN char_u   *p_pfn;         /* 'printfont' */
 EXTERN char_u   *p_popt;        /* 'printoptions' */
 EXTERN char_u   *p_header;      /* 'printheader' */
 #endif
 EXTERN int      p_prompt;       /* 'prompt' */
-#if defined(FEAT_GUI)
-EXTERN char_u   *p_guifont;     /* 'guifont' */
-#if defined(FEAT_XFONTSET)
-EXTERN char_u   *p_guifontset;  /* 'guifontset' */
-#endif
-#if defined(FEAT_MBYTE)
-EXTERN char_u   *p_guifontwide; /* 'guifontwide' */
-#endif
-EXTERN int      p_guipty;       /* 'guipty' */
-#endif
-#if defined(FEAT_GUI_GTK) || defined(FEAT_GUI_X11)
-EXTERN long     p_ghr;          /* 'guiheadroom' */
-#endif
 #if defined(CURSOR_SHAPE)
 EXTERN char_u   *p_guicursor;   /* 'guicursor' */
 #endif
 #if defined(FEAT_MOUSESHAPE)
 EXTERN char_u   *p_mouseshape;  /* 'mouseshape' */
-#endif
-#if defined(FEAT_GUI)
-EXTERN char_u   *p_go;          /* 'guioptions' */
 #endif
 #if defined(FEAT_GUI_TABLINE)
 EXTERN char_u   *p_gtl;         /* 'guitablabel' */
@@ -484,9 +442,6 @@ EXTERN char_u   *p_gtt;         /* 'guitabtooltip' */
 EXTERN char_u   *p_hf;          /* 'helpfile' */
 #if defined(FEAT_WINDOWS)
 EXTERN long     p_hh;           /* 'helpheight' */
-#endif
-#if defined(FEAT_MULTI_LANG)
-EXTERN char_u   *p_hlg;         /* 'helplang' */
 #endif
 EXTERN int      p_hid;          /* 'hidden' */
 /* Use P_HID to check if a buffer is to be hidden when it is no longer
@@ -508,11 +463,6 @@ EXTERN int      p_icon;         /* 'icon' */
 EXTERN char_u   *p_iconstring;  /* 'iconstring' */
 #endif
 EXTERN int      p_ic;           /* 'ignorecase' */
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-EXTERN char_u   *p_imak;        /* 'imactivatekey' */
-EXTERN char_u   *p_imaf;        /* 'imactivatefunc' */
-EXTERN char_u   *p_imsf;        /* 'imstatusfunc' */
-#endif
 #if defined(USE_IM_CONTROL)
 EXTERN int      p_imcmdline;    /* 'imcmdline' */
 EXTERN int      p_imdisable;    /* 'imdisable' */
@@ -529,12 +479,6 @@ EXTERN char_u   *p_km;          /* 'keymodel' */
 EXTERN char_u   *p_langmap;     /* 'langmap'*/
 EXTERN int      p_lnr;          /* 'langnoremap' */
 #endif
-#if defined(FEAT_MENU) && defined(FEAT_MULTI_LANG)
-EXTERN char_u   *p_lm;          /* 'langmenu' */
-#endif
-#if defined(FEAT_GUI)
-EXTERN long     p_linespace;    /* 'linespace' */
-#endif
 #if defined(FEAT_LISP)
 EXTERN char_u   *p_lispwords;   /* 'lispwords' */
 #endif
@@ -546,9 +490,6 @@ EXTERN char_u   *p_lcs;         /* 'listchars' */
 
 EXTERN int      p_lz;           /* 'lazyredraw' */
 EXTERN int      p_lpl;          /* 'loadplugins' */
-#if defined(FEAT_GUI_MAC)
-EXTERN int      p_macatsui;     /* 'macatsui' */
-#endif
 EXTERN int      p_magic;        /* 'magic' */
 #if defined(FEAT_QUICKFIX)
 EXTERN char_u   *p_mef;         /* 'makeef' */
@@ -559,12 +500,8 @@ EXTERN char_u   *p_cc;          /* 'colorcolumn' */
 EXTERN int      p_cc_cols[256]; /* array for 'colorcolumn' columns */
 #endif
 EXTERN long     p_mat;          /* 'matchtime' */
-#if defined(FEAT_MBYTE)
 EXTERN long     p_mco;          /* 'maxcombine' */
-#endif
-#if defined(FEAT_EVAL)
 EXTERN long     p_mfd;          /* 'maxfuncdepth' */
-#endif
 EXTERN long     p_mmd;          /* 'maxmapdepth' */
 EXTERN long     p_mm;           /* 'maxmem' */
 EXTERN long     p_mmp;          /* 'maxmempattern' */
@@ -577,21 +514,14 @@ EXTERN char_u   *p_msm;         /* 'mkspellmem' */
 #endif
 EXTERN long     p_mls;          /* 'modelines' */
 EXTERN char_u   *p_mouse;       /* 'mouse' */
-#if defined(FEAT_GUI)
-EXTERN int      p_mousef;       /* 'mousefocus' */
-EXTERN int      p_mh;           /* 'mousehide' */
-#endif
 EXTERN char_u   *p_mousem;      /* 'mousemodel' */
 EXTERN long     p_mouset;       /* 'mousetime' */
 EXTERN int      p_more;         /* 'more' */
-#if defined(FEAT_MZSCHEME)
-EXTERN long     p_mzq;          /* 'mzquantum */
-#endif
 EXTERN char_u   *p_opfunc;      /* 'operatorfunc' */
 EXTERN char_u   *p_para;        /* 'paragraphs' */
 EXTERN int      p_paste;        /* 'paste' */
 EXTERN char_u   *p_pt;          /* 'pastetoggle' */
-#if defined(FEAT_EVAL) && defined(FEAT_DIFF)
+#if defined(FEAT_DIFF)
 EXTERN char_u   *p_pex;         /* 'patchexpr' */
 #endif
 EXTERN char_u   *p_pm;          /* 'patchmode' */
@@ -718,9 +648,7 @@ EXTERN long     p_tl;           /* 'taglength' */
 EXTERN int      p_tr;           /* 'tagrelative' */
 EXTERN char_u   *p_tags;        /* 'tags' */
 EXTERN int      p_tgst;         /* 'tagstack' */
-#if defined(FEAT_MBYTE)
 EXTERN char_u   *p_tenc;        /* 'termencoding' */
-#endif
 EXTERN int      p_terse;        /* 'terse' */
 EXTERN int      p_ta;           /* 'textauto' */
 EXTERN int      p_to;           /* 'tildeop' */
@@ -739,7 +667,7 @@ EXTERN int      p_ttimeout;     /* 'ttimeout' */
 EXTERN long     p_ttm;          /* 'ttimeoutlen' */
 EXTERN int      p_tbi;          /* 'ttybuiltin' */
 EXTERN int      p_tf;           /* 'ttyfast' */
-#if defined(FEAT_TOOLBAR) && !defined(FEAT_GUI_W32)
+#if defined(FEAT_TOOLBAR)
 EXTERN char_u   *p_toolbar;     /* 'toolbar' */
 EXTERN unsigned toolbar_flags;
 #if defined(IN_OPTION_C)
@@ -750,19 +678,8 @@ static char *(p_toolbar_values[]) = {"text", "icons", "tooltips", "horiz", NULL}
 #define TOOLBAR_TOOLTIPS       0x04
 #define TOOLBAR_HORIZ          0x08
 #endif
-#if defined(FEAT_TOOLBAR) && defined(FEAT_GUI_GTK)
-EXTERN char_u   *p_tbis;        /* 'toolbariconsize' */
-EXTERN unsigned tbis_flags;
-#if defined(IN_OPTION_C)
-static char *(p_tbis_values[]) = {"tiny", "small", "medium", "large", NULL};
-#endif
-#define TBIS_TINY              0x01
-#define TBIS_SMALL             0x02
-#define TBIS_MEDIUM            0x04
-#define TBIS_LARGE             0x08
-#endif
 EXTERN long     p_ttyscroll;    /* 'ttyscroll' */
-#if defined(FEAT_MOUSE) && defined(UNIX)
+#if defined(FEAT_MOUSE)
 EXTERN char_u   *p_ttym;        /* 'ttymouse' */
 EXTERN unsigned ttym_flags;
 #if defined(IN_OPTION_C)
@@ -816,10 +733,6 @@ EXTERN int      p_warn;         /* 'warn' */
 EXTERN char_u   *p_wop;         /* 'wildoptions' */
 #endif
 EXTERN long     p_window;       /* 'window' */
-#if defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MOTIF) || defined(LINT) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON)
-#define FEAT_WAK
-EXTERN char_u   *p_wak;         /* 'winaltkeys' */
-#endif
 #if defined(FEAT_WILDIGN)
 EXTERN char_u   *p_wig;         /* 'wildignore' */
 #endif
@@ -867,9 +780,7 @@ enum
 #endif
     , BV_BIN
     , BV_BL
-#if defined(FEAT_MBYTE)
     , BV_BOMB
-#endif
     , BV_CI
 #if defined(FEAT_CINDENT)
     , BV_CIN
@@ -902,10 +813,8 @@ enum
     , BV_EP
     , BV_ET
     , BV_FENC
-#if defined(FEAT_EVAL)
     , BV_BEXPR
     , BV_FEX
-#endif
     , BV_FF
     , BV_FLP
     , BV_FO
@@ -914,11 +823,11 @@ enum
 #endif
     , BV_IMI
     , BV_IMS
-#if defined(FEAT_CINDENT) && defined(FEAT_EVAL)
+#if defined(FEAT_CINDENT)
     , BV_INDE
     , BV_INDK
 #endif
-#if defined(FEAT_FIND_ID) && defined(FEAT_EVAL)
+#if defined(FEAT_FIND_ID)
     , BV_INEX
 #endif
     , BV_INF
@@ -1009,10 +918,8 @@ enum
     , WV_FDM
     , WV_FML
     , WV_FDN
-#if defined(FEAT_EVAL)
     , WV_FDE
     , WV_FDT
-#endif
     , WV_FMR
 #endif
 #if defined(FEAT_LINEBREAK)

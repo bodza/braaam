@@ -69,17 +69,10 @@
  * MB_ISLOWER() and MB_ISUPPER() are to be used on multi-byte characters.  But
  * don't use them for negative values!
  */
-#if defined(FEAT_MBYTE)
 #define MB_ISLOWER(c)  vim_islower(c)
 #define MB_ISUPPER(c)  vim_isupper(c)
 #define MB_TOLOWER(c)  vim_tolower(c)
 #define MB_TOUPPER(c)  vim_toupper(c)
-#else
-#define MB_ISLOWER(c)  islower(c)
-#define MB_ISUPPER(c)  isupper(c)
-#define MB_TOLOWER(c)  TOLOWER_LOC(c)
-#define MB_TOUPPER(c)  TOUPPER_LOC(c)
-#endif
 
 /* Use our own isdigit() replacement, because on MS-Windows isdigit() returns
  * non-zero for superscript 1.  Also avoids that isdigit() crashes for numbers
@@ -107,7 +100,6 @@
  * a mapping and the langnoremap option was set.
  * The do-while is just to ignore a ';' after the macro.
  */
-#if defined(FEAT_MBYTE)
 #define LANGMAP_ADJUST(c, condition) \
     do { \
         if (*p_langmap \
@@ -123,17 +115,6 @@
         } \
     } while (0)
 #else
-#define LANGMAP_ADJUST(c, condition) \
-    do { \
-        if (*p_langmap \
-                && (condition) \
-                && (!p_lnr || (p_lnr && typebuf_maplen() == 0)) \
-                && !KeyStuffed \
-                && (c) >= 0 && (c) < 256) \
-            c = langmap_mapchar[c]; \
-    } while (0)
-#endif
-#else
 #define LANGMAP_ADJUST(c, condition) /* nop */
 #endif
 
@@ -147,22 +128,10 @@
  * On VMS file names are different and require a translation.
  * On the Mac open() has only two arguments.
  */
-#if (0)
-#else
 #define mch_access(n, p)     access((n), (p))
 #define mch_fopen(n, p)       fopen((n), (p))
 #define mch_fstat(n, p)        fstat((n), (p))
-#if (0) /* has it's own mch_stat() function */
-#else
-#if defined(STAT_IGNORES_SLASH)
-    /* On Solaris stat() accepts "file/" as if it was "file".  Return -1 if
-     * the name ends in "/" and it's not a directory. */
-#define mch_stat(n, p)       (illegal_slash(n) ? -1 : stat((n), (p)))
-#else
 #define mch_stat(n, p)       stat((n), (p))
-#endif
-#endif
-#endif
 
 #if defined(HAVE_LSTAT)
 #define mch_lstat(n, p)        lstat((n), (p))
@@ -170,19 +139,10 @@
 #define mch_lstat(n, p)        mch_stat((n), (p))
 #endif
 
-#if defined(MACOS_CLASSIC)
-/* MacOS classic doesn't support perm but MacOS X does. */
-#define mch_open(n, m, p)      open((n), (m))
-#else
 #define mch_open(n, m, p)    open((n), (m), (p))
-#endif
 
 /* mch_open_rw(): invoke mch_open() with third argument for user R/W. */
-#if defined(UNIX) /* open in rw------- mode */
 #define mch_open_rw(n, f)      mch_open((n), (f), (mode_t)0600)
-#else
-#define mch_open_rw(n, f)     mch_open((n), (f), 0)
-#endif
 
 #if defined(STARTUPTIME)
 #define TIME_MSG(s) { if (time_fd != NULL) time_msg(s, NULL); }
@@ -211,7 +171,6 @@
  * MB_COPY_CHAR(f, t): copy one char from "f" to "t" and advance the pointers.
  * PTR2CHAR(): get character from pointer.
  */
-#if defined(FEAT_MBYTE)
 /* Get the length of the character p points to */
 #define MB_PTR2LEN(p)          (has_mbyte ? (*mb_ptr2len)(p) : 1)
 /* Advance multi-byte pointer, skip over composing chars. */
@@ -227,16 +186,6 @@
 #define MB_CHARLEN(p)      (has_mbyte ? mb_charlen(p) : (int)STRLEN(p))
 #define MB_CHAR2LEN(c)     (has_mbyte ? mb_char2len(c) : 1)
 #define PTR2CHAR(p)        (has_mbyte ? mb_ptr2char(p) : (int)*(p))
-#else
-#define MB_PTR2LEN(p)          1
-#define mb_ptr_adv(p)          ++p
-#define mb_cptr_adv(p)         ++p
-#define mb_ptr_back(s, p)      --p
-#define MB_COPY_CHAR(f, t)     *t++ = *f++
-#define MB_CHARLEN(p)          STRLEN(p)
-#define MB_CHAR2LEN(c)         1
-#define PTR2CHAR(p)            ((int)*(p))
-#endif
 
 #if defined(FEAT_AUTOCHDIR)
 #define DO_AUTOCHDIR if (p_acd) do_autochdir();

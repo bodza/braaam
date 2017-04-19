@@ -35,14 +35,6 @@
 
 #include "vim.h"
 
-#if !defined(UNIX) /* it's in os_unix.h for Unix */
-#include <time.h>
-#endif
-
-#if defined(SASC) || defined(__amigaos4__)
-#include <proto/dos.h>     /* for Open() and Close() */
-#endif
-
 typedef struct block0           ZERO_BL;    /* contents of the first block */
 typedef struct pointer_block    PTR_BL;     /* contents of a pointer block */
 typedef struct data_block       DATA_BL;    /* contents of a data block */
@@ -233,9 +225,7 @@ static int ml_check_b0_id __ARGS((ZERO_BL *b0p));
 static void ml_upd_block0 __ARGS((buf_T *buf, upd_block0_T what));
 static void set_b0_fname __ARGS((ZERO_BL *, buf_T *buf));
 static void set_b0_dir_flag __ARGS((ZERO_BL *b0p, buf_T *buf));
-#if defined(FEAT_MBYTE)
 static void add_b0_fenc __ARGS((ZERO_BL *b0p, buf_T *buf));
-#endif
 static time_t swapfile_info __ARGS((char_u *));
 static int recov_file_names __ARGS((char_u **, char_u *, int prepend_dot));
 static int ml_append_int __ARGS((buf_T *, linenr_T, char_u *, colnr_T, int, int));
@@ -253,9 +243,7 @@ static int fnamecmp_ino __ARGS((char_u *, char_u *, long));
 #endif
 static void long_to_char __ARGS((long, char_u *));
 static long char_to_long __ARGS((char_u *));
-#if defined(UNIX)
 static char_u *make_percent_swname __ARGS((char_u *dir, char_u *name));
-#endif
 #if defined(FEAT_CRYPT)
 static cryptstate_T *ml_crypt_prepare __ARGS((memfile_T *mfp, off_t offset, int reading));
 #endif
@@ -988,10 +976,8 @@ set_b0_fname(b0p, buf)
         }
     }
 
-#if defined(FEAT_MBYTE)
     /* Also add the 'fileencoding' if there is room. */
     add_b0_fenc(b0p, curbuf);
-#endif
 }
 
 /*
@@ -1011,7 +997,6 @@ set_b0_dir_flag(b0p, buf)
         b0p->b0_flags &= ~B0_SAME_DIR;
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * When there is room, add the 'fileencoding' to block zero.
  */
@@ -1042,7 +1027,6 @@ add_b0_fenc(b0p, buf)
         b0p->b0_flags |= B0_HAS_FENC;
     }
 }
-#endif
 
 /*
  * Try to recover curbuf from the .swp file.
@@ -1753,15 +1737,11 @@ recover_names(fname, list, nr, fname_out)
             if (fname == NULL)
             {
                 names[0] = vim_strsave((char_u *)"*.sw?");
-#if defined(UNIX)
                 /* For Unix names starting with a dot are special.  MS-Windows
                  * supports this too, on some file systems. */
                 names[1] = vim_strsave((char_u *)".*.sw?");
                 names[2] = vim_strsave((char_u *)".sw?");
                 num_names = 3;
-#else
-                num_names = 1;
-#endif
             }
             else
                 num_names = recov_file_names(names, fname_res, TRUE);
@@ -1771,19 +1751,14 @@ recover_names(fname, list, nr, fname_out)
             if (fname == NULL)
             {
                 names[0] = concat_fnames(dir_name, (char_u *)"*.sw?", TRUE);
-#if defined(UNIX)
                 /* For Unix names starting with a dot are special.  MS-Windows
                  * supports this too, on some file systems. */
                 names[1] = concat_fnames(dir_name, (char_u *)".*.sw?", TRUE);
                 names[2] = concat_fnames(dir_name, (char_u *)".sw?", TRUE);
                 num_names = 3;
-#else
-                num_names = 1;
-#endif
             }
             else
             {
-#if defined(UNIX)
                 p = dir_name + STRLEN(dir_name);
                 if (after_pathsep(dir_name, p) && p[-1] == p[-2])
                 {
@@ -1791,7 +1766,6 @@ recover_names(fname, list, nr, fname_out)
                     tail = make_percent_swname(dir_name, fname_res);
                 }
                 else
-#endif
                 {
                     tail = gettail(fname_res);
                     tail = concat_fnames(dir_name, tail, TRUE);
@@ -1923,7 +1897,6 @@ recover_names(fname, list, nr, fname_out)
     return file_count;
 }
 
-#if defined(UNIX) /* Need _very_ long file names */
 /*
  * Append the full path to name with path separators made into percent
  * signs, to dir. An unnamed buffer is handled as "" (<currentdir>/"")
@@ -1953,9 +1926,8 @@ make_percent_swname(dir, name)
     }
     return d;
 }
-#endif
 
-#if defined(UNIX) && (defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG))
+#if (defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG))
 static int process_still_running;
 #endif
 
@@ -1972,14 +1944,11 @@ swapfile_info(fname)
     struct block0   b0;
     time_t          x = (time_t)0;
     char            *p;
-#if defined(UNIX)
     char_u          uname[B0_UNAME_SIZE];
-#endif
 
     /* print the swap file date */
     if (mch_stat((char *)fname, &st) != -1)
     {
-#if defined(UNIX)
         /* print name of owner of the file */
         if (mch_get_uname(st.st_uid, uname, B0_UNAME_SIZE) == OK)
         {
@@ -1988,7 +1957,6 @@ swapfile_info(fname)
             MSG_PUTS(_("   dated: "));
         }
         else
-#endif
             MSG_PUTS(_("             dated: "));
         x = st.st_mtime;                    /* Manx C can't do &st.st_mtime */
         p = ctime(&x);                      /* includes '\n' */
@@ -2044,7 +2012,6 @@ swapfile_info(fname)
                 {
                     MSG_PUTS(_("\n        process ID: "));
                     msg_outnum(char_to_long(b0.b0_pid));
-#if defined(UNIX)
                     /* EMX kill() not working correctly, it seems */
                     if (kill((pid_t)char_to_long(b0.b0_pid), 0) == 0)
                     {
@@ -2053,7 +2020,6 @@ swapfile_info(fname)
                         process_still_running = TRUE;
 #endif
                     }
-#endif
                 }
 
                 if (b0_magic_wrong(&b0))
@@ -2095,11 +2061,9 @@ recov_file_names(names, path, prepend_dot)
      */
     char_u      *p;
     int         i;
-#if (1)
     int     shortname = curbuf->b_shortname;
 
     curbuf->b_shortname = FALSE;
-#endif
 
     num_names = 0;
 
@@ -2136,7 +2100,6 @@ recov_file_names(names, path, prepend_dot)
     else
         ++num_names;
 
-#if (1)
     /*
      * Also try with 'shortname' set, in case the file is on a DOS filesystem.
      */
@@ -2156,12 +2119,9 @@ recov_file_names(names, path, prepend_dot)
         vim_free(names[num_names]);
     else
         ++num_names;
-#endif
 
 end:
-#if (1)
     curbuf->b_shortname = shortname;
-#endif
 
 #endif
 
@@ -2973,15 +2933,6 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
     /* The line was inserted below 'lnum' */
     ml_updatechunk(buf, lnum + 1, (long)len, ML_CHNK_ADDLINE);
 #endif
-#if defined(FEAT_NETBEANS_INTG)
-    if (netbeans_active())
-    {
-        if (STRLEN(line) > 0)
-            netbeans_inserted(buf, lnum+1, (colnr_T)0, line, (int)STRLEN(line));
-        netbeans_inserted(buf, lnum+1, (colnr_T)STRLEN(line),
-                                                           (char_u *)"\n", 1);
-    }
-#endif
     return OK;
 }
 
@@ -3011,13 +2962,6 @@ ml_replace(lnum, line, copy)
 
     if (copy && (line = vim_strsave(line)) == NULL) /* allocate memory */
         return FAIL;
-#if defined(FEAT_NETBEANS_INTG)
-    if (netbeans_active())
-    {
-        netbeans_removed(curbuf, lnum, 0, (long)STRLEN(ml_get(lnum)));
-        netbeans_inserted(curbuf, lnum, 0, line, (int)STRLEN(line));
-    }
-#endif
     if (curbuf->b_ml.ml_line_lnum != lnum)          /* other line buffered */
         ml_flush_line(curbuf);                      /* flush it */
     else if (curbuf->b_ml.ml_flags & ML_LINE_DIRTY) /* same line allocated */
@@ -3077,9 +3021,6 @@ ml_delete_int(buf, lnum, message)
     if (buf->b_ml.ml_line_count == 1)       /* file becomes empty */
     {
         if (message
-#if defined(FEAT_NETBEANS_INTG)
-                && !netbeansSuppressNoLines
-#endif
            )
             set_keep_msg((char_u *)_(no_lines_msg), 0);
 
@@ -3115,11 +3056,6 @@ ml_delete_int(buf, lnum, message)
         line_size = dp->db_txt_end - line_start;
     else
         line_size = ((dp->db_index[idx - 1]) & DB_INDEX_MASK) - line_start;
-
-#if defined(FEAT_NETBEANS_INTG)
-    if (netbeans_active())
-        netbeans_removed(buf, lnum, 0, (long)line_size);
-#endif
 
 /*
  * special case: If there is only one line in the data block it becomes empty.
@@ -3859,7 +3795,6 @@ makeswapname(fname, ffname, buf, dir_name)
     char_u      fname_buf[MAXPATHL];
 #endif
 
-#if defined(UNIX) /* Need _very_ long file names */
     s = dir_name + STRLEN(dir_name);
     if (after_pathsep(dir_name, s) && s[-1] == s[-2])
     {                          /* Ends with '//', Use Full path */
@@ -3871,7 +3806,6 @@ makeswapname(fname, ffname, buf, dir_name)
         }
         return r;
     }
-#endif
 
 #if defined(HAVE_READLINK)
     /* Expand symlink in the file name, so that we put the swap file with the
@@ -4074,22 +4008,6 @@ findswapname(buf, dirp, old_fname)
 #endif
     char_u      *buf_fname = buf->b_fname;
 
-#if !defined(SHORT_FNAME) && ((!defined(UNIX)) || defined(ARCHIE))
-#define CREATE_DUMMY_FILE
-    FILE        *dummyfd = NULL;
-
-    /*
-     * If we start editing a new file, e.g. "test.doc", which resides on an
-     * MSDOS compatible filesystem, it is possible that the file
-     * "test.doc.swp" which we create will be exactly the same file. To avoid
-     * this problem we temporarily create "test.doc".  Don't do this when the
-     * check below for a 8.3 file name is used.
-     */
-    if (!(buf->b_p_sn || buf->b_shortname) && buf_fname != NULL
-                                             && mch_getperm(buf_fname) < 0)
-        dummyfd = mch_fopen((char *)buf_fname, "w");
-#endif
-
     /*
      * Isolate a directory name from *dirp and put it in dir_name.
      * First allocate some memory to put the directory name in.
@@ -4118,7 +4036,7 @@ findswapname(buf, dirp, old_fname)
             fname = NULL;
             break;
         }
-#if defined(UNIX) && !defined(ARCHIE) && !defined(SHORT_FNAME)
+#if !defined(SHORT_FNAME)
 /*
  * Some systems have a MS-DOS compatible filesystem that use 8.3 character
  * file names. If this is the first try and the swap file name does not fit in
@@ -4225,23 +4143,6 @@ findswapname(buf, dirp, old_fname)
              * is most likely a symlink attack.
              */
             if (mch_lstat((char *)fname, &sb) < 0)
-#else
-#if (0)
-            fh = Open((UBYTE *)fname, (long)MODE_NEWFILE);
-            /*
-             * on the Amiga mch_getperm() will return -1 when the file exists
-             * but is being used by another program. This happens if you edit
-             * a file twice.
-             */
-            if (fh != (BPTR)NULL)       /* can open file, OK */
-            {
-                Close(fh);
-                mch_remove(fname);
-                break;
-            }
-            if (IoErr() != ERROR_OBJECT_IN_USE
-                                            && IoErr() != ERROR_OBJECT_EXISTS)
-#endif
 #endif
                 break;
         }
@@ -4369,7 +4270,7 @@ findswapname(buf, dirp, old_fname)
                     }
 #endif
 
-#if defined(UNIX) && (defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG))
+#if (defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG))
                     process_still_running = FALSE;
 #endif
 #if defined(FEAT_AUTOCMD)
@@ -4385,14 +4286,6 @@ findswapname(buf, dirp, old_fname)
                     if (choice == 0)
 #endif
                     {
-#if defined(FEAT_GUI)
-                        /* If we are supposed to start the GUI but it wasn't
-                         * completely started yet, start it now.  This makes
-                         * the messages displayed in the Vim window when
-                         * loading a session from the .gvimrc file. */
-                        if (gui.starting && !gui.in_use)
-                            gui_start();
-#endif
                         /* Show info about the existing swap file. */
                         attention_message(buf, fname);
 
@@ -4421,16 +4314,12 @@ findswapname(buf, dirp, old_fname)
                                     name == NULL
                                         ?  (char_u *)_("Swap file already exists!")
                                         : name,
-#if defined(UNIX)
                                     process_still_running
                                         ? (char_u *)_("&Open Read-Only\n&Edit anyway\n&Recover\n&Quit\n&Abort") :
-#endif
                                         (char_u *)_("&Open Read-Only\n&Edit anyway\n&Recover\n&Delete it\n&Quit\n&Abort"), 1, NULL, FALSE);
 
-#if defined(UNIX)
                         if (process_still_running && choice >= 4)
                             choice++;   /* Skip missing "Delete it" button */
-#endif
                         vim_free(name);
 
                         /* pretend screen didn't scroll, need redraw anyway */
@@ -4685,9 +4574,7 @@ ml_setflags(buf)
             b0p->b0_dirty = buf->b_changed ? B0_DIRTY : 0;
             b0p->b0_flags = (b0p->b0_flags & ~B0_FF_MASK)
                                                   | (get_fileformat(buf) + 1);
-#if defined(FEAT_MBYTE)
             add_b0_fenc(b0p, buf);
-#endif
             hp->bh_flags |= BH_DIRTY;
             mf_sync(buf->b_ml.ml_mfp, MFS_ZERO);
             break;
@@ -5231,10 +5118,8 @@ goto_byte(cnt)
     }
     check_cursor();
 
-#if defined(FEAT_MBYTE)
     /* Make sure the cursor is on the first byte of a multi-byte char. */
     if (has_mbyte)
         mb_adjust_cursor();
-#endif
 }
 #endif

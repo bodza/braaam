@@ -20,8 +20,6 @@
 
 #include "vim.h"
 
-#if defined(FEAT_EVAL) || defined(FEAT_SYN_HL)
-
 #if 0
 #define HT_DEBUG       /* extra checks for table consistency  and statistics */
 
@@ -490,5 +488,3 @@ hash_hash(key)
 
     return hash;
 }
-
-#endif

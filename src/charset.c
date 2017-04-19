@@ -4,12 +4,10 @@
 static int win_chartabsize __ARGS((win_T *wp, char_u *p, colnr_T col));
 #endif
 
-#if defined(FEAT_MBYTE)
 #if defined(HAVE_WCHAR_H)
 #include <wchar.h>        /* for towupper() and towlower() */
 #endif
 static int win_nolbr_chartabsize __ARGS((win_T *wp, char_u *s, colnr_T col, int *headp));
-#endif
 
 static unsigned nr2hex __ARGS((unsigned c));
 
@@ -79,7 +77,6 @@ buf_init_chartab(buf, global)
             chartab[c++] = 1 + CT_PRINT_CHAR;
         while (c < 256)
         {
-#if defined(FEAT_MBYTE)
             /* UTF-8: bytes 0xa0 - 0xff are printable (latin1) */
             if (enc_utf8 && c >= 0xa0)
                 chartab[c++] = CT_PRINT_CHAR + 1;
@@ -90,26 +87,22 @@ buf_init_chartab(buf, global)
             else if (enc_dbcs != 0 && MB_BYTE2LEN(c) == 2)
                 chartab[c++] = CT_PRINT_CHAR + 2;
             else
-#endif
                 /* the rest is unprintable by default */
                 chartab[c++] = (dy_flags & DY_UHEX) ? 4 : 2;
         }
 
-#if defined(FEAT_MBYTE)
         /* Assume that every multi-byte char is a filename character. */
         for (c = 1; c < 256; ++c)
             if ((enc_dbcs != 0 && MB_BYTE2LEN(c) > 1)
                     || (enc_dbcs == DBCS_JPNU && c == 0x8e)
                     || (enc_utf8 && c >= 0xa0))
                 chartab[c] |= CT_FNAME_CHAR;
-#endif
     }
 
     /*
      * Init word char flags all to FALSE
      */
     vim_memset(buf->b_chartab, 0, (size_t)32);
-#if defined(FEAT_MBYTE)
     if (enc_dbcs != 0)
         for (c = 0; c < 256; ++c)
         {
@@ -117,7 +110,6 @@ buf_init_chartab(buf, global)
             if (MB_BYTE2LEN(c) == 2)
                 SET_CHARTAB(buf, c);
         }
-#endif
 
 #if defined(FEAT_LISP)
     /*
@@ -154,11 +146,9 @@ buf_init_chartab(buf, global)
             if (VIM_ISDIGIT(*p))
                 c = getdigits(&p);
             else
-#if defined(FEAT_MBYTE)
                  if (has_mbyte)
                 c = mb_ptr2char_adv(&p);
             else
-#endif
                 c = *p++;
             c2 = -1;
             if (*p == '-' && p[1] != NUL)
@@ -167,11 +157,9 @@ buf_init_chartab(buf, global)
                 if (VIM_ISDIGIT(*p))
                     c2 = getdigits(&p);
                 else
-#if defined(FEAT_MBYTE)
                      if (has_mbyte)
                     c2 = mb_ptr2char_adv(&p);
                 else
-#endif
                     c2 = *p++;
             }
             if (c <= 0 || c >= 256 || (c2 < c && c2 != -1) || c2 >= 256
@@ -212,11 +200,9 @@ buf_init_chartab(buf, global)
                     else if (i == 1)            /* (re)set printable */
                     {
                         if ((c < ' ' || c > '~')
-#if defined(FEAT_MBYTE)
                                 /* For double-byte we keep the cell width, so
                                  * that we can detect it from the first byte. */
                                 && !(enc_dbcs && MB_BYTE2LEN(c) == 2)
-#endif
                            )
                         {
                             if (tilde)
@@ -280,12 +266,10 @@ trans_characters(buf, bufsize)
     room = bufsize - len;
     while (*buf != 0)
     {
-#if defined(FEAT_MBYTE)
         /* Assume a multi-byte character doesn't need translation. */
         if (has_mbyte && (trs_len = (*mb_ptr2len)(buf)) > 1)
             len -= trs_len;
         else
-#endif
         {
             trs = transchar_byte(*buf);
             trs_len = (int)STRLEN(trs);
@@ -303,7 +287,6 @@ trans_characters(buf, bufsize)
     }
 }
 
-#if defined(FEAT_EVAL) || defined(FEAT_TITLE) || defined(FEAT_INS_EXPAND)
 /*
  * Translate a string into allocated memory, replacing special chars with
  * printable chars.  Returns NULL when out of memory.
@@ -314,12 +297,9 @@ transstr(s)
 {
     char_u      *res;
     char_u      *p;
-#if defined(FEAT_MBYTE)
     int         l, len, c;
     char_u      hexbuf[11];
-#endif
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         /* Compute the length of the result, taking account of unprintable
@@ -352,7 +332,6 @@ transstr(s)
         res = alloc((unsigned)(len + 1));
     }
     else
-#endif
         res = alloc((unsigned)(vim_strsize(s) + 1));
     if (res != NULL)
     {
@@ -360,7 +339,6 @@ transstr(s)
         p = s;
         while (*p != NUL)
         {
-#if defined(FEAT_MBYTE)
             if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
             {
                 c = (*mb_ptr2char)(p);
@@ -371,13 +349,11 @@ transstr(s)
                 p += l;
             }
             else
-#endif
                 STRCAT(res, transchar_byte(*p++));
         }
     }
     return res;
 }
-#endif
 
 #if defined(FEAT_SYN_HL) || defined(FEAT_INS_EXPAND)
 /*
@@ -426,7 +402,6 @@ str_foldcase(str, orglen, buf, buflen)
     i = 0;
     while (STR_CHAR(i) != NUL)
     {
-#if defined(FEAT_MBYTE)
         if (enc_utf8 || (has_mbyte && MB_BYTE2LEN(STR_CHAR(i)) > 1))
         {
             if (enc_utf8)
@@ -478,7 +453,6 @@ str_foldcase(str, orglen, buf, buflen)
             i += (*mb_ptr2len)(STR_PTR(i));
         }
         else
-#endif
         {
             if (buf == NULL)
                 GA_CHAR(i) = TOLOWER_LOC(GA_CHAR(i));
@@ -530,7 +504,6 @@ transchar(c)
     return transchar_buf;
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Like transchar(), but called with a byte instead of a character.  Checks
  * for an illegal UTF-8 byte.
@@ -546,7 +519,6 @@ transchar_byte(c)
     }
     return transchar(c);
 }
-#endif
 
 /*
  * Convert non-printable character to two or more printable characters in
@@ -573,12 +545,10 @@ transchar_nonprint(buf, c)
 
         buf[2] = NUL;
     }
-#if defined(FEAT_MBYTE)
     else if (enc_utf8 && c >= 0x80)
     {
         transchar_hex(buf, c);
     }
-#endif
     else if (c >= ' ' + 0x80 && c <= '~' + 0x80)    /* 0xa0 - 0xfe */
     {
         buf[0] = '|';
@@ -601,13 +571,11 @@ transchar_hex(buf, c)
     int         i = 0;
 
     buf[0] = '<';
-#if defined(FEAT_MBYTE)
     if (c > 255)
     {
         buf[++i] = nr2hex((unsigned)c >> 12);
         buf[++i] = nr2hex((unsigned)c >> 8);
     }
-#endif
     buf[++i] = nr2hex((unsigned)c >> 4);
     buf[++i] = nr2hex((unsigned)c);
     buf[++i] = '>';
@@ -640,10 +608,8 @@ nr2hex(c)
 byte2cells(b)
     int         b;
 {
-#if defined(FEAT_MBYTE)
     if (enc_utf8 && b >= 0x80)
         return 0;
-#endif
     return (chartab[b] & CT_CELL_MASK);
 }
 
@@ -658,7 +624,6 @@ char2cells(c)
 {
     if (IS_SPECIAL(c))
         return char2cells(K_SECOND(c)) + 2;
-#if defined(FEAT_MBYTE)
     if (c >= 0x80)
     {
         /* UTF-8: above 0x80 need to check the value */
@@ -673,7 +638,6 @@ char2cells(c)
             return 2;
         }
     }
-#endif
     return (chartab[c & 0xff] & CT_CELL_MASK);
 }
 
@@ -685,12 +649,10 @@ char2cells(c)
 ptr2cells(p)
     char_u      *p;
 {
-#if defined(FEAT_MBYTE)
     /* For UTF-8 we need to look at more bytes if the first byte is >= 0x80. */
     if (enc_utf8 && *p >= 0x80)
         return utf_ptr2cells(p);
     /* For DBCS we can tell the cell count from the first byte. */
-#endif
     return (chartab[*p] & CT_CELL_MASK);
 }
 
@@ -718,7 +680,6 @@ vim_strnsize(s, len)
 
     while (*s != NUL && --len >= 0)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             int     l = (*mb_ptr2len)(s);
@@ -728,7 +689,6 @@ vim_strnsize(s, len)
             len -= l - 1;
         }
         else
-#endif
             size += byte2cells(*s++);
     }
     return size;
@@ -751,7 +711,7 @@ vim_strnsize(s, len)
     else \
         return ptr2cells(p);
 
-#if defined(FEAT_VREPLACE) || defined(FEAT_EX_EXTRA) || defined(FEAT_GUI) || defined(FEAT_VIRTUALEDIT)
+#if defined(FEAT_VREPLACE) || defined(FEAT_EX_EXTRA) || defined(FEAT_VIRTUALEDIT)
     int
 chartabsize(p, col)
     char_u      *p;
@@ -845,7 +805,6 @@ vim_iswordc_buf(c, buf)
     int         c;
     buf_T       *buf;
 {
-#if defined(FEAT_MBYTE)
     if (c >= 0x100)
     {
         if (enc_dbcs != 0)
@@ -853,7 +812,6 @@ vim_iswordc_buf(c, buf)
         if (enc_utf8)
             return utf_class(c) >= 2;
     }
-#endif
     return (c > 0 && c < 0x100 && GET_CHARTAB(buf, c) != 0);
 }
 
@@ -864,10 +822,8 @@ vim_iswordc_buf(c, buf)
 vim_iswordp(p)
     char_u *p;
 {
-#if defined(FEAT_MBYTE)
     if (has_mbyte && MB_BYTE2LEN(*p) > 1)
         return mb_get_class(p) >= 2;
-#endif
     return GET_CHARTAB(curbuf, *p) != 0;
 }
 
@@ -876,10 +832,8 @@ vim_iswordp_buf(p, buf)
     char_u      *p;
     buf_T       *buf;
 {
-#if defined(FEAT_MBYTE)
     if (has_mbyte && MB_BYTE2LEN(*p) > 1)
         return mb_get_class(p) >= 2;
-#endif
     return (GET_CHARTAB(buf, *p) != 0);
 }
 
@@ -920,10 +874,8 @@ vim_isfilec_or_wc(c)
 vim_isprintc(c)
     int c;
 {
-#if defined(FEAT_MBYTE)
     if (enc_utf8 && c >= 0x100)
         return utf_printable(c);
-#endif
     return (c >= 0x100 || (c > 0 && (chartab[c] & CT_PRINT_CHAR)));
 }
 
@@ -935,12 +887,10 @@ vim_isprintc(c)
 vim_isprintc_strict(c)
     int c;
 {
-#if defined(FEAT_MBYTE)
     if (enc_dbcs != 0 && c < 0x100 && MB_BYTE2LEN(c) > 1)
         return FALSE;
     if (enc_utf8 && c >= 0x100)
         return utf_printable(c);
-#endif
     return (c >= 0x100 || (c > 0 && (chartab[c] & CT_PRINT_CHAR)));
 }
 
@@ -957,10 +907,8 @@ lbr_chartabsize(line, s, col)
     if (!curwin->w_p_lbr && *p_sbr == NUL && !curwin->w_p_bri)
     {
 #endif
-#if defined(FEAT_MBYTE)
         if (curwin->w_p_wrap)
             return win_nolbr_chartabsize(curwin, s, col, NULL);
-#endif
         RET_WIN_BUF_CHARTABSIZE(curwin, curbuf, s, col)
 #if defined(FEAT_LINEBREAK)
     }
@@ -1006,11 +954,7 @@ win_lbr_chartabsize(wp, line, s, col, headp)
     colnr_T     col_adj = 0; /* col + screen size of tab */
     colnr_T     colmax;
     int         added;
-#if defined(FEAT_MBYTE)
     int         mb_added = 0;
-#else
-#define mb_added 0
-#endif
     int         numberextra;
     char_u      *ps;
     int         tab_corr = (*s == TAB);
@@ -1022,10 +966,8 @@ win_lbr_chartabsize(wp, line, s, col, headp)
     if (!wp->w_p_lbr && !wp->w_p_bri && *p_sbr == NUL)
 #endif
     {
-#if defined(FEAT_MBYTE)
         if (wp->w_p_wrap)
             return win_nolbr_chartabsize(wp, s, col, headp);
-#endif
         RET_WIN_BUF_CHARTABSIZE(wp, wp->w_buffer, s, col)
     }
 
@@ -1086,14 +1028,12 @@ win_lbr_chartabsize(wp, line, s, col, headp)
             }
         }
     }
-#if defined(FEAT_MBYTE)
     else if (has_mbyte && size == 2 && MB_BYTE2LEN(*s) > 1
                                     && wp->w_p_wrap && in_win_border(wp, col))
     {
         ++size;         /* Count the ">" in the last column. */
         mb_added = 1;
     }
-#endif
 
     /*
      * May have to add something for 'breakindent' and/or 'showbreak'
@@ -1161,7 +1101,6 @@ win_lbr_chartabsize(wp, line, s, col, headp)
 #endif
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Like win_lbr_chartabsize(), except that we know 'linebreak' is off and
  * 'wrap' is on.  This means we need to check for a double-byte character that
@@ -1219,7 +1158,6 @@ in_win_border(wp, vcol)
         return FALSE;
     return ((vcol - width1) % width2 == width2 - 1);
 }
-#endif
 
 /*
  * Get virtual column number of pos.
@@ -1265,14 +1203,9 @@ getvcol(wp, pos, start, cursor, end)
 #endif
        )
     {
-#if !defined(FEAT_MBYTE)
-        head = 0;
-#endif
         for (;;)
         {
-#if defined(FEAT_MBYTE)
             head = 0;
-#endif
             c = *ptr;
             /* make sure we don't go past the end of the line */
             if (c == NUL)
@@ -1285,7 +1218,6 @@ getvcol(wp, pos, start, cursor, end)
                 incr = ts - (vcol % ts);
             else
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     /* For utf-8, if the byte is >= 0x80, need to look at
@@ -1306,7 +1238,6 @@ getvcol(wp, pos, start, cursor, end)
                     }
                 }
                 else
-#endif
                     incr = CHARSIZE(c);
             }
 
@@ -1387,9 +1318,7 @@ getvvcol(wp, pos, start, cursor, end)
     colnr_T     col;
     colnr_T     coladd;
     colnr_T     endadd;
-#if defined(FEAT_MBYTE)
     char_u      *ptr;
-#endif
 
     if (virtual_active())
     {
@@ -1398,7 +1327,6 @@ getvvcol(wp, pos, start, cursor, end)
 
         coladd = pos->coladd;
         endadd = 0;
-#if defined(FEAT_MBYTE)
         /* Cannot put the cursor on part of a wide character. */
         ptr = ml_get_buf(wp->w_buffer, pos->lnum, FALSE);
         if (pos->col < (colnr_T)STRLEN(ptr))
@@ -1414,7 +1342,6 @@ getvvcol(wp, pos, start, cursor, end)
                     coladd = 0;
             }
         }
-#endif
         col += coladd;
         if (start != NULL)
             *start = col;
@@ -1566,7 +1493,6 @@ vim_isxdigit(c)
         || (c >= 'A' && c <= 'F');
 }
 
-#if defined(FEAT_MBYTE)
 /*
  * Vim's own character class functions.  These exist because many library
  * islower()/toupper() etc. do not work properly: they crash when used with
@@ -1679,7 +1605,6 @@ vim_tolower(c)
     }
     return TOLOWER_LOC(c);
 }
-#endif
 
 /*
  * skiptowhite: skip over text until ' ' or '\t' or NUL.
@@ -1693,7 +1618,7 @@ skiptowhite(p)
     return p;
 }
 
-#if defined(FEAT_LISTCMDS) || defined(FEAT_SIGNS) || defined(FEAT_SNIFF)
+#if defined(FEAT_LISTCMDS) || defined(FEAT_SIGNS)
 /*
  * skiptowhite_esc: Like skiptowhite(), but also skip escaped chars
  */
@@ -1870,7 +1795,7 @@ hex2nr(c)
     return c - '0';
 }
 
-#if defined(FEAT_TERMRESPONSE) || (defined(FEAT_GUI_GTK) && defined(FEAT_WINDOWS))
+#if defined(FEAT_TERMRESPONSE)
 /*
  * Convert two hex characters to a byte.
  * Return -1 if one of the characters is not hex.
@@ -1904,9 +1829,7 @@ rem_backslash(str)
 {
 #if defined(BACKSLASH_IN_FILENAME)
     return (str[0] == '\\'
-#if defined(FEAT_MBYTE)
             && str[1] < 0x80
-#endif
             && (str[1] == ' '
                 || (str[1] != NUL
                     && str[1] != '*'

@@ -9,11 +9,8 @@
 
 #if defined(FEAT_CSCOPE)
 
-#if defined(UNIX)
 #include <sys/types.h>         /* pid_t */
 #include <sys/stat.h>          /* dev_t, ino_t */
-#else
-#endif
 
 #define CSCOPE_SUCCESS          0
 #define CSCOPE_FAILURE          -1
@@ -46,12 +43,9 @@ typedef struct csi {
     char *          fname;      /* cscope db name */
     char *          ppath;      /* path to prepend (the -P option) */
     char *          flags;      /* additional cscope flags/options (e.g, -p2) */
-#if defined(UNIX)
     pid_t           pid;        /* PID of the connected cscope process. */
     dev_t           st_dev;     /* ID of dev containing cscope db */
     ino_t           st_ino;     /* inode number of cscope db */
-#else
-#endif
 
     FILE *          fr_fp;      /* from cscope: FILE. */
     FILE *          to_fp;      /* to cscope: FILE. */

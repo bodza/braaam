@@ -645,23 +645,6 @@ validate_cursor()
         curs_columns(TRUE);
 }
 
-#if defined(FEAT_GUI)
-/*
- * validate w_cline_row.
- */
-    void
-validate_cline_row()
-{
-    /*
-     * First make sure that w_topline is valid (after moving the cursor).
-     */
-    update_topline();
-    check_cursor_moved(curwin);
-    if (!(curwin->w_valid & VALID_CROW))
-        curs_rows(curwin);
-}
-#endif
-
 /*
  * Compute wp->w_cline_row and wp->w_cline_height, based on the current value
  * of wp->w_topline.
@@ -895,10 +878,6 @@ win_col_off(wp)
 #endif
 #if defined(FEAT_SIGNS)
             + (
-#if defined(FEAT_NETBEANS_INTG)
-                /* show glyph gutter in netbeans */
-                wp->w_buffer->b_has_sign_column ||
-#endif
                 wp->w_buffer->b_signlist != NULL ? 2 : 0)
 #endif
            );
@@ -2896,11 +2875,9 @@ do_check_cursorbind()
             restart_edit = TRUE;
             check_cursor();
             restart_edit = restart_edit_save;
-#if defined(FEAT_MBYTE)
             /* Correct cursor for multi-byte character. */
             if (has_mbyte)
                 mb_adjust_cursor();
-#endif
             redraw_later(VALID);
 
             /* Only scroll when 'scrollbind' hasn't done this. */

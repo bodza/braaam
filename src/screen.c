@@ -141,9 +141,7 @@ static int next_search_hl_pos __ARGS((match_T *shl, linenr_T lnum, posmatch_T *p
 #endif
 static void screen_start_highlight __ARGS((int attr));
 static void screen_char __ARGS((unsigned off, int row, int col));
-#if defined(FEAT_MBYTE)
 static void screen_char_2 __ARGS((unsigned off, int row, int col));
-#endif
 static void screenclear2 __ARGS((void));
 static void lineclear __ARGS((unsigned off, int width));
 static void lineinvalid __ARGS((unsigned off, int width));
@@ -210,13 +208,6 @@ redraw_win_later(wp, type)
 redraw_later_clear()
 {
     redraw_all_later(CLEAR);
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-        /* Use a code that will reset gui.highlight_mask in
-         * gui_stop_highlight(). */
-        screen_attr = HL_ALL + 1;
-    else
-#endif
         /* Use attributes that is very unlikely to appear in text. */
         screen_attr = HL_BOLD | HL_UNDERLINE | HL_INVERSE;
 }
@@ -274,12 +265,10 @@ redraw_asap(type)
     int         ret = 0;
     schar_T     *screenline;    /* copy from ScreenLines[] */
     sattr_T     *screenattr;    /* copy from ScreenAttrs[] */
-#if defined(FEAT_MBYTE)
     int         i;
     u8char_T    *screenlineUC = NULL;   /* copy from ScreenLinesUC[] */
     u8char_T    *screenlineC[MAX_MCO];  /* copy from ScreenLinesC[][] */
     schar_T     *screenline2 = NULL;    /* copy from ScreenLines2[] */
-#endif
 
     redraw_later(type);
     if (msg_scrolled || (State != NORMAL && State != NORMAL_BUSY))
@@ -293,7 +282,6 @@ redraw_asap(type)
                            (long_u)(rows * Columns * sizeof(sattr_T)), FALSE);
     if (screenline == NULL || screenattr == NULL)
         ret = 2;
-#if defined(FEAT_MBYTE)
     if (enc_utf8)
     {
         screenlineUC = (u8char_T *)lalloc(
@@ -315,7 +303,6 @@ redraw_asap(type)
         if (screenline2 == NULL)
             ret = 2;
     }
-#endif
 
     if (ret != 2)
     {
@@ -328,7 +315,6 @@ redraw_asap(type)
             mch_memmove(screenattr + r * Columns,
                         ScreenAttrs + LineOffset[cmdline_row + r],
                         (size_t)Columns * sizeof(sattr_T));
-#if defined(FEAT_MBYTE)
             if (enc_utf8)
             {
                 mch_memmove(screenlineUC + r * Columns,
@@ -343,7 +329,6 @@ redraw_asap(type)
                 mch_memmove(screenline2 + r * Columns,
                             ScreenLines2 + LineOffset[cmdline_row + r],
                             (size_t)Columns * sizeof(schar_T));
-#endif
         }
 
         update_screen(0);
@@ -362,7 +347,6 @@ redraw_asap(type)
                 mch_memmove(ScreenAttrs + off,
                             screenattr + r * Columns,
                             (size_t)Columns * sizeof(sattr_T));
-#if defined(FEAT_MBYTE)
                 if (enc_utf8)
                 {
                     mch_memmove(ScreenLinesUC + off,
@@ -377,7 +361,6 @@ redraw_asap(type)
                     mch_memmove(ScreenLines2 + off,
                                 screenline2 + r * Columns,
                                 (size_t)Columns * sizeof(schar_T));
-#endif
                 SCREEN_LINE(cmdline_row + r, 0, Columns, Columns, FALSE);
             }
             ret = 4;
@@ -386,7 +369,6 @@ redraw_asap(type)
 
     vim_free(screenline);
     vim_free(screenattr);
-#if defined(FEAT_MBYTE)
     if (enc_utf8)
     {
         vim_free(screenlineUC);
@@ -395,7 +377,6 @@ redraw_asap(type)
     }
     if (enc_dbcs == DBCS_JPNU)
         vim_free(screenline2);
-#endif
 
     /* Show the intro message when appropriate. */
     maybe_intro_message();
@@ -657,13 +638,6 @@ update_screen(type)
                 if (clip_plus.available && clip_isautosel_plus())
                     clip_update_selection(&clip_plus);
 #endif
-#if defined(FEAT_GUI)
-                /* Remove the cursor before starting to do anything, because
-                 * scrolling may make it difficult to redraw the text under
-                 * it. */
-                if (gui.in_use)
-                    gui_undraw_cursor();
-#endif
             }
 #endif
             win_update(wp);
@@ -697,9 +671,6 @@ update_screen(type)
 #endif
 
     updating_screen = FALSE;
-#if defined(FEAT_GUI)
-    gui_may_resize_shell();
-#endif
 
     /* Clear or redraw the command line.  Done last, because scrolling may
      * mess up the command line. */
@@ -711,17 +682,6 @@ update_screen(type)
         maybe_intro_message();
     did_intro = TRUE;
 
-#if defined(FEAT_GUI)
-    /* Redraw the cursor and update the scrollbars when all screen updating is
-     * done. */
-    if (gui.in_use)
-    {
-        out_flush();    /* required before updating the cursor */
-        if (did_one)
-            gui_update_cursor(FALSE, FALSE);
-        gui_update_scrollbars(FALSE);
-    }
-#endif
 }
 
 #if defined(FEAT_CONCEAL)
@@ -776,12 +736,6 @@ update_single_line(wp, lnum)
     if (lnum >= wp->w_topline && lnum < wp->w_botline
                                  && foldedCount(wp, lnum, &win_foldinfo) == 0)
     {
-#if defined(FEAT_GUI)
-        /* Remove the cursor before starting to do anything, because scrolling
-         * may make it difficult to redraw the text under it. */
-        if (gui.in_use)
-            gui_undraw_cursor();
-#endif
         row = 0;
         for (j = 0; j < wp->w_lines_valid; ++j)
         {
@@ -801,20 +755,12 @@ update_single_line(wp, lnum)
             }
             row += wp->w_lines[j].wl_size;
         }
-#if defined(FEAT_GUI)
-        /* Redraw the cursor */
-        if (gui.in_use)
-        {
-            out_flush();        /* required before updating the cursor */
-            gui_update_cursor(FALSE, FALSE);
-        }
-#endif
     }
     need_cursor_line_redraw = FALSE;
 }
 #endif
 
-#if defined(FEAT_SIGNS) || defined(FEAT_GUI)
+#if defined(FEAT_SIGNS)
 static void update_prepare __ARGS((void));
 static void update_finish __ARGS((void));
 
@@ -827,12 +773,6 @@ update_prepare()
 {
     cursor_off();
     updating_screen = TRUE;
-#if defined(FEAT_GUI)
-    /* Remove the cursor before starting to do anything, because scrolling may
-     * make it difficult to redraw the text under it. */
-    if (gui.in_use)
-        gui_undraw_cursor();
-#endif
 #if defined(FEAT_SEARCH_EXTRA)
     start_search_hl();
 #endif
@@ -853,18 +793,6 @@ update_finish()
 
     updating_screen = FALSE;
 
-#if defined(FEAT_GUI)
-    gui_may_resize_shell();
-
-    /* Redraw the cursor and update the scrollbars when all screen updating is
-     * done. */
-    if (gui.in_use)
-    {
-        out_flush();    /* required before updating the cursor */
-        gui_update_cursor(FALSE, FALSE);
-        gui_update_scrollbars(FALSE);
-    }
-#endif
 }
 #endif
 
@@ -905,9 +833,6 @@ update_debug_sign(buf, lnum)
     /* Return when there is nothing to do, screen updating is already
      * happening (recursive call) or still starting up. */
     if (!doit || updating_screen
-#if defined(FEAT_GUI)
-            || gui.starting
-#endif
             || starting)
         return;
 
@@ -925,51 +850,6 @@ update_debug_sign(buf, lnum)
 #else
     if (curwin->w_redr_type != 0)
         win_update(curwin);
-#endif
-
-    update_finish();
-}
-#endif
-
-#if defined(FEAT_GUI)
-/*
- * Update a single window, its status line and maybe the command line msg.
- * Used for the GUI scrollbar.
- */
-    void
-updateWindow(wp)
-    win_T       *wp;
-{
-    /* return if already busy updating */
-    if (updating_screen)
-        return;
-
-    update_prepare();
-
-#if defined(FEAT_CLIPBOARD)
-    /* When Visual area changed, may have to update selection. */
-    if (clip_star.available && clip_isautosel_star())
-        clip_update_selection(&clip_star);
-    if (clip_plus.available && clip_isautosel_plus())
-        clip_update_selection(&clip_plus);
-#endif
-
-    win_update(wp);
-
-#if defined(FEAT_WINDOWS)
-    /* When the screen was cleared redraw the tab pages line. */
-    if (redraw_tabline)
-        draw_tabline();
-
-    if (wp->w_redr_status
-#if defined(FEAT_CMDL_INFO)
-            || p_ru
-#endif
-#if defined(FEAT_STL_OPT)
-            || *p_stl != NUL || *wp->w_p_stl != NUL
-#endif
-            )
-        win_redr_status(wp);
 #endif
 
     update_finish();
@@ -2202,9 +2082,6 @@ draw_signcolumn(wp)
     win_T *wp;
 {
     return (wp->w_buffer->b_signlist != NULL
-#if defined(FEAT_NETBEANS_INTG)
-                                || wp->w_buffer->b_has_sign_column
-#endif
                     );
 }
 #endif
@@ -2397,10 +2274,8 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
     {
         ScreenLines[off] = cmdwin_type;
         ScreenAttrs[off] = hl_attr(HLF_AT);
-#if defined(FEAT_MBYTE)
         if (enc_utf8)
             ScreenLinesUC[off] = 0;
-#endif
         ++col;
     }
 #endif
@@ -2524,7 +2399,6 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
      *    Right-left text is put in columns 0 - number-col, normal text is put
      *    in columns number-col - window-width.
      */
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         int     cells;
@@ -2591,7 +2465,6 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
         }
     }
     else
-#endif
     {
         len = (int)STRLEN(text);
         if (len > W_WIDTH(wp) - col)
@@ -2619,7 +2492,6 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
 #endif
             )
     {
-#if defined(FEAT_MBYTE)
         if (enc_utf8)
         {
             if (fill_fold >= 0x80)
@@ -2630,7 +2502,6 @@ fold_line(wp, fold_count, foldinfo, lnum, row)
             else
                 ScreenLinesUC[off + col] = 0;
         }
-#endif
         ScreenLines[off + col++] = fill_fold;
     }
 
@@ -2757,10 +2628,8 @@ copy_text_attr(off, buf, len, attr)
     int         i;
 
     mch_memmove(ScreenLines + off, buf, (size_t)len);
-#if defined(FEAT_MBYTE)
     if (enc_utf8)
         vim_memset(ScreenLinesUC + off, 0, sizeof(u8char_T) * (size_t)len);
-#endif
     for (i = 0; i < len; ++i)
         ScreenAttrs[off + i] = attr;
 }
@@ -2910,13 +2779,11 @@ win_line(wp, lnum, startrow, endrow, nochange)
     int         cur_checked_col = 0;    /* checked column for current line */
 #endif
     int         extra_check;            /* has syntax or linebreak */
-#if defined(FEAT_MBYTE)
     int         multi_attr = 0;         /* attributes desired by multibyte */
     int         mb_l = 1;               /* multi-byte byte length */
     int         mb_c = 0;               /* decoded multi-byte character */
     int         mb_utf8 = FALSE;        /* screen char is UTF-8 char */
     int         u8cc[MAX_MCO];          /* composing UTF-8 chars */
-#endif
 #if defined(FEAT_DIFF)
     int         filler_lines;           /* nr of filler lines to be drawn */
     int         filler_todo;            /* nr of filler lines still to do + 1 */
@@ -2977,10 +2844,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
 #endif
 #define WL_LINE         WL_SBR + 1      /* text in the line */
     int         draw_state = WL_START;  /* what to draw next */
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-    int         feedback_col = 0;
-    int         feedback_old_attr = -1;
-#endif
 
 #if defined(FEAT_CONCEAL)
     int         syntax_flags    = 0;
@@ -3152,28 +3015,16 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
         }
 
-#if (1)
         /* Check if the character under the cursor should not be inverted */
         if (!highlight_match && lnum == curwin->w_cursor.lnum && wp == curwin
-#if defined(FEAT_GUI)
-                && !gui.in_use
-#endif
                 )
             noinvcur = TRUE;
-#endif
 
         /* if inverting in this line set area_highlighting */
         if (fromcol >= 0)
         {
             area_highlighting = TRUE;
             attr = hl_attr(HLF_V);
-#if defined(FEAT_CLIPBOARD) && defined(FEAT_X11)
-            if ((clip_star.available && !clip_star.owned
-                                                     && clip_isautosel_star())
-                    || (clip_plus.available && !clip_plus.owned
-                                                    && clip_isautosel_plus()))
-                attr = hl_attr(HLF_VNC);
-#endif
         }
     }
 
@@ -3306,16 +3157,12 @@ win_line(wp, lnum, startrow, endrow, nochange)
         v = wp->w_leftcol;
     if (v > 0)
     {
-#if defined(FEAT_MBYTE)
         char_u  *prev_ptr = ptr;
-#endif
         while (vcol < v && *ptr != NUL)
         {
             c = win_lbr_chartabsize(wp, line, ptr, (colnr_T)vcol, NULL);
             vcol += c;
-#if defined(FEAT_MBYTE)
             prev_ptr = ptr;
-#endif
             mb_ptr_adv(ptr);
         }
 
@@ -3343,11 +3190,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
         if (vcol > v)
         {
             vcol -= c;
-#if defined(FEAT_MBYTE)
             ptr = prev_ptr;
-#else
-            --ptr;
-#endif
             n_skip = v - vcol;
         }
 
@@ -3476,11 +3319,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
             /* Highlight one character for an empty match. */
             if (shl->startcol == shl->endcol)
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte && line[shl->endcol] != NUL)
                     shl->endcol += (*mb_ptr2len)(line + shl->endcol);
                 else
-#endif
                     ++shl->endcol;
             }
             if ((long)shl->startcol < v)  /* match at leftcol */
@@ -3594,10 +3435,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         {
                             /* Use the image in this position. */
                             c_extra = SIGN_BYTE;
-#if defined(FEAT_NETBEANS_INTG)
-                            if (buf_signcount(wp->w_buffer, lnum) > 1)
-                                c_extra = MULTISIGN_BYTE;
-#endif
                             char_attr = icon_sign;
                         }
                         else
@@ -3810,10 +3647,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
         {
             /* handle Visual or match highlighting in this line */
             if (vcol == fromcol
-#if defined(FEAT_MBYTE)
                     || (has_mbyte && vcol + 1 == fromcol && n_extra == 0
                         && (*mb_ptr2cells)(ptr) > 1)
-#endif
                     || ((int)vcol_prev == fromcol_prev
                         && vcol_prev < vcol     /* not at margin */
                         && vcol < tocol))
@@ -3859,12 +3694,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                 && v >= (long)shl->startcol
                                 && v < (long)shl->endcol)
                         {
-#if defined(FEAT_MBYTE)
                             int tmp_col = v + MB_PTR2LEN(ptr);
 
                             if (shl->endcol < tmp_col)
                                 shl->endcol = tmp_col;
-#endif
                             shl->attr_cur = shl->attr;
                         }
                         else if (v == (long)shl->endcol)
@@ -3891,12 +3724,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                 {
                                     /* highlight empty match, try again after
                                      * it */
-#if defined(FEAT_MBYTE)
                                     if (has_mbyte)
                                         shl->endcol += (*mb_ptr2len)(line
                                                                + shl->endcol);
                                     else
-#endif
                                         ++shl->endcol;
                                 }
 
@@ -3998,7 +3829,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             if (c_extra != NUL)
             {
                 c = c_extra;
-#if defined(FEAT_MBYTE)
                 mb_c = c;       /* doesn't handle non-utf-8 multi-byte! */
                 if (enc_utf8 && (*mb_char2len)(c) > 1)
                 {
@@ -4008,12 +3838,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 }
                 else
                     mb_utf8 = FALSE;
-#endif
             }
             else
             {
                 c = *p_extra;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                 {
                     mb_c = c;
@@ -4069,7 +3897,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         p_extra += mb_l - 1;
                     }
                 }
-#endif
                 ++p_extra;
             }
             --n_extra;
@@ -4085,7 +3912,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
              * Get a character from the line itself.
              */
             c = *ptr;
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 mb_c = c;
@@ -4245,14 +4071,11 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 }
 
             }
-#endif
             ++ptr;
 
             /* 'list' : change char 160 to lcs_nbsp. */
             if (wp->w_p_list && (c == 160
-#if defined(FEAT_MBYTE)
                         || (mb_utf8 && mb_c == 160)
-#endif
                         ) && lcs_nbsp)
             {
                 c = lcs_nbsp;
@@ -4262,7 +4085,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     extra_attr = hl_attr(HLF_8);
                     saved_attr2 = char_attr; /* save current attr */
                 }
-#if defined(FEAT_MBYTE)
                 mb_c = c;
                 if (enc_utf8 && (*mb_char2len)(c) > 1)
                 {
@@ -4272,7 +4094,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 }
                 else
                     mb_utf8 = FALSE;
-#endif
             }
 
             if (extra_check)
@@ -4347,14 +4168,12 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         char_u  *prev_ptr, *p;
                         int     len;
                         hlf_T   spell_hlf = HLF_COUNT;
-#if defined(FEAT_MBYTE)
                         if (has_mbyte)
                         {
                             prev_ptr = ptr - mb_l;
                             v -= mb_l - 1;
                         }
                         else
-#endif
                             prev_ptr = ptr - 1;
 
                         /* Use nextline[] if possible, it has the start of the
@@ -4425,13 +4244,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  */
                 if (wp->w_p_lbr && vim_isbreak(c) && !vim_isbreak(*ptr))
                 {
-#if defined(FEAT_MBYTE)
                     int mb_off = has_mbyte ? (*mb_head_off)(line, ptr - 1) : 0;
-#endif
                     char_u *p = ptr - (
-#if defined(FEAT_MBYTE)
                                 mb_off +
-#endif
                                 1);
 
                     /* TODO: is passing p for start of the line OK? */
@@ -4441,11 +4256,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         n_extra = (int)wp->w_buffer->b_p_ts
                                        - vcol % (int)wp->w_buffer->b_p_ts - 1;
 
-#if defined(FEAT_MBYTE)
                     c_extra = mb_off > 0 ? MB_FILLER_CHAR : ' ';
-#else
-                    c_extra = ' ';
-#endif
                     if (vim_iswhite(c))
                     {
 #if defined(FEAT_CONCEAL)
@@ -4468,7 +4279,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         extra_attr = hl_attr(HLF_8);
                         saved_attr2 = char_attr; /* save current attr */
                     }
-#if defined(FEAT_MBYTE)
                     mb_c = c;
                     if (enc_utf8 && (*mb_char2len)(c) > 1)
                     {
@@ -4478,7 +4288,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     }
                     else
                         mb_utf8 = FALSE;
-#endif
                 }
             }
 
@@ -4533,11 +4342,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         /* if n_extra > 0, it gives the number of chars, to
                          * use for a tab, else we need to calculate the width
                          * for a tab */
-#if defined(FEAT_MBYTE)
                         len = (tab_len * mb_char2len(lcs_tab2));
                         if (n_extra > 0)
                             len += n_extra - tab_len;
-#endif
                         c = lcs_tab1;
                         p = alloc((unsigned)(len + 1));
                         vim_memset(p, ' ', len);
@@ -4545,14 +4352,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         p_extra_free = p;
                         for (i = 0; i < tab_len; i++)
                         {
-#if defined(FEAT_MBYTE)
                             mb_char2bytes(lcs_tab2, p);
                             p += mb_char2len(lcs_tab2);
                             n_extra += mb_char2len(lcs_tab2)
                                                  - (saved_nextra > 0 ? 1 : 0);
-#else
-                            p[i] = lcs_tab2;
-#endif
                         }
                         p_extra = p_extra_free;
 #if defined(FEAT_CONCEAL)
@@ -4583,9 +4386,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                             tab_len += vc_saved;
                     }
 #endif
-#if defined(FEAT_MBYTE)
                     mb_utf8 = FALSE;    /* don't draw as UTF-8 */
-#endif
                     if (wp->w_p_list)
                     {
                         c = lcs_tab1;
@@ -4598,7 +4399,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         n_attr = tab_len + 1;
                         extra_attr = hl_attr(HLF_8);
                         saved_attr2 = char_attr; /* save current attr */
-#if defined(FEAT_MBYTE)
                         mb_c = c;
                         if (enc_utf8 && (*mb_char2len)(c) > 1)
                         {
@@ -4606,7 +4406,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                             u8cc[0] = 0;
                             c = 0xc0;
                         }
-#endif
                     }
                     else
                     {
@@ -4672,7 +4471,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         extra_attr = hl_attr(HLF_AT);
                         n_attr = 1;
                     }
-#if defined(FEAT_MBYTE)
                     mb_c = c;
                     if (enc_utf8 && (*mb_char2len)(c) > 1)
                     {
@@ -4682,7 +4480,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     }
                     else
                         mb_utf8 = FALSE;        /* don't draw as UTF-8 */
-#endif
                 }
                 else if (c != NUL)
                 {
@@ -4718,9 +4515,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         extra_attr = hl_attr(HLF_8);
                         saved_attr2 = char_attr; /* save current attr */
                     }
-#if defined(FEAT_MBYTE)
                     mb_utf8 = FALSE;    /* don't draw as UTF-8 */
-#endif
                 }
 #if defined(FEAT_VIRTUALEDIT)
                 else if (VIsual_active
@@ -4832,7 +4627,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     is_concealing = TRUE;
                     n_skip = 1;
                 }
-#if defined(FEAT_MBYTE)
                 mb_c = c;
                 if (enc_utf8 && (*mb_char2len)(c) > 1)
                 {
@@ -4842,7 +4636,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 }
                 else
                     mb_utf8 = FALSE;    /* don't draw as UTF-8 */
-#endif
             }
             else
             {
@@ -4872,43 +4665,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 && !attr_pri)
             char_attr = extra_attr;
 
-#if defined(FEAT_XIM) && defined(FEAT_GUI_GTK)
-        /* XIM don't send preedit_start and preedit_end, but they send
-         * preedit_changed and commit.  Thus Vim can't set "im_is_active", use
-         * im_is_preediting() here. */
-        if (xic != NULL
-                && lnum == wp->w_cursor.lnum
-                && (State & INSERT)
-                && !p_imdisable
-                && im_is_preediting()
-                && draw_state == WL_LINE)
-        {
-            colnr_T tcol;
-
-            if (preedit_end_col == MAXCOL)
-                getvcol(curwin, &(wp->w_cursor), &tcol, NULL, NULL);
-            else
-                tcol = preedit_end_col;
-            if ((long)preedit_start_col <= vcol && vcol < (long)tcol)
-            {
-                if (feedback_old_attr < 0)
-                {
-                    feedback_col = 0;
-                    feedback_old_attr = char_attr;
-                }
-                char_attr = im_get_feedback_attr(feedback_col);
-                if (char_attr < 0)
-                    char_attr = feedback_old_attr;
-                feedback_col++;
-            }
-            else if (feedback_old_attr >= 0)
-            {
-                char_attr = feedback_old_attr;
-                feedback_old_attr = -1;
-                feedback_col = 0;
-            }
-        }
-#endif
         /*
          * Handle the case where we are in column 0 but not on the first
          * character of the line and the user wants us to show us a
@@ -4925,7 +4681,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         {
             c = lcs_prec;
             lcs_prec_todo = NUL;
-#if defined(FEAT_MBYTE)
             if (has_mbyte && (*mb_char2cells)(mb_c) > 1)
             {
                 /* Double-width character being overwritten by the "precedes"
@@ -4944,7 +4699,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
             else
                 mb_utf8 = FALSE;        /* don't draw as UTF-8 */
-#endif
             if (!attr_pri)
             {
                 saved_attr3 = char_attr; /* save current attr */
@@ -5033,10 +4787,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 {
                     /* Add a blank character to highlight. */
                     ScreenLines[off] = ' ';
-#if defined(FEAT_MBYTE)
                     if (enc_utf8)
                         ScreenLinesUC[off] = 0;
-#endif
                 }
 #if defined(FEAT_SEARCH_EXTRA)
                 if (area_attr == 0)
@@ -5144,10 +4896,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 while (col < W_WIDTH(wp))
                 {
                     ScreenLines[off] = ' ';
-#if defined(FEAT_MBYTE)
                     if (enc_utf8)
                         ScreenLinesUC[off] = 0;
-#endif
                     ++col;
                     if (draw_color_col)
                         draw_color_col = advance_color_col(VCOL_HLC,
@@ -5206,7 +4956,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
         {
             c = lcs_ext;
             char_attr = hl_attr(HLF_AT);
-#if defined(FEAT_MBYTE)
             mb_c = c;
             if (enc_utf8 && (*mb_char2len)(c) > 1)
             {
@@ -5216,7 +4965,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
             else
                 mb_utf8 = FALSE;
-#endif
         }
 
 #if defined(FEAT_SYN_HL)
@@ -5255,7 +5003,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
             /*
              * Store the character.
              */
-#if defined(FEAT_RIGHTLEFT) && defined(FEAT_MBYTE)
+#if defined(FEAT_RIGHTLEFT)
             if (has_mbyte && wp->w_p_rl && (*mb_char2cells)(mb_c) > 1)
             {
                 /* A double-wide character is: put first halve in left cell. */
@@ -5264,7 +5012,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
             }
 #endif
             ScreenLines[off] = c;
-#if defined(FEAT_MBYTE)
             if (enc_dbcs == DBCS_JPNU)
             {
                 if ((mb_c & 0xff00) == 0x8e00)
@@ -5296,10 +5043,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 multi_attr = 0;
             }
             else
-#endif
                 ScreenAttrs[off] = char_attr;
 
-#if defined(FEAT_MBYTE)
             if (has_mbyte && (*mb_char2cells)(mb_c) > 1)
             {
                 /* Need to fill two screen columns. */
@@ -5325,7 +5070,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 }
 #endif
             }
-#endif
 #if defined(FEAT_RIGHTLEFT)
             if (wp->w_p_rl)
             {
@@ -5380,7 +5124,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     n_attr = 0;
                 }
 
-#if defined(FEAT_MBYTE)
                 if (has_mbyte && (*mb_char2cells)(mb_c) > 1)
                 {
                     /* Need to fill two screen columns. */
@@ -5397,7 +5140,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         ++col;
                     }
                 }
-#endif
 
 #if defined(FEAT_RIGHTLEFT)
                 if (wp->w_p_rl)
@@ -5529,10 +5271,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  * Don't do this for a window not at the right screen border.
                  */
                 if (p_tf
-#if defined(FEAT_GUI)
-                         && !gui.in_use
-#endif
-#if defined(FEAT_MBYTE)
                          && !(has_mbyte
                              && ((*mb_off2cells)(LineOffset[screen_row],
                                      LineOffset[screen_row] + screen_Columns)
@@ -5541,7 +5279,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                                         + (int)Columns - 2,
                                      LineOffset[screen_row] + screen_Columns)
                                                                         == 2))
-#endif
                    )
                 {
                     /* First make sure we are at the end of the screen line,
@@ -5553,14 +5290,12 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                                       + (unsigned)Columns - 1,
                                           screen_row - 1, (int)(Columns - 1));
 
-#if defined(FEAT_MBYTE)
                     /* When there is a multi-byte character, just output a
                      * space to keep it simple. */
                     if (has_mbyte && MB_BYTE2LEN(ScreenLines[LineOffset[
                                         screen_row - 1] + (Columns - 1)]) > 1)
                         out_char(' ');
                     else
-#endif
                         out_char(ScreenLines[LineOffset[screen_row - 1]
                                                             + (Columns - 1)]);
                     /* force a redraw of the first char on the next line */
@@ -5616,7 +5351,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
     return row;
 }
 
-#if defined(FEAT_MBYTE)
 static int comp_char_differs __ARGS((int, int));
 
 /*
@@ -5639,7 +5373,6 @@ comp_char_differs(off_from, off_to)
     }
     return FALSE;
 }
-#endif
 
 /*
  * Check whether the given character needs redrawing:
@@ -5658,7 +5391,6 @@ char_needs_redraw(off_from, off_to, cols)
             && ((ScreenLines[off_from] != ScreenLines[off_to]
                     || ScreenAttrs[off_from] != ScreenAttrs[off_to])
 
-#if defined(FEAT_MBYTE)
                 || (enc_dbcs != 0
                     && MB_BYTE2LEN(ScreenLines[off_from]) > 1
                     && (enc_dbcs == DBCS_JPNU && ScreenLines[off_from] == 0x8e
@@ -5672,7 +5404,6 @@ char_needs_redraw(off_from, off_to, cols)
                         || ((*mb_off2cells)(off_from, off_from + cols) > 1
                             && ScreenLines[off_from + 1]
                                                   != ScreenLines[off_to + 1])))
-#endif
                ))
         return TRUE;
     return FALSE;
@@ -5705,29 +5436,18 @@ screen_line(row, coloff, endcol, clear_width
 {
     unsigned        off_from;
     unsigned        off_to;
-#if defined(FEAT_MBYTE)
     unsigned        max_off_from;
     unsigned        max_off_to;
-#endif
     int             col = 0;
-#if defined(FEAT_GUI) || defined(UNIX) || defined(FEAT_VERTSPLIT)
     int             hl;
-#endif
     int             force = FALSE;      /* force update rest of the line */
     int             redraw_this         /* bool: does character need redraw? */
-#if defined(FEAT_GUI)
-                                = TRUE  /* For GUI when while-loop empty */
-#endif
                                 ;
     int             redraw_next;        /* redraw_this for next character */
-#if defined(FEAT_MBYTE)
     int             clear_next = FALSE;
     int             char_cells;         /* 1: normal char */
                                         /* 2: occupies two display cells */
 #define CHAR_CELLS char_cells
-#else
-#define CHAR_CELLS 1
-#endif
 
     /* Check for illegal row and col, just in case. */
     if (row >= Rows)
@@ -5741,10 +5461,8 @@ screen_line(row, coloff, endcol, clear_width
 
     off_from = (unsigned)(current_ScreenLine - ScreenLines);
     off_to = LineOffset[row] + coloff;
-#if defined(FEAT_MBYTE)
     max_off_from = off_from + screen_Columns;
     max_off_to = LineOffset[row] + screen_Columns;
-#endif
 
 #if defined(FEAT_RIGHTLEFT)
     if (rlflag)
@@ -5754,9 +5472,7 @@ screen_line(row, coloff, endcol, clear_width
         {
             while (col <= endcol && ScreenLines[off_to] == ' '
                     && ScreenAttrs[off_to] == 0
-#if defined(FEAT_MBYTE)
                                   && (!enc_utf8 || ScreenLinesUC[off_to] == 0)
-#endif
                                                   )
             {
                 ++off_to;
@@ -5777,31 +5493,14 @@ screen_line(row, coloff, endcol, clear_width
 
     while (col < endcol)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte && (col + 1 < endcol))
             char_cells = (*mb_off2cells)(off_from, max_off_from);
         else
             char_cells = 1;
-#endif
 
         redraw_this = redraw_next;
         redraw_next = force || char_needs_redraw(off_from + CHAR_CELLS,
                               off_to + CHAR_CELLS, endcol - col - CHAR_CELLS);
-
-#if defined(FEAT_GUI)
-        /* If the next character was bold, then redraw the current character to
-         * remove any pixels that might have spilt over into us.  This only
-         * happens in the GUI.
-         */
-        if (redraw_next && gui.in_use)
-        {
-            hl = ScreenAttrs[off_to + CHAR_CELLS];
-            if (hl > HL_ALL)
-                hl = syn_attr2attr(hl);
-            if (hl & HL_BOLD)
-                redraw_this = TRUE;
-        }
-#endif
 
         if (redraw_this)
         {
@@ -5819,9 +5518,6 @@ screen_line(row, coloff, endcol, clear_width
              */
             if (       p_wiv
                     && !force
-#if defined(FEAT_GUI)
-                    && !gui.in_use
-#endif
                     && ScreenAttrs[off_to] != 0
                     && ScreenAttrs[off_from] != ScreenAttrs[off_to])
             {
@@ -5847,7 +5543,6 @@ screen_line(row, coloff, endcol, clear_width
                 else
                     screen_attr = 0;        /* highlighting has stopped */
             }
-#if defined(FEAT_MBYTE)
             if (enc_dbcs != 0)
             {
                 /* Check if overwriting a double-byte with a single-byte or
@@ -5890,10 +5585,8 @@ screen_line(row, coloff, endcol, clear_width
                             && (*mb_off2cells)(off_to, max_off_to) == 1
                             && (*mb_off2cells)(off_to + 1, max_off_to) > 1)))
                 clear_next = TRUE;
-#endif
 
             ScreenLines[off_to] = ScreenLines[off_from];
-#if defined(FEAT_MBYTE)
             if (enc_utf8)
             {
                 ScreenLinesUC[off_to] = ScreenLinesUC[off_from];
@@ -5907,23 +5600,13 @@ screen_line(row, coloff, endcol, clear_width
             }
             if (char_cells == 2)
                 ScreenLines[off_to + 1] = ScreenLines[off_from + 1];
-#endif
 
-#if defined(FEAT_GUI) || defined(UNIX)
             /* The bold trick makes a single column of pixels appear in the
              * next character.  When a bold character is removed, the next
              * character should be redrawn too.  This happens for our own GUI
              * and for some xterms. */
             if (
-#if defined(FEAT_GUI)
-                    gui.in_use
-#endif
-#if defined(FEAT_GUI) && defined(UNIX)
-                    ||
-#endif
-#if defined(UNIX)
                     term_is_xterm
-#endif
                     )
             {
                 hl = ScreenAttrs[off_to];
@@ -5932,9 +5615,7 @@ screen_line(row, coloff, endcol, clear_width
                 if (hl & HL_BOLD)
                     redraw_next = TRUE;
             }
-#endif
             ScreenAttrs[off_to] = ScreenAttrs[off_from];
-#if defined(FEAT_MBYTE)
             /* For simplicity set the attributes of second half of a
              * double-wide character equal to the first half. */
             if (char_cells == 2)
@@ -5943,13 +5624,9 @@ screen_line(row, coloff, endcol, clear_width
             if (enc_dbcs != 0 && char_cells == 2)
                 screen_char_2(off_to, row, col + coloff);
             else
-#endif
                 screen_char(off_to, row, col + coloff);
         }
         else if (  p_wiv
-#if defined(FEAT_GUI)
-                && !gui.in_use
-#endif
                 && col + coloff > 0)
         {
             if (ScreenAttrs[off_to] == ScreenAttrs[off_to - 1])
@@ -5969,7 +5646,6 @@ screen_line(row, coloff, endcol, clear_width
         col += CHAR_CELLS;
     }
 
-#if defined(FEAT_MBYTE)
     if (clear_next)
     {
         /* Clear the second half of a double-wide character of which the left
@@ -5979,7 +5655,6 @@ screen_line(row, coloff, endcol, clear_width
             ScreenLinesUC[off_to] = 0;
         screen_char(off_to, row, col + coloff);
     }
-#endif
 
     if (clear_width > 0
 #if defined(FEAT_RIGHTLEFT)
@@ -5987,16 +5662,11 @@ screen_line(row, coloff, endcol, clear_width
 #endif
                                    )
     {
-#if defined(FEAT_GUI)
-        int startCol = col;
-#endif
 
         /* blank out the rest of the line */
         while (col < clear_width && ScreenLines[off_to] == ' '
                                                   && ScreenAttrs[off_to] == 0
-#if defined(FEAT_MBYTE)
                                   && (!enc_utf8 || ScreenLinesUC[off_to] == 0)
-#endif
                                                   )
         {
             ++off_to;
@@ -6004,49 +5674,6 @@ screen_line(row, coloff, endcol, clear_width
         }
         if (col < clear_width)
         {
-#if defined(FEAT_GUI)
-            /*
-             * In the GUI, clearing the rest of the line may leave pixels
-             * behind if the first character cleared was bold.  Some bold
-             * fonts spill over the left.  In this case we redraw the previous
-             * character too.  If we didn't skip any blanks above, then we
-             * only redraw if the character wasn't already redrawn anyway.
-             */
-            if (gui.in_use && (col > startCol || !redraw_this))
-            {
-                hl = ScreenAttrs[off_to];
-                if (hl > HL_ALL || (hl & HL_BOLD))
-                {
-                    int prev_cells = 1;
-#if defined(FEAT_MBYTE)
-                    if (enc_utf8)
-                        /* for utf-8, ScreenLines[char_offset + 1] == 0 means
-                         * that its width is 2. */
-                        prev_cells = ScreenLines[off_to - 1] == 0 ? 2 : 1;
-                    else if (enc_dbcs != 0)
-                    {
-                        /* find previous character by counting from first
-                         * column and get its width. */
-                        unsigned off = LineOffset[row];
-                        unsigned max_off = LineOffset[row] + screen_Columns;
-
-                        while (off < off_to)
-                        {
-                            prev_cells = (*mb_off2cells)(off, max_off);
-                            off += prev_cells;
-                        }
-                    }
-
-                    if (enc_dbcs != 0 && prev_cells > 1)
-                        screen_char_2(off_to - prev_cells, row,
-                                                   col + coloff - prev_cells);
-                    else
-#endif
-                        screen_char(off_to - prev_cells, row,
-                                                   col + coloff - prev_cells);
-                }
-            }
-#endif
             screen_fill(row, row + 1, col + coloff, clear_width + coloff,
                                                                  ' ', ' ', 0);
 #if defined(FEAT_VERTSPLIT)
@@ -6066,15 +5693,12 @@ screen_line(row, coloff, endcol, clear_width
 
             c = fillchar_vsep(&hl);
             if (ScreenLines[off_to] != (schar_T)c
-#if defined(FEAT_MBYTE)
                     || (enc_utf8 && (int)ScreenLinesUC[off_to]
                                                        != (c >= 0x80 ? c : 0))
-#endif
                     || ScreenAttrs[off_to] != hl)
             {
                 ScreenLines[off_to] = c;
                 ScreenAttrs[off_to] = hl;
-#if defined(FEAT_MBYTE)
                 if (enc_utf8)
                 {
                     if (c >= 0x80)
@@ -6085,7 +5709,6 @@ screen_line(row, coloff, endcol, clear_width
                     else
                         ScreenLinesUC[off_to] = 0;
                 }
-#endif
                 screen_char(off_to, row, col + coloff);
             }
         }
@@ -6305,18 +5928,14 @@ win_redr_status_matches(xp, num_matches, matches, match, showtail)
 #if defined(FEAT_MENU)
     int         emenu;
 #endif
-#if defined(FEAT_MBYTE) || defined(FEAT_MENU)
     int         l;
-#endif
 
     if (matches == NULL)        /* interrupted completion? */
         return;
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         buf = alloc((unsigned)Columns * MB_MAXBYTES + 1);
     else
-#endif
         buf = alloc((unsigned)Columns + 1);
     if (buf == NULL)
         return;
@@ -6409,7 +6028,6 @@ win_redr_status_matches(xp, num_matches, matches, match, showtail)
         {
             s += skip_status_match_char(xp, s);
             clen += ptr2cells(s);
-#if defined(FEAT_MBYTE)
             if (has_mbyte && (l = (*mb_ptr2len)(s)) > 1)
             {
                 STRNCPY(buf + len, s, l);
@@ -6417,7 +6035,6 @@ win_redr_status_matches(xp, num_matches, matches, match, showtail)
                 len += l;
             }
             else
-#endif
             {
                 STRCPY(buf + len, transchar_byte(*s));
                 len += (int)STRLEN(buf + len);
@@ -6599,7 +6216,6 @@ win_redr_status(wp)
         }
         else
 #endif
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
             {
                 int     clen = 0, i;
@@ -6622,7 +6238,6 @@ win_redr_status(wp)
 
             }
             else
-#endif
             if (len > this_ru_col - 1)
             {
                 p += len - (this_ru_col - 1);
@@ -6745,7 +6360,6 @@ get_keymap_str(wp, buf, len)
         return FALSE;
 
     {
-#if defined(FEAT_EVAL)
         buf_T   *old_curbuf = curbuf;
         win_T   *old_curwin = curwin;
         char_u  *s;
@@ -6759,7 +6373,6 @@ get_keymap_str(wp, buf, len)
         curbuf = old_curbuf;
         curwin = old_curwin;
         if (p == NULL || *p == NUL)
-#endif
         {
 #if defined(FEAT_KEYMAP)
             if (wp->w_buffer->b_kmap_state & KEYMAP_LOADED)
@@ -6772,9 +6385,7 @@ get_keymap_str(wp, buf, len)
             sprintf((char *)buf, "<%s>", p);
         else
             buf[0] = NUL;
-#if defined(FEAT_EVAL)
         vim_free(s);
-#endif
     }
     return buf[0] != NUL;
 }
@@ -6825,9 +6436,7 @@ win_redr_custom(wp, draw_ruler)
         fillchar = ' ';
         attr = hl_attr(HLF_TPF);
         maxwidth = Columns;
-#if defined(FEAT_EVAL)
         use_sandbox = was_set_insecurely((char_u *)"tabline", 0);
-#endif
     }
     else
     {
@@ -6869,9 +6478,7 @@ win_redr_custom(wp, draw_ruler)
                 attr = 0;
             }
 
-#if defined(FEAT_EVAL)
             use_sandbox = was_set_insecurely((char_u *)"rulerformat", 0);
-#endif
         }
         else
         {
@@ -6879,10 +6486,8 @@ win_redr_custom(wp, draw_ruler)
                 stl = wp->w_p_stl;
             else
                 stl = p_stl;
-#if defined(FEAT_EVAL)
             use_sandbox = was_set_insecurely((char_u *)"statusline",
                                          *wp->w_p_stl == NUL ? 0 : OPT_LOCAL);
-#endif
         }
 
 #if defined(FEAT_VERTSPLIT)
@@ -6920,11 +6525,7 @@ win_redr_custom(wp, draw_ruler)
     len = (int)STRLEN(buf);
     while (width < maxwidth && len < (int)sizeof(buf) - 1)
     {
-#if defined(FEAT_MBYTE)
         len += (*mb_char2bytes)(fillchar, buf + len);
-#else
-        buf[len++] = fillchar;
-#endif
         ++width;
     }
     buf[len] = NUL;
@@ -6990,11 +6591,9 @@ screen_putchar(c, row, col, attr)
 {
     char_u      buf[MB_MAXBYTES + 1];
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         buf[(*mb_char2bytes)(c, buf)] = NUL;
     else
-#endif
     {
         buf[0] = c;
         buf[1] = NUL;
@@ -7022,7 +6621,6 @@ screen_getbytes(row, col, bytes, attrp)
         bytes[0] = ScreenLines[off];
         bytes[1] = NUL;
 
-#if defined(FEAT_MBYTE)
         if (enc_utf8 && ScreenLinesUC[off] != 0)
             bytes[utfc_char2bytes(off, bytes)] = NUL;
         else if (enc_dbcs == DBCS_JPNU && ScreenLines[off] == 0x8e)
@@ -7036,11 +6634,9 @@ screen_getbytes(row, col, bytes, attrp)
             bytes[1] = ScreenLines[off + 1];
             bytes[2] = NUL;
         }
-#endif
     }
 }
 
-#if defined(FEAT_MBYTE)
 static int screen_comp_differs __ARGS((int, int*));
 
 /*
@@ -7064,7 +6660,6 @@ screen_comp_differs(off, u8cc)
     }
     return FALSE;
 }
-#endif
 
 /*
  * Put string '*text' on the screen at position 'row' and 'col', with
@@ -7098,31 +6693,23 @@ screen_puts_len(text, textlen, row, col, attr)
     char_u      *ptr = text;
     int         len = textlen;
     int         c;
-#if defined(FEAT_MBYTE)
     unsigned    max_off;
     int         mbyte_blen = 1;
     int         mbyte_cells = 1;
     int         u8c = 0;
     int         u8cc[MAX_MCO];
     int         clear_next_cell = FALSE;
-#endif
-#if defined(FEAT_MBYTE) || defined(FEAT_GUI) || defined(UNIX)
     int         force_redraw_this;
     int         force_redraw_next = FALSE;
-#endif
     int         need_redraw;
 
     if (ScreenLines == NULL || row >= screen_Rows)      /* safety check */
         return;
     off = LineOffset[row] + col;
 
-#if defined(FEAT_MBYTE)
     /* When drawing over the right halve of a double-wide char clear out the
      * left halve.  Only needed in a terminal. */
     if (has_mbyte && col > 0 && col < screen_Columns
-#if defined(FEAT_GUI)
-            && !gui.in_use
-#endif
             && mb_fix_col(col, row) != col)
     {
         ScreenLines[off - 1] = ' ';
@@ -7137,17 +6724,13 @@ screen_puts_len(text, textlen, row, col, attr)
         /* force the cell at "col" to be redrawn */
         force_redraw_next = TRUE;
     }
-#endif
 
-#if defined(FEAT_MBYTE)
     max_off = LineOffset[row] + screen_Columns;
-#endif
     while (col < screen_Columns
             && (len < 0 || (int)(ptr - text) < len)
             && *ptr != NUL)
     {
         c = *ptr;
-#if defined(FEAT_MBYTE)
         /* check if this is the first byte of a multibyte */
         if (has_mbyte)
         {
@@ -7185,15 +6768,11 @@ screen_puts_len(text, textlen, row, col, attr)
                 }
             }
         }
-#endif
 
-#if defined(FEAT_MBYTE) || defined(FEAT_GUI) || defined(UNIX)
         force_redraw_this = force_redraw_next;
         force_redraw_next = FALSE;
-#endif
 
         need_redraw = ScreenLines[off] != c
-#if defined(FEAT_MBYTE)
                 || (mbyte_cells == 2
                     && ScreenLines[off + 1] != (enc_dbcs ? ptr[1] : 0))
                 || (enc_dbcs == DBCS_JPNU
@@ -7204,31 +6783,19 @@ screen_puts_len(text, textlen, row, col, attr)
                                 (u8char_T)(c < 0x80 && u8cc[0] == 0 ? 0 : u8c)
                         || (ScreenLinesUC[off] != 0
                                           && screen_comp_differs(off, u8cc))))
-#endif
                 || ScreenAttrs[off] != attr
                 || exmode_active;
 
         if (need_redraw
-#if defined(FEAT_MBYTE) || defined(FEAT_GUI) || defined(UNIX)
                 || force_redraw_this
-#endif
                 )
         {
-#if defined(FEAT_GUI) || defined(UNIX)
             /* The bold trick makes a single row of pixels appear in the next
              * character.  When a bold character is removed, the next
              * character should be redrawn too.  This happens for our own GUI
              * and for some xterms. */
             if (need_redraw && ScreenLines[off] != ' ' && (
-#if defined(FEAT_GUI)
-                    gui.in_use
-#endif
-#if defined(FEAT_GUI) && defined(UNIX)
-                    ||
-#endif
-#if defined(UNIX)
                     term_is_xterm
-#endif
                     ))
             {
                 int     n = ScreenAttrs[off];
@@ -7238,8 +6805,6 @@ screen_puts_len(text, textlen, row, col, attr)
                 if (n & HL_BOLD)
                     force_redraw_next = TRUE;
             }
-#endif
-#if defined(FEAT_MBYTE)
             /* When at the end of the text and overwriting a two-cell
              * character with a one-cell character, need to clear the next
              * cell.  Also when overwriting the left halve of a two-cell char
@@ -7264,10 +6829,8 @@ screen_puts_len(text, textlen, row, col, attr)
                             && (*mb_off2cells)(off, max_off) == 1
                             && (*mb_off2cells)(off + 1, max_off) > 1)))
                 ScreenLines[off + mbyte_blen] = 0;
-#endif
             ScreenLines[off] = c;
             ScreenAttrs[off] = attr;
-#if defined(FEAT_MBYTE)
             if (enc_utf8)
             {
                 if (c < 0x80 && u8cc[0] == 0)
@@ -7303,10 +6866,8 @@ screen_puts_len(text, textlen, row, col, attr)
                 screen_char(off, row, col);
             }
             else
-#endif
                 screen_char(off, row, col);
         }
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             off += mbyte_cells;
@@ -7320,7 +6881,6 @@ screen_puts_len(text, textlen, row, col, attr)
             }
         }
         else
-#endif
         {
             ++off;
             ++col;
@@ -7328,19 +6888,15 @@ screen_puts_len(text, textlen, row, col, attr)
         }
     }
 
-#if defined(FEAT_MBYTE) || defined(FEAT_GUI) || defined(UNIX)
     /* If we detected the next character needs to be redrawn, but the text
      * doesn't extend up to there, update the character here. */
     if (force_redraw_next && col < screen_Columns)
     {
-#if defined(FEAT_MBYTE)
         if (enc_dbcs != 0 && dbcs_off2cells(off, max_off) > 1)
             screen_char_2(off, row, col);
         else
-#endif
             screen_char(off, row, col);
     }
-#endif
 }
 
 #if defined(FEAT_SEARCH_EXTRA)
@@ -7556,11 +7112,9 @@ next_search_hl(win, shl, lnum, mincol, cur)
                 shl->lnum = 0;
                 break;
             }
-#if defined(FEAT_MBYTE)
             if (has_mbyte)
                 matchcol += mb_ptr2len(ml);
             else
-#endif
                 ++matchcol;
         }
         else
@@ -7689,17 +7243,6 @@ screen_start_highlight(attr)
     screen_attr = attr;
     if (full_screen)
     {
-#if defined(FEAT_GUI)
-        if (gui.in_use)
-        {
-            char        buf[20];
-
-            /* The GUI handles this internally. */
-            sprintf(buf, "\033|%dh", attr);
-            OUT_STR(buf);
-        }
-        else
-#endif
         {
             if (attr > HL_ALL)                          /* special HL attr. */
             {
@@ -7759,17 +7302,6 @@ screen_stop_highlight()
 
     if (screen_attr != 0)
     {
-#if defined(FEAT_GUI)
-        if (gui.in_use)
-        {
-            char        buf[20];
-
-            /* use internal GUI code */
-            sprintf(buf, "\033|%dH", screen_attr);
-            OUT_STR(buf);
-        }
-        else
-#endif
         {
             if (screen_attr > HL_ALL)                   /* special HL attr. */
             {
@@ -7917,7 +7449,6 @@ screen_char(off, row, col)
     if (screen_attr != attr)
         screen_start_highlight(attr);
 
-#if defined(FEAT_MBYTE)
     if (enc_utf8 && ScreenLinesUC[off] != 0)
     {
         char_u      buf[MB_MAXBYTES + 1];
@@ -7931,23 +7462,16 @@ screen_char(off, row, col)
             ++screen_cur_col;
     }
     else
-#endif
     {
-#if defined(FEAT_MBYTE)
         out_flush_check();
-#endif
         out_char(ScreenLines[off]);
-#if defined(FEAT_MBYTE)
         /* double-byte character in single-width cell */
         if (enc_dbcs == DBCS_JPNU && ScreenLines[off] == 0x8e)
             out_char(ScreenLines2[off]);
-#endif
     }
 
     screen_cur_col++;
 }
-
-#if defined(FEAT_MBYTE)
 
 /*
  * Used for enc_dbcs only: Put one double-wide character at ScreenLines["off"]
@@ -7979,7 +7503,6 @@ screen_char_2(off, row, col)
     out_char(ScreenLines[off + 1]);
     ++screen_cur_col;
 }
-#endif
 
 #if defined(FEAT_CLIPBOARD) || defined(FEAT_VERTSPLIT)
 /*
@@ -7996,9 +7519,7 @@ screen_draw_rectangle(row, col, height, width, invert)
 {
     int         r, c;
     int         off;
-#if defined(FEAT_MBYTE)
     int         max_off;
-#endif
 
     /* Can't use ScreenLines unless initialized */
     if (ScreenLines == NULL)
@@ -8009,25 +7530,19 @@ screen_draw_rectangle(row, col, height, width, invert)
     for (r = row; r < row + height; ++r)
     {
         off = LineOffset[r];
-#if defined(FEAT_MBYTE)
         max_off = off + screen_Columns;
-#endif
         for (c = col; c < col + width; ++c)
         {
-#if defined(FEAT_MBYTE)
             if (enc_dbcs != 0 && dbcs_off2cells(off + c, max_off) > 1)
             {
                 screen_char_2(off + c, r, c);
                 ++c;
             }
             else
-#endif
             {
                 screen_char(off + c, r, c);
-#if defined(FEAT_MBYTE)
                 if (utf_off2cells(off + c, max_off) > 1)
                     ++c;
-#endif
             }
         }
     }
@@ -8085,9 +7600,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
     int             did_delete;
     int             c;
     int             norm_term;
-#if defined(FEAT_GUI) || defined(UNIX)
     int             force_next = FALSE;
-#endif
 
     if (end_row > screen_Rows)          /* safety check */
         end_row = screen_Rows;
@@ -8100,17 +7613,10 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
 
     /* it's a "normal" terminal when not in a GUI or cterm */
     norm_term = (
-#if defined(FEAT_GUI)
-            !gui.in_use &&
-#endif
                             t_colors <= 1);
     for (row = start_row; row < end_row; ++row)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte
-#if defined(FEAT_GUI)
-                && !gui.in_use
-#endif
            )
         {
             /* When drawing over the right halve of a double-wide char clear
@@ -8122,7 +7628,6 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
             if (end_col < screen_Columns && mb_fix_col(end_col, row) != end_col)
                 screen_puts_len((char_u *)" ", 1, row, end_col, 0);
         }
-#endif
         /*
          * Try to use delete-line termcap code, when no attributes or in a
          * "normal" terminal, where a bold/italic space is just a
@@ -8148,13 +7653,11 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
             end_off = LineOffset[row] + end_col;
 
             /* skip blanks (used often, keep it fast!) */
-#if defined(FEAT_MBYTE)
             if (enc_utf8)
                 while (off < end_off && ScreenLines[off] == ' '
                           && ScreenAttrs[off] == 0 && ScreenLinesUC[off] == 0)
                     ++off;
             else
-#endif
                 while (off < end_off && ScreenLines[off] == ' '
                                                      && ScreenAttrs[off] == 0)
                     ++off;
@@ -8169,10 +7672,8 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
                 while (col--)           /* clear chars in ScreenLines */
                 {
                     ScreenLines[off] = ' ';
-#if defined(FEAT_MBYTE)
                     if (enc_utf8)
                         ScreenLinesUC[off] = 0;
-#endif
                     ScreenAttrs[off] = 0;
                     ++off;
                 }
@@ -8185,31 +7686,18 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
         for (col = start_col; col < end_col; ++col)
         {
             if (ScreenLines[off] != c
-#if defined(FEAT_MBYTE)
                     || (enc_utf8 && (int)ScreenLinesUC[off]
                                                        != (c >= 0x80 ? c : 0))
-#endif
                     || ScreenAttrs[off] != attr
-#if defined(FEAT_GUI) || defined(UNIX)
                     || force_next
-#endif
                     )
             {
-#if defined(FEAT_GUI) || defined(UNIX)
                 /* The bold trick may make a single row of pixels appear in
                  * the next character.  When a bold character is removed, the
                  * next character should be redrawn too.  This happens for our
                  * own GUI and for some xterms.  */
                 if (
-#if defined(FEAT_GUI)
-                        gui.in_use
-#endif
-#if defined(FEAT_GUI) && defined(UNIX)
-                        ||
-#endif
-#if defined(UNIX)
                         term_is_xterm
-#endif
                    )
                 {
                     if (ScreenLines[off] != ' '
@@ -8219,9 +7707,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
                     else
                         force_next = FALSE;
                 }
-#endif
                 ScreenLines[off] = c;
-#if defined(FEAT_MBYTE)
                 if (enc_utf8)
                 {
                     if (c >= 0x80)
@@ -8232,7 +7718,6 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
                     else
                         ScreenLinesUC[off] = 0;
                 }
-#endif
                 ScreenAttrs[off] = attr;
                 if (!did_delete || c != ' ')
                     screen_char(off, row, col);
@@ -8307,19 +7792,14 @@ screenalloc(doclear)
     int     doclear;
 {
     int             new_row, old_row;
-#if defined(FEAT_GUI)
-    int             old_Rows;
-#endif
     win_T           *wp;
     int             outofmem = FALSE;
     int             len;
     schar_T         *new_ScreenLines;
-#if defined(FEAT_MBYTE)
     u8char_T        *new_ScreenLinesUC = NULL;
     u8char_T        *new_ScreenLinesC[MAX_MCO];
     schar_T         *new_ScreenLines2 = NULL;
     int             i;
-#endif
     sattr_T         *new_ScreenAttrs;
     unsigned        *new_LineOffset;
     char_u          *new_LineWraps;
@@ -8342,11 +7822,9 @@ retry:
     if ((ScreenLines != NULL
                 && Rows == screen_Rows
                 && Columns == screen_Columns
-#if defined(FEAT_MBYTE)
                 && enc_utf8 == (ScreenLinesUC != NULL)
                 && (enc_dbcs == DBCS_JPNU) == (ScreenLines2 != NULL)
                 && p_mco == Screen_mco
-#endif
                 )
             || Rows == 0
             || Columns == 0
@@ -8392,7 +7870,6 @@ retry:
 
     new_ScreenLines = (schar_T *)lalloc((long_u)(
                               (Rows + 1) * Columns * sizeof(schar_T)), FALSE);
-#if defined(FEAT_MBYTE)
     vim_memset(new_ScreenLinesC, 0, sizeof(u8char_T *) * MAX_MCO);
     if (enc_utf8)
     {
@@ -8405,7 +7882,6 @@ retry:
     if (enc_dbcs == DBCS_JPNU)
         new_ScreenLines2 = (schar_T *)lalloc((long_u)(
                              (Rows + 1) * Columns * sizeof(schar_T)), FALSE);
-#endif
     new_ScreenAttrs = (sattr_T *)lalloc((long_u)(
                               (Rows + 1) * Columns * sizeof(sattr_T)), FALSE);
     new_LineOffset = (unsigned *)lalloc((long_u)(
@@ -8434,16 +7910,12 @@ retry:
 give_up:
 #endif
 
-#if defined(FEAT_MBYTE)
     for (i = 0; i < p_mco; ++i)
         if (new_ScreenLinesC[i] == NULL)
             break;
-#endif
     if (new_ScreenLines == NULL
-#if defined(FEAT_MBYTE)
             || (enc_utf8 && (new_ScreenLinesUC == NULL || i != p_mco))
             || (enc_dbcs == DBCS_JPNU && new_ScreenLines2 == NULL)
-#endif
             || new_ScreenAttrs == NULL
             || new_LineOffset == NULL
             || new_LineWraps == NULL
@@ -8463,7 +7935,6 @@ give_up:
         }
         vim_free(new_ScreenLines);
         new_ScreenLines = NULL;
-#if defined(FEAT_MBYTE)
         vim_free(new_ScreenLinesUC);
         new_ScreenLinesUC = NULL;
         for (i = 0; i < p_mco; ++i)
@@ -8473,7 +7944,6 @@ give_up:
         }
         vim_free(new_ScreenLines2);
         new_ScreenLines2 = NULL;
-#endif
         vim_free(new_ScreenAttrs);
         new_ScreenAttrs = NULL;
         vim_free(new_LineOffset);
@@ -8504,7 +7974,6 @@ give_up:
             {
                 (void)vim_memset(new_ScreenLines + new_row * Columns,
                                       ' ', (size_t)Columns * sizeof(schar_T));
-#if defined(FEAT_MBYTE)
                 if (enc_utf8)
                 {
                     (void)vim_memset(new_ScreenLinesUC + new_row * Columns,
@@ -8517,7 +7986,6 @@ give_up:
                 if (enc_dbcs == DBCS_JPNU)
                     (void)vim_memset(new_ScreenLines2 + new_row * Columns,
                                        0, (size_t)Columns * sizeof(schar_T));
-#endif
                 (void)vim_memset(new_ScreenAttrs + new_row * Columns,
                                         0, (size_t)Columns * sizeof(sattr_T));
                 old_row = new_row + (screen_Rows - Rows);
@@ -8527,16 +7995,13 @@ give_up:
                         len = screen_Columns;
                     else
                         len = Columns;
-#if defined(FEAT_MBYTE)
                     /* When switching to utf-8 don't copy characters, they
                      * may be invalid now.  Also when p_mco changes. */
                     if (!(enc_utf8 && ScreenLinesUC == NULL)
                                                        && p_mco == Screen_mco)
-#endif
                         mch_memmove(new_ScreenLines + new_LineOffset[new_row],
                                 ScreenLines + LineOffset[old_row],
                                 (size_t)len * sizeof(schar_T));
-#if defined(FEAT_MBYTE)
                     if (enc_utf8 && ScreenLinesUC != NULL
                                                        && p_mco == Screen_mco)
                     {
@@ -8553,7 +8018,6 @@ give_up:
                         mch_memmove(new_ScreenLines2 + new_LineOffset[new_row],
                                 ScreenLines2 + LineOffset[old_row],
                                 (size_t)len * sizeof(schar_T));
-#endif
                     mch_memmove(new_ScreenAttrs + new_LineOffset[new_row],
                             ScreenAttrs + LineOffset[old_row],
                             (size_t)len * sizeof(sattr_T));
@@ -8567,13 +8031,11 @@ give_up:
     free_screenlines();
 
     ScreenLines = new_ScreenLines;
-#if defined(FEAT_MBYTE)
     ScreenLinesUC = new_ScreenLinesUC;
     for (i = 0; i < p_mco; ++i)
         ScreenLinesC[i] = new_ScreenLinesC[i];
     Screen_mco = p_mco;
     ScreenLines2 = new_ScreenLines2;
-#endif
     ScreenAttrs = new_ScreenAttrs;
     LineOffset = new_LineOffset;
     LineWraps = new_LineWraps;
@@ -8583,35 +8045,12 @@ give_up:
 
     /* It's important that screen_Rows and screen_Columns reflect the actual
      * size of ScreenLines[].  Set them before calling anything. */
-#if defined(FEAT_GUI)
-    old_Rows = screen_Rows;
-#endif
     screen_Rows = Rows;
     screen_Columns = Columns;
 
     must_redraw = CLEAR;        /* need to clear the screen later */
     if (doclear)
         screenclear2();
-
-#if defined(FEAT_GUI)
-    else if (gui.in_use
-            && !gui.starting
-            && ScreenLines != NULL
-            && old_Rows != Rows)
-    {
-        (void)gui_redraw_block(0, 0, (int)Rows - 1, (int)Columns - 1, 0);
-        /*
-         * Adjust the position of the cursor, for when executing an external
-         * command.
-         */
-        if (msg_row >= Rows)            /* Rows got smaller */
-            msg_row = Rows - 1;         /* put cursor at last row */
-        else if (Rows > old_Rows)       /* Rows got bigger */
-            msg_row += Rows - old_Rows; /* put cursor in same place */
-        if (msg_col >= Columns)         /* Columns got smaller */
-            msg_col = Columns - 1;      /* put cursor at last column */
-    }
-#endif
 
     entered = FALSE;
     --RedrawingDisabled;
@@ -8634,14 +8073,12 @@ give_up:
     void
 free_screenlines()
 {
-#if defined(FEAT_MBYTE)
     int         i;
 
     vim_free(ScreenLinesUC);
     for (i = 0; i < Screen_mco; ++i)
         vim_free(ScreenLinesC[i]);
     vim_free(ScreenLines2);
-#endif
     vim_free(ScreenLines);
     vim_free(ScreenAttrs);
     vim_free(LineOffset);
@@ -8665,15 +8102,9 @@ screenclear2()
     int     i;
 
     if (starting == NO_SCREEN || ScreenLines == NULL
-#if defined(FEAT_GUI)
-            || (gui.in_use && gui.starting)
-#endif
             )
         return;
 
-#if defined(FEAT_GUI)
-    if (!gui.in_use)
-#endif
         screen_attr = -1;       /* force setting the Normal colors */
     screen_stop_highlight();    /* don't want highlighting here */
 
@@ -8730,11 +8161,9 @@ lineclear(off, width)
     int         width;
 {
     (void)vim_memset(ScreenLines + off, ' ', (size_t)width * sizeof(schar_T));
-#if defined(FEAT_MBYTE)
     if (enc_utf8)
         (void)vim_memset(ScreenLinesUC + off, 0,
                                           (size_t)width * sizeof(u8char_T));
-#endif
     (void)vim_memset(ScreenAttrs + off, 0, (size_t)width * sizeof(sattr_T));
 }
 
@@ -8765,7 +8194,6 @@ linecopy(to, from, wp)
 
     mch_memmove(ScreenLines + off_to, ScreenLines + off_from,
             wp->w_width * sizeof(schar_T));
-#if defined(FEAT_MBYTE)
     if (enc_utf8)
     {
         int     i;
@@ -8779,7 +8207,6 @@ linecopy(to, from, wp)
     if (enc_dbcs == DBCS_JPNU)
         mch_memmove(ScreenLines2 + off_to, ScreenLines2 + off_from,
                 wp->w_width * sizeof(schar_T));
-#endif
     mch_memmove(ScreenAttrs + off_to, ScreenAttrs + off_from,
             wp->w_width * sizeof(sattr_T));
 }
@@ -8794,9 +8221,6 @@ can_clear(p)
     char_u      *p;
 {
     return (*p != NUL && (t_colors <= 1
-#if defined(FEAT_GUI)
-                || gui.in_use
-#endif
                 || cterm_normal_bg_color == 0 || *T_UT != NUL));
 }
 
@@ -8964,7 +8388,6 @@ windgoto(row, col)
                     if (i != 0)
                         cost = 999;     /* different attributes, don't do it */
                 }
-#if defined(FEAT_MBYTE)
                 if (enc_utf8)
                 {
                     /* Don't use an UTF-8 char for positioning, it's slow. */
@@ -8975,7 +8398,6 @@ windgoto(row, col)
                             break;
                         }
                 }
-#endif
             }
 
             /*
@@ -9034,15 +8456,11 @@ windgoto(row, col)
                         {
                             if (ScreenAttrs[off] != screen_attr)
                                 screen_stop_highlight();
-#if defined(FEAT_MBYTE)
                             out_flush_check();
-#endif
                             out_char(ScreenLines[off]);
-#if defined(FEAT_MBYTE)
                             if (enc_dbcs == DBCS_JPNU
                                                   && ScreenLines[off] == 0x8e)
                                 out_char(ScreenLines2[off]);
-#endif
                             ++off;
                         }
                     }
@@ -9082,11 +8500,9 @@ setcursor()
                 /* With 'rightleft' set and the cursor on a double-wide
                  * character, position it on the leftmost column. */
                 curwin->w_p_rl ? ((int)W_WIDTH(curwin) - curwin->w_wcol - (
-#if defined(FEAT_MBYTE)
                         (has_mbyte
                            && (*mb_ptr2cells)(ml_get_cursor()) == 2
                            && vim_isprintc(gchar_cursor())) ? 2 :
-#endif
                         1)) :
 #endif
                                                             curwin->w_wcol));
@@ -9475,12 +8891,6 @@ screen_ins_lines(off, row, line_count, end, wp)
         clip_scroll_selection(-line_count);
 #endif
 
-#if defined(FEAT_GUI)
-    /* Don't update the GUI cursor here, ScreenLines[] is invalid until the
-     * scrolling is actually carried out. */
-    gui_dont_update_cursor();
-#endif
-
     if (*T_CCS != NUL)     /* cursor relative to region */
         cursor_row = row;
     else
@@ -9571,11 +8981,6 @@ screen_ins_lines(off, row, line_count, end, wp)
         }
     }
 
-#if defined(FEAT_GUI)
-    gui_can_update_cursor();
-    if (gui.in_use)
-        out_flush();    /* always flush after a scroll */
-#endif
     return OK;
 }
 
@@ -9646,27 +9051,7 @@ screen_del_lines(off, row, line_count, end, force, wp)
 #endif
     if (can_clear(T_CD) && result_empty)
         type = USE_T_CD;
-#if (0) && defined(BEOS_DR8)
-    /*
-     * USE_NL does not seem to work in Terminal of DR8 so we set T_DB="" in
-     * its internal termcap... this works okay for tests which test *T_DB !=
-     * NUL.  It has the disadvantage that the user cannot use any :set t_*
-     * command to get T_DB (back) to empty_option, only :set term=... will do
-     * the trick...
-     * Anyway, this hack will hopefully go away with the next OS release.
-     * (Olaf Seibert)
-     */
-    else if (row == 0 && T_DB == empty_option
-                                        && (line_count == 1 || *T_CDL == NUL))
-#else
-    else if (row == 0 && (
-#if (1)
-        /* On the Amiga, somehow '\n' on the last line doesn't always scroll
-         * up, so use delete-line command */
-                            line_count == 1 ||
-#endif
-                                                *T_CDL == NUL))
-#endif
+    else if (row == 0 && (line_count == 1 || *T_CDL == NUL))
         type = USE_NL;
     else if (*T_CDL != NUL && line_count > 1 && can_delete)
         type = USE_T_CDL;
@@ -9694,12 +9079,6 @@ screen_del_lines(off, row, line_count, end, force, wp)
         clip_clear_selection(&clip_star);
     else
         clip_scroll_selection(line_count);
-#endif
-
-#if defined(FEAT_GUI)
-    /* Don't update the GUI cursor here, ScreenLines[] is invalid until the
-     * scrolling is actually carried out. */
-    gui_dont_update_cursor();
 #endif
 
     if (*T_CCS != NUL)      /* cursor relative to region */
@@ -9818,12 +9197,6 @@ screen_del_lines(off, row, line_count, end, force, wp)
         }
     }
 
-#if defined(FEAT_GUI)
-    gui_can_update_cursor();
-    if (gui.in_use)
-        out_flush();    /* always flush after a scroll */
-#endif
-
     return OK;
 }
 
@@ -9881,27 +9254,6 @@ showmode()
         if (do_mode)
         {
             MSG_PUTS_ATTR("--", attr);
-#if defined(FEAT_XIM)
-            if (
-#if defined(FEAT_GUI_GTK)
-                    preedit_get_status()
-#else
-                    im_get_status()
-#endif
-               )
-#if defined(FEAT_GUI_GTK) /* most of the time, it's not XIM being used */
-                MSG_PUTS_ATTR(" IM", attr);
-#else
-                MSG_PUTS_ATTR(" XIM", attr);
-#endif
-#endif
-#if defined(FEAT_HANGULIN) && defined(FEAT_GUI)
-            if (gui.in_use)
-            {
-                if (hangul_input_state_get())
-                    MSG_PUTS_ATTR(" \307\321\261\333", attr);   /* HANGUL */
-            }
-#endif
 #if defined(FEAT_INS_EXPAND)
             /* CTRL-X in Insert mode */
             if (edit_submode != NULL && !shortmess(SHM_COMPLETIONMENU))
@@ -10092,9 +9444,6 @@ draw_tabline()
     char_u      *p;
     int         room;
     int         use_sep_chars = (t_colors < 8
-#if defined(FEAT_GUI)
-                                            && !gui.in_use
-#endif
                                             );
 
     redraw_tabline = FALSE;
@@ -10204,7 +9553,6 @@ draw_tabline()
                 shorten_dir(NameBuff);
                 len = vim_strsize(NameBuff);
                 p = NameBuff;
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     while (len > room)
                     {
@@ -10212,7 +9560,6 @@ draw_tabline()
                         mb_ptr_adv(p);
                     }
                 else
-#endif
                     if (len > room)
                 {
                     p += len - room;
@@ -10548,18 +9895,15 @@ win_redr_ruler(wp, always)
             /* need at least 3 chars left for get_rel_pos() + NUL */
             while (this_ru_col + o < WITH_WIDTH(width) && RULER_BUF_LEN > i + 4)
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     i += (*mb_char2bytes)(fillchar, buffer + i);
                 else
-#endif
                     buffer[i++] = fillchar;
                 ++o;
             }
             get_rel_pos(wp, buffer + i, RULER_BUF_LEN - i);
         }
         /* Truncate at window boundary. */
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             o = 0;
@@ -10574,7 +9918,6 @@ win_redr_ruler(wp, always)
             }
         }
         else
-#endif
         if (this_ru_col + (int)STRLEN(buffer) > WITH_WIDTH(width))
             buffer[WITH_WIDTH(width) - this_ru_col] = NUL;
 

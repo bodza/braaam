@@ -16,9 +16,7 @@ static int      VIsual_mode_orig = NUL;         /* saved Visual mode */
 
 static int      restart_VIsual_select = 0;
 
-#if defined(FEAT_EVAL)
 static void     set_vcount_ca __ARGS((cmdarg_T *cap, int *set_prevcount));
-#endif
 static int
                 nv_compare __ARGS((const void *s1, const void *s2));
 static int      find_command __ARGS((int cmdchar));
@@ -59,10 +57,6 @@ static void     nv_mouse __ARGS((cmdarg_T *cap));
 #endif
 static void     nv_scroll_line __ARGS((cmdarg_T *cap));
 static void     nv_zet __ARGS((cmdarg_T *cap));
-#if defined(FEAT_GUI)
-static void     nv_ver_scrollbar __ARGS((cmdarg_T *cap));
-static void     nv_hor_scrollbar __ARGS((cmdarg_T *cap));
-#endif
 #if defined(FEAT_GUI_TABLINE)
 static void     nv_tabline __ARGS((cmdarg_T *cap));
 static void     nv_tabmenu __ARGS((cmdarg_T *cap));
@@ -124,9 +118,7 @@ static void     nv_redo __ARGS((cmdarg_T *cap));
 static void     nv_Undo __ARGS((cmdarg_T *cap));
 static void     nv_tilde __ARGS((cmdarg_T *cap));
 static void     nv_operator __ARGS((cmdarg_T *cap));
-#if defined(FEAT_EVAL)
 static void     set_op_var __ARGS((int optype));
-#endif
 static void     nv_lineop __ARGS((cmdarg_T *cap));
 static void     nv_home __ARGS((cmdarg_T *cap));
 static void     nv_pipe __ARGS((cmdarg_T *cap));
@@ -151,12 +143,6 @@ static void     nv_halfpage __ARGS((cmdarg_T *cap));
 static void     nv_join __ARGS((cmdarg_T *cap));
 static void     nv_put __ARGS((cmdarg_T *cap));
 static void     nv_open __ARGS((cmdarg_T *cap));
-#if defined(FEAT_SNIFF)
-static void     nv_sniff __ARGS((cmdarg_T *cap));
-#endif
-#if defined(FEAT_NETBEANS_INTG)
-static void     nv_nbcmd __ARGS((cmdarg_T *cap));
-#endif
 #if defined(FEAT_DND)
 static void     nv_drop __ARGS((cmdarg_T *cap));
 #endif
@@ -395,19 +381,9 @@ static const struct nv_cmd
     {K_F1,      nv_help,        NV_NCW,                 0},
     {K_XF1,     nv_help,        NV_NCW,                 0},
     {K_SELECT,  nv_select,      0,                      0},
-#if defined(FEAT_GUI)
-    {K_VER_SCROLLBAR, nv_ver_scrollbar, 0,              0},
-    {K_HOR_SCROLLBAR, nv_hor_scrollbar, 0,              0},
-#endif
 #if defined(FEAT_GUI_TABLINE)
     {K_TABLINE, nv_tabline,     0,                      0},
     {K_TABMENU, nv_tabmenu,     0,                      0},
-#endif
-#if defined(FEAT_SNIFF)
-    {K_SNIFF,   nv_sniff,       0,                      0},
-#endif
-#if defined(FEAT_NETBEANS_INTG)
-    {K_F21,     nv_nbcmd,       NV_NCH_ALW,             0},
 #endif
 #if defined(FEAT_DND)
     {K_DROP,    nv_drop,        NV_STS,                 0},
@@ -483,11 +459,9 @@ find_command(cmdchar)
     int         top, bot;
     int         c;
 
-#if defined(FEAT_MBYTE)
     /* A multi-byte character is never a command. */
     if (cmdchar >= 0x100)
         return -1;
-#endif
 
     /* We use the absolute value of the character.  Special keys have a
      * negative value, but are sorted on their absolute value. */
@@ -541,9 +515,7 @@ normal_cmd(oap, toplevel)
     int         mapped_len;
     static int  old_mapped_len = 0;
     int         idx;
-#if defined(FEAT_EVAL)
     int         set_prevcount = FALSE;
-#endif
 
     vim_memset(&ca, 0, sizeof(ca));     /* also resets ca.retval */
     ca.oap = oap;
@@ -552,10 +524,6 @@ normal_cmd(oap, toplevel)
      * "3d" we return from normal_cmd() and come back here, the "3" is
      * remembered in "opcount". */
     ca.opcount = opcount;
-
-#if defined(FEAT_SNIFF)
-    want_sniff_request = sniff_connected;
-#endif
 
     /*
      * If there is an operator pending, then the command we take this time
@@ -581,9 +549,7 @@ normal_cmd(oap, toplevel)
     if (!finish_op && !oap->regname)
     {
         ca.opcount = 0;
-#if defined(FEAT_EVAL)
         set_prevcount = TRUE;
-#endif
     }
 
 #if defined(FEAT_AUTOCMD)
@@ -606,13 +572,11 @@ normal_cmd(oap, toplevel)
     dont_scroll = FALSE;        /* allow scrolling here */
 #endif
 
-#if defined(FEAT_EVAL)
     /* Set v:count here, when called from main() and not a stuffed
      * command, so that v:count can be used in an expression mapping
      * when there is no count. Do set it for redo. */
     if (toplevel && readbuf1_empty())
         set_vcount_ca(&ca, &set_prevcount);
-#endif
 
     /*
      * Get the command character from the user.
@@ -681,13 +645,11 @@ getcount:
                 ca.count0 = ca.count0 * 10 + (c - '0');
             if (ca.count0 < 0)      /* got too large! */
                 ca.count0 = 999999999L;
-#if defined(FEAT_EVAL)
             /* Set v:count here, when called from main() and not a stuffed
              * command, so that v:count can be used in an expression mapping
              * right after the count. Do set it for redo. */
             if (toplevel && readbuf1_empty())
                 set_vcount_ca(&ca, &set_prevcount);
-#endif
             if (ctrl_w)
             {
                 ++no_mapping;
@@ -764,14 +726,12 @@ getcount:
     ca.opcount = ca.count0;
     ca.count1 = (ca.count0 == 0 ? 1 : ca.count0);
 
-#if defined(FEAT_EVAL)
     /*
      * Only set v:count when called from main() and not a stuffed command.
      * Do set it for redo.
      */
     if (toplevel && readbuf1_empty())
         set_vcount(ca.count0, ca.count1, set_prevcount);
-#endif
 
     /*
      * Find the command character in the table of commands.
@@ -1050,7 +1010,6 @@ getcount:
                 }
             }
 
-#if defined(FEAT_MBYTE)
             /* When getting a text character and the next character is a
              * multi-byte character, it could be a composing character.
              * However, don't wait for it to arrive. Also, do enable mapping,
@@ -1072,7 +1031,6 @@ getcount:
                     ca.ncharC2 = c;
             }
             ++no_mapping;
-#endif
         }
         --no_mapping;
         --allow_keys;
@@ -1145,7 +1103,6 @@ getcount:
             && (idx < 0 || !(nv_cmds[idx].cmd_flags & NV_KEEPREG)))
     {
         clearop(oap);
-#if defined(FEAT_EVAL)
         {
             int regname = 0;
 
@@ -1156,7 +1113,6 @@ getcount:
 #endif
             set_reg_var(regname);
         }
-#endif
     }
 
     /* Get the length of mapped chars again after typing a count, second
@@ -1274,10 +1230,8 @@ normal_end:
     checkpcmark();              /* check if we moved since setting pcmark */
     vim_free(ca.searchbuf);
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
         mb_adjust_cursor();
-#endif
 
 #if defined(FEAT_SCROLLBIND)
     if (curwin->w_p_scb && toplevel)
@@ -1324,7 +1278,6 @@ normal_end:
     opcount = ca.opcount;
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Set v:count and v:count1 according to "cap".
  * Set v:prevcount only when "set_prevcount" is TRUE.
@@ -1342,7 +1295,6 @@ set_vcount_ca(cap, set_prevcount)
     set_vcount(count, count == 0 ? 1 : count, *set_prevcount);
     *set_prevcount = FALSE;  /* only set v:prevcount once */
 }
-#endif
 
 /*
  * Handle an operator after visual mode or when the movement is finished
@@ -1518,9 +1470,7 @@ do_pending_operator(cap, old_col, gui_yank)
                     VIsual_mode_orig = NUL;
                 }
                 curbuf->b_visual.vi_curswant = curwin->w_curswant;
-#if defined(FEAT_EVAL)
                 curbuf->b_visual_mode_eval = VIsual_mode;
-#endif
             }
 
             /* In Select mode, a linewise selection is operated upon like a
@@ -1806,7 +1756,6 @@ do_pending_operator(cap, old_col, gui_yank)
             }
         }
 
-#if defined(FEAT_MBYTE)
         /* Include the trailing byte of a multi-byte char. */
         if (has_mbyte && oap->inclusive)
         {
@@ -1816,7 +1765,6 @@ do_pending_operator(cap, old_col, gui_yank)
             if (l > 1)
                 oap->end.col += l - 1;
         }
-#endif
         curwin->w_set_curswant = TRUE;
 
         /*
@@ -2000,9 +1948,7 @@ do_pending_operator(cap, old_col, gui_yank)
 #endif
 #if defined(FEAT_CINDENT)
                 op_reindent(oap,
-#if defined(FEAT_EVAL)
                         *curbuf->b_p_inde != NUL ? get_expr_indent :
-#endif
                             get_c_indent);
                 break;
 #endif
@@ -2027,11 +1973,9 @@ do_pending_operator(cap, old_col, gui_yank)
             break;
 
         case OP_FORMAT:
-#if defined(FEAT_EVAL)
             if (*curbuf->b_p_fex != NUL)
                 op_formatexpr(oap);     /* use expression */
             else
-#endif
                 if (*p_fp != NUL)
                 op_colon(oap);          /* use external command */
             else
@@ -2234,7 +2178,6 @@ op_colon(oap)
 op_function(oap)
     oparg_T     *oap UNUSED;
 {
-#if defined(FEAT_EVAL)
     char_u      *(argv[1]);
 #if defined(FEAT_VIRTUALEDIT)
     int         save_virtual_op = virtual_op;
@@ -2270,9 +2213,6 @@ op_function(oap)
         virtual_op = save_virtual_op;
 #endif
     }
-#else
-    EMSG(_("E775: Eval feature not available"));
-#endif
 }
 
 #if defined(FEAT_MOUSE)
@@ -2363,9 +2303,6 @@ do_mouse(oap, c, dir, count, fixindent)
     if (do_always)
         do_always = FALSE;
     else
-#if defined(FEAT_GUI)
-        if (!gui.in_use)
-#endif
         {
             if (VIsual_active)
             {
@@ -2664,78 +2601,7 @@ do_mouse(oap, c, dir, count, fixindent)
              * NOTE: Ignore right button down and drag mouse events.
              * Windows only shows the popup menu on the button up event.
              */
-#if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_PHOTON) || defined(FEAT_GUI_MAC)
-            if (!is_click)
-                return FALSE;
-#endif
-#if defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MSWIN)
-            if (is_click || is_drag)
-                return FALSE;
-#endif
-#if defined(FEAT_GUI_MOTIF) || defined(FEAT_GUI_GTK) || defined(FEAT_GUI_ATHENA) || defined(FEAT_GUI_MSWIN) || defined(FEAT_GUI_MAC) || defined(FEAT_GUI_PHOTON)
-            if (gui.in_use)
-            {
-                jump_flags = 0;
-                if (STRCMP(p_mousem, "popup_setpos") == 0)
-                {
-                    /* First set the cursor position before showing the popup
-                     * menu. */
-                    if (VIsual_active)
-                    {
-                        pos_T    m_pos;
-
-                        /*
-                         * set MOUSE_MAY_STOP_VIS if we are outside the
-                         * selection or the current window (might have false
-                         * negative here)
-                         */
-                        if (mouse_row < W_WINROW(curwin)
-                             || mouse_row
-                                      > (W_WINROW(curwin) + curwin->w_height))
-                            jump_flags = MOUSE_MAY_STOP_VIS;
-                        else if (get_fpos_of_mouse(&m_pos) != IN_BUFFER)
-                            jump_flags = MOUSE_MAY_STOP_VIS;
-                        else
-                        {
-                            if ((lt(curwin->w_cursor, VIsual)
-                                        && (lt(m_pos, curwin->w_cursor)
-                                            || lt(VIsual, m_pos)))
-                                    || (lt(VIsual, curwin->w_cursor)
-                                        && (lt(m_pos, VIsual)
-                                            || lt(curwin->w_cursor, m_pos))))
-                            {
-                                jump_flags = MOUSE_MAY_STOP_VIS;
-                            }
-                            else if (VIsual_mode == Ctrl_V)
-                            {
-                                getvcols(curwin, &curwin->w_cursor, &VIsual,
-                                                         &leftcol, &rightcol);
-                                getvcol(curwin, &m_pos, NULL, &m_pos.col, NULL);
-                                if (m_pos.col < leftcol || m_pos.col > rightcol)
-                                    jump_flags = MOUSE_MAY_STOP_VIS;
-                            }
-                        }
-                    }
-                    else
-                        jump_flags = MOUSE_MAY_STOP_VIS;
-                }
-                if (jump_flags)
-                {
-                    jump_flags = jump_to_mouse(jump_flags, NULL, which_button);
-                    update_curbuf(VIsual_active ? INVERTED : VALID);
-                    setcursor();
-                    out_flush();    /* Update before showing popup menu */
-                }
-#if defined(FEAT_MENU)
-                gui_show_popupmenu();
-#endif
-                return (jump_flags & CURSOR_MOVED) != 0;
-            }
-            else
-                return FALSE;
-#else
             return FALSE;
-#endif
         }
         if (which_button == MOUSE_LEFT
                                 && (mod_mask & (MOD_MASK_SHIFT|MOD_MASK_ALT)))
@@ -2808,18 +2674,6 @@ do_mouse(oap, c, dir, count, fixindent)
     in_status_line = (jump_flags & IN_STATUS_LINE);
 #if defined(FEAT_VERTSPLIT)
     in_sep_line = (jump_flags & IN_SEP_LINE);
-#endif
-
-#if defined(FEAT_NETBEANS_INTG)
-    if (isNetbeansBuffer(curbuf)
-                            && !(jump_flags & (IN_STATUS_LINE | IN_SEP_LINE)))
-    {
-        int key = KEY2TERMCAP1(c);
-
-        if (key == (int)KE_LEFTRELEASE || key == (int)KE_MIDDLERELEASE
-                                               || key == (int)KE_RIGHTRELEASE)
-            netbeans_button_release(which_button);
-    }
 #endif
 
     /* When jumping to another window, clear a pending operator.  That's a bit
@@ -3144,12 +2998,7 @@ do_mouse(oap, c, dir, count, fixindent)
                 {
                     find_start_of_word(&VIsual);
                     if (*p_sel == 'e' && *ml_get_cursor() != NUL)
-#if defined(FEAT_MBYTE)
-                        curwin->w_cursor.col +=
-                                         (*mb_ptr2len)(ml_get_cursor());
-#else
-                        ++curwin->w_cursor.col;
-#endif
+                        curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
                     find_end_of_word(&curwin->w_cursor);
                 }
             }
@@ -3192,9 +3041,7 @@ find_start_of_word(pos)
     while (pos->col > 0)
     {
         col = pos->col - 1;
-#if defined(FEAT_MBYTE)
         col -= (*mb_head_off)(line, line + col);
-#endif
         if (get_mouse_class(line + col) != cclass)
             break;
         pos->col = col;
@@ -3217,18 +3064,12 @@ find_end_of_word(pos)
     if (*p_sel == 'e' && pos->col > 0)
     {
         --pos->col;
-#if defined(FEAT_MBYTE)
         pos->col -= (*mb_head_off)(line, line + pos->col);
-#endif
     }
     cclass = get_mouse_class(line + pos->col);
     while (line[pos->col] != NUL)
     {
-#if defined(FEAT_MBYTE)
         col = pos->col + (*mb_ptr2len)(line + pos->col);
-#else
-        col = pos->col + 1;
-#endif
         if (get_mouse_class(line + col) != cclass)
         {
             if (*p_sel == 'e')
@@ -3252,10 +3093,8 @@ get_mouse_class(p)
 {
     int         c;
 
-#if defined(FEAT_MBYTE)
     if (has_mbyte && MB_BYTE2LEN(p[0]) > 1)
         return mb_get_class(p);
-#endif
 
     c = *p;
     if (c == ' ' || c == '\t')
@@ -3323,9 +3162,7 @@ end_visual_mode()
     curbuf->b_visual.vi_start = VIsual;
     curbuf->b_visual.vi_end = curwin->w_cursor;
     curbuf->b_visual.vi_curswant = curwin->w_curswant;
-#if defined(FEAT_EVAL)
     curbuf->b_visual_mode_eval = VIsual_mode;
-#endif
 #if defined(FEAT_VIRTUALEDIT)
     if (!virtual_active())
         curwin->w_cursor.coladd = 0;
@@ -3368,49 +3205,6 @@ reset_VIsual()
         VIsual_reselect = FALSE;
     }
 }
-
-#if defined(FEAT_BEVAL)
-static int find_is_eval_item __ARGS((char_u *ptr, int *colp, int *nbp, int dir));
-
-/*
- * Check for a balloon-eval special item to include when searching for an
- * identifier.  When "dir" is BACKWARD "ptr[-1]" must be valid!
- * Returns TRUE if the character at "*ptr" should be included.
- * "dir" is FORWARD or BACKWARD, the direction of searching.
- * "*colp" is in/decremented if "ptr[-dir]" should also be included.
- * "bnp" points to a counter for square brackets.
- */
-    static int
-find_is_eval_item(ptr, colp, bnp, dir)
-    char_u      *ptr;
-    int         *colp;
-    int         *bnp;
-    int         dir;
-{
-    /* Accept everything inside []. */
-    if ((*ptr == ']' && dir == BACKWARD) || (*ptr == '[' && dir == FORWARD))
-        ++*bnp;
-    if (*bnp > 0)
-    {
-        if ((*ptr == '[' && dir == BACKWARD) || (*ptr == ']' && dir == FORWARD))
-            --*bnp;
-        return TRUE;
-    }
-
-    /* skip over "s.var" */
-    if (*ptr == '.')
-        return TRUE;
-
-    /* two-character item: s->var */
-    if (ptr[dir == BACKWARD ? 0 : 1] == '>'
-            && ptr[dir == BACKWARD ? -1 : 0] == '-')
-    {
-        *colp += dir;
-        return TRUE;
-    }
-    return FALSE;
-}
-#endif
 
 /*
  * Find the identifier under or to the right of the cursor.
@@ -3457,14 +3251,9 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
     char_u      *ptr;
     int         col = 0;            /* init to shut up GCC */
     int         i;
-#if defined(FEAT_MBYTE)
     int         this_class = 0;
     int         prev_class;
     int         prevcol;
-#endif
-#if defined(FEAT_BEVAL)
-    int         bn = 0;     /* bracket nesting */
-#endif
 
     /*
      * if i == 0: try to find an identifier
@@ -3477,16 +3266,10 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
          * 1. skip to start of identifier/string
          */
         col = startcol;
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             while (ptr[col] != NUL)
             {
-#if defined(FEAT_BEVAL)
-                /* Stop at a ']' to evaluate "a[x]". */
-                if ((find_type & FIND_EVAL) && ptr[col] == ']')
-                    break;
-#endif
                 this_class = mb_get_class(ptr + col);
                 if (this_class != 0 && (i == 1 || this_class != 1))
                     break;
@@ -3494,32 +3277,17 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
             }
         }
         else
-#endif
             while (ptr[col] != NUL
                     && (i == 0 ? !vim_iswordc(ptr[col]) : vim_iswhite(ptr[col]))
-#if defined(FEAT_BEVAL)
-                    && (!(find_type & FIND_EVAL) || ptr[col] != ']')
-#endif
                     )
                 ++col;
-
-#if defined(FEAT_BEVAL)
-        /* When starting on a ']' count it, so that we include the '['. */
-        bn = ptr[col] == ']';
-#endif
 
         /*
          * 2. Back up to start of identifier/string.
          */
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             /* Remember class of character under cursor. */
-#if defined(FEAT_BEVAL)
-            if ((find_type & FIND_EVAL) && ptr[col] == ']')
-                this_class = mb_get_class((char_u *)"a");
-            else
-#endif
                 this_class = mb_get_class(ptr + col);
             while (col > 0 && this_class != 0)
             {
@@ -3529,12 +3297,6 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
                         && (i == 0
                             || prev_class == 0
                             || (find_type & FIND_IDENT))
-#if defined(FEAT_BEVAL)
-                        && (!(find_type & FIND_EVAL)
-                            || prevcol == 0
-                            || !find_is_eval_item(ptr + prevcol, &prevcol,
-                                                               &bn, BACKWARD))
-#endif
                         )
                     break;
                 col = prevcol;
@@ -3548,7 +3310,6 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
                 break;
         }
         else
-#endif
         {
             while (col > 0
                     && ((i == 0
@@ -3556,12 +3317,6 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
                             : (!vim_iswhite(ptr[col - 1])
                                 && (!(find_type & FIND_IDENT)
                                     || !vim_iswordc(ptr[col - 1]))))
-#if defined(FEAT_BEVAL)
-                        || ((find_type & FIND_EVAL)
-                            && col > 1
-                            && find_is_eval_item(ptr + col - 1, &col,
-                                                               &bn, BACKWARD))
-#endif
                         ))
                 --col;
 
@@ -3573,9 +3328,7 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
     }
 
     if (ptr[col] == NUL || (i == 0 && (
-#if defined(FEAT_MBYTE)
                 has_mbyte ? this_class != 2 :
-#endif
                 !vim_iswordc(ptr[col]))))
     {
         /*
@@ -3593,12 +3346,7 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
     /*
      * 3. Find the end if the identifier/string.
      */
-#if defined(FEAT_BEVAL)
-    bn = 0;
-    startcol -= col;
-#endif
     col = 0;
-#if defined(FEAT_MBYTE)
     if (has_mbyte)
     {
         /* Search for point of changing multibyte character class. */
@@ -3606,23 +3354,12 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
         while (ptr[col] != NUL
                 && ((i == 0 ? mb_get_class(ptr + col) == this_class
                             : mb_get_class(ptr + col) != 0)
-#if defined(FEAT_BEVAL)
-                    || ((find_type & FIND_EVAL)
-                        && col <= (int)startcol
-                        && find_is_eval_item(ptr + col, &col, &bn, FORWARD))
-#endif
                 ))
             col += (*mb_ptr2len)(ptr + col);
     }
     else
-#endif
         while ((i == 0 ? vim_iswordc(ptr[col])
                        : (ptr[col] != NUL && !vim_iswhite(ptr[col])))
-#if defined(FEAT_BEVAL)
-                    || ((find_type & FIND_EVAL)
-                        && col <= (int)startcol
-                        && find_is_eval_item(ptr + col, &col, &bn, FORWARD))
-#endif
                 )
         {
             ++col;
@@ -3824,11 +3561,7 @@ clear_showcmd()
             }
             while ((*p_sel != 'e') ? s <= e : s < e)
             {
-#if defined(FEAT_MBYTE)
                 l = (*mb_ptr2len)(s);
-#else
-                l = (*s == NUL) ? 0 : 1;
-#endif
                 if (l == 0)
                 {
                     ++bytes;
@@ -3876,10 +3609,6 @@ add_to_showcmd(c)
     int         i;
     static int  ignore[] =
     {
-#if defined(FEAT_GUI)
-        K_VER_SCROLLBAR, K_HOR_SCROLLBAR,
-        K_LEFTMOUSE_NM, K_LEFTRELEASE_NM,
-#endif
         K_IGNORE,
         K_LEFTMOUSE, K_LEFTDRAG, K_LEFTRELEASE,
         K_MIDDLEMOUSE, K_MIDDLEDRAG, K_MIDDLERELEASE,
@@ -4533,7 +4262,6 @@ nv_screengo(oap, dir, dist)
     else
         coladvance(curwin->w_curswant);
 
-#if defined(FEAT_LINEBREAK) || defined(FEAT_MBYTE)
     if (curwin->w_cursor.col > 0 && curwin->w_p_wrap)
     {
         colnr_T virtcol;
@@ -4557,7 +4285,6 @@ nv_screengo(oap, dir, dist)
                                                       > (colnr_T)width2 / 2)))
             --curwin->w_cursor.col;
     }
-#endif
 
     if (atend)
         curwin->w_curswant = MAXCOL;        /* stick in the last column */
@@ -4605,24 +4332,6 @@ nv_mousescroll(cap)
             nv_scroll_line(cap);
         }
     }
-#if defined(FEAT_GUI)
-    else
-    {
-        /* Horizontal scroll - only allowed when 'wrap' is disabled */
-        if (!curwin->w_p_wrap)
-        {
-            int val, step = 6;
-
-            if (mod_mask & (MOD_MASK_SHIFT | MOD_MASK_CTRL))
-                step = W_WIDTH(curwin);
-            val = curwin->w_leftcol + (cap->arg == MSCR_RIGHT ? -step : +step);
-            if (val < 0)
-                val = 0;
-
-            gui_do_horiz_scroll(val, TRUE);
-        }
-    }
-#endif
 
 #if defined(FEAT_WINDOWS)
     curwin->w_redr_status = TRUE;
@@ -4760,9 +4469,6 @@ nv_zet(cap)
                 n = n * 10 + (nchar - '0');
             else if (nchar == CAR)
             {
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setheight((int)n);
                 break;
             }
@@ -5205,36 +4911,6 @@ dozet:
         newFoldLevel();
 #endif
 }
-
-#if defined(FEAT_GUI)
-/*
- * Vertical scrollbar movement.
- */
-    static void
-nv_ver_scrollbar(cap)
-    cmdarg_T    *cap;
-{
-    if (cap->oap->op_type != OP_NOP)
-        clearopbeep(cap->oap);
-
-    /* Even if an operator was pending, we still want to scroll */
-    gui_do_scroll();
-}
-
-/*
- * Horizontal scrollbar movement.
- */
-    static void
-nv_hor_scrollbar(cap)
-    cmdarg_T    *cap;
-{
-    if (cap->oap->op_type != OP_NOP)
-        clearopbeep(cap->oap);
-
-    /* Even if an operator was pending, we still want to scroll */
-    gui_do_horiz_scroll(scrollbar_value, FALSE);
-}
-#endif
 
 #if defined(FEAT_GUI_TABLINE)
 /*
@@ -5718,7 +5394,6 @@ nv_ident(cap)
             /* put a backslash before \ and some others */
             if (vim_strchr(aux_ptr, *ptr) != NULL)
                 *p++ = '\\';
-#if defined(FEAT_MBYTE)
             /* When current byte is a part of multibyte character, copy all
              * bytes of that character. */
             if (has_mbyte)
@@ -5729,7 +5404,6 @@ nv_ident(cap)
                 for (i = 0; i < len && n >= 1; ++i, --n)
                     *p++ = *ptr++;
             }
-#endif
             *p++ = *ptr++;
         }
         *p = NUL;
@@ -5741,9 +5415,7 @@ nv_ident(cap)
     if (cmdchar == '*' || cmdchar == '#')
     {
         if (!g_cmd && (
-#if defined(FEAT_MBYTE)
                 has_mbyte ? vim_iswordp(mb_prevptr(ml_get_curline(), ptr)) :
-#endif
                 vim_iswordc(ptr[-1])))
             STRCAT(buf, "\\>");
 #if defined(FEAT_CMDHIST)
@@ -5794,11 +5466,9 @@ get_visual_text(cap, pp, lenp)
             *pp = ml_get_pos(&VIsual);
             *lenp = curwin->w_cursor.col - VIsual.col + 1;
         }
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             /* Correct the length to include the whole last character. */
             *lenp += (*mb_ptr2len)(*pp + (*lenp - 1)) - 1;
-#endif
     }
     reset_VIsual_and_resel();
     return OK;
@@ -6009,12 +5679,10 @@ nv_right(cap)
             else
 #endif
             {
-#if defined(FEAT_MBYTE)
                 if (has_mbyte)
                     curwin->w_cursor.col +=
                                          (*mb_ptr2len)(ml_get_cursor());
                 else
-#endif
                     ++curwin->w_cursor.col;
             }
         }
@@ -6081,11 +5749,9 @@ nv_left(cap)
 
                     if (*cp != NUL)
                     {
-#if defined(FEAT_MBYTE)
                         if (has_mbyte)
                             curwin->w_cursor.col += (*mb_ptr2len)(cp);
                         else
-#endif
                             ++curwin->w_cursor.col;
                     }
                     cap->retval |= CA_NO_ADJ_OP_END;
@@ -6995,9 +6661,7 @@ nv_replace(cap)
     /* Abort if not enough characters to replace. */
     ptr = ml_get_cursor();
     if (STRLEN(ptr) < (unsigned)cap->count1
-#if defined(FEAT_MBYTE)
             || (has_mbyte && mb_charlen(ptr) < cap->count1)
-#endif
             )
     {
         clearopbeep(cap->oap);
@@ -7033,11 +6697,7 @@ nv_replace(cap)
          * autoindent.  The insert command depends on being on the last
          * character of a line or not.
          */
-#if defined(FEAT_MBYTE)
         (void)del_chars(cap->count1, FALSE);    /* delete the characters */
-#else
-        (void)del_bytes(cap->count1, FALSE, FALSE); /* delete the characters */
-#endif
         stuffcharReadbuff('\r');
         stuffcharReadbuff(ESC);
 
@@ -7050,7 +6710,6 @@ nv_replace(cap)
                                        NUL, 'r', NUL, had_ctrl_v, cap->nchar);
 
         curbuf->b_op_start = curwin->w_cursor;
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             int         old_State = State;
@@ -7086,7 +6745,6 @@ nv_replace(cap)
             }
         }
         else
-#endif
         {
             /*
              * Replace the characters within one line.
@@ -7112,29 +6770,16 @@ nv_replace(cap)
                     showmatch(cap->nchar);
                 ++curwin->w_cursor.col;
             }
-#if defined(FEAT_NETBEANS_INTG)
-            if (netbeans_active())
-            {
-                colnr_T  start = (colnr_T)(curwin->w_cursor.col - cap->count1);
-
-                netbeans_removed(curbuf, curwin->w_cursor.lnum, start,
-                                                           (long)cap->count1);
-                netbeans_inserted(curbuf, curwin->w_cursor.lnum, start,
-                                               &ptr[start], (int)cap->count1);
-            }
-#endif
 
             /* mark the buffer as changed and prepare for displaying */
             changed_bytes(curwin->w_cursor.lnum,
                                (colnr_T)(curwin->w_cursor.col - cap->count1));
         }
         --curwin->w_cursor.col;     /* cursor on the last replaced char */
-#if defined(FEAT_MBYTE)
         /* if the character on the left of the current cursor is a multi-byte
          * character, move two characters left */
         if (has_mbyte)
             mb_adjust_cursor();
-#endif
         curbuf->b_op_end = curwin->w_cursor;
         curwin->w_set_curswant = TRUE;
         set_last_insert(cap->nchar);
@@ -7268,11 +6913,6 @@ n_swapchar(cap)
     long        n;
     pos_T       startpos;
     int         did_change = 0;
-#if defined(FEAT_NETBEANS_INTG)
-    pos_T       pos;
-    char_u      *ptr;
-    int         count;
-#endif
 
     if (checkclearopq(cap->oap))
         return;
@@ -7289,9 +6929,6 @@ n_swapchar(cap)
         return;
 
     startpos = curwin->w_cursor;
-#if defined(FEAT_NETBEANS_INTG)
-    pos = startpos;
-#endif
     for (n = cap->count1; n > 0; --n)
     {
         did_change |= swapchar(cap->oap->op_type, &curwin->w_cursor);
@@ -7301,22 +6938,6 @@ n_swapchar(cap)
             if (vim_strchr(p_ww, '~') != NULL
                     && curwin->w_cursor.lnum < curbuf->b_ml.ml_line_count)
             {
-#if defined(FEAT_NETBEANS_INTG)
-                if (netbeans_active())
-                {
-                    if (did_change)
-                    {
-                        ptr = ml_get(pos.lnum);
-                        count = (int)STRLEN(ptr) - pos.col;
-                        netbeans_removed(curbuf, pos.lnum, pos.col,
-                                                                 (long)count);
-                        netbeans_inserted(curbuf, pos.lnum, pos.col,
-                                                        &ptr[pos.col], count);
-                    }
-                    pos.col = 0;
-                    pos.lnum++;
-                }
-#endif
                 ++curwin->w_cursor.lnum;
                 curwin->w_cursor.col = 0;
                 if (n > 1)
@@ -7330,15 +6951,6 @@ n_swapchar(cap)
                 break;
         }
     }
-#if defined(FEAT_NETBEANS_INTG)
-    if (did_change && netbeans_active())
-    {
-        ptr = ml_get(pos.lnum);
-        count = curwin->w_cursor.col - pos.col;
-        netbeans_removed(curbuf, pos.lnum, pos.col, (long)count);
-        netbeans_inserted(curbuf, pos.lnum, pos.col, &ptr[pos.col], count);
-    }
-#endif
 
     check_cursor();
     curwin->w_set_curswant = TRUE;
@@ -7468,9 +7080,7 @@ nv_optrans(cap)
         {
             cap->oap->start = curwin->w_cursor;
             cap->oap->op_type = OP_DELETE;
-#if defined(FEAT_EVAL)
             set_op_var(OP_DELETE);
-#endif
             cap->count1 = 1;
             nv_dollar(cap);
             finish_op = TRUE;
@@ -7595,17 +7205,13 @@ nv_regname(cap)
 {
     if (checkclearop(cap->oap))
         return;
-#if defined(FEAT_EVAL)
     if (cap->nchar == '=')
         cap->nchar = get_expr_register();
-#endif
     if (cap->nchar != NUL && valid_yank_reg(cap->nchar, FALSE))
     {
         cap->oap->regname = cap->nchar;
         cap->opcount = cap->count0;     /* remember count before '"' */
-#if defined(FEAT_EVAL)
         set_reg_var(cap->oap->regname);
-#endif
     }
     else
         clearopbeep(cap->oap);
@@ -7891,9 +7497,7 @@ nv_g_cmd(cap)
                 i = VIsual_mode;
                 VIsual_mode = curbuf->b_visual.vi_mode;
                 curbuf->b_visual.vi_mode = i;
-#if defined(FEAT_EVAL)
                 curbuf->b_visual_mode_eval = i;
-#endif
                 i = curwin->w_curswant;
                 curwin->w_curswant = curbuf->b_visual.vi_curswant;
                 curbuf->b_visual.vi_curswant = i;
@@ -8129,7 +7733,6 @@ nv_g_cmd(cap)
                     validate_virtcol();
                     curwin->w_curswant = curwin->w_virtcol;
                     curwin->w_set_curswant = FALSE;
-#if defined(FEAT_LINEBREAK) || defined(FEAT_MBYTE)
                     if (curwin->w_cursor.col > 0 && curwin->w_p_wrap)
                     {
                         /*
@@ -8140,7 +7743,6 @@ nv_g_cmd(cap)
                         if (curwin->w_virtcol > (colnr_T)i)
                             --curwin->w_cursor.col;
                     }
-#endif
                 }
                 else if (nv_screengo(oap, FORWARD, cap->count1 - 1) == FAIL)
                     clearopbeep(oap);
@@ -8255,7 +7857,6 @@ nv_g_cmd(cap)
         do_ascii(NULL);
         break;
 
-#if defined(FEAT_MBYTE)
     /*
      * "g8": Display the bytes used for the UTF-8 character under the
      * cursor.  It is displayed in hex.
@@ -8267,7 +7868,6 @@ nv_g_cmd(cap)
         else
             show_utf8();
         break;
-#endif
 
     case '<':
         show_sb_text();
@@ -8537,13 +8137,10 @@ nv_operator(cap)
     {
         cap->oap->start = curwin->w_cursor;
         cap->oap->op_type = op_type;
-#if defined(FEAT_EVAL)
         set_op_var(op_type);
-#endif
     }
 }
 
-#if defined(FEAT_EVAL)
 /*
  * Set v:operator to the characters for "optype".
  */
@@ -8563,7 +8160,6 @@ set_op_var(optype)
         set_vim_var_string(VV_OP, opchars, -1);
     }
 }
-#endif
 
 /*
  * Handle linewise operator "dd", "yy", etc.
@@ -8762,11 +8358,9 @@ adjust_cursor(oap)
                 )
     {
         --curwin->w_cursor.col;
-#if defined(FEAT_MBYTE)
         /* prevent cursor from moving on the trail byte */
         if (has_mbyte)
             mb_adjust_cursor();
-#endif
         oap->inclusive = TRUE;
     }
 }
@@ -8800,11 +8394,9 @@ adjust_for_sel(cap)
     if (VIsual_active && cap->oap->inclusive && *p_sel == 'e'
             && gchar_cursor() != NUL && lt(VIsual, curwin->w_cursor))
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             inc_cursor();
         else
-#endif
             ++curwin->w_cursor.col;
         cap->oap->inclusive = FALSE;
     }
@@ -8834,9 +8426,7 @@ unadjust_for_sel()
         if (pp->col > 0)
         {
             --pp->col;
-#if defined(FEAT_MBYTE)
             mb_adjustpos(curbuf, pp);
-#endif
         }
         else if (pp->lnum > 1)
         {
@@ -9240,13 +8830,11 @@ nv_at(cap)
 {
     if (checkclearop(cap->oap))
         return;
-#if defined(FEAT_EVAL)
     if (cap->nchar == '=')
     {
         if (get_expr_register() == NUL)
             return;
     }
-#endif
     while (cap->count1-- && !got_int)
     {
         if (do_execreg(cap->nchar, FALSE, FALSE, FALSE) == FAIL)
@@ -9451,24 +9039,6 @@ nv_open(cap)
     else
         n_opencmd(cap);
 }
-
-#if defined(FEAT_SNIFF)
-    static void
-nv_sniff(cap)
-    cmdarg_T    *cap UNUSED;
-{
-    ProcessSniffRequests();
-}
-#endif
-
-#if defined(FEAT_NETBEANS_INTG)
-    static void
-nv_nbcmd(cap)
-    cmdarg_T    *cap;
-{
-    netbeans_keycommand(cap->nchar);
-}
-#endif
 
 #if defined(FEAT_DND)
     static void

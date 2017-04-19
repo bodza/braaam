@@ -129,9 +129,6 @@ do_window(nchar, Prenum, xchar)
                 if (bt_quickfix(curbuf))
                     goto newwindow;
 #endif
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_split((int)Prenum, 0);
                 break;
 
@@ -146,9 +143,6 @@ do_window(nchar, Prenum, xchar)
                  * don't replicate the quickfix buffer. */
                 if (bt_quickfix(curbuf))
                     goto newwindow;
-#endif
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
 #endif
                 win_split((int)Prenum, WSP_VERT);
                 break;
@@ -401,59 +395,38 @@ newwindow:
 
 /* make all windows the same height */
     case '=':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_equal(NULL, FALSE, 'b');
                 break;
 
 /* increase current window height */
     case '+':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setheight(curwin->w_height + (int)Prenum1);
                 break;
 
 /* decrease current window height */
     case '-':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setheight(curwin->w_height - (int)Prenum1);
                 break;
 
 /* set current window height */
     case Ctrl__:
     case '_':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setheight(Prenum ? (int)Prenum : 9999);
                 break;
 
 #if defined(FEAT_VERTSPLIT)
 /* increase current window width */
     case '>':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setwidth(curwin->w_width + (int)Prenum1);
                 break;
 
 /* decrease current window width */
     case '<':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setwidth(curwin->w_width - (int)Prenum1);
                 break;
 
 /* set current window width */
     case '|':
-#if defined(FEAT_GUI)
-                need_mouse_correct = TRUE;
-#endif
                 win_setwidth(Prenum != 0 ? (int)Prenum : 9999);
                 break;
 #endif
@@ -497,9 +470,6 @@ wingotofile:
                 ptr = grab_file_name(Prenum1, &lnum);
                 if (ptr != NULL)
                 {
-#if defined(FEAT_GUI)
-                    need_mouse_correct = TRUE;
-#endif
                     setpcmark();
                     if (win_split(0, 0) == OK)
                     {
@@ -819,12 +789,6 @@ win_split_ins(size, flags, new_wp, dir)
         }
         need_status = STATUS_HEIGHT;
     }
-
-#if defined(FEAT_GUI)
-    /* May be needed for the scrollbars that are going to change. */
-    if (gui.in_use)
-        out_flush();
-#endif
 
 #if defined(FEAT_VERTSPLIT)
     if (flags & WSP_VERT)
@@ -1277,11 +1241,6 @@ win_split_ins(size, flags, new_wp, dir)
         if (size != 0)
             p_wiw = size;
 
-#if defined(FEAT_GUI)
-        /* When 'guioptions' includes 'L' or 'R' may have to add scrollbars. */
-        if (gui.in_use)
-            gui_init_which_components(NULL);
-#endif
     }
     else
 #endif
@@ -1528,10 +1487,6 @@ win_exchange(Prenum)
         return;
     }
 
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
-
     /*
      * find window to exchange with
      */
@@ -1633,10 +1588,6 @@ win_rotate(upwards, count)
         return;
     }
 
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
-
 #if defined(FEAT_VERTSPLIT)
     /* Check if all frames in this row/col have one window. */
     for (frp = curwin->w_frame->fr_parent->fr_child; frp != NULL;
@@ -1735,11 +1686,6 @@ win_totop(size, flags)
             win_equal(curwin, TRUE, 'v');
     }
 
-#if defined(FEAT_GUI) && defined(FEAT_VERTSPLIT)
-    /* When 'guioptions' includes 'L' or 'R' may have to remove or add
-     * scrollbars.  Have to update them anyway. */
-    gui_may_update_scrollbars();
-#endif
 }
 
 /*
@@ -2395,19 +2341,10 @@ win_close(win, free_buf)
         win->w_closing = FALSE;
         if (last_window())
             return FAIL;
-#if defined(FEAT_EVAL)
         /* autocmds may abort script processing */
         if (aborting())
             return FAIL;
-#endif
     }
-#endif
-
-#if defined(FEAT_GUI)
-    /* Avoid trouble with scrollbars that are going to be deleted in
-     * win_free(). */
-    if (gui.in_use)
-        out_flush();
 #endif
 
 #if defined(FEAT_SYN_HL)
@@ -2518,12 +2455,6 @@ win_close(win, free_buf)
      * before it was opened. */
     if (help_window)
         restore_snapshot(SNAP_HELP_IDX, close_curwin);
-
-#if defined(FEAT_GUI) && defined(FEAT_VERTSPLIT)
-    /* When 'guioptions' includes 'L' or 'R' may have to remove scrollbars. */
-    if (gui.in_use && !win_hasvertsplit())
-        gui_init_which_components(NULL);
-#endif
 
     redraw_all_later(NOT_VALID);
     return OK;
@@ -3615,15 +3546,11 @@ win_init_size()
 alloc_tabpage()
 {
     tabpage_T   *tp;
-#if defined(FEAT_GUI)
-    int         i;
-#endif
 
     tp = (tabpage_T *)alloc_clear((unsigned)sizeof(tabpage_T));
     if (tp == NULL)
         return NULL;
 
-#if defined(FEAT_EVAL)
     /* init t: variables */
     tp->tp_vars = dict_alloc();
     if (tp->tp_vars == NULL)
@@ -3632,12 +3559,7 @@ alloc_tabpage()
         return NULL;
     }
     init_var_dict(tp->tp_vars, &tp->tp_winvar, VAR_SCOPE);
-#endif
 
-#if defined(FEAT_GUI)
-    for (i = 0; i < 3; i++)
-        tp->tp_prev_which_scrollbars[i] = -1;
-#endif
 #if defined(FEAT_DIFF)
     tp->tp_diff_invalid = TRUE;
 #endif
@@ -3657,19 +3579,9 @@ free_tabpage(tp)
 #endif
     for (idx = 0; idx < SNAP_COUNT; ++idx)
         clear_snapshot(tp, idx);
-#if defined(FEAT_EVAL)
     vars_clear(&tp->tp_vars->dv_hashtab);       /* free all t: variables */
     hash_init(&tp->tp_vars->dv_hashtab);
     unref_var_dict(tp->tp_vars);
-#endif
-
-#if defined(FEAT_PYTHON)
-    python_tabpage_free(tp);
-#endif
-
-#if defined(FEAT_PYTHON3)
-    python3_tabpage_free(tp);
-#endif
 
     vim_free(tp);
 }
@@ -3730,12 +3642,6 @@ win_new_tabpage(after)
 
         newtp->tp_topframe = topframe;
         last_status(FALSE);
-
-#if defined(FEAT_GUI)
-        /* When 'guioptions' includes 'L' or 'R' may have to remove or add
-         * scrollbars.  Have to update them anyway. */
-        gui_may_update_scrollbars();
-#endif
 
         redraw_all_later(CLEAR);
 #if defined(FEAT_AUTOCMD)
@@ -3882,11 +3788,6 @@ leave_tabpage(new_curbuf, trigger_leave_autocmds)
             return FAIL;
     }
 #endif
-#if defined(FEAT_GUI)
-    /* Remove the scrollbars.  They may be added back later. */
-    if (gui.in_use)
-        gui_remove_scrollbars();
-#endif
     tp->tp_curwin = curwin;
     tp->tp_prevwin = prevwin;
     tp->tp_firstwin = firstwin;
@@ -3947,12 +3848,6 @@ enter_tabpage(tp, old_curbuf, trigger_enter_autocmds, trigger_leave_autocmds)
 #if defined(FEAT_VERTSPLIT)
     if (curtab->tp_old_Columns != Columns && starting == 0)
         shell_new_columns();    /* update window widths */
-#endif
-
-#if defined(FEAT_GUI)
-    /* When 'guioptions' includes 'L' or 'R' may have to remove or add
-     * scrollbars.  Have to update them anyway. */
-    gui_may_update_scrollbars();
 #endif
 
 #if defined(FEAT_AUTOCMD)
@@ -4169,9 +4064,6 @@ win_goto(wp)
     else if (VIsual_active)
         wp->w_cursor = curwin->w_cursor;
 
-#if defined(FEAT_GUI)
-    need_mouse_correct = TRUE;
-#endif
     win_enter(wp, TRUE);
 
 #if defined(FEAT_CONCEAL)
@@ -4183,28 +4075,7 @@ win_goto(wp)
 #endif
 }
 
-#if defined(FEAT_PERL)
-/*
- * Find window number "winnr" (counting top to bottom).
- */
-    win_T *
-win_find_nr(winnr)
-    int         winnr;
-{
-    win_T       *wp;
-
-#if defined(FEAT_WINDOWS)
-    for (wp = firstwin; wp != NULL; wp = wp->w_next)
-        if (--winnr == 0)
-            break;
-    return wp;
-#else
-    return curwin;
-#endif
-}
-#endif
-
-#if (defined(FEAT_WINDOWS) && (defined(FEAT_PYTHON) || defined(FEAT_PYTHON3)))
+#if (defined(FEAT_WINDOWS) && ((0)))
 /*
  * Find the tabpage for window "win".
  */
@@ -4399,11 +4270,9 @@ win_enter_ext(wp, undo_sync, curwin_invalid, trigger_enter_autocmds, trigger_lea
         apply_autocmds(EVENT_WINLEAVE, NULL, NULL, FALSE, curbuf);
         if (!win_valid(wp))
             return;
-#if defined(FEAT_EVAL)
         /* autocmds may abort script processing */
         if (aborting())
             return;
-#endif
     }
 #endif
 
@@ -4579,7 +4448,6 @@ win_alloc(after, hidden)
         return NULL;
     }
 
-#if defined(FEAT_EVAL)
     /* init w: variables */
     new_wp->w_vars = dict_alloc();
     if (new_wp->w_vars == NULL)
@@ -4589,7 +4457,6 @@ win_alloc(after, hidden)
         return NULL;
     }
     init_var_dict(new_wp->w_vars, &new_wp->w_winvar, VAR_SCOPE);
-#endif
 
 #if defined(FEAT_AUTOCMD)
     /* Don't execute autocommands while the window is not properly
@@ -4624,15 +4491,6 @@ win_alloc(after, hidden)
     new_wp->w_fraction = 0;
     new_wp->w_prev_fraction_row = -1;
 
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        gui_create_scrollbar(&new_wp->w_scrollbars[SBAR_LEFT],
-                SBAR_LEFT, new_wp);
-        gui_create_scrollbar(&new_wp->w_scrollbars[SBAR_RIGHT],
-                SBAR_RIGHT, new_wp);
-    }
-#endif
 #if defined(FEAT_FOLDING)
     foldInitWin(new_wp);
 #endif
@@ -4673,42 +4531,12 @@ win_free(wp, tp)
     block_autocmds();
 #endif
 
-#if defined(FEAT_LUA)
-    lua_window_free(wp);
-#endif
-
-#if defined(FEAT_MZSCHEME)
-    mzscheme_window_free(wp);
-#endif
-
-#if defined(FEAT_PERL)
-    perl_win_free(wp);
-#endif
-
-#if defined(FEAT_PYTHON)
-    python_window_free(wp);
-#endif
-
-#if defined(FEAT_PYTHON3)
-    python3_window_free(wp);
-#endif
-
-#if defined(FEAT_TCL)
-    tcl_window_free(wp);
-#endif
-
-#if defined(FEAT_RUBY)
-    ruby_window_free(wp);
-#endif
-
     clear_winopt(&wp->w_onebuf_opt);
     clear_winopt(&wp->w_allbuf_opt);
 
-#if defined(FEAT_EVAL)
     vars_clear(&wp->w_vars->dv_hashtab);        /* free all w: variables */
     hash_init(&wp->w_vars->dv_hashtab);
     unref_var_dict(wp->w_vars);
-#endif
 
     if (prevwin == wp)
         prevwin = NULL;
@@ -4736,14 +4564,6 @@ win_free(wp, tp)
 
 #if defined(FEAT_QUICKFIX)
     qf_free_all(wp);
-#endif
-
-#if defined(FEAT_GUI)
-    if (gui.in_use)
-    {
-        gui_mch_destroy_scrollbar(&wp->w_scrollbars[SBAR_LEFT]);
-        gui_mch_destroy_scrollbar(&wp->w_scrollbars[SBAR_RIGHT]);
-    }
 #endif
 
 #if defined(FEAT_SYN_HL)
@@ -6273,11 +6093,9 @@ file_name_in_line(line, col, options, count, rel_fname, file_lnum)
      */
     while (ptr > line)
     {
-#if defined(FEAT_MBYTE)
         if (has_mbyte && (len = (*mb_head_off)(line, ptr - 1)) > 0)
             ptr -= len + 1;
         else
-#endif
         if (vim_isfilec(ptr[-1])
                 || ((options & FNAME_HYP) && path_is_url(ptr - 1)))
             --ptr;
@@ -6296,11 +6114,9 @@ file_name_in_line(line, col, options, count, rel_fname, file_lnum)
         if (ptr[len] == '\\')
             /* Skip over the "\" in "\ ". */
             ++len;
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
             len += (*mb_ptr2len)(ptr + len);
         else
-#endif
             ++len;
     }
 
@@ -6332,7 +6148,7 @@ file_name_in_line(line, col, options, count, rel_fname, file_lnum)
     return find_file_name_in_path(ptr, len, options, count, rel_fname);
 }
 
-#if defined(FEAT_FIND_ID) && defined(FEAT_EVAL)
+#if defined(FEAT_FIND_ID)
 static char_u *eval_includeexpr __ARGS((char_u *ptr, int len));
 
     static char_u *
@@ -6364,7 +6180,7 @@ find_file_name_in_path(ptr, len, options, count, rel_fname)
 {
     char_u      *file_name;
     int         c;
-#if defined(FEAT_FIND_ID) && defined(FEAT_EVAL)
+#if defined(FEAT_FIND_ID)
     char_u      *tofree = NULL;
 
     if ((options & FNAME_INCL) && *curbuf->b_p_inex != NUL)
@@ -6383,7 +6199,7 @@ find_file_name_in_path(ptr, len, options, count, rel_fname)
         file_name = find_file_in_path(ptr, len, options & ~FNAME_MESS,
                                                              TRUE, rel_fname);
 
-#if defined(FEAT_FIND_ID) && defined(FEAT_EVAL)
+#if defined(FEAT_FIND_ID)
         /*
          * If the file could not be found in a normal way, try applying
          * 'includeexpr' (unless done already).
@@ -6420,7 +6236,7 @@ find_file_name_in_path(ptr, len, options, count, rel_fname)
     else
         file_name = vim_strnsave(ptr, len);
 
-#if defined(FEAT_FIND_ID) && defined(FEAT_EVAL)
+#if defined(FEAT_FIND_ID)
     vim_free(tofree);
 #endif
 
@@ -6496,9 +6312,6 @@ vim_FullName(fname, buf, len, force)
         /* something failed; use the file name (truncate when too long) */
         vim_strncpy(buf, fname, len - 1);
     }
-#if defined(MACOS_CLASSIC)
-    slash_adjust(buf);
-#endif
     return retval;
 }
 
@@ -6758,7 +6571,6 @@ restore_snapshot_rec(sn, fr)
 
 #endif
 
-#if defined(FEAT_EVAL) || defined(FEAT_PYTHON) || defined(FEAT_PYTHON3)
 /*
  * Set "win" to be the curwin and "tp" to be the current tab page.
  * restore_win() MUST be called to undo, also when FAIL is returned.
@@ -6876,28 +6688,6 @@ restore_buffer(save_curbuf)
         ++curbuf->b_nwindows;
     }
 }
-#endif
-
-#if (defined(FEAT_GUI) && defined(FEAT_VERTSPLIT))
-/*
- * Return TRUE if there is any vertically split window.
- */
-    int
-win_hasvertsplit()
-{
-    frame_T     *fr;
-
-    if (topframe->fr_layout == FR_ROW)
-        return TRUE;
-
-    if (topframe->fr_layout == FR_COL)
-        for (fr = topframe->fr_child; fr != NULL; fr = fr->fr_next)
-            if (fr->fr_layout == FR_ROW)
-                return TRUE;
-
-    return FALSE;
-}
-#endif
 
 #if defined(FEAT_SEARCH_EXTRA)
 /*
@@ -7190,40 +6980,6 @@ get_match(wp, id)
     while (cur != NULL && cur->id != id)
         cur = cur->next;
     return cur;
-}
-#endif
-
-#if defined(FEAT_PYTHON) || defined(FEAT_PYTHON3)
-    int
-get_win_number(win_T *wp, win_T *first_win)
-{
-    int         i = 1;
-    win_T       *w;
-
-    for (w = first_win; w != NULL && w != wp; w = W_NEXT(w))
-        ++i;
-
-    if (w == NULL)
-        return 0;
-    else
-        return i;
-}
-
-    int
-get_tab_number(tabpage_T *tp UNUSED)
-{
-    int         i = 1;
-#if defined(FEAT_WINDOWS)
-    tabpage_T   *t;
-
-    for (t = first_tabpage; t != NULL && t != tp; t = t->tp_next)
-        ++i;
-
-    if (t == NULL)
-        return 0;
-    else
-#endif
-        return i;
 }
 #endif
 

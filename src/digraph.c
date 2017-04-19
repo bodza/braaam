@@ -6,11 +6,7 @@
 
 #if defined(FEAT_DIGRAPHS)
 
-#if defined(FEAT_MBYTE)
 typedef int result_T;
-#else
-typedef char_u result_T;
-#endif
 
 typedef struct digraph
 {
@@ -210,7 +206,6 @@ static digr_T digraphdefault[] =
         {'t', 'h', 0xfe},
         {'y', ':', 0xff},
 
-#if defined(FEAT_MBYTE)
 #define USE_UNICODE_DIGRAPHS
 
         {'A', '-', 0x0100},
@@ -1345,7 +1340,6 @@ static digr_T digraphdefault[] =
         {'f', 'l', 0xfb02},
         {'f', 't', 0xfb05},
         {'s', 't', 0xfb06},
-#endif
 
         /* Vim 5.x compatible digraphs that don't conflict with the above */
         {'~', '!', 161},        /* ¡ */
@@ -1453,9 +1447,7 @@ get_digraph(cmdline)
         if (cmdline)
         {
             if (char2cells(c) == 1
-#if defined(FEAT_CRYPT) || defined(FEAT_EVAL)
                     && cmdline_star == 0
-#endif
                     )
                 putcmdline(c, TRUE);
         }
@@ -1522,7 +1514,6 @@ getexactdigraph(char1, char2, meta_char)
             ++dp;
         }
     }
-#if defined(FEAT_MBYTE)
 #if defined(USE_UNICODE_DIGRAPHS)
     if (retval != 0 && !enc_utf8)
     {
@@ -1552,7 +1543,6 @@ getexactdigraph(char1, char2, meta_char)
     /* Ignore multi-byte characters when not in multi-byte mode. */
     if (!has_mbyte && retval > 0xff)
         retval = 0;
-#endif
 
     if (retval == 0)            /* digraph deleted or not found */
     {
@@ -1657,7 +1647,7 @@ listdigraphs()
     dp = digraphdefault;
     for (i = 0; dp->char1 != NUL && !got_int; ++i)
     {
-#if defined(USE_UNICODE_DIGRAPHS) && defined(FEAT_MBYTE)
+#if defined(USE_UNICODE_DIGRAPHS)
         digr_T tmp;
 
         /* May need to convert the result to 'encoding'. */
@@ -1670,9 +1660,7 @@ listdigraphs()
 #else
 
         if (getexactdigraph(dp->char1, dp->char2, FALSE) == dp->result
-#if defined(FEAT_MBYTE)
                 && (has_mbyte || dp->result <= 255)
-#endif
                 )
             printdigraph(dp);
 #endif
@@ -1701,9 +1689,7 @@ printdigraph(dp)
     int         list_width;
 
     if ((dy_flags & DY_UHEX)
-#if defined(FEAT_MBYTE)
             || has_mbyte
-#endif
             )
         list_width = 13;
     else
@@ -1721,7 +1707,6 @@ printdigraph(dp)
         *p++ = dp->char1;
         *p++ = dp->char2;
         *p++ = ' ';
-#if defined(FEAT_MBYTE)
         if (has_mbyte)
         {
             /* add a space to draw a composing char on */
@@ -1730,7 +1715,6 @@ printdigraph(dp)
             p += (*mb_char2bytes)(dp->result, p);
         }
         else
-#endif
             *p++ = (char_u)dp->result;
         if (char2cells(dp->result) == 1)
             *p++ = ' ';
@@ -1780,20 +1764,16 @@ keymap_init()
         /* Source the keymap file.  It will contain a ":loadkeymap" command
          * which will call ex_loadkeymap() below. */
         buflen = STRLEN(curbuf->b_p_keymap)
-#if defined(FEAT_MBYTE)
                                            + STRLEN(p_enc)
-#endif
                                                        + 14;
         buf = alloc((unsigned)buflen);
         if (buf == NULL)
             return e_outofmem;
 
-#if defined(FEAT_MBYTE)
         /* try finding "keymap/'keymap'_'encoding'.vim"  in 'runtimepath' */
         vim_snprintf((char *)buf, buflen, "keymap/%s_%s.vim",
                                                    curbuf->b_p_keymap, p_enc);
         if (source_runtime(buf, FALSE) == FAIL)
-#endif
         {
             /* try finding "keymap/'keymap'.vim" in 'runtimepath'  */
             vim_snprintf((char *)buf, buflen, "keymap/%s.vim",
