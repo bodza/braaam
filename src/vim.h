@@ -35,7 +35,7 @@
 /* ============ the header file puzzle (ca. 50-100 pieces) ========= */
 
 #ifdef HAVE_CONFIG_H	/* GNU autoconf (or something else) was here */
-# include "auto/config.h"
+# include "config.h"
 # define HAVE_PATHDEF
 
 /*
@@ -44,7 +44,7 @@
  * test program.  Other items from configure may also be wrong then!
  */
 # if (VIM_SIZEOF_INT == 0)
-    Error: configure did not run properly.  Check auto/config.log.
+    Error: configure did not run properly.  Check config.log.
 # endif
 
 /*
@@ -316,7 +316,7 @@
  */
 #if !defined(__cplusplus) && defined(UNIX) \
   && !defined(MACOS_X) /* MACOS_X doesn't yet support osdef.h */
-# include "auto/osdef.h"	/* bring missing declarations in */
+# include "osdef.h"	/* bring missing declarations in */
 #endif
 
 #ifdef __EMX__
