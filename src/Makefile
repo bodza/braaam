@@ -12,7 +12,7 @@ VIMMINOR = 4
 SHELL = /bin/sh
 
 .SUFFIXES:
-.SUFFIXES: .c .o .pro
+.SUFFIXES: .c .o
 
 ALL_CFLAGS = $(CFLAGS)
 ALL_LIBS = $(LIBS)
@@ -22,7 +22,7 @@ BASIC_SRC = buffer.c charset.c digraph.c \
 	fileio.c getchar.c hashtab.c \
 	main.c mark.c memfile.c memline.c message.c misc1.c misc2.c \
 	move.c mbyte.c normal.c ops.c option.c os_unix.c \
-	regexp.c screen.c search.c sha256.c syntax.c tag.c \
+	regexp.c screen.c search.c sha256.c syntax.c \
 	term.c ui.c undo.c version.c window.c
 
 SRC = $(BASIC_SRC)
@@ -57,7 +57,6 @@ OBJ_COMMON = \
 	objects/search.o \
 	objects/sha256.o \
 	objects/syntax.o \
-	objects/tag.o \
 	objects/term.o \
 	objects/ui.o \
 	objects/undo.o \
@@ -168,7 +167,7 @@ objects/option.o: option.c
 objects/os_unix.o: os_unix.c
 	$(CCC) -o $@ os_unix.c
 
-objects/regexp.o: regexp.c regexp_nfa.c
+objects/regexp.o: regexp.c
 	$(CCC) -o $@ regexp.c
 
 objects/screen.o: screen.c
@@ -182,9 +181,6 @@ objects/sha256.o: sha256.c
 
 objects/syntax.o: syntax.c
 	$(CCC) -o $@ syntax.c
-
-objects/tag.o: tag.c
-	$(CCC) -o $@ tag.c
 
 objects/term.o: term.c
 	$(CCC) -o $@ term.c
@@ -226,12 +222,11 @@ objects/normal.o: normal.c vim.h ex_cmds.h proto.h
 objects/ops.o: ops.c vim.h ex_cmds.h proto.h
 objects/option.o: option.c vim.h ex_cmds.h proto.h
 objects/os_unix.o: os_unix.c vim.h ex_cmds.h proto.h
-objects/regexp.o: regexp.c vim.h ex_cmds.h proto.h regexp_nfa.c
+objects/regexp.o: regexp.c vim.h ex_cmds.h proto.h
 objects/screen.o: screen.c vim.h ex_cmds.h proto.h
 objects/search.o: search.c vim.h ex_cmds.h proto.h
 objects/sha256.o: sha256.c vim.h ex_cmds.h proto.h
 objects/syntax.o: syntax.c vim.h ex_cmds.h proto.h
-objects/tag.o: tag.c vim.h ex_cmds.h proto.h
 objects/term.o: term.c vim.h ex_cmds.h proto.h
 objects/ui.o: ui.c vim.h ex_cmds.h proto.h
 objects/undo.o: undo.c vim.h ex_cmds.h proto.h

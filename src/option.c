@@ -43,86 +43,85 @@
  * Definition of the PV_ values for buffer-local options.
  * The BV_ values are defined in option.h.
  */
-#define PV_AI           OPT_BUF(BV_AI)
-#define PV_AR           OPT_BOTH(OPT_BUF(BV_AR))
-#define PV_BKC          OPT_BOTH(OPT_BUF(BV_BKC))
-#define PV_BIN          OPT_BUF(BV_BIN)
-#define PV_BL           OPT_BUF(BV_BL)
-#define PV_BOMB        OPT_BUF(BV_BOMB)
-#define PV_CI           OPT_BUF(BV_CI)
-#define PV_CIN         OPT_BUF(BV_CIN)
-#define PV_CINK        OPT_BUF(BV_CINK)
-#define PV_CINO        OPT_BUF(BV_CINO)
-#define PV_CINW        OPT_BUF(BV_CINW)
-#define PV_CM           OPT_BOTH(OPT_BUF(BV_CM))
-#define PV_COM         OPT_BUF(BV_COM)
-#define PV_EOL          OPT_BUF(BV_EOL)
-#define PV_EP           OPT_BOTH(OPT_BUF(BV_EP))
-#define PV_ET           OPT_BUF(BV_ET)
-#define PV_FENC        OPT_BUF(BV_FENC)
-#define PV_FEX         OPT_BUF(BV_FEX)
-#define PV_FF           OPT_BUF(BV_FF)
-#define PV_FLP          OPT_BUF(BV_FLP)
-#define PV_FO           OPT_BUF(BV_FO)
-#define PV_FT          OPT_BUF(BV_FT)
-#define PV_IMI          OPT_BUF(BV_IMI)
-#define PV_IMS          OPT_BUF(BV_IMS)
-#define PV_INDE        OPT_BUF(BV_INDE)
-#define PV_INDK        OPT_BUF(BV_INDK)
-#define PV_INF          OPT_BUF(BV_INF)
-#define PV_ISK          OPT_BUF(BV_ISK)
-#define PV_KP           OPT_BOTH(OPT_BUF(BV_KP))
-#define PV_LISP        OPT_BUF(BV_LISP)
-#define PV_LW          OPT_BOTH(OPT_BUF(BV_LW))
-#define PV_MA           OPT_BUF(BV_MA)
-#define PV_ML           OPT_BUF(BV_ML)
-#define PV_MOD          OPT_BUF(BV_MOD)
-#define PV_MPS          OPT_BUF(BV_MPS)
-#define PV_NF           OPT_BUF(BV_NF)
-#define PV_PATH         OPT_BOTH(OPT_BUF(BV_PATH))
-#define PV_PI           OPT_BUF(BV_PI)
-#define PV_QE          OPT_BUF(BV_QE)
-#define PV_RO           OPT_BUF(BV_RO)
-#define PV_SI          OPT_BUF(BV_SI)
-#define PV_SN          OPT_BUF(BV_SN)
-#define PV_SMC         OPT_BUF(BV_SMC)
-#define PV_SYN         OPT_BUF(BV_SYN)
-#define PV_STS          OPT_BUF(BV_STS)
-#define PV_SW           OPT_BUF(BV_SW)
-#define PV_SWF          OPT_BUF(BV_SWF)
-#define PV_TAGS         OPT_BOTH(OPT_BUF(BV_TAGS))
-#define PV_TS           OPT_BUF(BV_TS)
-#define PV_TW           OPT_BUF(BV_TW)
-#define PV_TX           OPT_BUF(BV_TX)
-#define PV_UDF         OPT_BUF(BV_UDF)
-#define PV_WM           OPT_BUF(BV_WM)
+#define PV_AI       OPT_BUF(BV_AI)
+#define PV_AR       OPT_BOTH(OPT_BUF(BV_AR))
+#define PV_BKC      OPT_BOTH(OPT_BUF(BV_BKC))
+#define PV_BIN      OPT_BUF(BV_BIN)
+#define PV_BL       OPT_BUF(BV_BL)
+#define PV_BOMB     OPT_BUF(BV_BOMB)
+#define PV_CI       OPT_BUF(BV_CI)
+#define PV_CIN      OPT_BUF(BV_CIN)
+#define PV_CINK     OPT_BUF(BV_CINK)
+#define PV_CINO     OPT_BUF(BV_CINO)
+#define PV_CINW     OPT_BUF(BV_CINW)
+#define PV_CM       OPT_BOTH(OPT_BUF(BV_CM))
+#define PV_COM      OPT_BUF(BV_COM)
+#define PV_EOL      OPT_BUF(BV_EOL)
+#define PV_EP       OPT_BOTH(OPT_BUF(BV_EP))
+#define PV_ET       OPT_BUF(BV_ET)
+#define PV_FENC     OPT_BUF(BV_FENC)
+#define PV_FEX      OPT_BUF(BV_FEX)
+#define PV_FF       OPT_BUF(BV_FF)
+#define PV_FLP      OPT_BUF(BV_FLP)
+#define PV_FO       OPT_BUF(BV_FO)
+#define PV_FT       OPT_BUF(BV_FT)
+#define PV_IMI      OPT_BUF(BV_IMI)
+#define PV_IMS      OPT_BUF(BV_IMS)
+#define PV_INDE     OPT_BUF(BV_INDE)
+#define PV_INDK     OPT_BUF(BV_INDK)
+#define PV_INF      OPT_BUF(BV_INF)
+#define PV_ISK      OPT_BUF(BV_ISK)
+#define PV_KP       OPT_BOTH(OPT_BUF(BV_KP))
+#define PV_LISP     OPT_BUF(BV_LISP)
+#define PV_LW       OPT_BOTH(OPT_BUF(BV_LW))
+#define PV_MA       OPT_BUF(BV_MA)
+#define PV_ML       OPT_BUF(BV_ML)
+#define PV_MOD      OPT_BUF(BV_MOD)
+#define PV_MPS      OPT_BUF(BV_MPS)
+#define PV_NF       OPT_BUF(BV_NF)
+#define PV_PATH     OPT_BOTH(OPT_BUF(BV_PATH))
+#define PV_PI       OPT_BUF(BV_PI)
+#define PV_QE       OPT_BUF(BV_QE)
+#define PV_RO       OPT_BUF(BV_RO)
+#define PV_SI       OPT_BUF(BV_SI)
+#define PV_SN       OPT_BUF(BV_SN)
+#define PV_SMC      OPT_BUF(BV_SMC)
+#define PV_SYN      OPT_BUF(BV_SYN)
+#define PV_STS      OPT_BUF(BV_STS)
+#define PV_SW       OPT_BUF(BV_SW)
+#define PV_SWF      OPT_BUF(BV_SWF)
+#define PV_TS       OPT_BUF(BV_TS)
+#define PV_TW       OPT_BUF(BV_TW)
+#define PV_TX       OPT_BUF(BV_TX)
+#define PV_UDF      OPT_BUF(BV_UDF)
+#define PV_WM       OPT_BUF(BV_WM)
 
 /*
  * Definition of the PV_ values for window-local options.
  * The WV_ values are defined in option.h.
  */
-#define PV_LIST         OPT_WIN(WV_LIST)
-#define PV_BRI         OPT_WIN(WV_BRI)
-#define PV_BRIOPT      OPT_WIN(WV_BRIOPT)
-#define PV_LBR         OPT_WIN(WV_LBR)
-#define PV_NU           OPT_WIN(WV_NU)
-#define PV_RNU          OPT_WIN(WV_RNU)
-#define PV_NUW         OPT_WIN(WV_NUW)
-#define PV_RL          OPT_WIN(WV_RL)
-#define PV_RLC         OPT_WIN(WV_RLC)
-#define PV_SCBIND      OPT_WIN(WV_SCBIND)
-#define PV_SCROLL       OPT_WIN(WV_SCROLL)
-#define PV_CUC         OPT_WIN(WV_CUC)
-#define PV_CUL         OPT_WIN(WV_CUL)
-#define PV_CC          OPT_WIN(WV_CC)
-#define PV_STL         OPT_BOTH(OPT_WIN(WV_STL))
-#define PV_UL           OPT_BOTH(OPT_BUF(BV_UL))
-#define PV_WFH         OPT_WIN(WV_WFH)
-#define PV_WFW         OPT_WIN(WV_WFW)
-#define PV_WRAP         OPT_WIN(WV_WRAP)
-#define PV_CRBIND      OPT_WIN(WV_CRBIND)
-#define PV_COCU        OPT_WIN(WV_COCU)
-#define PV_COLE        OPT_WIN(WV_COLE)
+#define PV_LIST     OPT_WIN(WV_LIST)
+#define PV_BRI      OPT_WIN(WV_BRI)
+#define PV_BRIOPT   OPT_WIN(WV_BRIOPT)
+#define PV_LBR      OPT_WIN(WV_LBR)
+#define PV_NU       OPT_WIN(WV_NU)
+#define PV_RNU      OPT_WIN(WV_RNU)
+#define PV_NUW      OPT_WIN(WV_NUW)
+#define PV_RL       OPT_WIN(WV_RL)
+#define PV_RLC      OPT_WIN(WV_RLC)
+#define PV_SCBIND   OPT_WIN(WV_SCBIND)
+#define PV_SCROLL   OPT_WIN(WV_SCROLL)
+#define PV_CUC      OPT_WIN(WV_CUC)
+#define PV_CUL      OPT_WIN(WV_CUL)
+#define PV_CC       OPT_WIN(WV_CC)
+#define PV_STL      OPT_BOTH(OPT_WIN(WV_STL))
+#define PV_UL       OPT_BOTH(OPT_BUF(BV_UL))
+#define PV_WFH      OPT_WIN(WV_WFH)
+#define PV_WFW      OPT_WIN(WV_WFW)
+#define PV_WRAP     OPT_WIN(WV_WRAP)
+#define PV_CRBIND   OPT_WIN(WV_CRBIND)
+#define PV_COCU     OPT_WIN(WV_COCU)
+#define PV_COLE     OPT_WIN(WV_COLE)
 
 /* WV_ and BV_ values get typecasted to this for the "indir" field */
 typedef enum
@@ -804,9 +803,6 @@ static struct vimoption
     {"showcmd",     "sc",   P_BOOL|P_VIM,
                             (char_u *)&p_sc, PV_NONE,
                             {(char_u *)FALSE, (char_u *)FALSE}, 0},
-    {"showfulltag", "sft",  P_BOOL|P_VI_DEF,
-                            (char_u *)&p_sft, PV_NONE,
-                            {(char_u *)FALSE, (char_u *)0L}, 0},
     {"showmatch",   "sm",   P_BOOL|P_VI_DEF,
                             (char_u *)&p_sm, PV_NONE,
                             {(char_u *)FALSE, (char_u *)0L}, 0},
@@ -879,21 +875,6 @@ static struct vimoption
     {"tabstop",     "ts",   P_NUM|P_VI_DEF|P_RBUF,
                             (char_u *)&p_ts, PV_TS,
                             {(char_u *)8L, (char_u *)0L}, 0},
-    {"tagbsearch",  "tbs",   P_BOOL|P_VI_DEF,
-                            (char_u *)&p_tbs, PV_NONE,
-                            {(char_u *)TRUE, (char_u *)0L}, 0},
-    {"taglength",   "tl",   P_NUM|P_VI_DEF,
-                            (char_u *)&p_tl, PV_NONE,
-                            {(char_u *)0L, (char_u *)0L}, 0},
-    {"tagrelative", "tr",   P_BOOL|P_VIM,
-                            (char_u *)&p_tr, PV_NONE,
-                            {(char_u *)FALSE, (char_u *)TRUE}, 0},
-    {"tags",        "tag",  P_STRING|P_EXPAND|P_VI_DEF|P_COMMA|P_NODUP,
-                            (char_u *)&p_tags, PV_TAGS,
-                            {(char_u *)"./tags,tags", (char_u *)0L}, 0},
-    {"tagstack",    "tgst", P_BOOL|P_VI_DEF,
-                            (char_u *)&p_tgst, PV_NONE,
-                            {(char_u *)TRUE, (char_u *)0L}, 0},
     {"term",        NULL,   P_STRING|P_EXPAND|P_NODEFAULT|P_NO_MKRC|P_VI_DEF|P_RALL,
                             (char_u *)&T_NAME, PV_NONE,
                             {(char_u *)"", (char_u *)0L}, 0},
@@ -1005,9 +986,6 @@ static struct vimoption
     {"wildmode",    "wim",  P_STRING|P_VI_DEF|P_COMMA|P_NODUP,
                             (char_u *)&p_wim, PV_NONE,
                             {(char_u *)"full", (char_u *)0L}, 0},
-    {"wildoptions", "wop",  P_STRING|P_VI_DEF,
-                            (char_u *)&p_wop, PV_NONE,
-                            {(char_u *)"", (char_u *)0L}, 0},
     {"window",      "wi",   P_NUM|P_VI_DEF,
                             (char_u *)&p_window, PV_NONE,
                             {(char_u *)0L, (char_u *)0L}, 0},
@@ -1126,7 +1104,6 @@ static char *(p_ambw_values[]) = {"single", "double", NULL};
 static char *(p_bg_values[]) = {"light", "dark", NULL};
 static char *(p_nf_values[]) = {"octal", "hex", "alpha", NULL};
 static char *(p_ff_values[]) = {FF_UNIX, FF_DOS, FF_MAC, NULL};
-static char *(p_wop_values[]) = {"tagfile", NULL};
 static char *(p_mousem_values[]) = {"extend", "popup", "popup_setpos", "mac", NULL};
 static char *(p_sel_values[]) = {"inclusive", "exclusive", "old", NULL};
 static char *(p_slm_values[]) = {"mouse", "key", "cmd", NULL};
@@ -2622,10 +2599,8 @@ option_expand(opt_idx, val)
 
     /*
      * Expanding this with NameBuff, expand_env() must not be passed IObuff.
-     * Escape spaces when expanding 'tags', they are used to separate file names.
-     * For 'spellsuggest' expand after "file:".
      */
-    expand_env_esc(val, NameBuff, MAXPATHL, (char_u **)options[opt_idx].var == &p_tags, FALSE, NULL);
+    expand_env_esc(val, NameBuff, MAXPATHL, FALSE, FALSE, NULL);
     if (STRCMP(NameBuff, val) == 0)   /* they are the same */
         return NULL;
 
@@ -2692,7 +2667,6 @@ check_buf_options(buf)
     check_string_option(&buf->b_p_cinw);
     check_string_option(&buf->b_p_ep);
     check_string_option(&buf->b_p_path);
-    check_string_option(&buf->b_p_tags);
     check_string_option(&buf->b_p_lw);
     check_string_option(&buf->b_p_bkc);
 }
@@ -3091,13 +3065,6 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
     else if (varp == &p_wim)
     {
         if (check_opt_wim() == FAIL)
-            errmsg = e_invarg;
-    }
-
-    /* 'wildoptions' */
-    else if (varp == &p_wop)
-    {
-        if (check_opt_strings(p_wop, p_wop_values, TRUE) != OK)
             errmsg = e_invarg;
     }
 
@@ -5499,9 +5466,6 @@ unset_global_local_option(name, from)
             clear_string_option(&buf->b_p_bkc);
             buf->b_bkc_flags = 0;
             break;
-        case PV_TAGS:
-            clear_string_option(&buf->b_p_tags);
-            break;
         case PV_STL:
             clear_string_option(&((win_T *)from)->w_p_stl);
             break;
@@ -5536,7 +5500,6 @@ get_varp_scope(p, opt_flags)
             case PV_KP:   return (char_u *)&(curbuf->b_p_kp);
             case PV_PATH: return (char_u *)&(curbuf->b_p_path);
             case PV_AR:   return (char_u *)&(curbuf->b_p_ar);
-            case PV_TAGS: return (char_u *)&(curbuf->b_p_tags);
             case PV_STL:  return (char_u *)&(curwin->w_p_stl);
             case PV_UL:   return (char_u *)&(curbuf->b_p_ul);
             case PV_LW:   return (char_u *)&(curbuf->b_p_lw);
@@ -5571,8 +5534,6 @@ get_varp(p)
                                     ? (char_u *)&(curbuf->b_p_path) : p->var;
         case PV_AR:     return curbuf->b_p_ar >= 0
                                     ? (char_u *)&(curbuf->b_p_ar) : p->var;
-        case PV_TAGS:   return *curbuf->b_p_tags != NUL
-                                    ? (char_u *)&(curbuf->b_p_tags) : p->var;
         case PV_BKC:    return *curbuf->b_p_bkc != NUL
                                     ? (char_u *)&(curbuf->b_p_bkc) : p->var;
         case PV_STL:    return *curwin->w_p_stl != NUL
@@ -5880,7 +5841,6 @@ buf_copy_options(buf, flags)
             buf->b_p_ep = empty_option;
             buf->b_p_kp = empty_option;
             buf->b_p_path = empty_option;
-            buf->b_p_tags = empty_option;
             buf->b_p_qe = vim_strsave(p_qe);
             buf->b_p_udf = p_udf;
             buf->b_p_lw = empty_option;
@@ -6105,11 +6065,7 @@ set_context_in_set_cmd(xp, arg, opt_flags)
         else
         {
             xp->xp_context = EXPAND_FILES;
-            /* for 'tags' need three backslashes for a space */
-            if (p == (char_u *)&p_tags)
-                xp->xp_backslash = XP_BS_THREE;
-            else
-                xp->xp_backslash = XP_BS_ONE;
+            xp->xp_backslash = XP_BS_ONE;
         }
     }
 

@@ -459,8 +459,6 @@ static void f_feedkeys(typval_T *argvars, typval_T *rettv);
 static void f_filereadable(typval_T *argvars, typval_T *rettv);
 static void f_filewritable(typval_T *argvars, typval_T *rettv);
 static void f_filter(typval_T *argvars, typval_T *rettv);
-static void f_finddir(typval_T *argvars, typval_T *rettv);
-static void f_findfile(typval_T *argvars, typval_T *rettv);
 static void f_float2nr(typval_T *argvars, typval_T *rettv);
 static void f_floor(typval_T *argvars, typval_T *rettv);
 static void f_fmod(typval_T *argvars, typval_T *rettv);
@@ -637,8 +635,6 @@ static void f_systemlist(typval_T *argvars, typval_T *rettv);
 static void f_tabpagebuflist(typval_T *argvars, typval_T *rettv);
 static void f_tabpagenr(typval_T *argvars, typval_T *rettv);
 static void f_tabpagewinnr(typval_T *argvars, typval_T *rettv);
-static void f_taglist(typval_T *argvars, typval_T *rettv);
-static void f_tagfiles(typval_T *argvars, typval_T *rettv);
 static void f_tempname(typval_T *argvars, typval_T *rettv);
 static void f_test(typval_T *argvars, typval_T *rettv);
 static void f_tan(typval_T *argvars, typval_T *rettv);
@@ -7487,8 +7483,6 @@ static struct fst
     {"filereadable",    1, 1, f_filereadable},
     {"filewritable",    1, 1, f_filewritable},
     {"filter",          2, 2, f_filter},
-    {"finddir",         1, 3, f_finddir},
-    {"findfile",        1, 3, f_findfile},
     {"float2nr",        1, 1, f_float2nr},
     {"floor",           1, 1, f_floor},
     {"fmod",            2, 2, f_fmod},
@@ -7668,8 +7662,6 @@ static struct fst
     {"tabpagebuflist",  0, 1, f_tabpagebuflist},
     {"tabpagenr",       0, 1, f_tabpagenr},
     {"tabpagewinnr",    1, 2, f_tabpagewinnr},
-    {"tagfiles",        0, 0, f_tagfiles},
-    {"taglist",         1, 1, f_taglist},
     {"tan",             1, 1, f_tan},
     {"tanh",            1, 1, f_tanh},
     {"tempname",        0, 0, f_tempname},
@@ -9743,18 +9735,6 @@ f_filewritable(argvars, rettv)
     rettv->vval.v_number = filewritable(get_tv_string(&argvars[0]));
 }
 
-static void findfilendir(typval_T *argvars, typval_T *rettv, int find_what);
-
-    static void
-findfilendir(argvars, rettv, find_what)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-    int         find_what UNUSED;
-{
-    rettv->vval.v_string = NULL;
-    rettv->v_type = VAR_STRING;
-}
-
 static void filter_map(typval_T *argvars, typval_T *rettv, int map);
 static int filter_map_one(typval_T *tv, char_u *expr, int map, int *remp);
 
@@ -9926,28 +9906,6 @@ f_filter(argvars, rettv)
     typval_T    *rettv;
 {
     filter_map(argvars, rettv, FALSE);
-}
-
-/*
- * "finddir({fname}[, {path}[, {count}]])" function
- */
-    static void
-f_finddir(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    findfilendir(argvars, rettv, FINDFILE_DIR);
-}
-
-/*
- * "findfile({fname}[, {path}[, {count}]])" function
- */
-    static void
-f_findfile(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    findfilendir(argvars, rettv, FINDFILE_FILE);
 }
 
 /*
@@ -11332,7 +11290,6 @@ f_has(argvars, rettv)
         "smartindent",
         "statusline",
         "syntax",
-        "tag_binary",
         "terminfo",
 #if defined(FEAT_TERMRESPONSE)
         "termresponse",
@@ -16512,52 +16469,6 @@ f_tabpagewinnr(argvars, rettv)
 }
 
 /*
- * "tagfiles()" function
- */
-    static void
-f_tagfiles(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    char_u      *fname;
-    tagname_T   tn;
-    int         first;
-
-    if (rettv_list_alloc(rettv) == FAIL)
-        return;
-    fname = alloc(MAXPATHL);
-    if (fname == NULL)
-        return;
-
-    for (first = TRUE; ; first = FALSE)
-        if (get_tagfname(&tn, first, fname) == FAIL
-                || list_append_string(rettv->vval.v_list, fname, -1) == FAIL)
-            break;
-    tagname_free(&tn);
-    vim_free(fname);
-}
-
-/*
- * "taglist()" function
- */
-    static void
-f_taglist(argvars, rettv)
-    typval_T  *argvars;
-    typval_T  *rettv;
-{
-    char_u  *tag_pattern;
-
-    tag_pattern = get_tv_string(&argvars[0]);
-
-    rettv->vval.v_number = FALSE;
-    if (*tag_pattern == NUL)
-        return;
-
-    if (rettv_list_alloc(rettv) == OK)
-        (void)get_tags(rettv->vval.v_list, tag_pattern);
-}
-
-/*
  * "tempname()" function
  */
     static void
@@ -21663,4 +21574,185 @@ do_string_sub(str, pat, sub, flags)
         free_string_option(save_cpo);
 
     return ret;
+}
+
+/*
+ * Converts a file name into a canonical form. It simplifies a file name into
+ * its simplest form by stripping out unneeded components, if any.  The
+ * resulting file name is simplified in place and will either be the same
+ * length as that supplied, or shorter.
+ */
+    void
+simplify_filename(filename)
+    char_u      *filename;
+{
+    int         components = 0;
+    char_u      *p, *tail, *start;
+    int         stripping_disabled = FALSE;
+    int         relative = TRUE;
+
+    p = filename;
+
+    if (vim_ispathsep(*p))
+    {
+        relative = FALSE;
+        do
+            ++p;
+        while (vim_ispathsep(*p));
+    }
+    start = p;      /* remember start after "c:/" or "/" or "///" */
+
+    do
+    {
+        /* At this point "p" is pointing to the char following a single "/"
+         * or "p" is at the "start" of the (absolute or relative) path name. */
+        if (vim_ispathsep(*p))
+            STRMOVE(p, p + 1);          /* remove duplicate "/" */
+        else if (p[0] == '.' && (vim_ispathsep(p[1]) || p[1] == NUL))
+        {
+            if (p == start && relative)
+                p += 1 + (p[1] != NUL); /* keep single "." or leading "./" */
+            else
+            {
+                /* Strip "./" or ".///".  If we are at the end of the file name
+                 * and there is no trailing path separator, either strip "/." if
+                 * we are after "start", or strip "." if we are at the beginning
+                 * of an absolute path name . */
+                tail = p + 1;
+                if (p[1] != NUL)
+                    while (vim_ispathsep(*tail))
+                        mb_ptr_adv(tail);
+                else if (p > start)
+                    --p;                /* strip preceding path separator */
+                STRMOVE(p, tail);
+            }
+        }
+        else if (p[0] == '.' && p[1] == '.' && (vim_ispathsep(p[2]) || p[2] == NUL))
+        {
+            /* Skip to after ".." or "../" or "..///". */
+            tail = p + 2;
+            while (vim_ispathsep(*tail))
+                mb_ptr_adv(tail);
+
+            if (components > 0)         /* strip one preceding component */
+            {
+                int             do_strip = FALSE;
+                char_u          saved_char;
+                struct stat     st;
+
+                /* Don't strip for an erroneous file name. */
+                if (!stripping_disabled)
+                {
+                    /* If the preceding component does not exist in the file
+                     * system, we strip it.  On Unix, we don't accept a symbolic
+                     * link that refers to a non-existent file. */
+                    saved_char = p[-1];
+                    p[-1] = NUL;
+                    if (mch_lstat((char *)filename, &st) < 0)
+                        do_strip = TRUE;
+                    p[-1] = saved_char;
+
+                    --p;
+                    /* Skip back to after previous '/'. */
+                    while (p > start && !after_pathsep(start, p))
+                        mb_ptr_back(start, p);
+
+                    if (!do_strip)
+                    {
+                        /* If the component exists in the file system, check
+                         * that stripping it won't change the meaning of the
+                         * file name.  First get information about the
+                         * unstripped file name.  This may fail if the component
+                         * to strip is not a searchable directory (but a regular
+                         * file, for instance), since the trailing "/.." cannot
+                         * be applied then.  We don't strip it then since we
+                         * don't want to replace an erroneous file name by
+                         * a valid one, and we disable stripping of later
+                         * components. */
+                        saved_char = *tail;
+                        *tail = NUL;
+                        if (mch_stat((char *)filename, &st) >= 0)
+                            do_strip = TRUE;
+                        else
+                            stripping_disabled = TRUE;
+                        *tail = saved_char;
+                        if (do_strip)
+                        {
+                            struct stat new_st;
+
+                            /* On Unix, the check for the unstripped file name
+                             * above works also for a symbolic link pointing to
+                             * a searchable directory.  But then the parent of
+                             * the directory pointed to by the link must be the
+                             * same as the stripped file name.  (The latter
+                             * exists in the file system since it is the
+                             * component's parent directory.) */
+                            if (p == start && relative)
+                                (void)mch_stat(".", &new_st);
+                            else
+                            {
+                                saved_char = *p;
+                                *p = NUL;
+                                (void)mch_stat((char *)filename, &new_st);
+                                *p = saved_char;
+                            }
+
+                            if (new_st.st_ino != st.st_ino || new_st.st_dev != st.st_dev)
+                            {
+                                do_strip = FALSE;
+                                /* We don't disable stripping of later
+                                 * components since the unstripped path name is still valid. */
+                            }
+                        }
+                    }
+                }
+
+                if (!do_strip)
+                {
+                    /* Skip the ".." or "../" and reset the counter for the
+                     * components that might be stripped later on. */
+                    p = tail;
+                    components = 0;
+                }
+                else
+                {
+                    /* Strip previous component.  If the result would get empty
+                     * and there is no trailing path separator, leave a single
+                     * "." instead.  If we are at the end of the file name and
+                     * there is no trailing path separator and a preceding
+                     * component is left after stripping, strip its trailing
+                     * path separator as well. */
+                    if (p == start && relative && tail[-1] == '.')
+                    {
+                        *p++ = '.';
+                        *p = NUL;
+                    }
+                    else
+                    {
+                        if (p > start && tail[-1] == '.')
+                            --p;
+                        STRMOVE(p, tail);       /* strip previous component */
+                    }
+
+                    --components;
+                }
+            }
+            else if (p == start && !relative)   /* leading "/.." or "/../" */
+                STRMOVE(p, tail);               /* strip ".." or "../" */
+            else
+            {
+                if (p == start + 2 && p[-2] == '.')     /* leading "./../" */
+                {
+                    STRMOVE(p - 2, p);                  /* strip leading "./" */
+                    tail -= 2;
+                }
+                p = tail;               /* skip to char after ".." or "../" */
+            }
+        }
+        else
+        {
+            ++components;               /* simple path component */
+            p = getnextcomp(p);
+        }
+    } while (*p != NUL);
 }

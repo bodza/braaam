@@ -25,7 +25,6 @@ typedef struct
     char_u      *pre_commands[MAX_ARG_CMDS]; /* commands from --cmd argument */
 
     int         edit_type;              /* type of editing to do */
-    char_u      *tagname;               /* tag from -t argument */
 
     int         want_full_screen;
     int         stdout_isatty;          /* is stdout a terminal? */
@@ -40,8 +39,6 @@ typedef struct
 #define EDIT_NONE   0       /* no edit type yet */
 #define EDIT_FILE   1       /* file name argument[s] given, use argument list */
 #define EDIT_STDIN  2       /* read file from stdin */
-#define EDIT_TAG    3       /* tag name argument given, use tagname */
-#define EDIT_QF     4       /* start in quickfix mode */
 
 static int file_owned(char *fname);
 static void mainerr(int, char_u *);
@@ -397,23 +394,6 @@ main
      * Shorten any of the filenames, but only when absolute.
      */
     shorten_fnames(FALSE);
-
-    /*
-     * Need to jump to the tag before executing the '-c command'.
-     * Makes "vim -c '/return' -t main" work.
-     */
-    if (params.tagname != NULL)
-    {
-        swap_exists_did_quit = FALSE;
-
-        vim_snprintf((char *)IObuff, IOSIZE, "ta %s", params.tagname);
-        do_cmdline_cmd(IObuff);
-        TIME_MSG("jumping to tag");
-
-        /* If the user doesn't want to edit the file then we quit here. */
-        if (swap_exists_did_quit)
-            getout(1);
-    }
 
     /* Execute any "+", "-c" and "-S" arguments. */
     if (params.n_commands > 0)
@@ -1033,19 +1013,6 @@ command_line_scan(parmp)
                     want_argument = TRUE;
                 break;
 
-            case 't':           /* "-t {tag}" or "-t{tag}" jump to tag */
-                if (parmp->edit_type != EDIT_NONE)
-                    mainerr(ME_TOO_MANY_ARGS, (char_u *)argv[0]);
-                parmp->edit_type = EDIT_TAG;
-                if (argv[0][argv_idx])          /* "-t{tag}" */
-                {
-                    parmp->tagname = (char_u *)argv[0] + argv_idx;
-                    argv_idx = -1;
-                }
-                else                            /* "-t {tag}" */
-                    want_argument = TRUE;
-                break;
-
             case 'D':           /* "-D"         Debugging */
                 parmp->use_debug_break_level = 9999;
                 break;
@@ -1195,10 +1162,6 @@ scripterror:
                     }
                     if (save_typebuf() == FAIL)
                         mch_exit(2);    /* out of memory */
-                    break;
-
-                case 't':       /* "-t {tag}" */
-                    parmp->tagname = (char_u *)argv[0];
                     break;
 
                 case 'T':       /* "-T {terminal}" terminal name */
@@ -1618,7 +1581,7 @@ exe_commands(parmp)
      * with g`" was used.
      */
     msg_scroll = TRUE;
-    if (parmp->tagname == NULL && curwin->w_cursor.lnum <= 1)
+    if (curwin->w_cursor.lnum <= 1)
         curwin->w_cursor.lnum = 0;
     sourcing_name = (char_u *)"command line";
     current_SID = SID_CARG;
@@ -1852,7 +1815,6 @@ usage()
     {
         "[file ..]       edit specified file(s)",
         "-               read text from stdin",
-        "-t tag          edit file where tag is defined",
     };
 
     reset_signals();            /* kill us with CTRL-C here, if you like */

@@ -1472,7 +1472,6 @@ free_buf_options(buf, free_p_ff)
     clear_string_option(&buf->b_p_cinw);
     clear_string_option(&buf->b_p_ep);
     clear_string_option(&buf->b_p_path);
-    clear_string_option(&buf->b_p_tags);
     clear_string_option(&buf->b_p_qe);
     buf->b_p_ar = -1;
     buf->b_p_ul = NO_LOCAL_UNDOLEVEL;
@@ -3208,8 +3207,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             break;
 
         case STL_PERCENTAGE:
-            num = (int)(((long)wp->w_cursor.lnum * 100L) /
-                        (long)wp->w_buffer->b_ml.ml_line_count);
+            num = (int)(((long)wp->w_cursor.lnum * 100L) / (long)wp->w_buffer->b_ml.ml_line_count);
             break;
 
         case STL_ALTPERCENT:

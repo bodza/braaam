@@ -73,7 +73,6 @@ static void     ex_close(exarg_T *eap);
 static void     ex_win_close(int forceit, win_T *win, tabpage_T *tp);
 static void     ex_only(exarg_T *eap);
 static void     ex_resize(exarg_T *eap);
-static void     ex_stag(exarg_T *eap);
 static void     ex_tabclose(exarg_T *eap);
 static void     ex_tabonly(exarg_T *eap);
 static void     ex_tabnext(exarg_T *eap);
@@ -125,8 +124,6 @@ static char_u   *find_ucmd(exarg_T *eap, char_u *p, int *full, expand_T *xp, int
 static void     ex_normal(exarg_T *eap);
 static void     ex_startinsert(exarg_T *eap);
 static void     ex_stopinsert(exarg_T *eap);
-static void     ex_tag(exarg_T *eap);
-static void     ex_tag_cmd(exarg_T *eap, char_u *name);
 static char_u   *arg_all(void);
 static void     ex_behave(exarg_T *eap);
 static void     ex_filetype(exarg_T *eap);
@@ -3252,19 +3249,6 @@ set_one_cmd_context(xp, buff)
         case CMD_setlocal:
             set_context_in_set_cmd(xp, arg, OPT_LOCAL);
             break;
-        case CMD_tag:
-        case CMD_stag:
-        case CMD_ltag:
-        case CMD_tselect:
-        case CMD_stselect:
-        case CMD_tjump:
-        case CMD_stjump:
-            if (*p_wop != NUL)
-                xp->xp_context = EXPAND_TAGS_LISTFILES;
-            else
-                xp->xp_context = EXPAND_TAGS;
-            xp->xp_pattern = arg;
-            break;
         case CMD_augroup:
             xp->xp_context = EXPAND_AUGROUP;
             xp->xp_pattern = arg;
@@ -4787,8 +4771,6 @@ static struct
     {EXPAND_OWNSYNTAX, "syntax"},
     {EXPAND_SETTINGS, "option"},
     {EXPAND_SHELLCMD, "shellcmd"},
-    {EXPAND_TAGS, "tag"},
-    {EXPAND_TAGS_LISTFILES, "tag_listfiles"},
     {EXPAND_USER, "user"},
     {EXPAND_USER_VARS, "var"},
     {0, NULL}
@@ -8154,71 +8136,6 @@ exec_normal_cmd(cmd, remap, silent)
         update_topline_cursor();
         normal_cmd(&oa, TRUE);  /* execute a Normal mode cmd */
     }
-}
-
-/*
- * ":stag", ":stselect" and ":stjump".
- */
-    static void
-ex_stag(eap)
-    exarg_T     *eap;
-{
-    postponed_split = -1;
-    postponed_split_flags = cmdmod.split;
-    postponed_split_tab = cmdmod.tab;
-    ex_tag_cmd(eap, cmdnames[eap->cmdidx].cmd_name + 1);
-    postponed_split_flags = 0;
-    postponed_split_tab = 0;
-}
-
-/*
- * ":tag", ":tselect", ":tjump", ":tnext", etc.
- */
-    static void
-ex_tag(eap)
-    exarg_T     *eap;
-{
-    ex_tag_cmd(eap, cmdnames[eap->cmdidx].cmd_name);
-}
-
-    static void
-ex_tag_cmd(eap, name)
-    exarg_T     *eap;
-    char_u      *name;
-{
-    int         cmd;
-
-    switch (name[1])
-    {
-        case 'j': cmd = DT_JUMP;        /* ":tjump" */
-                  break;
-        case 's': cmd = DT_SELECT;      /* ":tselect" */
-                  break;
-        case 'p': cmd = DT_PREV;        /* ":tprevious" */
-                  break;
-        case 'N': cmd = DT_PREV;        /* ":tNext" */
-                  break;
-        case 'n': cmd = DT_NEXT;        /* ":tnext" */
-                  break;
-        case 'o': cmd = DT_POP;         /* ":pop" */
-                  break;
-        case 'f':                       /* ":tfirst" */
-        case 'r': cmd = DT_FIRST;       /* ":trewind" */
-                  break;
-        case 'l': cmd = DT_LAST;        /* ":tlast" */
-                  break;
-        default:                        /* ":tag" */
-                  cmd = DT_TAG;
-                  break;
-    }
-
-    if (name[0] == 'l')
-    {
-        ex_ni(eap);
-        return;
-    }
-
-    do_tag(eap->arg, cmd, eap->addr_count > 0 ? (int)eap->line2 : 1, eap->forceit, TRUE);
 }
 
 /*

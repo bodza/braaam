@@ -59,7 +59,6 @@ static void     nv_ctrlo(cmdarg_T *cap);
 static void     nv_hat(cmdarg_T *cap);
 static void     nv_Zet(cmdarg_T *cap);
 static void     nv_ident(cmdarg_T *cap);
-static void     nv_tagpop(cmdarg_T *cap);
 static void     nv_scroll(cmdarg_T *cap);
 static void     nv_right(cmdarg_T *cap);
 static void     nv_left(cmdarg_T *cap);
@@ -192,7 +191,7 @@ static const struct nv_cmd
     {Ctrl_Q,    nv_visual,      0,                      FALSE},
     {Ctrl_R,    nv_redo,        0,                      0},
     {Ctrl_S,    nv_ignore,      0,                      0},
-    {Ctrl_T,    nv_tagpop,      NV_NCW,                 0},
+    {Ctrl_T,    nv_error,       0,                      0},
     {Ctrl_U,    nv_halfpage,    0,                      0},
     {Ctrl_V,    nv_visual,      0,                      FALSE},
     {'V',       nv_visual,      0,                      FALSE},
@@ -4542,17 +4541,6 @@ get_visual_text(cap, pp, lenp)
     }
     reset_VIsual_and_resel();
     return OK;
-}
-
-/*
- * CTRL-T: backwards in tag stack
- */
-    static void
-nv_tagpop(cap)
-    cmdarg_T    *cap;
-{
-    if (!checkclearopq(cap->oap))
-        do_tag((char_u *)"", DT_POP, (int)cap->count1, FALSE, TRUE);
 }
 
 /*

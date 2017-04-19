@@ -1,8 +1,6 @@
 /*
  * term.c: functions for controlling the terminal
  *
- * primitive termcap support for Amiga, MSDOS, and Win32 included
- *
  * NOTE: padding and variable substitution is not performed,
  * when compiling without HAVE_TGETENT, we use tputs() and tgoto() dummies.
  */

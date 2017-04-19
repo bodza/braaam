@@ -4562,36 +4562,6 @@ buf_modname(shortname, fname, ext, prepend_dot)
 }
 
 /*
- * Like fgets(), but if the file line is too long, it is truncated and the
- * rest of the line is thrown away.  Returns TRUE for end-of-file.
- */
-    int
-vim_fgets(buf, size, fp)
-    char_u      *buf;
-    int         size;
-    FILE        *fp;
-{
-    char        *eof;
-#define FGETS_SIZE 200
-    char        tbuf[FGETS_SIZE];
-
-    buf[size - 2] = NUL;
-    eof = fgets((char *)buf, size, fp);
-    if (buf[size - 2] != NUL && buf[size - 2] != '\n')
-    {
-        buf[size - 1] = NUL;        /* Truncate the line */
-
-        /* Now throw away the rest of the line: */
-        do
-        {
-            tbuf[FGETS_SIZE - 2] = NUL;
-            ignoredp = fgets((char *)tbuf, FGETS_SIZE, fp);
-        } while (tbuf[FGETS_SIZE - 2] != NUL && tbuf[FGETS_SIZE - 2] != '\n');
-    }
-    return (eof == NULL);
-}
-
-/*
  * rename() only works if both files are on the same file system, this
  * function will (attempts to?) copy the file across if rename fails -- webb
  * Return -1 for failure, 0 for success.

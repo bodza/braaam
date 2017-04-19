@@ -329,6 +329,7 @@ void last_set_msg(scid_T scriptID);
 void ex_oldfiles(exarg_T *eap);
 int modify_fname(char_u *src, int *usedlen, char_u **fnamep, char_u **bufp, int *fnamelen);
 char_u *do_string_sub(char_u *str, char_u *pat, char_u *sub, char_u *flags);
+void simplify_filename(char_u *filename);
 
 /* #include "ex_cmds.pro" */
 
@@ -588,8 +589,6 @@ char_u *shorten_fname(char_u *full_path, char_u *dir_name);
 void shorten_fnames(int force);
 char_u *modname(char_u *fname, char_u *ext, int prepend_dot);
 char_u *buf_modname(int shortname, char_u *fname, char_u *ext, int prepend_dot);
-int vim_fgets(char_u *buf, int size, FILE *fp);
-int tag_fgets(char_u *buf, int size, FILE *fp);
 int vim_rename(char_u *from, char_u *to);
 int check_timestamps(int focus);
 int buf_check_timestamp(buf_T *buf, int focus);
@@ -1078,10 +1077,6 @@ int get_real_state(void);
 int after_pathsep(char_u *b, char_u *p);
 int same_directory(char_u *f1, char_u *f2);
 char_u *parse_shape_opt(int what);
-void *vim_findfile_init(char_u *path, char_u *filename, char_u *stopdirs, int level, int free_visited, int find_what, void *search_ctx_arg, int tagfile, char_u *rel_fname);
-void vim_findfile_cleanup(void *ctx);
-char_u *vim_findfile(void *search_ctx_arg);
-void vim_findfile_free_visited(void *search_ctx_arg);
 int vim_chdir(char_u *new_dir);
 int get_user_name(char_u *buf, int len);
 void sort_strings(char_u **files, int count);
@@ -1515,19 +1510,6 @@ int syn_get_final_id(int hl_id);
 int highlight_changed(void);
 void set_context_in_highlight_cmd(expand_T *xp, char_u *arg);
 char_u *get_highlight_name(expand_T *xp, int idx);
-
-/* #include "tag.pro" */
-
-int do_tag(char_u *tag, int type, int count, int forceit, int verbose);
-void tag_freematch(void);
-void do_tags(exarg_T *eap);
-int find_tags(char_u *pat, int *num_matches, char_u ***matchesp, int flags, int mincount, char_u *buf_ffname);
-void free_tag_stuff(void);
-int get_tagfname(tagname_T *tnp, int first, char_u *buf);
-void tagname_free(tagname_T *tnp);
-void simplify_filename(char_u *filename);
-int expand_tags(int tagnames, char_u *pat, int *num_file, char_u ***file);
-int get_tags(list_T *list, char_u *pat);
 
 /* #include "term.pro" */
 

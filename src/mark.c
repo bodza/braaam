@@ -1019,12 +1019,6 @@ mark_adjust(line1, line2, amount, amount_after)
 
         if (win->w_buffer == curbuf)
         {
-            if (!cmdmod.lockmarks)
-                /* marks in the tag stack */
-                for (i = 0; i < win->w_tagstacklen; i++)
-                    if (win->w_tagstack[i].fmark.fnum == fnum)
-                        one_adjust_nodel(&(win->w_tagstack[i].fmark.mark.lnum));
-
             /* the displayed Visual area */
             if (win->w_old_cursor_lnum != 0)
             {
@@ -1153,11 +1147,6 @@ mark_col_adjust(lnum, mincol, lnum_amount, col_amount)
 
         if (win->w_buffer == curbuf)
         {
-            /* marks in the tag stack */
-            for (i = 0; i < win->w_tagstacklen; i++)
-                if (win->w_tagstack[i].fmark.fnum == fnum)
-                    col_adjust(&(win->w_tagstack[i].fmark.mark));
-
             /* cursor position for other windows with the same buffer */
             if (win != curwin)
                 col_adjust(&win->w_cursor);

@@ -1303,7 +1303,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define EXPAND_DIRECTORIES      3
 #define EXPAND_SETTINGS         4
 #define EXPAND_BOOL_SETTINGS    5
-#define EXPAND_TAGS             6
 #define EXPAND_OLD_SETTING      7
 #define EXPAND_BUFFERS          9
 #define EXPAND_EVENTS           10
@@ -1312,7 +1311,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define EXPAND_AUGROUP          14
 #define EXPAND_USER_VARS        15
 #define EXPAND_MAPPINGS         16
-#define EXPAND_TAGS_LISTFILES   17
 #define EXPAND_FUNCTIONS        18
 #define EXPAND_USER_FUNC        19
 #define EXPAND_EXPRESSION       20
@@ -1378,11 +1376,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define EW_ALLLINKS     0x1000  /* also links not pointing to existing file */
 #define EW_SHELLCMD     0x2000  /* called from expand_shellcmd(), don't check
                                  * if executable is in $PATH */
-
-/* Flags for find_file_*() functions. */
-#define FINDFILE_FILE   0       /* only files */
-#define FINDFILE_DIR    1       /* only directories */
-#define FINDFILE_BOTH   2       /* files and directories */
 
 #define W_WINCOL(wp)   (wp->w_wincol)
 #define W_WIDTH(wp)    (wp->w_width)
@@ -1627,31 +1620,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define CT_PRINT_CHAR   0x10    /* flag: set for printable chars */
 #define CT_ID_CHAR      0x20    /* flag: set for ID chars */
 #define CT_FNAME_CHAR   0x40    /* flag: set for file name chars */
-
-/*
- * Values for do_tag().
- */
-#define DT_TAG          1       /* jump to newer position or same tag again */
-#define DT_POP          2       /* jump to older position */
-#define DT_NEXT         3       /* jump to next match of same tag */
-#define DT_PREV         4       /* jump to previous match of same tag */
-#define DT_FIRST        5       /* jump to first match of same tag */
-#define DT_LAST         6       /* jump to first match of same tag */
-#define DT_SELECT       7       /* jump to selection from list */
-#define DT_JUMP         9       /* jump to new tag or selection from list */
-#define DT_LTAG         11      /* tag using location list */
-#define DT_FREE         99      /* free cached matches */
-
-/*
- * flags for find_tags().
- */
-#define TAG_NAMES       2       /* only return name of tag */
-#define TAG_REGEXP      4       /* use tag pattern as regexp */
-#define TAG_NOIC        8       /* don't always ignore case */
-#define TAG_VERBOSE     32      /* message verbosity */
-
-#define TAG_MANY        300     /* When finding many tags (for completion),
-                                   find up to this many tags */
 
 /*
  * Types of dialogs passed to do_vim_dialog().
@@ -2553,7 +2521,6 @@ EXTERN int      p_sr;           /* 'shiftround' */
 EXTERN char_u   *p_shm;         /* 'shortmess' */
 EXTERN char_u   *p_sbr;         /* 'showbreak' */
 EXTERN int      p_sc;           /* 'showcmd' */
-EXTERN int      p_sft;          /* 'showfulltag' */
 EXTERN int      p_sm;           /* 'showmatch' */
 EXTERN int      p_smd;          /* 'showmode' */
 EXTERN long     p_ss;           /* 'sidescroll' */
@@ -2576,11 +2543,6 @@ static char *(p_swb_values[]) = {"useopen", "usetab", "split", "newtab", NULL};
 #define SWB_USETAB              0x002
 #define SWB_SPLIT               0x004
 #define SWB_NEWTAB              0x008
-EXTERN int      p_tbs;          /* 'tagbsearch' */
-EXTERN long     p_tl;           /* 'taglength' */
-EXTERN int      p_tr;           /* 'tagrelative' */
-EXTERN char_u   *p_tags;        /* 'tags' */
-EXTERN int      p_tgst;         /* 'tagstack' */
 EXTERN char_u   *p_tenc;        /* 'termencoding' */
 EXTERN int      p_terse;        /* 'terse' */
 EXTERN int      p_ta;           /* 'textauto' */
@@ -2632,7 +2594,6 @@ char_u  *p_vfile = (char_u *)""; /* used before options are initialized */
 extern char_u   *p_vfile;       /* 'verbosefile' */
 #endif
 EXTERN int      p_warn;         /* 'warn' */
-EXTERN char_u   *p_wop;         /* 'wildoptions' */
 EXTERN long     p_window;       /* 'window' */
 EXTERN int      p_wiv;          /* 'weirdinvert' */
 EXTERN char_u   *p_ww;          /* 'whichwrap' */
@@ -2704,7 +2665,6 @@ enum
     , BV_STS
     , BV_SW
     , BV_SWF
-    , BV_TAGS
     , BV_TS
     , BV_TW
     , BV_TX
@@ -2965,7 +2925,6 @@ struct regengine
 
 #define NMARKS          ('z' - 'a' + 1) /* max. # of named marks */
 #define JUMPLISTSIZE    100             /* max. # of marks in jump list */
-#define TAGSTACKSIZE    20              /* max. # of tags in tag stack */
 
 typedef struct filemark
 {
@@ -2979,17 +2938,6 @@ typedef struct xfilemark
     fmark_T     fmark;
     char_u      *fname;         /* file name, used when fnum == 0 */
 } xfmark_T;
-
-/*
- * The taggy struct is used to store the information about a :tag command.
- */
-typedef struct taggy
-{
-    char_u      *tagname;       /* tag name */
-    fmark_T     fmark;          /* cursor position BEFORE ":tag" */
-    int         cur_match;      /* match number */
-    int         cur_fnum;       /* buffer number used for cur_match */
-} taggy_T;
 
 /*
  * Structure that contains all options that are local to a window.
@@ -4135,7 +4083,6 @@ struct file_buffer
     char_u      *b_p_ep;        /* 'equalprg' local value */
     char_u      *b_p_path;      /* 'path' local value */
     int         b_p_ar;         /* 'autoread' local value */
-    char_u      *b_p_tags;      /* 'tags' local value */
     long        b_p_ul;         /* 'undolevels' local value */
     int         b_p_udf;        /* 'undofile' */
     char_u      *b_p_lw;        /* 'lispwords' local value */
@@ -4540,16 +4487,6 @@ struct window_S
     int         w_next_match_id;        /* next match ID */
 
     /*
-     * the tagstack grows from 0 upwards:
-     * entry 0: older
-     * entry 1: newer
-     * entry 2: newest
-     */
-    taggy_T     w_tagstack[TAGSTACKSIZE];       /* the tag stack */
-    int         w_tagstackidx;          /* idx just below active entry */
-    int         w_tagstacklen;          /* number of tags on stack */
-
-    /*
      * w_fraction is the fractional row of the cursor within the window, from
      * 0 at the top row to FRACTION_MULT at the last row.
      * w_prev_fraction_row was the actual cursor row when w_fraction was last calculated.
@@ -4557,8 +4494,7 @@ struct window_S
     int         w_fraction;
     int         w_prev_fraction_row;
 
-    linenr_T    w_nrwidth_line_count;   /* line count when ml_nrwidth_width
-                                         * was computed. */
+    linenr_T    w_nrwidth_line_count;   /* line count when ml_nrwidth_width was computed. */
     long        w_nuw_cached;           /* 'numberwidth' option cached */
     int         w_nrwidth_width;        /* nr of chars to print line count. */
 };
@@ -4572,20 +4508,16 @@ typedef struct oparg_S
     int         regname;        /* register to use for the operator */
     int         motion_type;    /* type of the current cursor motion */
     int         motion_force;   /* force motion type: 'v', 'V' or CTRL-V */
-    int         use_reg_one;    /* TRUE if delete uses reg 1 even when not
-                                   linewise */
+    int         use_reg_one;    /* TRUE if delete uses reg 1 even when not linewise */
     int         inclusive;      /* TRUE if char motion is inclusive (only
                                    valid when motion_type is MCHAR */
-    int         end_adjusted;   /* backuped b_op_end one char (only used by
-                                   do_format()) */
+    int         end_adjusted;   /* backuped b_op_end one char (only used by do_format()) */
     pos_T       start;          /* start of the operator */
     pos_T       end;            /* end of the operator */
     pos_T       cursor_start;   /* cursor position before motion for "gw" */
 
-    long        line_count;     /* number of lines from op_start to op_end
-                                   (inclusive) */
-    int         empty;          /* op_start and op_end the same (only used by
-                                   do_change()) */
+    long        line_count;     /* number of lines from op_start to op_end (inclusive) */
+    int         empty;          /* op_start and op_end the same (only used by do_change()) */
     int         is_VIsual;      /* operator on Visual area */
     int         block_mode;     /* current operator is Visual block mode */
     colnr_T     start_vcol;     /* start col for block mode operator */
@@ -4694,62 +4626,6 @@ typedef struct
     int         strlen;
     int         present;
 } option_table_T;
-
-/*
- * Structure to hold printing color and font attributes.
- */
-typedef struct
-{
-    long_u      fg_color;
-    long_u      bg_color;
-    int         bold;
-    int         italic;
-    int         underline;
-    int         undercurl;
-} prt_text_attr_T;
-
-/*
- * Structure passed back to the generic printer code.
- */
-typedef struct
-{
-    int         n_collated_copies;
-    int         n_uncollated_copies;
-    int         duplex;
-    int         chars_per_line;
-    int         lines_per_page;
-    int         has_color;
-    prt_text_attr_T number;
-    int         modec;
-    int         do_syntax;
-    int         user_abort;
-    char_u      *jobname;
-} prt_settings_T;
-
-#define PRINT_NUMBER_WIDTH 8
-
-/*
- * Used for popup menu items.
- */
-typedef struct
-{
-    char_u      *pum_text;      /* main menu text */
-    char_u      *pum_kind;      /* extra kind text (may be truncated) */
-    char_u      *pum_extra;     /* extra menu text (may be truncated) */
-    char_u      *pum_info;      /* extra info */
-} pumitem_T;
-
-/*
- * Structure used for get_tagfname().
- */
-typedef struct
-{
-    char_u      *tn_tags;       /* value of 'tags' when starting */
-    char_u      *tn_np;         /* current position in tn_tags */
-    int         tn_did_filefind_init;
-    int         tn_hf_idx;
-    void        *tn_search_ctx;
-} tagname_T;
 
 typedef struct {
   UINT32_T total[2];
@@ -5748,7 +5624,7 @@ EXTERN char_u e_abort[]         INIT(= "E470: Command aborted");
 EXTERN char_u e_argreq[]        INIT(= "E471: Argument required");
 EXTERN char_u e_backslash[]     INIT(= "E10: \\ should be followed by /, ? or &");
 EXTERN char_u e_cmdwin[]        INIT(= "E11: Invalid in command-line window; <CR> executes, CTRL-C quits");
-EXTERN char_u e_curdir[]        INIT(= "E12: Command not allowed from exrc/vimrc in current dir or tag search");
+EXTERN char_u e_curdir[]        INIT(= "E12: Command not allowed from exrc/vimrc in current dir");
 EXTERN char_u e_endif[]         INIT(= "E171: Missing :endif");
 EXTERN char_u e_endtry[]        INIT(= "E600: Missing :endtry");
 EXTERN char_u e_endwhile[]      INIT(= "E170: Missing :endwhile");
@@ -5812,7 +5688,6 @@ EXTERN char_u e_screenmode[]    INIT(= "E359: Screen mode setting not supported"
 EXTERN char_u e_scroll[]        INIT(= "E49: Invalid scroll size");
 EXTERN char_u e_shellempty[]    INIT(= "E91: 'shell' option is empty");
 EXTERN char_u e_swapclose[]     INIT(= "E72: Close error on swap file");
-EXTERN char_u e_tagstack[]      INIT(= "E73: tag stack empty");
 EXTERN char_u e_toocompl[]      INIT(= "E74: Command too complex");
 EXTERN char_u e_longname[]      INIT(= "E75: Name too long");
 EXTERN char_u e_toomsbra[]      INIT(= "E76: Too many [");

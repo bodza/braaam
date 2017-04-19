@@ -1018,8 +1018,6 @@ win_init(newp, oldp, flags)
     win_T       *oldp;
     int          flags UNUSED;
 {
-    int         i;
-
     newp->w_buffer = oldp->w_buffer;
     newp->w_s = &(oldp->w_buffer->b_s);
     oldp->w_buffer->b_nwindows++;
@@ -1037,16 +1035,6 @@ win_init(newp, oldp, flags)
     newp->w_prev_fraction_row = oldp->w_prev_fraction_row;
     copy_jumplist(oldp, newp);
     newp->w_localdir = (oldp->w_localdir == NULL) ? NULL : vim_strsave(oldp->w_localdir);
-
-    /* copy tagstack and folds */
-    for (i = 0; i < oldp->w_tagstacklen; i++)
-    {
-        newp->w_tagstack[i] = oldp->w_tagstack[i];
-        if (newp->w_tagstack[i].tagname != NULL)
-            newp->w_tagstack[i].tagname = vim_strsave(newp->w_tagstack[i].tagname);
-    }
-    newp->w_tagstackidx = oldp->w_tagstackidx;
-    newp->w_tagstacklen = oldp->w_tagstacklen;
 
     win_init_some(newp, oldp);
 
@@ -3884,7 +3872,6 @@ win_free(wp, tp)
     win_T       *wp;
     tabpage_T   *tp;            /* tab page "win" is in, NULL for current */
 {
-    int         i;
     buf_T       *buf;
     wininfo_T   *wip;
 
@@ -3905,9 +3892,6 @@ win_free(wp, tp)
     if (prevwin == wp)
         prevwin = NULL;
     win_free_lsize(wp);
-
-    for (i = 0; i < wp->w_tagstacklen; ++i)
-        vim_free(wp->w_tagstack[i].tagname);
 
     vim_free(wp->w_localdir);
 

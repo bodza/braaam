@@ -6182,106 +6182,61 @@ syn_get_stack_item(i)
  * The default highlight groups.  These are compiled-in for fast startup and
  * they still work when the runtime files can't be found.
  * When making changes here, also change runtime/colors/default.vim!
- * The #ifdefs are needed to reduce the amount of static data.  Helps to make
- * the 16 bit DOS (museum) version compile.
  */
-#define CENT(a, b) b
 static char *(highlight_init_both[]) =
     {
-        CENT("ErrorMsg term=standout ctermbg=DarkRed ctermfg=White",
-             "ErrorMsg term=standout ctermbg=DarkRed ctermfg=White guibg=Red guifg=White"),
-        CENT("IncSearch term=reverse cterm=reverse",
-             "IncSearch term=reverse cterm=reverse gui=reverse"),
-        CENT("ModeMsg term=bold cterm=bold",
-             "ModeMsg term=bold cterm=bold gui=bold"),
-        CENT("NonText term=bold ctermfg=Blue",
-             "NonText term=bold ctermfg=Blue gui=bold guifg=Blue"),
-        CENT("StatusLine term=reverse,bold cterm=reverse,bold",
-             "StatusLine term=reverse,bold cterm=reverse,bold gui=reverse,bold"),
-        CENT("StatusLineNC term=reverse cterm=reverse",
-             "StatusLineNC term=reverse cterm=reverse gui=reverse"),
-        CENT("VertSplit term=reverse cterm=reverse",
-             "VertSplit term=reverse cterm=reverse gui=reverse"),
-        CENT("VisualNOS term=underline,bold cterm=underline,bold",
-             "VisualNOS term=underline,bold cterm=underline,bold gui=underline,bold"),
-        CENT("TabLineSel term=bold cterm=bold",
-             "TabLineSel term=bold cterm=bold gui=bold"),
-        CENT("TabLineFill term=reverse cterm=reverse",
-             "TabLineFill term=reverse cterm=reverse gui=reverse"),
+        "ErrorMsg term=standout ctermbg=DarkRed ctermfg=White guibg=Red guifg=White",
+        "IncSearch term=reverse cterm=reverse gui=reverse",
+        "ModeMsg term=bold cterm=bold gui=bold",
+        "NonText term=bold ctermfg=Blue gui=bold guifg=Blue",
+        "StatusLine term=reverse,bold cterm=reverse,bold gui=reverse,bold",
+        "StatusLineNC term=reverse cterm=reverse gui=reverse",
+        "VertSplit term=reverse cterm=reverse gui=reverse",
+        "VisualNOS term=underline,bold cterm=underline,bold gui=underline,bold",
+        "TabLineSel term=bold cterm=bold gui=bold",
+        "TabLineFill term=reverse cterm=reverse gui=reverse",
         NULL
     };
 
 static char *(highlight_init_light[]) =
     {
-        CENT("Directory term=bold ctermfg=DarkBlue",
-             "Directory term=bold ctermfg=DarkBlue guifg=Blue"),
-        CENT("LineNr term=underline ctermfg=Brown",
-             "LineNr term=underline ctermfg=Brown guifg=Brown"),
-        CENT("CursorLineNr term=bold ctermfg=Brown",
-             "CursorLineNr term=bold ctermfg=Brown gui=bold guifg=Brown"),
-        CENT("MoreMsg term=bold ctermfg=DarkGreen",
-             "MoreMsg term=bold ctermfg=DarkGreen gui=bold guifg=SeaGreen"),
-        CENT("Question term=standout ctermfg=DarkGreen",
-             "Question term=standout ctermfg=DarkGreen gui=bold guifg=SeaGreen"),
-        CENT("Search term=reverse ctermbg=Yellow ctermfg=NONE",
-             "Search term=reverse ctermbg=Yellow ctermfg=NONE guibg=Yellow guifg=NONE"),
-        CENT("SpecialKey term=bold ctermfg=DarkBlue",
-             "SpecialKey term=bold ctermfg=DarkBlue guifg=Blue"),
-        CENT("Title term=bold ctermfg=DarkMagenta",
-             "Title term=bold ctermfg=DarkMagenta gui=bold guifg=Magenta"),
-        CENT("WarningMsg term=standout ctermfg=DarkRed",
-             "WarningMsg term=standout ctermfg=DarkRed guifg=Red"),
-        CENT("Visual term=reverse",
-             "Visual term=reverse guibg=LightGrey"),
-        CENT("TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey",
-             "TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey gui=underline guibg=LightGrey"),
-        CENT("CursorColumn term=reverse ctermbg=LightGrey",
-             "CursorColumn term=reverse ctermbg=LightGrey guibg=Grey90"),
-        CENT("CursorLine term=underline cterm=underline",
-             "CursorLine term=underline cterm=underline guibg=Grey90"),
-        CENT("ColorColumn term=reverse ctermbg=LightRed",
-             "ColorColumn term=reverse ctermbg=LightRed guibg=LightRed"),
-        CENT("Conceal ctermbg=DarkGrey ctermfg=LightGrey",
-             "Conceal ctermbg=DarkGrey ctermfg=LightGrey guibg=DarkGrey guifg=LightGrey"),
-        CENT("MatchParen term=reverse ctermbg=Cyan",
-             "MatchParen term=reverse ctermbg=Cyan guibg=Cyan"),
+        "Directory term=bold ctermfg=DarkBlue guifg=Blue",
+        "LineNr term=underline ctermfg=Brown guifg=Brown",
+        "CursorLineNr term=bold ctermfg=Brown gui=bold guifg=Brown",
+        "MoreMsg term=bold ctermfg=DarkGreen gui=bold guifg=SeaGreen",
+        "Question term=standout ctermfg=DarkGreen gui=bold guifg=SeaGreen",
+        "Search term=reverse ctermbg=Yellow ctermfg=NONE guibg=Yellow guifg=NONE",
+        "SpecialKey term=bold ctermfg=DarkBlue guifg=Blue",
+        "Title term=bold ctermfg=DarkMagenta gui=bold guifg=Magenta",
+        "WarningMsg term=standout ctermfg=DarkRed guifg=Red",
+        "Visual term=reverse guibg=LightGrey",
+        "TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey gui=underline guibg=LightGrey",
+        "CursorColumn term=reverse ctermbg=LightGrey guibg=Grey90",
+        "CursorLine term=underline cterm=underline guibg=Grey90",
+        "ColorColumn term=reverse ctermbg=LightRed guibg=LightRed",
+        "Conceal ctermbg=DarkGrey ctermfg=LightGrey guibg=DarkGrey guifg=LightGrey",
+        "MatchParen term=reverse ctermbg=Cyan guibg=Cyan",
         NULL
     };
 
 static char *(highlight_init_dark[]) =
     {
-        CENT("Directory term=bold ctermfg=LightCyan",
-             "Directory term=bold ctermfg=LightCyan guifg=Cyan"),
-        CENT("LineNr term=underline ctermfg=Yellow",
-             "LineNr term=underline ctermfg=Yellow guifg=Yellow"),
-        CENT("CursorLineNr term=bold ctermfg=Yellow",
-             "CursorLineNr term=bold ctermfg=Yellow gui=bold guifg=Yellow"),
-        CENT("MoreMsg term=bold ctermfg=LightGreen",
-             "MoreMsg term=bold ctermfg=LightGreen gui=bold guifg=SeaGreen"),
-        CENT("Question term=standout ctermfg=LightGreen",
-             "Question term=standout ctermfg=LightGreen gui=bold guifg=Green"),
-        CENT("Search term=reverse ctermbg=Yellow ctermfg=Black",
-             "Search term=reverse ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black"),
-        CENT("SpecialKey term=bold ctermfg=LightBlue",
-             "SpecialKey term=bold ctermfg=LightBlue guifg=Cyan"),
-        CENT("Title term=bold ctermfg=LightMagenta",
-             "Title term=bold ctermfg=LightMagenta gui=bold guifg=Magenta"),
-        CENT("WarningMsg term=standout ctermfg=LightRed",
-             "WarningMsg term=standout ctermfg=LightRed guifg=Red"),
-        CENT("Visual term=reverse",
-             "Visual term=reverse guibg=DarkGrey"),
-        CENT("TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey",
-             "TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey gui=underline guibg=DarkGrey"),
-        CENT("CursorColumn term=reverse ctermbg=DarkGrey",
-             "CursorColumn term=reverse ctermbg=DarkGrey guibg=Grey40"),
-        CENT("CursorLine term=underline cterm=underline",
-             "CursorLine term=underline cterm=underline guibg=Grey40"),
-        CENT("ColorColumn term=reverse ctermbg=DarkRed",
-             "ColorColumn term=reverse ctermbg=DarkRed guibg=DarkRed"),
-        CENT("MatchParen term=reverse ctermbg=DarkCyan",
-             "MatchParen term=reverse ctermbg=DarkCyan guibg=DarkCyan"),
-        CENT("Conceal ctermbg=DarkGrey ctermfg=LightGrey",
-             "Conceal ctermbg=DarkGrey ctermfg=LightGrey guibg=DarkGrey guifg=LightGrey"),
+        "Directory term=bold ctermfg=LightCyan guifg=Cyan",
+        "LineNr term=underline ctermfg=Yellow guifg=Yellow",
+        "CursorLineNr term=bold ctermfg=Yellow gui=bold guifg=Yellow",
+        "MoreMsg term=bold ctermfg=LightGreen gui=bold guifg=SeaGreen",
+        "Question term=standout ctermfg=LightGreen gui=bold guifg=Green",
+        "Search term=reverse ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black",
+        "SpecialKey term=bold ctermfg=LightBlue guifg=Cyan",
+        "Title term=bold ctermfg=LightMagenta gui=bold guifg=Magenta",
+        "WarningMsg term=standout ctermfg=LightRed guifg=Red",
+        "Visual term=reverse guibg=DarkGrey",
+        "TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey gui=underline guibg=DarkGrey",
+        "CursorColumn term=reverse ctermbg=DarkGrey guibg=Grey40",
+        "CursorLine term=underline cterm=underline guibg=Grey40",
+        "ColorColumn term=reverse ctermbg=DarkRed guibg=DarkRed",
+        "MatchParen term=reverse ctermbg=DarkCyan guibg=DarkCyan",
+        "Conceal ctermbg=DarkGrey ctermfg=LightGrey guibg=DarkGrey guifg=LightGrey",
         NULL
     };
 
@@ -7493,8 +7448,7 @@ highlight_list_arg(id, didh, type, iarg, sarg, name)
             }
         }
 
-        (void)syn_list_header(didh,
-                               (int)(vim_strsize(ts) + STRLEN(name) + 1), id);
+        (void)syn_list_header(didh, (int)(vim_strsize(ts) + STRLEN(name) + 1), id);
         didh = TRUE;
         if (!got_int)
         {
@@ -8037,9 +7991,7 @@ highlight_changed()
                 hlt[hlcnt + i].sg_gui = highlight_attr[HLF_SNC];
             }
             else
-                mch_memmove(&hlt[hlcnt + i],
-                            &hlt[id_SNC - 1],
-                            sizeof(struct hl_group));
+                mch_memmove(&hlt[hlcnt + i], &hlt[id_SNC - 1], sizeof(struct hl_group));
             hlt[hlcnt + i].sg_link = 0;
 
             /* Apply difference between UserX and HLF_S to HLF_SNC */

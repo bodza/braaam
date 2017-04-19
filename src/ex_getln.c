@@ -2873,22 +2873,6 @@ ExpandEscape(xp, str, numfiles, files, options)
             if (*files[0] == '+')
                 escape_fname(&files[0]);
         }
-        else if (xp->xp_context == EXPAND_TAGS)
-        {
-            /*
-             * Insert a backslash before characters in a tag name that
-             * would terminate the ":tag" command.
-             */
-            for (i = 0; i < numfiles; ++i)
-            {
-                p = vim_strsave_escaped(files[i], (char_u *)"\\|\"");
-                if (p != NULL)
-                {
-                    vim_free(files[i]);
-                    files[i] = p;
-                }
-            }
-        }
     }
 }
 
@@ -3035,27 +3019,14 @@ showmatches(xp, wildmenu)
                 maxlen = j;
         }
 
-        if (xp->xp_context == EXPAND_TAGS_LISTFILES)
-            lines = num_files;
-        else
-        {
-            /* compute the number of columns and lines for the listing */
-            maxlen += 2;    /* two spaces between file names */
-            columns = ((int)Columns + 2) / maxlen;
-            if (columns < 1)
-                columns = 1;
-            lines = (num_files + columns - 1) / columns;
-        }
+        /* compute the number of columns and lines for the listing */
+        maxlen += 2;    /* two spaces between file names */
+        columns = ((int)Columns + 2) / maxlen;
+        if (columns < 1)
+            columns = 1;
+        lines = (num_files + columns - 1) / columns;
 
         attr = hl_attr(HLF_D);  /* find out highlighting for directories */
-
-        if (xp->xp_context == EXPAND_TAGS_LISTFILES)
-        {
-            MSG_PUTS_ATTR("tagname", hl_attr(HLF_T));
-            msg_clr_eos();
-            msg_advance(maxlen - 3);
-            MSG_PUTS_ATTR(" kind file\n", hl_attr(HLF_T));
-        }
 
         /* list the files line by line */
         for (i = 0; i < lines; ++i)
@@ -3063,16 +3034,6 @@ showmatches(xp, wildmenu)
             lastlen = 999;
             for (k = i; k < num_files; k += lines)
             {
-                if (xp->xp_context == EXPAND_TAGS_LISTFILES)
-                {
-                    msg_outtrans_attr(files_found[k], hl_attr(HLF_D));
-                    p = files_found[k] + STRLEN(files_found[k]) + 1;
-                    msg_advance(maxlen + 1);
-                    msg_puts(p);
-                    msg_advance(maxlen + 3);
-                    msg_puts_long_attr(p + 2, hl_attr(HLF_D));
-                    break;
-                }
                 for (j = maxlen - lastlen; --j >= 0; )
                     msg_putchar(' ');
                 if (xp->xp_context == EXPAND_FILES
@@ -3233,8 +3194,7 @@ addstar(fname, len, context)
         if (context == EXPAND_COLORS
                 || context == EXPAND_COMPILER
                 || context == EXPAND_OWNSYNTAX
-                || context == EXPAND_FILETYPE
-                || (context == EXPAND_TAGS && fname[0] == '/'))
+                || context == EXPAND_FILETYPE)
             retval = vim_strnsave(fname, len);
         else
         {
@@ -3350,8 +3310,6 @@ addstar(fname, len, context)
  *  EXPAND_SHELLCMD         After ":!cmd", ":r !cmd"  or ":w !cmd".
  *  EXPAND_SETTINGS         Complete variable names.  eg :set d^I
  *  EXPAND_BOOL_SETTINGS    Complete boolean variables only,  eg :set no^I
- *  EXPAND_TAGS             Complete tags from the files in p_tags.  eg :ta a^I
- *  EXPAND_TAGS_LISTFILES   As above, but list filenames on ^D, after :tselect
  *  EXPAND_EVENTS           Complete event names
  *  EXPAND_SYNTAX           Complete :syntax command arguments
  *  EXPAND_HIGHLIGHT        Complete highlight (syntax) group names
@@ -3511,7 +3469,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
         int     free_pat = FALSE;
         int     i;
 
-        /* for ":set path=" and ":set tags=" halve backslashes for escaped space */
+        /* for ":set path=" halve backslashes for escaped space */
         if (xp->xp_backslash != XP_BS_NONE)
         {
             free_pat = TRUE;
@@ -3555,8 +3513,6 @@ ExpandFromContext(xp, pat, num_file, file, options)
         return ExpandOldSetting(num_file, file);
     if (xp->xp_context == EXPAND_BUFFERS)
         return ExpandBufnames(pat, num_file, file, options);
-    if (xp->xp_context == EXPAND_TAGS || xp->xp_context == EXPAND_TAGS_LISTFILES)
-        return expand_tags(xp->xp_context == EXPAND_TAGS, pat, num_file, file);
     if (xp->xp_context == EXPAND_COLORS)
     {
         char *directories[] = {"colors", NULL};
@@ -3752,7 +3708,7 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
     if (buf == NULL)
         return FAIL;
 
-    /* for ":set path=" and ":set tags=" halve backslashes for escaped space */
+    /* for ":set path=" halve backslashes for escaped space */
     pat = vim_strsave(filepat);
     for (i = 0; pat[i]; ++i)
         if (pat[i] == '\\' && pat[i + 1] == ' ')
