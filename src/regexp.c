@@ -667,14 +667,10 @@ get_equi_class(pp)
 
     if (p[1] == '=')
     {
-        if (has_mbyte)
-            l = (*mb_ptr2len)(p + 2);
+        l = utfc_ptr2len(p + 2);
         if (p[l + 2] == '=' && p[l + 3] == ']')
         {
-            if (has_mbyte)
-                c = mb_ptr2char(p + 2);
-            else
-                c = p[2];
+            c = utf_ptr2char(p + 2);
             *pp += l + 4;
             return c;
         }
@@ -685,309 +681,308 @@ get_equi_class(pp)
 /*
  * Produce the bytes for equivalence class "c".
  * Currently only handles latin1, latin9 and utf-8.
- * NOTE: When changing this function, also change nfa_emit_equi_class()
+ *
+ * NOTE! When changing this function, also change nfa_emit_equi_class()
  */
     static void
 reg_equi_class(c)
     int     c;
 {
-    if (enc_utf8 || STRCMP(p_enc, "latin1") == 0 || STRCMP(p_enc, "iso-8859-15") == 0)
+    switch (c)
     {
-        switch (c)
-        {
-            case 'A': case '\300': case '\301': case '\302':
-            CASEMBC(0x100) CASEMBC(0x102) CASEMBC(0x104) CASEMBC(0x1cd)
-            CASEMBC(0x1de) CASEMBC(0x1e0) CASEMBC(0x1ea2)
-            case '\303': case '\304': case '\305':
-                      regmbc('A'); regmbc('\300'); regmbc('\301');
-                      regmbc('\302'); regmbc('\303'); regmbc('\304');
-                      regmbc('\305');
-                      REGMBC(0x100) REGMBC(0x102) REGMBC(0x104)
-                      REGMBC(0x1cd) REGMBC(0x1de) REGMBC(0x1e0)
-                      REGMBC(0x1ea2)
-                      return;
-            case 'B': CASEMBC(0x1e02) CASEMBC(0x1e06)
-                      regmbc('B'); REGMBC(0x1e02) REGMBC(0x1e06)
-                      return;
-            case 'C': case '\307':
-            CASEMBC(0x106) CASEMBC(0x108) CASEMBC(0x10a) CASEMBC(0x10c)
-                      regmbc('C'); regmbc('\307');
-                      REGMBC(0x106) REGMBC(0x108) REGMBC(0x10a)
-                      REGMBC(0x10c)
-                      return;
-            case 'D': CASEMBC(0x10e) CASEMBC(0x110) CASEMBC(0x1e0a)
-            CASEMBC(0x1e0e) CASEMBC(0x1e10)
-                      regmbc('D'); REGMBC(0x10e) REGMBC(0x110)
-                      REGMBC(0x1e0a) REGMBC(0x1e0e) REGMBC(0x1e10)
-                      return;
-            case 'E': case '\310': case '\311': case '\312': case '\313':
-            CASEMBC(0x112) CASEMBC(0x114) CASEMBC(0x116) CASEMBC(0x118)
-            CASEMBC(0x11a) CASEMBC(0x1eba) CASEMBC(0x1ebc)
-                      regmbc('E'); regmbc('\310'); regmbc('\311');
-                      regmbc('\312'); regmbc('\313');
-                      REGMBC(0x112) REGMBC(0x114) REGMBC(0x116)
-                      REGMBC(0x118) REGMBC(0x11a) REGMBC(0x1eba)
-                      REGMBC(0x1ebc)
-                      return;
-            case 'F': CASEMBC(0x1e1e)
-                      regmbc('F'); REGMBC(0x1e1e)
-                      return;
-            case 'G': CASEMBC(0x11c) CASEMBC(0x11e) CASEMBC(0x120)
-            CASEMBC(0x122) CASEMBC(0x1e4) CASEMBC(0x1e6) CASEMBC(0x1f4)
-            CASEMBC(0x1e20)
-                      regmbc('G'); REGMBC(0x11c) REGMBC(0x11e)
-                      REGMBC(0x120) REGMBC(0x122) REGMBC(0x1e4)
-                      REGMBC(0x1e6) REGMBC(0x1f4) REGMBC(0x1e20)
-                      return;
-            case 'H': CASEMBC(0x124) CASEMBC(0x126) CASEMBC(0x1e22)
-            CASEMBC(0x1e26) CASEMBC(0x1e28)
-                      regmbc('H'); REGMBC(0x124) REGMBC(0x126)
-                      REGMBC(0x1e22) REGMBC(0x1e26) REGMBC(0x1e28)
-                      return;
-            case 'I': case '\314': case '\315': case '\316': case '\317':
-            CASEMBC(0x128) CASEMBC(0x12a) CASEMBC(0x12c) CASEMBC(0x12e)
-            CASEMBC(0x130) CASEMBC(0x1cf) CASEMBC(0x1ec8)
-                      regmbc('I'); regmbc('\314'); regmbc('\315');
-                      regmbc('\316'); regmbc('\317');
-                      REGMBC(0x128) REGMBC(0x12a) REGMBC(0x12c)
-                      REGMBC(0x12e) REGMBC(0x130) REGMBC(0x1cf)
-                      REGMBC(0x1ec8)
-                      return;
-            case 'J': CASEMBC(0x134)
-                      regmbc('J'); REGMBC(0x134)
-                      return;
-            case 'K': CASEMBC(0x136) CASEMBC(0x1e8) CASEMBC(0x1e30)
-            CASEMBC(0x1e34)
-                      regmbc('K'); REGMBC(0x136) REGMBC(0x1e8)
-                      REGMBC(0x1e30) REGMBC(0x1e34)
-                      return;
-            case 'L': CASEMBC(0x139) CASEMBC(0x13b) CASEMBC(0x13d)
-            CASEMBC(0x13f) CASEMBC(0x141) CASEMBC(0x1e3a)
-                      regmbc('L'); REGMBC(0x139) REGMBC(0x13b)
-                      REGMBC(0x13d) REGMBC(0x13f) REGMBC(0x141)
-                      REGMBC(0x1e3a)
-                      return;
-            case 'M': CASEMBC(0x1e3e) CASEMBC(0x1e40)
-                      regmbc('M'); REGMBC(0x1e3e) REGMBC(0x1e40)
-                      return;
-            case 'N': case '\321':
-            CASEMBC(0x143) CASEMBC(0x145) CASEMBC(0x147) CASEMBC(0x1e44)
-            CASEMBC(0x1e48)
-                      regmbc('N'); regmbc('\321');
-                      REGMBC(0x143) REGMBC(0x145) REGMBC(0x147)
-                      REGMBC(0x1e44) REGMBC(0x1e48)
-                      return;
-            case 'O': case '\322': case '\323': case '\324': case '\325':
-            case '\326': case '\330':
-            CASEMBC(0x14c) CASEMBC(0x14e) CASEMBC(0x150) CASEMBC(0x1a0)
-            CASEMBC(0x1d1) CASEMBC(0x1ea) CASEMBC(0x1ec) CASEMBC(0x1ece)
-                      regmbc('O'); regmbc('\322'); regmbc('\323');
-                      regmbc('\324'); regmbc('\325'); regmbc('\326');
-                      regmbc('\330');
-                      REGMBC(0x14c) REGMBC(0x14e) REGMBC(0x150)
-                      REGMBC(0x1a0) REGMBC(0x1d1) REGMBC(0x1ea)
-                      REGMBC(0x1ec) REGMBC(0x1ece)
-                      return;
-            case 'P': case 0x1e54: case 0x1e56:
-                      regmbc('P'); REGMBC(0x1e54) REGMBC(0x1e56)
-                      return;
-            case 'R': CASEMBC(0x154) CASEMBC(0x156) CASEMBC(0x158)
-            CASEMBC(0x1e58) CASEMBC(0x1e5e)
-                      regmbc('R'); REGMBC(0x154) REGMBC(0x156) REGMBC(0x158)
-                      REGMBC(0x1e58) REGMBC(0x1e5e)
-                      return;
-            case 'S': CASEMBC(0x15a) CASEMBC(0x15c) CASEMBC(0x15e)
-            CASEMBC(0x160) CASEMBC(0x1e60)
-                      regmbc('S'); REGMBC(0x15a) REGMBC(0x15c)
-                      REGMBC(0x15e) REGMBC(0x160) REGMBC(0x1e60)
-                      return;
-            case 'T': CASEMBC(0x162) CASEMBC(0x164) CASEMBC(0x166)
-            CASEMBC(0x1e6a) CASEMBC(0x1e6e)
-                      regmbc('T'); REGMBC(0x162) REGMBC(0x164)
-                      REGMBC(0x166) REGMBC(0x1e6a) REGMBC(0x1e6e)
-                      return;
-            case 'U': case '\331': case '\332': case '\333': case '\334':
-            CASEMBC(0x168) CASEMBC(0x16a) CASEMBC(0x16c) CASEMBC(0x16e)
-            CASEMBC(0x170) CASEMBC(0x172) CASEMBC(0x1af) CASEMBC(0x1d3)
-            CASEMBC(0x1ee6)
-                      regmbc('U'); regmbc('\331'); regmbc('\332');
-                      regmbc('\333'); regmbc('\334');
-                      REGMBC(0x168) REGMBC(0x16a) REGMBC(0x16c)
-                      REGMBC(0x16e) REGMBC(0x170) REGMBC(0x172)
-                      REGMBC(0x1af) REGMBC(0x1d3) REGMBC(0x1ee6)
-                      return;
-            case 'V': CASEMBC(0x1e7c)
-                      regmbc('V'); REGMBC(0x1e7c)
-                      return;
-            case 'W': CASEMBC(0x174) CASEMBC(0x1e80) CASEMBC(0x1e82)
-            CASEMBC(0x1e84) CASEMBC(0x1e86)
-                      regmbc('W'); REGMBC(0x174) REGMBC(0x1e80)
-                      REGMBC(0x1e82) REGMBC(0x1e84) REGMBC(0x1e86)
-                      return;
-            case 'X': CASEMBC(0x1e8a) CASEMBC(0x1e8c)
-                      regmbc('X'); REGMBC(0x1e8a) REGMBC(0x1e8c)
-                      return;
-            case 'Y': case '\335':
-            CASEMBC(0x176) CASEMBC(0x178) CASEMBC(0x1e8e) CASEMBC(0x1ef2)
-            CASEMBC(0x1ef6) CASEMBC(0x1ef8)
-                      regmbc('Y'); regmbc('\335');
-                      REGMBC(0x176) REGMBC(0x178) REGMBC(0x1e8e)
-                      REGMBC(0x1ef2) REGMBC(0x1ef6) REGMBC(0x1ef8)
-                      return;
-            case 'Z': CASEMBC(0x179) CASEMBC(0x17b) CASEMBC(0x17d)
-            CASEMBC(0x1b5) CASEMBC(0x1e90) CASEMBC(0x1e94)
-                      regmbc('Z'); REGMBC(0x179) REGMBC(0x17b)
-                      REGMBC(0x17d) REGMBC(0x1b5) REGMBC(0x1e90)
-                      REGMBC(0x1e94)
-                      return;
-            case 'a': case '\340': case '\341': case '\342':
-            case '\343': case '\344': case '\345':
-            CASEMBC(0x101) CASEMBC(0x103) CASEMBC(0x105) CASEMBC(0x1ce)
-            CASEMBC(0x1df) CASEMBC(0x1e1) CASEMBC(0x1ea3)
-                      regmbc('a'); regmbc('\340'); regmbc('\341');
-                      regmbc('\342'); regmbc('\343'); regmbc('\344');
-                      regmbc('\345');
-                      REGMBC(0x101) REGMBC(0x103) REGMBC(0x105)
-                      REGMBC(0x1ce) REGMBC(0x1df) REGMBC(0x1e1)
-                      REGMBC(0x1ea3)
-                      return;
-            case 'b': CASEMBC(0x1e03) CASEMBC(0x1e07)
-                      regmbc('b'); REGMBC(0x1e03) REGMBC(0x1e07)
-                      return;
-            case 'c': case '\347':
-            CASEMBC(0x107) CASEMBC(0x109) CASEMBC(0x10b) CASEMBC(0x10d)
-                      regmbc('c'); regmbc('\347');
-                      REGMBC(0x107) REGMBC(0x109) REGMBC(0x10b)
-                      REGMBC(0x10d)
-                      return;
-            case 'd': CASEMBC(0x10f) CASEMBC(0x111) CASEMBC(0x1d0b)
-            CASEMBC(0x1e11)
-                      regmbc('d'); REGMBC(0x10f) REGMBC(0x111)
-                      REGMBC(0x1e0b) REGMBC(0x01e0f) REGMBC(0x1e11)
-                      return;
-            case 'e': case '\350': case '\351': case '\352': case '\353':
-            CASEMBC(0x113) CASEMBC(0x115) CASEMBC(0x117) CASEMBC(0x119)
-            CASEMBC(0x11b) CASEMBC(0x1ebb) CASEMBC(0x1ebd)
-                      regmbc('e'); regmbc('\350'); regmbc('\351');
-                      regmbc('\352'); regmbc('\353');
-                      REGMBC(0x113) REGMBC(0x115) REGMBC(0x117)
-                      REGMBC(0x119) REGMBC(0x11b) REGMBC(0x1ebb)
-                      REGMBC(0x1ebd)
-                      return;
-            case 'f': CASEMBC(0x1e1f)
-                      regmbc('f'); REGMBC(0x1e1f)
-                      return;
-            case 'g': CASEMBC(0x11d) CASEMBC(0x11f) CASEMBC(0x121)
-            CASEMBC(0x123) CASEMBC(0x1e5) CASEMBC(0x1e7) CASEMBC(0x1f5)
-            CASEMBC(0x1e21)
-                      regmbc('g'); REGMBC(0x11d) REGMBC(0x11f)
-                      REGMBC(0x121) REGMBC(0x123) REGMBC(0x1e5)
-                      REGMBC(0x1e7) REGMBC(0x1f5) REGMBC(0x1e21)
-                      return;
-            case 'h': CASEMBC(0x125) CASEMBC(0x127) CASEMBC(0x1e23)
-            CASEMBC(0x1e27) CASEMBC(0x1e29) CASEMBC(0x1e96)
-                      regmbc('h'); REGMBC(0x125) REGMBC(0x127)
-                      REGMBC(0x1e23) REGMBC(0x1e27) REGMBC(0x1e29)
-                      REGMBC(0x1e96)
-                      return;
-            case 'i': case '\354': case '\355': case '\356': case '\357':
-            CASEMBC(0x129) CASEMBC(0x12b) CASEMBC(0x12d) CASEMBC(0x12f)
-            CASEMBC(0x1d0) CASEMBC(0x1ec9)
-                      regmbc('i'); regmbc('\354'); regmbc('\355');
-                      regmbc('\356'); regmbc('\357');
-                      REGMBC(0x129) REGMBC(0x12b) REGMBC(0x12d)
-                      REGMBC(0x12f) REGMBC(0x1d0) REGMBC(0x1ec9)
-                      return;
-            case 'j': CASEMBC(0x135) CASEMBC(0x1f0)
-                      regmbc('j'); REGMBC(0x135) REGMBC(0x1f0)
-                      return;
-            case 'k': CASEMBC(0x137) CASEMBC(0x1e9) CASEMBC(0x1e31)
-            CASEMBC(0x1e35)
-                      regmbc('k'); REGMBC(0x137) REGMBC(0x1e9)
-                      REGMBC(0x1e31) REGMBC(0x1e35)
-                      return;
-            case 'l': CASEMBC(0x13a) CASEMBC(0x13c) CASEMBC(0x13e)
-            CASEMBC(0x140) CASEMBC(0x142) CASEMBC(0x1e3b)
-                      regmbc('l'); REGMBC(0x13a) REGMBC(0x13c)
-                      REGMBC(0x13e) REGMBC(0x140) REGMBC(0x142)
-                      REGMBC(0x1e3b)
-                      return;
-            case 'm': CASEMBC(0x1e3f) CASEMBC(0x1e41)
-                      regmbc('m'); REGMBC(0x1e3f) REGMBC(0x1e41)
-                      return;
-            case 'n': case '\361':
-            CASEMBC(0x144) CASEMBC(0x146) CASEMBC(0x148) CASEMBC(0x149)
-            CASEMBC(0x1e45) CASEMBC(0x1e49)
-                      regmbc('n'); regmbc('\361');
-                      REGMBC(0x144) REGMBC(0x146) REGMBC(0x148)
-                      REGMBC(0x149) REGMBC(0x1e45) REGMBC(0x1e49)
-                      return;
-            case 'o': case '\362': case '\363': case '\364': case '\365':
-            case '\366': case '\370':
-            CASEMBC(0x14d) CASEMBC(0x14f) CASEMBC(0x151) CASEMBC(0x1a1)
-            CASEMBC(0x1d2) CASEMBC(0x1eb) CASEMBC(0x1ed) CASEMBC(0x1ecf)
-                      regmbc('o'); regmbc('\362'); regmbc('\363');
-                      regmbc('\364'); regmbc('\365'); regmbc('\366');
-                      regmbc('\370');
-                      REGMBC(0x14d) REGMBC(0x14f) REGMBC(0x151)
-                      REGMBC(0x1a1) REGMBC(0x1d2) REGMBC(0x1eb)
-                      REGMBC(0x1ed) REGMBC(0x1ecf)
-                      return;
-            case 'p': CASEMBC(0x1e55) CASEMBC(0x1e57)
-                      regmbc('p'); REGMBC(0x1e55) REGMBC(0x1e57)
-                      return;
-            case 'r': CASEMBC(0x155) CASEMBC(0x157) CASEMBC(0x159)
-            CASEMBC(0x1e59) CASEMBC(0x1e5f)
-                      regmbc('r'); REGMBC(0x155) REGMBC(0x157) REGMBC(0x159)
-                      REGMBC(0x1e59) REGMBC(0x1e5f)
-                      return;
-            case 's': CASEMBC(0x15b) CASEMBC(0x15d) CASEMBC(0x15f)
-            CASEMBC(0x161) CASEMBC(0x1e61)
-                      regmbc('s'); REGMBC(0x15b) REGMBC(0x15d)
-                      REGMBC(0x15f) REGMBC(0x161) REGMBC(0x1e61)
-                      return;
-            case 't': CASEMBC(0x163) CASEMBC(0x165) CASEMBC(0x167)
-            CASEMBC(0x1e6b) CASEMBC(0x1e6f) CASEMBC(0x1e97)
-                      regmbc('t'); REGMBC(0x163) REGMBC(0x165) REGMBC(0x167)
-                      REGMBC(0x1e6b) REGMBC(0x1e6f) REGMBC(0x1e97)
-                      return;
-            case 'u': case '\371': case '\372': case '\373': case '\374':
-            CASEMBC(0x169) CASEMBC(0x16b) CASEMBC(0x16d) CASEMBC(0x16f)
-            CASEMBC(0x171) CASEMBC(0x173) CASEMBC(0x1b0) CASEMBC(0x1d4)
-            CASEMBC(0x1ee7)
-                      regmbc('u'); regmbc('\371'); regmbc('\372');
-                      regmbc('\373'); regmbc('\374');
-                      REGMBC(0x169) REGMBC(0x16b) REGMBC(0x16d)
-                      REGMBC(0x16f) REGMBC(0x171) REGMBC(0x173)
-                      REGMBC(0x1b0) REGMBC(0x1d4) REGMBC(0x1ee7)
-                      return;
-            case 'v': CASEMBC(0x1e7d)
-                      regmbc('v'); REGMBC(0x1e7d)
-                      return;
-            case 'w': CASEMBC(0x175) CASEMBC(0x1e81) CASEMBC(0x1e83)
-            CASEMBC(0x1e85) CASEMBC(0x1e87) CASEMBC(0x1e98)
-                      regmbc('w'); REGMBC(0x175) REGMBC(0x1e81)
-                      REGMBC(0x1e83) REGMBC(0x1e85) REGMBC(0x1e87)
-                      REGMBC(0x1e98)
-                      return;
-            case 'x': CASEMBC(0x1e8b) CASEMBC(0x1e8d)
-                      regmbc('x'); REGMBC(0x1e8b) REGMBC(0x1e8d)
-                      return;
-            case 'y': case '\375': case '\377':
-            CASEMBC(0x177) CASEMBC(0x1e8f) CASEMBC(0x1e99)
-            CASEMBC(0x1ef3) CASEMBC(0x1ef7) CASEMBC(0x1ef9)
-                      regmbc('y'); regmbc('\375'); regmbc('\377');
-                      REGMBC(0x177) REGMBC(0x1e8f) REGMBC(0x1e99)
-                      REGMBC(0x1ef3) REGMBC(0x1ef7) REGMBC(0x1ef9)
-                      return;
-            case 'z': CASEMBC(0x17a) CASEMBC(0x17c) CASEMBC(0x17e)
-            CASEMBC(0x1b6) CASEMBC(0x1e91) CASEMBC(0x1e95)
-                      regmbc('z'); REGMBC(0x17a) REGMBC(0x17c)
-                      REGMBC(0x17e) REGMBC(0x1b6) REGMBC(0x1e91)
-                      REGMBC(0x1e95)
-                      return;
-        }
+        case 'A': case '\300': case '\301': case '\302':
+        CASEMBC(0x100) CASEMBC(0x102) CASEMBC(0x104) CASEMBC(0x1cd)
+        CASEMBC(0x1de) CASEMBC(0x1e0) CASEMBC(0x1ea2)
+        case '\303': case '\304': case '\305':
+                    regmbc('A'); regmbc('\300'); regmbc('\301');
+                    regmbc('\302'); regmbc('\303'); regmbc('\304');
+                    regmbc('\305');
+                    REGMBC(0x100) REGMBC(0x102) REGMBC(0x104)
+                    REGMBC(0x1cd) REGMBC(0x1de) REGMBC(0x1e0)
+                    REGMBC(0x1ea2)
+                    return;
+        case 'B': CASEMBC(0x1e02) CASEMBC(0x1e06)
+                    regmbc('B'); REGMBC(0x1e02) REGMBC(0x1e06)
+                    return;
+        case 'C': case '\307':
+        CASEMBC(0x106) CASEMBC(0x108) CASEMBC(0x10a) CASEMBC(0x10c)
+                    regmbc('C'); regmbc('\307');
+                    REGMBC(0x106) REGMBC(0x108) REGMBC(0x10a)
+                    REGMBC(0x10c)
+                    return;
+        case 'D': CASEMBC(0x10e) CASEMBC(0x110) CASEMBC(0x1e0a)
+        CASEMBC(0x1e0e) CASEMBC(0x1e10)
+                    regmbc('D'); REGMBC(0x10e) REGMBC(0x110)
+                    REGMBC(0x1e0a) REGMBC(0x1e0e) REGMBC(0x1e10)
+                    return;
+        case 'E': case '\310': case '\311': case '\312': case '\313':
+        CASEMBC(0x112) CASEMBC(0x114) CASEMBC(0x116) CASEMBC(0x118)
+        CASEMBC(0x11a) CASEMBC(0x1eba) CASEMBC(0x1ebc)
+                    regmbc('E'); regmbc('\310'); regmbc('\311');
+                    regmbc('\312'); regmbc('\313');
+                    REGMBC(0x112) REGMBC(0x114) REGMBC(0x116)
+                    REGMBC(0x118) REGMBC(0x11a) REGMBC(0x1eba)
+                    REGMBC(0x1ebc)
+                    return;
+        case 'F': CASEMBC(0x1e1e)
+                    regmbc('F'); REGMBC(0x1e1e)
+                    return;
+        case 'G': CASEMBC(0x11c) CASEMBC(0x11e) CASEMBC(0x120)
+        CASEMBC(0x122) CASEMBC(0x1e4) CASEMBC(0x1e6) CASEMBC(0x1f4)
+        CASEMBC(0x1e20)
+                    regmbc('G'); REGMBC(0x11c) REGMBC(0x11e)
+                    REGMBC(0x120) REGMBC(0x122) REGMBC(0x1e4)
+                    REGMBC(0x1e6) REGMBC(0x1f4) REGMBC(0x1e20)
+                    return;
+        case 'H': CASEMBC(0x124) CASEMBC(0x126) CASEMBC(0x1e22)
+        CASEMBC(0x1e26) CASEMBC(0x1e28)
+                    regmbc('H'); REGMBC(0x124) REGMBC(0x126)
+                    REGMBC(0x1e22) REGMBC(0x1e26) REGMBC(0x1e28)
+                    return;
+        case 'I': case '\314': case '\315': case '\316': case '\317':
+        CASEMBC(0x128) CASEMBC(0x12a) CASEMBC(0x12c) CASEMBC(0x12e)
+        CASEMBC(0x130) CASEMBC(0x1cf) CASEMBC(0x1ec8)
+                    regmbc('I'); regmbc('\314'); regmbc('\315');
+                    regmbc('\316'); regmbc('\317');
+                    REGMBC(0x128) REGMBC(0x12a) REGMBC(0x12c)
+                    REGMBC(0x12e) REGMBC(0x130) REGMBC(0x1cf)
+                    REGMBC(0x1ec8)
+                    return;
+        case 'J': CASEMBC(0x134)
+                    regmbc('J'); REGMBC(0x134)
+                    return;
+        case 'K': CASEMBC(0x136) CASEMBC(0x1e8) CASEMBC(0x1e30)
+        CASEMBC(0x1e34)
+                    regmbc('K'); REGMBC(0x136) REGMBC(0x1e8)
+                    REGMBC(0x1e30) REGMBC(0x1e34)
+                    return;
+        case 'L': CASEMBC(0x139) CASEMBC(0x13b) CASEMBC(0x13d)
+        CASEMBC(0x13f) CASEMBC(0x141) CASEMBC(0x1e3a)
+                    regmbc('L'); REGMBC(0x139) REGMBC(0x13b)
+                    REGMBC(0x13d) REGMBC(0x13f) REGMBC(0x141)
+                    REGMBC(0x1e3a)
+                    return;
+        case 'M': CASEMBC(0x1e3e) CASEMBC(0x1e40)
+                    regmbc('M'); REGMBC(0x1e3e) REGMBC(0x1e40)
+                    return;
+        case 'N': case '\321':
+        CASEMBC(0x143) CASEMBC(0x145) CASEMBC(0x147) CASEMBC(0x1e44)
+        CASEMBC(0x1e48)
+                    regmbc('N'); regmbc('\321');
+                    REGMBC(0x143) REGMBC(0x145) REGMBC(0x147)
+                    REGMBC(0x1e44) REGMBC(0x1e48)
+                    return;
+        case 'O': case '\322': case '\323': case '\324': case '\325':
+        case '\326': case '\330':
+        CASEMBC(0x14c) CASEMBC(0x14e) CASEMBC(0x150) CASEMBC(0x1a0)
+        CASEMBC(0x1d1) CASEMBC(0x1ea) CASEMBC(0x1ec) CASEMBC(0x1ece)
+                    regmbc('O'); regmbc('\322'); regmbc('\323');
+                    regmbc('\324'); regmbc('\325'); regmbc('\326');
+                    regmbc('\330');
+                    REGMBC(0x14c) REGMBC(0x14e) REGMBC(0x150)
+                    REGMBC(0x1a0) REGMBC(0x1d1) REGMBC(0x1ea)
+                    REGMBC(0x1ec) REGMBC(0x1ece)
+                    return;
+        case 'P': case 0x1e54: case 0x1e56:
+                    regmbc('P'); REGMBC(0x1e54) REGMBC(0x1e56)
+                    return;
+        case 'R': CASEMBC(0x154) CASEMBC(0x156) CASEMBC(0x158)
+        CASEMBC(0x1e58) CASEMBC(0x1e5e)
+                    regmbc('R'); REGMBC(0x154) REGMBC(0x156) REGMBC(0x158)
+                    REGMBC(0x1e58) REGMBC(0x1e5e)
+                    return;
+        case 'S': CASEMBC(0x15a) CASEMBC(0x15c) CASEMBC(0x15e)
+        CASEMBC(0x160) CASEMBC(0x1e60)
+                    regmbc('S'); REGMBC(0x15a) REGMBC(0x15c)
+                    REGMBC(0x15e) REGMBC(0x160) REGMBC(0x1e60)
+                    return;
+        case 'T': CASEMBC(0x162) CASEMBC(0x164) CASEMBC(0x166)
+        CASEMBC(0x1e6a) CASEMBC(0x1e6e)
+                    regmbc('T'); REGMBC(0x162) REGMBC(0x164)
+                    REGMBC(0x166) REGMBC(0x1e6a) REGMBC(0x1e6e)
+                    return;
+        case 'U': case '\331': case '\332': case '\333': case '\334':
+        CASEMBC(0x168) CASEMBC(0x16a) CASEMBC(0x16c) CASEMBC(0x16e)
+        CASEMBC(0x170) CASEMBC(0x172) CASEMBC(0x1af) CASEMBC(0x1d3)
+        CASEMBC(0x1ee6)
+                    regmbc('U'); regmbc('\331'); regmbc('\332');
+                    regmbc('\333'); regmbc('\334');
+                    REGMBC(0x168) REGMBC(0x16a) REGMBC(0x16c)
+                    REGMBC(0x16e) REGMBC(0x170) REGMBC(0x172)
+                    REGMBC(0x1af) REGMBC(0x1d3) REGMBC(0x1ee6)
+                    return;
+        case 'V': CASEMBC(0x1e7c)
+                    regmbc('V'); REGMBC(0x1e7c)
+                    return;
+        case 'W': CASEMBC(0x174) CASEMBC(0x1e80) CASEMBC(0x1e82)
+        CASEMBC(0x1e84) CASEMBC(0x1e86)
+                    regmbc('W'); REGMBC(0x174) REGMBC(0x1e80)
+                    REGMBC(0x1e82) REGMBC(0x1e84) REGMBC(0x1e86)
+                    return;
+        case 'X': CASEMBC(0x1e8a) CASEMBC(0x1e8c)
+                    regmbc('X'); REGMBC(0x1e8a) REGMBC(0x1e8c)
+                    return;
+        case 'Y': case '\335':
+        CASEMBC(0x176) CASEMBC(0x178) CASEMBC(0x1e8e) CASEMBC(0x1ef2)
+        CASEMBC(0x1ef6) CASEMBC(0x1ef8)
+                    regmbc('Y'); regmbc('\335');
+                    REGMBC(0x176) REGMBC(0x178) REGMBC(0x1e8e)
+                    REGMBC(0x1ef2) REGMBC(0x1ef6) REGMBC(0x1ef8)
+                    return;
+        case 'Z': CASEMBC(0x179) CASEMBC(0x17b) CASEMBC(0x17d)
+        CASEMBC(0x1b5) CASEMBC(0x1e90) CASEMBC(0x1e94)
+                    regmbc('Z'); REGMBC(0x179) REGMBC(0x17b)
+                    REGMBC(0x17d) REGMBC(0x1b5) REGMBC(0x1e90)
+                    REGMBC(0x1e94)
+                    return;
+        case 'a': case '\340': case '\341': case '\342':
+        case '\343': case '\344': case '\345':
+        CASEMBC(0x101) CASEMBC(0x103) CASEMBC(0x105) CASEMBC(0x1ce)
+        CASEMBC(0x1df) CASEMBC(0x1e1) CASEMBC(0x1ea3)
+                    regmbc('a'); regmbc('\340'); regmbc('\341');
+                    regmbc('\342'); regmbc('\343'); regmbc('\344');
+                    regmbc('\345');
+                    REGMBC(0x101) REGMBC(0x103) REGMBC(0x105)
+                    REGMBC(0x1ce) REGMBC(0x1df) REGMBC(0x1e1)
+                    REGMBC(0x1ea3)
+                    return;
+        case 'b': CASEMBC(0x1e03) CASEMBC(0x1e07)
+                    regmbc('b'); REGMBC(0x1e03) REGMBC(0x1e07)
+                    return;
+        case 'c': case '\347':
+        CASEMBC(0x107) CASEMBC(0x109) CASEMBC(0x10b) CASEMBC(0x10d)
+                    regmbc('c'); regmbc('\347');
+                    REGMBC(0x107) REGMBC(0x109) REGMBC(0x10b)
+                    REGMBC(0x10d)
+                    return;
+        case 'd': CASEMBC(0x10f) CASEMBC(0x111) CASEMBC(0x1d0b)
+        CASEMBC(0x1e11)
+                    regmbc('d'); REGMBC(0x10f) REGMBC(0x111)
+                    REGMBC(0x1e0b) REGMBC(0x01e0f) REGMBC(0x1e11)
+                    return;
+        case 'e': case '\350': case '\351': case '\352': case '\353':
+        CASEMBC(0x113) CASEMBC(0x115) CASEMBC(0x117) CASEMBC(0x119)
+        CASEMBC(0x11b) CASEMBC(0x1ebb) CASEMBC(0x1ebd)
+                    regmbc('e'); regmbc('\350'); regmbc('\351');
+                    regmbc('\352'); regmbc('\353');
+                    REGMBC(0x113) REGMBC(0x115) REGMBC(0x117)
+                    REGMBC(0x119) REGMBC(0x11b) REGMBC(0x1ebb)
+                    REGMBC(0x1ebd)
+                    return;
+        case 'f': CASEMBC(0x1e1f)
+                    regmbc('f'); REGMBC(0x1e1f)
+                    return;
+        case 'g': CASEMBC(0x11d) CASEMBC(0x11f) CASEMBC(0x121)
+        CASEMBC(0x123) CASEMBC(0x1e5) CASEMBC(0x1e7) CASEMBC(0x1f5)
+        CASEMBC(0x1e21)
+                    regmbc('g'); REGMBC(0x11d) REGMBC(0x11f)
+                    REGMBC(0x121) REGMBC(0x123) REGMBC(0x1e5)
+                    REGMBC(0x1e7) REGMBC(0x1f5) REGMBC(0x1e21)
+                    return;
+        case 'h': CASEMBC(0x125) CASEMBC(0x127) CASEMBC(0x1e23)
+        CASEMBC(0x1e27) CASEMBC(0x1e29) CASEMBC(0x1e96)
+                    regmbc('h'); REGMBC(0x125) REGMBC(0x127)
+                    REGMBC(0x1e23) REGMBC(0x1e27) REGMBC(0x1e29)
+                    REGMBC(0x1e96)
+                    return;
+        case 'i': case '\354': case '\355': case '\356': case '\357':
+        CASEMBC(0x129) CASEMBC(0x12b) CASEMBC(0x12d) CASEMBC(0x12f)
+        CASEMBC(0x1d0) CASEMBC(0x1ec9)
+                    regmbc('i'); regmbc('\354'); regmbc('\355');
+                    regmbc('\356'); regmbc('\357');
+                    REGMBC(0x129) REGMBC(0x12b) REGMBC(0x12d)
+                    REGMBC(0x12f) REGMBC(0x1d0) REGMBC(0x1ec9)
+                    return;
+        case 'j': CASEMBC(0x135) CASEMBC(0x1f0)
+                    regmbc('j'); REGMBC(0x135) REGMBC(0x1f0)
+                    return;
+        case 'k': CASEMBC(0x137) CASEMBC(0x1e9) CASEMBC(0x1e31)
+        CASEMBC(0x1e35)
+                    regmbc('k'); REGMBC(0x137) REGMBC(0x1e9)
+                    REGMBC(0x1e31) REGMBC(0x1e35)
+                    return;
+        case 'l': CASEMBC(0x13a) CASEMBC(0x13c) CASEMBC(0x13e)
+        CASEMBC(0x140) CASEMBC(0x142) CASEMBC(0x1e3b)
+                    regmbc('l'); REGMBC(0x13a) REGMBC(0x13c)
+                    REGMBC(0x13e) REGMBC(0x140) REGMBC(0x142)
+                    REGMBC(0x1e3b)
+                    return;
+        case 'm': CASEMBC(0x1e3f) CASEMBC(0x1e41)
+                    regmbc('m'); REGMBC(0x1e3f) REGMBC(0x1e41)
+                    return;
+        case 'n': case '\361':
+        CASEMBC(0x144) CASEMBC(0x146) CASEMBC(0x148) CASEMBC(0x149)
+        CASEMBC(0x1e45) CASEMBC(0x1e49)
+                    regmbc('n'); regmbc('\361');
+                    REGMBC(0x144) REGMBC(0x146) REGMBC(0x148)
+                    REGMBC(0x149) REGMBC(0x1e45) REGMBC(0x1e49)
+                    return;
+        case 'o': case '\362': case '\363': case '\364': case '\365':
+        case '\366': case '\370':
+        CASEMBC(0x14d) CASEMBC(0x14f) CASEMBC(0x151) CASEMBC(0x1a1)
+        CASEMBC(0x1d2) CASEMBC(0x1eb) CASEMBC(0x1ed) CASEMBC(0x1ecf)
+                    regmbc('o'); regmbc('\362'); regmbc('\363');
+                    regmbc('\364'); regmbc('\365'); regmbc('\366');
+                    regmbc('\370');
+                    REGMBC(0x14d) REGMBC(0x14f) REGMBC(0x151)
+                    REGMBC(0x1a1) REGMBC(0x1d2) REGMBC(0x1eb)
+                    REGMBC(0x1ed) REGMBC(0x1ecf)
+                    return;
+        case 'p': CASEMBC(0x1e55) CASEMBC(0x1e57)
+                    regmbc('p'); REGMBC(0x1e55) REGMBC(0x1e57)
+                    return;
+        case 'r': CASEMBC(0x155) CASEMBC(0x157) CASEMBC(0x159)
+        CASEMBC(0x1e59) CASEMBC(0x1e5f)
+                    regmbc('r'); REGMBC(0x155) REGMBC(0x157) REGMBC(0x159)
+                    REGMBC(0x1e59) REGMBC(0x1e5f)
+                    return;
+        case 's': CASEMBC(0x15b) CASEMBC(0x15d) CASEMBC(0x15f)
+        CASEMBC(0x161) CASEMBC(0x1e61)
+                    regmbc('s'); REGMBC(0x15b) REGMBC(0x15d)
+                    REGMBC(0x15f) REGMBC(0x161) REGMBC(0x1e61)
+                    return;
+        case 't': CASEMBC(0x163) CASEMBC(0x165) CASEMBC(0x167)
+        CASEMBC(0x1e6b) CASEMBC(0x1e6f) CASEMBC(0x1e97)
+                    regmbc('t'); REGMBC(0x163) REGMBC(0x165) REGMBC(0x167)
+                    REGMBC(0x1e6b) REGMBC(0x1e6f) REGMBC(0x1e97)
+                    return;
+        case 'u': case '\371': case '\372': case '\373': case '\374':
+        CASEMBC(0x169) CASEMBC(0x16b) CASEMBC(0x16d) CASEMBC(0x16f)
+        CASEMBC(0x171) CASEMBC(0x173) CASEMBC(0x1b0) CASEMBC(0x1d4)
+        CASEMBC(0x1ee7)
+                    regmbc('u'); regmbc('\371'); regmbc('\372');
+                    regmbc('\373'); regmbc('\374');
+                    REGMBC(0x169) REGMBC(0x16b) REGMBC(0x16d)
+                    REGMBC(0x16f) REGMBC(0x171) REGMBC(0x173)
+                    REGMBC(0x1b0) REGMBC(0x1d4) REGMBC(0x1ee7)
+                    return;
+        case 'v': CASEMBC(0x1e7d)
+                    regmbc('v'); REGMBC(0x1e7d)
+                    return;
+        case 'w': CASEMBC(0x175) CASEMBC(0x1e81) CASEMBC(0x1e83)
+        CASEMBC(0x1e85) CASEMBC(0x1e87) CASEMBC(0x1e98)
+                    regmbc('w'); REGMBC(0x175) REGMBC(0x1e81)
+                    REGMBC(0x1e83) REGMBC(0x1e85) REGMBC(0x1e87)
+                    REGMBC(0x1e98)
+                    return;
+        case 'x': CASEMBC(0x1e8b) CASEMBC(0x1e8d)
+                    regmbc('x'); REGMBC(0x1e8b) REGMBC(0x1e8d)
+                    return;
+        case 'y': case '\375': case '\377':
+        CASEMBC(0x177) CASEMBC(0x1e8f) CASEMBC(0x1e99)
+        CASEMBC(0x1ef3) CASEMBC(0x1ef7) CASEMBC(0x1ef9)
+                    regmbc('y'); regmbc('\375'); regmbc('\377');
+                    REGMBC(0x177) REGMBC(0x1e8f) REGMBC(0x1e99)
+                    REGMBC(0x1ef3) REGMBC(0x1ef7) REGMBC(0x1ef9)
+                    return;
+        case 'z': CASEMBC(0x17a) CASEMBC(0x17c) CASEMBC(0x17e)
+        CASEMBC(0x1b6) CASEMBC(0x1e91) CASEMBC(0x1e95)
+                    regmbc('z'); REGMBC(0x17a) REGMBC(0x17c)
+                    REGMBC(0x17e) REGMBC(0x1b6) REGMBC(0x1e91)
+                    REGMBC(0x1e95)
+                    return;
     }
+
     regmbc(c);
 }
 
@@ -1007,14 +1002,10 @@ get_coll_element(pp)
 
     if (p[1] == '.')
     {
-        if (has_mbyte)
-            l = (*mb_ptr2len)(p + 2);
+        l = utfc_ptr2len(p + 2);
         if (p[l + 2] == '.' && p[l + 3] == ']')
         {
-            if (has_mbyte)
-                c = mb_ptr2char(p + 2);
-            else
-                c = p[2];
+            c = utf_ptr2char(p + 2);
             *pp += l + 4;
             return c;
         }
@@ -1050,13 +1041,13 @@ skip_anyof(p)
         ++p;
     while (*p != NUL && *p != ']')
     {
-        if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+        if ((l = utfc_ptr2len(p)) > 1)
             p += l;
         else if (*p == '-')
         {
             ++p;
             if (*p != ']' && *p != NUL)
-                mb_ptr_adv(p);
+                p += utfc_ptr2len(p);
         }
         else if (*p == '\\'
                 && !reg_cpo_bsl
@@ -1102,7 +1093,7 @@ skip_regexp(startp, dirc, magic, newp)
         mymagic = MAGIC_OFF;
     get_cpo_flags();
 
-    for (; p[0] != NUL; mb_ptr_adv(p))
+    for (; p[0] != NUL; p += utfc_ptr2len(p))
     {
         if (p[0] == dirc)       /* found end of regexp */
             break;
@@ -1239,10 +1230,7 @@ bt_regcomp(expr, re_flags)
 
         if (OP(scan) == EXACTLY)
         {
-            if (has_mbyte)
-                r->regstart = (*mb_ptr2char)(OPERAND(scan));
-            else
-                r->regstart = *OPERAND(scan);
+            r->regstart = utf_ptr2char(OPERAND(scan));
         }
         else if ((OP(scan) == BOW
                     || OP(scan) == EOW
@@ -1251,10 +1239,7 @@ bt_regcomp(expr, re_flags)
                     || OP(scan) == MCLOSE + 0 || OP(scan) == NCLOSE)
                  && OP(regnext(scan)) == EXACTLY)
         {
-            if (has_mbyte)
-                r->regstart = (*mb_ptr2char)(OPERAND(regnext(scan)));
-            else
-                r->regstart = *OPERAND(regnext(scan));
+            r->regstart = utf_ptr2char(OPERAND(regnext(scan)));
         }
 
         /*
@@ -1824,7 +1809,7 @@ regatom(flagp)
             EMSG_RET_NULL("E63: invalid use of \\_");
         /* When '.' is followed by a composing char ignore the dot, so that
          * the composing char is matched here. */
-        if (enc_utf8 && c == Magic('.') && utf_iscomposing(peekchr()))
+        if (c == Magic('.') && utf_iscomposing(peekchr()))
         {
             c = getchr();
             goto do_multibyte;
@@ -2213,12 +2198,7 @@ collection:
                             if (*regparse == '[')
                                 endc = get_coll_element(&regparse);
                             if (endc == 0)
-                            {
-                                if (has_mbyte)
-                                    endc = mb_ptr2char_adv(&regparse);
-                                else
-                                    endc = *regparse++;
-                            }
+                                endc = mb_ptr2char_adv(&regparse);
 
                             /* Handle \o40, \x20 and \u20AC style sequences */
                             if (endc == '\\' && !reg_cpo_lit && !reg_cpo_bsl)
@@ -2226,7 +2206,7 @@ collection:
 
                             if (startc > endc)
                                 EMSG_RET_NULL((char *)e_invrange);
-                            if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
+                            if (utf_char2len(startc) > 1 || utf_char2len(endc) > 1)
                             {
                                 /* Limit to a range of 256 chars */
                                 if (endc > startc + 256)
@@ -2350,7 +2330,7 @@ collection:
                                 break;
                             case CLASS_LOWER:
                                 for (cu = 1; cu <= 255; cu++)
-                                    if (MB_ISLOWER(cu))
+                                    if (vim_islower(cu))
                                         regc(cu);
                                 break;
                             case CLASS_PRINT:
@@ -2370,7 +2350,7 @@ collection:
                                 break;
                             case CLASS_UPPER:
                                 for (cu = 1; cu <= 255; cu++)
-                                    if (MB_ISUPPER(cu))
+                                    if (vim_isupper(cu))
                                         regc(cu);
                                 break;
                             case CLASS_XDIGIT:
@@ -2394,24 +2374,16 @@ collection:
                     }
                     else
                     {
-                        if (has_mbyte)
-                        {
-                            int len;
+                        int len;
 
-                            /* produce a multibyte character, including any
-                             * following composing characters */
-                            startc = mb_ptr2char(regparse);
-                            len = (*mb_ptr2len)(regparse);
-                            if (enc_utf8 && utf_char2len(startc) != len)
-                                startc = -1;    /* composing chars */
-                            while (--len >= 0)
-                                regc(*regparse++);
-                        }
-                        else
-                        {
-                            startc = *regparse++;
-                            regc(startc);
-                        }
+                        /* produce a multibyte character, including any
+                         * following composing characters */
+                        startc = utf_ptr2char(regparse);
+                        len = utfc_ptr2len(regparse);
+                        if (utf_char2len(startc) != len)
+                            startc = -1;    /* composing chars */
+                        while (--len >= 0)
+                            regc(*regparse++);
                     }
                 }
                 regc(NUL);
@@ -2459,26 +2431,23 @@ do_multibyte:
                             && !is_Magic(c))); ++len)
             {
                 c = no_Magic(c);
-                if (has_mbyte)
-                {
-                    regmbc(c);
-                    if (enc_utf8)
-                    {
-                        int     l;
 
-                        /* Need to get composing character too. */
-                        for (;;)
-                        {
-                            l = utf_ptr2len(regparse);
-                            if (!UTF_COMPOSINGLIKE(regparse, regparse + l))
-                                break;
-                            regmbc(utf_ptr2char(regparse));
-                            skipchr();
-                        }
+                regmbc(c);
+
+                {
+                    int     l;
+
+                    /* Need to get composing character too. */
+                    for (;;)
+                    {
+                        l = utf_ptr2len(regparse);
+                        if (!UTF_COMPOSINGLIKE(regparse, regparse + l))
+                            break;
+                        regmbc(utf_ptr2char(regparse));
+                        skipchr();
                     }
                 }
-                else
-                    regc(c);
+
                 c = getchr();
             }
             ungetchr();
@@ -2501,8 +2470,7 @@ do_multibyte:
 use_multibytecode(c)
     int c;
 {
-    return has_mbyte && (*mb_char2len)(c) > 1
-                     && (re_multi_type(peekchr()) != NOT_MULTI || (enc_utf8 && utf_iscomposing(c)));
+    return utf_char2len(c) > 1 && (re_multi_type(peekchr()) != NOT_MULTI || utf_iscomposing(c));
 }
 
 /*
@@ -2547,12 +2515,10 @@ regc(b)
 regmbc(c)
     int         c;
 {
-    if (!has_mbyte && c > 0xff)
-        return;
     if (regcode == JUST_CALC_SIZE)
-        regsize += (*mb_char2len)(c);
+        regsize += utf_char2len(c);
     else
-        regcode += (*mb_char2bytes)(c, regcode);
+        regcode += utf_char2bytes(c, regcode);
 }
 
 /*
@@ -2927,17 +2893,13 @@ peekchr()
                      * Next character can never be (made) magic?
                      * Then backslashing it won't do anything.
                      */
-                    if (has_mbyte)
-                        curchr = (*mb_ptr2char)(regparse + 1);
-                    else
-                        curchr = c;
+                    curchr = utf_ptr2char(regparse + 1);
                 }
                 break;
             }
 
         default:
-            if (has_mbyte)
-                curchr = (*mb_ptr2char)(regparse);
+            curchr = utf_ptr2char(regparse);
         }
     }
 
@@ -2957,13 +2919,8 @@ skipchr()
         prevchr_len = 0;
     if (regparse[prevchr_len] != NUL)
     {
-        if (enc_utf8)
-            /* exclude composing chars that mb_ptr2len does include */
-            prevchr_len += utf_ptr2len(regparse + prevchr_len);
-        else if (has_mbyte)
-            prevchr_len += (*mb_ptr2len)(regparse + prevchr_len);
-        else
-            ++prevchr_len;
+        /* exclude composing chars that utfc_ptr2len does include */
+        prevchr_len += utf_ptr2len(regparse + prevchr_len);
     }
     regparse += prevchr_len;
     prev_at_start = at_start;
@@ -3588,36 +3545,26 @@ bt_regexec_both(line, col, tm)
     {
         int c;
 
-        if (has_mbyte)
-            c = (*mb_ptr2char)(prog->regmust);
-        else
-            c = *prog->regmust;
+        c = utf_ptr2char(prog->regmust);
         s = line + col;
 
         /*
          * This is used very often, esp. for ":global".  Use three versions of
          * the loop to avoid overhead of conditions.
          */
-        if (!ireg_ic && !has_mbyte)
-            while ((s = vim_strbyte(s, c)) != NULL)
-            {
-                if (cstrncmp(s, prog->regmust, &prog->regmlen) == 0)
-                    break;              /* Found it. */
-                ++s;
-            }
-        else if (!ireg_ic || (!enc_utf8 && mb_char2len(c) > 1))
+        if (!ireg_ic)
             while ((s = vim_strchr(s, c)) != NULL)
             {
                 if (cstrncmp(s, prog->regmust, &prog->regmlen) == 0)
                     break;              /* Found it. */
-                mb_ptr_adv(s);
+                s += utfc_ptr2len(s);
             }
         else
             while ((s = cstrchr(s, c)) != NULL)
             {
                 if (cstrncmp(s, prog->regmust, &prog->regmlen) == 0)
                     break;              /* Found it. */
-                mb_ptr_adv(s);
+                s += utfc_ptr2len(s);
             }
         if (s == NULL)          /* Not present. */
             goto theend;
@@ -3632,16 +3579,12 @@ bt_regexec_both(line, col, tm)
     {
         int     c;
 
-        if (has_mbyte)
-            c = (*mb_ptr2char)(regline + col);
-        else
-            c = regline[col];
+        c = utf_ptr2char(regline + col);
         if (prog->regstart == NUL
                 || prog->regstart == c
-                || (ireg_ic && ((
-                        (enc_utf8 && utf_fold(prog->regstart) == utf_fold(c)))
+                || (ireg_ic && ((utf_fold(prog->regstart) == utf_fold(c))
                         || (c < 255 && prog->regstart < 255 &&
-                            MB_TOLOWER(prog->regstart) == MB_TOLOWER(c)))))
+                            vim_tolower(prog->regstart) == vim_tolower(c)))))
             retval = regtry(prog, col);
         else
             retval = 0;
@@ -3656,10 +3599,7 @@ bt_regexec_both(line, col, tm)
             {
                 /* Skip until the char we know it must start with.
                  * Used often, do some work to avoid call overhead. */
-                if (!ireg_ic && !has_mbyte)
-                    s = vim_strbyte(regline + col, prog->regstart);
-                else
-                    s = cstrchr(regline + col, prog->regstart);
+                s = cstrchr(regline + col, prog->regstart);
                 if (s == NULL)
                 {
                     retval = 0;
@@ -3687,10 +3627,7 @@ bt_regexec_both(line, col, tm)
             }
             if (regline[col] == NUL)
                 break;
-            if (has_mbyte)
-                col += (*mb_ptr2len)(regline + col);
-            else
-                ++col;
+            col += utfc_ptr2len(regline + col);
             /* Check for timeout once in a twenty times to avoid overhead. */
             if (tm != NULL && ++tm_count == 20)
             {
@@ -3846,7 +3783,7 @@ static int reg_prev_class(void);
 reg_prev_class()
 {
     if (reginput > regline)
-        return mb_get_class_buf(reginput - 1 - (*mb_head_off)(regline, reginput - 1), reg_buf);
+        return mb_get_class_buf(reginput - 1 - utf_head_off(regline, reginput - 1), reg_buf);
     return -1;
 }
 
@@ -3926,8 +3863,6 @@ reg_match_visual()
     return TRUE;
 }
 
-#define ADVANCE_REGINPUT() mb_ptr_adv(reginput)
-
 /*
  * The arguments from BRACE_LIMITS are stored here.  They are actually local
  * to regmatch(), but they are here to reduce the amount of stack space used
@@ -4002,762 +3937,719 @@ regmatch(scan)
         }
         else if (reg_line_lbr && WITH_NL(op) && *reginput == '\n')
         {
-            ADVANCE_REGINPUT();
+            reginput += utfc_ptr2len(reginput);
         }
         else
         {
-          if (WITH_NL(op))
-              op -= ADD_NL;
-          if (has_mbyte)
-              c = (*mb_ptr2char)(reginput);
-          else
-              c = *reginput;
-          switch (op)
-          {
-          case BOL:
-            if (reginput != regline)
-                status = RA_NOMATCH;
-            break;
-
-          case EOL:
-            if (c != NUL)
-                status = RA_NOMATCH;
-            break;
-
-          case RE_BOF:
-            /* We're not at the beginning of the file when below the first
-             * line where we started, not at the start of the line or we
-             * didn't start at the first line of the buffer. */
-            if (reglnum != 0 || reginput != regline || (REG_MULTI && reg_firstlnum > 1))
-                status = RA_NOMATCH;
-            break;
-
-          case RE_EOF:
-            if (reglnum != reg_maxline || c != NUL)
-                status = RA_NOMATCH;
-            break;
-
-          case CURSOR:
-            /* Check if the buffer is in a window and compare the
-             * reg_win->w_cursor position to the match position. */
-            if (reg_win == NULL
-                    || (reglnum + reg_firstlnum != reg_win->w_cursor.lnum)
-                    || ((colnr_T)(reginput - regline) != reg_win->w_cursor.col))
-                status = RA_NOMATCH;
-            break;
-
-          case RE_MARK:
-            /* Compare the mark position to the match position. */
+            if (WITH_NL(op))
+                op -= ADD_NL;
+            c = utf_ptr2char(reginput);
+            switch (op)
             {
-                int     mark = OPERAND(scan)[0];
-                int     cmp = OPERAND(scan)[1];
-                pos_T   *pos;
-
-                pos = getmark_buf(reg_buf, mark, FALSE);
-                if (pos == NULL              /* mark doesn't exist */
-                        || pos->lnum <= 0    /* mark isn't set in reg_buf */
-                        || (pos->lnum == reglnum + reg_firstlnum
-                                ? (pos->col == (colnr_T)(reginput - regline)
-                                    ? (cmp == '<' || cmp == '>')
-                                    : (pos->col < (colnr_T)(reginput - regline)
-                                        ? cmp != '>'
-                                        : cmp != '<'))
-                                : (pos->lnum < reglnum + reg_firstlnum
-                                    ? cmp != '>'
-                                    : cmp != '<')))
+            case BOL:
+                if (reginput != regline)
                     status = RA_NOMATCH;
-            }
-            break;
-
-          case RE_VISUAL:
-            if (!reg_match_visual())
-                status = RA_NOMATCH;
-            break;
-
-          case RE_LNUM:
-            if (!REG_MULTI || !re_num_cmp((long_u)(reglnum + reg_firstlnum), scan))
-                status = RA_NOMATCH;
-            break;
-
-          case RE_COL:
-            if (!re_num_cmp((long_u)(reginput - regline) + 1, scan))
-                status = RA_NOMATCH;
-            break;
-
-          case RE_VCOL:
-            if (!re_num_cmp((long_u)win_linetabsize(
-                            reg_win == NULL ? curwin : reg_win,
-                            regline, (colnr_T)(reginput - regline)) + 1, scan))
-                status = RA_NOMATCH;
-            break;
-
-          case BOW:     /* \<word; reginput points to w */
-            if (c == NUL)       /* Can't match at end of line */
-                status = RA_NOMATCH;
-            else if (has_mbyte)
-            {
-                int this_class;
-
-                /* Get class of current and previous char (if it exists). */
-                this_class = mb_get_class_buf(reginput, reg_buf);
-                if (this_class <= 1)
-                    status = RA_NOMATCH;  /* not on a word at all */
-                else if (reg_prev_class() == this_class)
-                    status = RA_NOMATCH;  /* previous char is in same word */
-            }
-            else
-            {
-                if (!vim_iswordc_buf(c, reg_buf) || (reginput > regline
-                                   && vim_iswordc_buf(reginput[-1], reg_buf)))
-                    status = RA_NOMATCH;
-            }
-            break;
-
-          case EOW:     /* word\>; reginput points after d */
-            if (reginput == regline)    /* Can't match at start of line */
-                status = RA_NOMATCH;
-            else if (has_mbyte)
-            {
-                int this_class, prev_class;
-
-                /* Get class of current and previous char (if it exists). */
-                this_class = mb_get_class_buf(reginput, reg_buf);
-                prev_class = reg_prev_class();
-                if (this_class == prev_class || prev_class == 0 || prev_class == 1)
-                    status = RA_NOMATCH;
-            }
-            else
-            {
-                if (!vim_iswordc_buf(reginput[-1], reg_buf)
-                        || (reginput[0] != NUL && vim_iswordc_buf(c, reg_buf)))
-                    status = RA_NOMATCH;
-            }
-            break; /* Matched with EOW */
-
-          case ANY:
-            /* ANY does not match new lines. */
-            if (c == NUL)
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case IDENT:
-            if (!vim_isIDc(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case SIDENT:
-            if (VIM_ISDIGIT(*reginput) || !vim_isIDc(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case KWORD:
-            if (!vim_iswordp_buf(reginput, reg_buf))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case SKWORD:
-            if (VIM_ISDIGIT(*reginput) || !vim_iswordp_buf(reginput, reg_buf))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case FNAME:
-            if (!vim_isfilec(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case SFNAME:
-            if (VIM_ISDIGIT(*reginput) || !vim_isfilec(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case PRINT:
-            if (!vim_isprintc(PTR2CHAR(reginput)))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case SPRINT:
-            if (VIM_ISDIGIT(*reginput) || !vim_isprintc(PTR2CHAR(reginput)))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case WHITE:
-            if (!vim_iswhite(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NWHITE:
-            if (c == NUL || vim_iswhite(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case DIGIT:
-            if (!ri_digit(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NDIGIT:
-            if (c == NUL || ri_digit(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case HEX:
-            if (!ri_hex(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NHEX:
-            if (c == NUL || ri_hex(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case OCTAL:
-            if (!ri_octal(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NOCTAL:
-            if (c == NUL || ri_octal(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case WORD:
-            if (!ri_word(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NWORD:
-            if (c == NUL || ri_word(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case HEAD:
-            if (!ri_head(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NHEAD:
-            if (c == NUL || ri_head(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case ALPHA:
-            if (!ri_alpha(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NALPHA:
-            if (c == NUL || ri_alpha(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case LOWER:
-            if (!ri_lower(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NLOWER:
-            if (c == NUL || ri_lower(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case UPPER:
-            if (!ri_upper(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case NUPPER:
-            if (c == NUL || ri_upper(c))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case EXACTLY:
-            {
-                int     len;
-                char_u  *opnd;
-
-                opnd = OPERAND(scan);
-                /* Inline the first byte, for speed. */
-                if (*opnd != *reginput
-                        && (!ireg_ic || (
-                            !enc_utf8 &&
-                            MB_TOLOWER(*opnd) != MB_TOLOWER(*reginput))))
-                    status = RA_NOMATCH;
-                else if (*opnd == NUL)
-                {
-                    /* match empty string always works; happens when "~" is empty. */
-                }
-                else
-                {
-                    if (opnd[1] == NUL && !(enc_utf8 && ireg_ic))
-                    {
-                        len = 1;        /* matched a single byte above */
-                    }
-                    else
-                    {
-                        /* Need to match first byte again for multi-byte. */
-                        len = (int)STRLEN(opnd);
-                        if (cstrncmp(opnd, reginput, &len) != 0)
-                            status = RA_NOMATCH;
-                    }
-                    /* Check for following composing character, unless %C
-                     * follows (skips over all composing chars). */
-                    if (status != RA_NOMATCH
-                            && enc_utf8
-                            && UTF_COMPOSINGLIKE(reginput, reginput + len)
-                            && !ireg_icombine
-                            && OP(next) != RE_COMPOSING)
-                    {
-                        /* raaron: This code makes a composing character get
-                         * ignored, which is the correct behavior (sometimes)
-                         * for voweled Hebrew texts. */
-                        status = RA_NOMATCH;
-                    }
-                    if (status != RA_NOMATCH)
-                        reginput += len;
-                }
-            }
-            break;
-
-          case ANYOF:
-          case ANYBUT:
-            if (c == NUL)
-                status = RA_NOMATCH;
-            else if ((cstrchr(OPERAND(scan), c) == NULL) == (op == ANYOF))
-                status = RA_NOMATCH;
-            else
-                ADVANCE_REGINPUT();
-            break;
-
-          case MULTIBYTECODE:
-            if (has_mbyte)
-            {
-                int     i, len;
-                char_u  *opnd;
-                int     opndc = 0, inpc;
-
-                opnd = OPERAND(scan);
-                /* Safety check (just in case 'encoding' was changed since
-                 * compiling the program). */
-                if ((len = (*mb_ptr2len)(opnd)) < 2)
-                {
-                    status = RA_NOMATCH;
-                    break;
-                }
-                if (enc_utf8)
-                    opndc = mb_ptr2char(opnd);
-                if (enc_utf8 && utf_iscomposing(opndc))
-                {
-                    /* When only a composing char is given match at any
-                     * position where that composing char appears. */
-                    status = RA_NOMATCH;
-                    for (i = 0; reginput[i] != NUL; i += utf_ptr2len(reginput + i))
-                    {
-                        inpc = mb_ptr2char(reginput + i);
-                        if (!utf_iscomposing(inpc))
-                        {
-                            if (i > 0)
-                                break;
-                        }
-                        else if (opndc == inpc)
-                        {
-                            /* Include all following composing chars. */
-                            len = i + mb_ptr2len(reginput + i);
-                            status = RA_MATCH;
-                            break;
-                        }
-                    }
-                }
-                else
-                    for (i = 0; i < len; ++i)
-                        if (opnd[i] != reginput[i])
-                        {
-                            status = RA_NOMATCH;
-                            break;
-                        }
-                reginput += len;
-            }
-            else
-                status = RA_NOMATCH;
-            break;
-          case RE_COMPOSING:
-            if (enc_utf8)
-            {
-                /* Skip composing characters. */
-                while (utf_iscomposing(utf_ptr2char(reginput)))
-                    mb_cptr_adv(reginput);
-            }
-            break;
-
-          case NOTHING:
-            break;
-
-          case BACK:
-            {
-                int             i;
-                backpos_T       *bp;
-
-                /*
-                 * When we run into BACK we need to check if we don't keep
-                 * looping without matching any input.  The second and later
-                 * times a BACK is encountered it fails if the input is still
-                 * at the same position as the previous time.
-                 * The positions are stored in "backpos" and found by the
-                 * current value of "scan", the position in the RE program.
-                 */
-                bp = (backpos_T *)backpos.ga_data;
-                for (i = 0; i < backpos.ga_len; ++i)
-                    if (bp[i].bp_scan == scan)
-                        break;
-                if (i == backpos.ga_len)
-                {
-                    /* First time at this BACK, make room to store the pos. */
-                    if (ga_grow(&backpos, 1) == FAIL)
-                        status = RA_FAIL;
-                    else
-                    {
-                        /* get "ga_data" again, it may have changed */
-                        bp = (backpos_T *)backpos.ga_data;
-                        bp[i].bp_scan = scan;
-                        ++backpos.ga_len;
-                    }
-                }
-                else if (reg_save_equal(&bp[i].bp_pos))
-                    /* Still at same position as last time, fail. */
-                    status = RA_NOMATCH;
-
-                if (status != RA_FAIL && status != RA_NOMATCH)
-                    reg_save(&bp[i].bp_pos, &backpos);
-            }
-            break;
-
-          case MOPEN + 0:   /* Match start: \zs */
-          case MOPEN + 1:   /* \( */
-          case MOPEN + 2:
-          case MOPEN + 3:
-          case MOPEN + 4:
-          case MOPEN + 5:
-          case MOPEN + 6:
-          case MOPEN + 7:
-          case MOPEN + 8:
-          case MOPEN + 9:
-            {
-                no = op - MOPEN;
-                cleanup_subexpr();
-                rp = regstack_push(RS_MOPEN, scan);
-                if (rp == NULL)
-                    status = RA_FAIL;
-                else
-                {
-                    rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_startpos[no], &reg_startp[no]);
-                    /* We simply continue and handle the result when done. */
-                }
-            }
-            break;
-
-          case NOPEN:       /* \%( */
-          case NCLOSE:      /* \) after \%( */
-                if (regstack_push(RS_NOPEN, scan) == NULL)
-                    status = RA_FAIL;
-                /* We simply continue and handle the result when done. */
                 break;
 
-          case ZOPEN + 1:
-          case ZOPEN + 2:
-          case ZOPEN + 3:
-          case ZOPEN + 4:
-          case ZOPEN + 5:
-          case ZOPEN + 6:
-          case ZOPEN + 7:
-          case ZOPEN + 8:
-          case ZOPEN + 9:
-            {
-                no = op - ZOPEN;
-                cleanup_zsubexpr();
-                rp = regstack_push(RS_ZOPEN, scan);
-                if (rp == NULL)
-                    status = RA_FAIL;
+            case EOL:
+                if (c != NUL)
+                    status = RA_NOMATCH;
+                break;
+
+            case RE_BOF:
+                /* We're not at the beginning of the file when below the first
+                 * line where we started, not at the start of the line or we
+                 * didn't start at the first line of the buffer. */
+                if (reglnum != 0 || reginput != regline || (REG_MULTI && reg_firstlnum > 1))
+                    status = RA_NOMATCH;
+                break;
+
+            case RE_EOF:
+                if (reglnum != reg_maxline || c != NUL)
+                    status = RA_NOMATCH;
+                break;
+
+            case CURSOR:
+                /* Check if the buffer is in a window and compare the
+                 * reg_win->w_cursor position to the match position. */
+                if (reg_win == NULL
+                        || (reglnum + reg_firstlnum != reg_win->w_cursor.lnum)
+                        || ((colnr_T)(reginput - regline) != reg_win->w_cursor.col))
+                    status = RA_NOMATCH;
+                break;
+
+            case RE_MARK:
+                /* Compare the mark position to the match position. */
+                {
+                    int     mark = OPERAND(scan)[0];
+                    int     cmp = OPERAND(scan)[1];
+                    pos_T   *pos;
+
+                    pos = getmark_buf(reg_buf, mark, FALSE);
+                    if (pos == NULL              /* mark doesn't exist */
+                            || pos->lnum <= 0    /* mark isn't set in reg_buf */
+                            || (pos->lnum == reglnum + reg_firstlnum
+                                    ? (pos->col == (colnr_T)(reginput - regline)
+                                        ? (cmp == '<' || cmp == '>')
+                                        : (pos->col < (colnr_T)(reginput - regline)
+                                            ? cmp != '>'
+                                            : cmp != '<'))
+                                    : (pos->lnum < reglnum + reg_firstlnum
+                                        ? cmp != '>'
+                                        : cmp != '<')))
+                        status = RA_NOMATCH;
+                }
+                break;
+
+            case RE_VISUAL:
+                if (!reg_match_visual())
+                    status = RA_NOMATCH;
+                break;
+
+            case RE_LNUM:
+                if (!REG_MULTI || !re_num_cmp((long_u)(reglnum + reg_firstlnum), scan))
+                    status = RA_NOMATCH;
+                break;
+
+            case RE_COL:
+                if (!re_num_cmp((long_u)(reginput - regline) + 1, scan))
+                    status = RA_NOMATCH;
+                break;
+
+            case RE_VCOL:
+                if (!re_num_cmp((long_u)win_linetabsize(
+                                reg_win == NULL ? curwin : reg_win,
+                                regline, (colnr_T)(reginput - regline)) + 1, scan))
+                    status = RA_NOMATCH;
+                break;
+
+            case BOW:     /* \<word; reginput points to w */
+                if (c == NUL)       /* Can't match at end of line */
+                    status = RA_NOMATCH;
                 else
                 {
-                    rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_startzpos[no], &reg_startzp[no]);
-                    /* We simply continue and handle the result when done. */
-                }
-            }
-            break;
+                    int this_class;
 
-          case MCLOSE + 0:  /* Match end: \ze */
-          case MCLOSE + 1:  /* \) */
-          case MCLOSE + 2:
-          case MCLOSE + 3:
-          case MCLOSE + 4:
-          case MCLOSE + 5:
-          case MCLOSE + 6:
-          case MCLOSE + 7:
-          case MCLOSE + 8:
-          case MCLOSE + 9:
-            {
-                no = op - MCLOSE;
-                cleanup_subexpr();
-                rp = regstack_push(RS_MCLOSE, scan);
-                if (rp == NULL)
-                    status = RA_FAIL;
+                    /* Get class of current and previous char (if it exists). */
+                    this_class = mb_get_class_buf(reginput, reg_buf);
+                    if (this_class <= 1)
+                        status = RA_NOMATCH;  /* not on a word at all */
+                    else if (reg_prev_class() == this_class)
+                        status = RA_NOMATCH;  /* previous char is in same word */
+                }
+                break;
+
+            case EOW:     /* word\>; reginput points after d */
+                if (reginput == regline)    /* Can't match at start of line */
+                    status = RA_NOMATCH;
                 else
                 {
-                    rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_endpos[no], &reg_endp[no]);
-                    /* We simply continue and handle the result when done. */
-                }
-            }
-            break;
+                    int this_class, prev_class;
 
-          case ZCLOSE + 1:  /* \) after \z( */
-          case ZCLOSE + 2:
-          case ZCLOSE + 3:
-          case ZCLOSE + 4:
-          case ZCLOSE + 5:
-          case ZCLOSE + 6:
-          case ZCLOSE + 7:
-          case ZCLOSE + 8:
-          case ZCLOSE + 9:
-            {
-                no = op - ZCLOSE;
-                cleanup_zsubexpr();
-                rp = regstack_push(RS_ZCLOSE, scan);
-                if (rp == NULL)
-                    status = RA_FAIL;
+                    /* Get class of current and previous char (if it exists). */
+                    this_class = mb_get_class_buf(reginput, reg_buf);
+                    prev_class = reg_prev_class();
+                    if (this_class == prev_class || prev_class == 0 || prev_class == 1)
+                        status = RA_NOMATCH;
+                }
+                break; /* Matched with EOW */
+
+            case ANY:
+                /* ANY does not match new lines. */
+                if (c == NUL)
+                    status = RA_NOMATCH;
                 else
-                {
-                    rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_endzpos[no], &reg_endzp[no]);
-                    /* We simply continue and handle the result when done. */
-                }
-            }
-            break;
+                    reginput += utfc_ptr2len(reginput);
+                break;
 
-          case BACKREF + 1:
-          case BACKREF + 2:
-          case BACKREF + 3:
-          case BACKREF + 4:
-          case BACKREF + 5:
-          case BACKREF + 6:
-          case BACKREF + 7:
-          case BACKREF + 8:
-          case BACKREF + 9:
-            {
-                int             len;
+            case IDENT:
+                if (!vim_isIDc(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
 
-                no = op - BACKREF;
-                cleanup_subexpr();
-                if (!REG_MULTI)         /* Single-line regexp */
+            case SIDENT:
+                if (VIM_ISDIGIT(*reginput) || !vim_isIDc(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case KWORD:
+                if (!vim_iswordp_buf(reginput, reg_buf))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case SKWORD:
+                if (VIM_ISDIGIT(*reginput) || !vim_iswordp_buf(reginput, reg_buf))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case FNAME:
+                if (!vim_isfilec(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case SFNAME:
+                if (VIM_ISDIGIT(*reginput) || !vim_isfilec(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case PRINT:
+                if (!vim_isprintc(utf_ptr2char(reginput)))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case SPRINT:
+                if (VIM_ISDIGIT(*reginput) || !vim_isprintc(utf_ptr2char(reginput)))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case WHITE:
+                if (!vim_iswhite(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NWHITE:
+                if (c == NUL || vim_iswhite(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case DIGIT:
+                if (!ri_digit(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NDIGIT:
+                if (c == NUL || ri_digit(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case HEX:
+                if (!ri_hex(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NHEX:
+                if (c == NUL || ri_hex(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case OCTAL:
+                if (!ri_octal(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NOCTAL:
+                if (c == NUL || ri_octal(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case WORD:
+                if (!ri_word(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NWORD:
+                if (c == NUL || ri_word(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case HEAD:
+                if (!ri_head(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NHEAD:
+                if (c == NUL || ri_head(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case ALPHA:
+                if (!ri_alpha(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NALPHA:
+                if (c == NUL || ri_alpha(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case LOWER:
+                if (!ri_lower(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NLOWER:
+                if (c == NUL || ri_lower(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case UPPER:
+                if (!ri_upper(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case NUPPER:
+                if (c == NUL || ri_upper(c))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
+
+            case EXACTLY:
                 {
-                    if (reg_startp[no] == NULL || reg_endp[no] == NULL)
+                    int     len;
+                    char_u  *opnd;
+
+                    opnd = OPERAND(scan);
+                    /* Inline the first byte, for speed. */
+                    if (*opnd != *reginput && !ireg_ic)
+                        status = RA_NOMATCH;
+                    else if (*opnd == NUL)
                     {
-                        /* Backref was not set: Match an empty string. */
-                        len = 0;
+                        /* match empty string always works; happens when "~" is empty. */
                     }
                     else
                     {
-                        /* Compare current input with back-ref in the same line. */
-                        len = (int)(reg_endp[no] - reg_startp[no]);
-                        if (cstrncmp(reg_startp[no], reginput, &len) != 0)
-                            status = RA_NOMATCH;
-                    }
-                }
-                else                            /* Multi-line regexp */
-                {
-                    if (reg_startpos[no].lnum < 0 || reg_endpos[no].lnum < 0)
-                    {
-                        /* Backref was not set: Match an empty string. */
-                        len = 0;
-                    }
-                    else
-                    {
-                        if (reg_startpos[no].lnum == reglnum && reg_endpos[no].lnum == reglnum)
+                        if (opnd[1] == NUL && !ireg_ic)
                         {
-                            /* Compare back-ref within the current line. */
-                            len = reg_endpos[no].col - reg_startpos[no].col;
-                            if (cstrncmp(regline + reg_startpos[no].col, reginput, &len) != 0)
-                                status = RA_NOMATCH;
+                            len = 1;        /* matched a single byte above */
                         }
                         else
                         {
-                            /* Messy situation: Need to compare between two lines. */
-                            int r = match_with_backref(
-                                            reg_startpos[no].lnum,
-                                            reg_startpos[no].col,
-                                            reg_endpos[no].lnum,
-                                            reg_endpos[no].col,
-                                            &len);
-
-                            if (r != RA_MATCH)
-                                status = r;
+                            /* Need to match first byte again for multi-byte. */
+                            len = (int)STRLEN(opnd);
+                            if (cstrncmp(opnd, reginput, &len) != 0)
+                                status = RA_NOMATCH;
                         }
+                        /* Check for following composing character, unless %C
+                         * follows (skips over all composing chars). */
+                        if (status != RA_NOMATCH
+                                && UTF_COMPOSINGLIKE(reginput, reginput + len)
+                                && !ireg_icombine
+                                && OP(next) != RE_COMPOSING)
+                        {
+                            /* raaron: This code makes a composing character get
+                             * ignored, which is the correct behavior (sometimes)
+                             * for voweled Hebrew texts. */
+                            status = RA_NOMATCH;
+                        }
+                        if (status != RA_NOMATCH)
+                            reginput += len;
                     }
                 }
+                break;
 
-                /* Matched the backref, skip over it. */
-                reginput += len;
-            }
-            break;
+            case ANYOF:
+            case ANYBUT:
+                if (c == NUL)
+                    status = RA_NOMATCH;
+                else if ((cstrchr(OPERAND(scan), c) == NULL) == (op == ANYOF))
+                    status = RA_NOMATCH;
+                else
+                    reginput += utfc_ptr2len(reginput);
+                break;
 
-          case ZREF + 1:
-          case ZREF + 2:
-          case ZREF + 3:
-          case ZREF + 4:
-          case ZREF + 5:
-          case ZREF + 6:
-          case ZREF + 7:
-          case ZREF + 8:
-          case ZREF + 9:
-            {
-                int     len;
-
-                cleanup_zsubexpr();
-                no = op - ZREF;
-                if (re_extmatch_in != NULL && re_extmatch_in->matches[no] != NULL)
+            case MULTIBYTECODE:
                 {
-                    len = (int)STRLEN(re_extmatch_in->matches[no]);
-                    if (cstrncmp(re_extmatch_in->matches[no], reginput, &len) != 0)
+                    int     i, len;
+                    char_u  *opnd;
+                    int     opndc = 0, inpc;
+
+                    opnd = OPERAND(scan);
+                    /* Safety check (just in case 'encoding' was changed since
+                     * compiling the program). */
+                    if ((len = utfc_ptr2len(opnd)) < 2)
+                    {
                         status = RA_NOMATCH;
+                        break;
+                    }
+                    opndc = utf_ptr2char(opnd);
+                    if (utf_iscomposing(opndc))
+                    {
+                        /* When only a composing char is given match at any
+                         * position where that composing char appears. */
+                        status = RA_NOMATCH;
+                        for (i = 0; reginput[i] != NUL; i += utf_ptr2len(reginput + i))
+                        {
+                            inpc = utf_ptr2char(reginput + i);
+                            if (!utf_iscomposing(inpc))
+                            {
+                                if (i > 0)
+                                    break;
+                            }
+                            else if (opndc == inpc)
+                            {
+                                /* Include all following composing chars. */
+                                len = i + utfc_ptr2len(reginput + i);
+                                status = RA_MATCH;
+                                break;
+                            }
+                        }
+                    }
                     else
-                        reginput += len;
+                        for (i = 0; i < len; ++i)
+                            if (opnd[i] != reginput[i])
+                            {
+                                status = RA_NOMATCH;
+                                break;
+                            }
+                    reginput += len;
                 }
-                else
+                break;
+            case RE_COMPOSING:
                 {
-                    /* Backref was not set: Match an empty string. */
+                    /* Skip composing characters. */
+                    while (utf_iscomposing(utf_ptr2char(reginput)))
+                        reginput += utf_ptr2len(reginput);
                 }
-            }
-            break;
+                break;
 
-          case BRANCH:
-            {
-                if (OP(next) != BRANCH) /* No choice. */
-                    next = OPERAND(scan);       /* Avoid recursion. */
-                else
-                {
-                    rp = regstack_push(RS_BRANCH, scan);
-                    if (rp == NULL)
-                        status = RA_FAIL;
-                    else
-                        status = RA_BREAK;      /* rest is below */
-                }
-            }
-            break;
+            case NOTHING:
+                break;
 
-          case BRACE_LIMITS:
-            {
-                if (OP(next) == BRACE_SIMPLE)
+            case BACK:
                 {
-                    bl_minval = OPERAND_MIN(scan);
-                    bl_maxval = OPERAND_MAX(scan);
-                }
-                else if (OP(next) >= BRACE_COMPLEX && OP(next) < BRACE_COMPLEX + 10)
-                {
-                    no = OP(next) - BRACE_COMPLEX;
-                    brace_min[no] = OPERAND_MIN(scan);
-                    brace_max[no] = OPERAND_MAX(scan);
-                    brace_count[no] = 0;
-                }
-                else
-                {
-                    EMSG((char *)e_internal);            /* Shouldn't happen */
-                    status = RA_FAIL;
-                }
-            }
-            break;
+                    int             i;
+                    backpos_T       *bp;
 
-          case BRACE_COMPLEX + 0:
-          case BRACE_COMPLEX + 1:
-          case BRACE_COMPLEX + 2:
-          case BRACE_COMPLEX + 3:
-          case BRACE_COMPLEX + 4:
-          case BRACE_COMPLEX + 5:
-          case BRACE_COMPLEX + 6:
-          case BRACE_COMPLEX + 7:
-          case BRACE_COMPLEX + 8:
-          case BRACE_COMPLEX + 9:
-            {
-                no = op - BRACE_COMPLEX;
-                ++brace_count[no];
+                    /*
+                     * When we run into BACK we need to check if we don't keep
+                     * looping without matching any input.  The second and later
+                     * times a BACK is encountered it fails if the input is still
+                     * at the same position as the previous time.
+                     * The positions are stored in "backpos" and found by the
+                     * current value of "scan", the position in the RE program.
+                     */
+                    bp = (backpos_T *)backpos.ga_data;
+                    for (i = 0; i < backpos.ga_len; ++i)
+                        if (bp[i].bp_scan == scan)
+                            break;
+                    if (i == backpos.ga_len)
+                    {
+                        /* First time at this BACK, make room to store the pos. */
+                        if (ga_grow(&backpos, 1) == FAIL)
+                            status = RA_FAIL;
+                        else
+                        {
+                            /* get "ga_data" again, it may have changed */
+                            bp = (backpos_T *)backpos.ga_data;
+                            bp[i].bp_scan = scan;
+                            ++backpos.ga_len;
+                        }
+                    }
+                    else if (reg_save_equal(&bp[i].bp_pos))
+                        /* Still at same position as last time, fail. */
+                        status = RA_NOMATCH;
 
-                /* If not matched enough times yet, try one more */
-                if (brace_count[no] <= (brace_min[no] <= brace_max[no] ? brace_min[no] : brace_max[no]))
+                    if (status != RA_FAIL && status != RA_NOMATCH)
+                        reg_save(&bp[i].bp_pos, &backpos);
+                }
+                break;
+
+            case MOPEN + 0:   /* Match start: \zs */
+            case MOPEN + 1:   /* \( */
+            case MOPEN + 2:
+            case MOPEN + 3:
+            case MOPEN + 4:
+            case MOPEN + 5:
+            case MOPEN + 6:
+            case MOPEN + 7:
+            case MOPEN + 8:
+            case MOPEN + 9:
                 {
-                    rp = regstack_push(RS_BRCPLX_MORE, scan);
+                    no = op - MOPEN;
+                    cleanup_subexpr();
+                    rp = regstack_push(RS_MOPEN, scan);
                     if (rp == NULL)
                         status = RA_FAIL;
                     else
                     {
                         rp->rs_no = no;
-                        reg_save(&rp->rs_un.regsave, &backpos);
-                        next = OPERAND(scan);
-                        /* We continue and handle the result when done. */
+                        save_se(&rp->rs_un.sesave, &reg_startpos[no], &reg_startp[no]);
+                        /* We simply continue and handle the result when done. */
                     }
-                    break;
                 }
+                break;
 
-                /* If matched enough times, may try matching some more */
-                if (brace_min[no] <= brace_max[no])
+            case NOPEN:       /* \%( */
+            case NCLOSE:      /* \) after \%( */
+                    if (regstack_push(RS_NOPEN, scan) == NULL)
+                        status = RA_FAIL;
+                    /* We simply continue and handle the result when done. */
+                    break;
+
+            case ZOPEN + 1:
+            case ZOPEN + 2:
+            case ZOPEN + 3:
+            case ZOPEN + 4:
+            case ZOPEN + 5:
+            case ZOPEN + 6:
+            case ZOPEN + 7:
+            case ZOPEN + 8:
+            case ZOPEN + 9:
                 {
-                    /* Range is the normal way around, use longest match */
-                    if (brace_count[no] <= brace_max[no])
+                    no = op - ZOPEN;
+                    cleanup_zsubexpr();
+                    rp = regstack_push(RS_ZOPEN, scan);
+                    if (rp == NULL)
+                        status = RA_FAIL;
+                    else
                     {
-                        rp = regstack_push(RS_BRCPLX_LONG, scan);
+                        rp->rs_no = no;
+                        save_se(&rp->rs_un.sesave, &reg_startzpos[no], &reg_startzp[no]);
+                        /* We simply continue and handle the result when done. */
+                    }
+                }
+                break;
+
+            case MCLOSE + 0:  /* Match end: \ze */
+            case MCLOSE + 1:  /* \) */
+            case MCLOSE + 2:
+            case MCLOSE + 3:
+            case MCLOSE + 4:
+            case MCLOSE + 5:
+            case MCLOSE + 6:
+            case MCLOSE + 7:
+            case MCLOSE + 8:
+            case MCLOSE + 9:
+                {
+                    no = op - MCLOSE;
+                    cleanup_subexpr();
+                    rp = regstack_push(RS_MCLOSE, scan);
+                    if (rp == NULL)
+                        status = RA_FAIL;
+                    else
+                    {
+                        rp->rs_no = no;
+                        save_se(&rp->rs_un.sesave, &reg_endpos[no], &reg_endp[no]);
+                        /* We simply continue and handle the result when done. */
+                    }
+                }
+                break;
+
+            case ZCLOSE + 1:  /* \) after \z( */
+            case ZCLOSE + 2:
+            case ZCLOSE + 3:
+            case ZCLOSE + 4:
+            case ZCLOSE + 5:
+            case ZCLOSE + 6:
+            case ZCLOSE + 7:
+            case ZCLOSE + 8:
+            case ZCLOSE + 9:
+                {
+                    no = op - ZCLOSE;
+                    cleanup_zsubexpr();
+                    rp = regstack_push(RS_ZCLOSE, scan);
+                    if (rp == NULL)
+                        status = RA_FAIL;
+                    else
+                    {
+                        rp->rs_no = no;
+                        save_se(&rp->rs_un.sesave, &reg_endzpos[no], &reg_endzp[no]);
+                        /* We simply continue and handle the result when done. */
+                    }
+                }
+                break;
+
+            case BACKREF + 1:
+            case BACKREF + 2:
+            case BACKREF + 3:
+            case BACKREF + 4:
+            case BACKREF + 5:
+            case BACKREF + 6:
+            case BACKREF + 7:
+            case BACKREF + 8:
+            case BACKREF + 9:
+                {
+                    int             len;
+
+                    no = op - BACKREF;
+                    cleanup_subexpr();
+                    if (!REG_MULTI)         /* Single-line regexp */
+                    {
+                        if (reg_startp[no] == NULL || reg_endp[no] == NULL)
+                        {
+                            /* Backref was not set: Match an empty string. */
+                            len = 0;
+                        }
+                        else
+                        {
+                            /* Compare current input with back-ref in the same line. */
+                            len = (int)(reg_endp[no] - reg_startp[no]);
+                            if (cstrncmp(reg_startp[no], reginput, &len) != 0)
+                                status = RA_NOMATCH;
+                        }
+                    }
+                    else                            /* Multi-line regexp */
+                    {
+                        if (reg_startpos[no].lnum < 0 || reg_endpos[no].lnum < 0)
+                        {
+                            /* Backref was not set: Match an empty string. */
+                            len = 0;
+                        }
+                        else
+                        {
+                            if (reg_startpos[no].lnum == reglnum && reg_endpos[no].lnum == reglnum)
+                            {
+                                /* Compare back-ref within the current line. */
+                                len = reg_endpos[no].col - reg_startpos[no].col;
+                                if (cstrncmp(regline + reg_startpos[no].col, reginput, &len) != 0)
+                                    status = RA_NOMATCH;
+                            }
+                            else
+                            {
+                                /* Messy situation: Need to compare between two lines. */
+                                int r = match_with_backref(
+                                                reg_startpos[no].lnum,
+                                                reg_startpos[no].col,
+                                                reg_endpos[no].lnum,
+                                                reg_endpos[no].col,
+                                                &len);
+
+                                if (r != RA_MATCH)
+                                    status = r;
+                            }
+                        }
+                    }
+
+                    /* Matched the backref, skip over it. */
+                    reginput += len;
+                }
+                break;
+
+            case ZREF + 1:
+            case ZREF + 2:
+            case ZREF + 3:
+            case ZREF + 4:
+            case ZREF + 5:
+            case ZREF + 6:
+            case ZREF + 7:
+            case ZREF + 8:
+            case ZREF + 9:
+                {
+                    int     len;
+
+                    cleanup_zsubexpr();
+                    no = op - ZREF;
+                    if (re_extmatch_in != NULL && re_extmatch_in->matches[no] != NULL)
+                    {
+                        len = (int)STRLEN(re_extmatch_in->matches[no]);
+                        if (cstrncmp(re_extmatch_in->matches[no], reginput, &len) != 0)
+                            status = RA_NOMATCH;
+                        else
+                            reginput += len;
+                    }
+                    else
+                    {
+                        /* Backref was not set: Match an empty string. */
+                    }
+                }
+                break;
+
+            case BRANCH:
+                {
+                    if (OP(next) != BRANCH) /* No choice. */
+                        next = OPERAND(scan);       /* Avoid recursion. */
+                    else
+                    {
+                        rp = regstack_push(RS_BRANCH, scan);
+                        if (rp == NULL)
+                            status = RA_FAIL;
+                        else
+                            status = RA_BREAK;      /* rest is below */
+                    }
+                }
+                break;
+
+            case BRACE_LIMITS:
+                {
+                    if (OP(next) == BRACE_SIMPLE)
+                    {
+                        bl_minval = OPERAND_MIN(scan);
+                        bl_maxval = OPERAND_MAX(scan);
+                    }
+                    else if (OP(next) >= BRACE_COMPLEX && OP(next) < BRACE_COMPLEX + 10)
+                    {
+                        no = OP(next) - BRACE_COMPLEX;
+                        brace_min[no] = OPERAND_MIN(scan);
+                        brace_max[no] = OPERAND_MAX(scan);
+                        brace_count[no] = 0;
+                    }
+                    else
+                    {
+                        EMSG((char *)e_internal);            /* Shouldn't happen */
+                        status = RA_FAIL;
+                    }
+                }
+                break;
+
+            case BRACE_COMPLEX + 0:
+            case BRACE_COMPLEX + 1:
+            case BRACE_COMPLEX + 2:
+            case BRACE_COMPLEX + 3:
+            case BRACE_COMPLEX + 4:
+            case BRACE_COMPLEX + 5:
+            case BRACE_COMPLEX + 6:
+            case BRACE_COMPLEX + 7:
+            case BRACE_COMPLEX + 8:
+            case BRACE_COMPLEX + 9:
+                {
+                    no = op - BRACE_COMPLEX;
+                    ++brace_count[no];
+
+                    /* If not matched enough times yet, try one more */
+                    if (brace_count[no] <= (brace_min[no] <= brace_max[no] ? brace_min[no] : brace_max[no]))
+                    {
+                        rp = regstack_push(RS_BRCPLX_MORE, scan);
                         if (rp == NULL)
                             status = RA_FAIL;
                         else
@@ -4767,181 +4659,200 @@ regmatch(scan)
                             next = OPERAND(scan);
                             /* We continue and handle the result when done. */
                         }
+                        break;
                     }
-                }
-                else
-                {
-                    /* Range is backwards, use shortest match first */
-                    if (brace_count[no] <= brace_min[no])
+
+                    /* If matched enough times, may try matching some more */
+                    if (brace_min[no] <= brace_max[no])
                     {
-                        rp = regstack_push(RS_BRCPLX_SHORT, scan);
-                        if (rp == NULL)
-                            status = RA_FAIL;
-                        else
+                        /* Range is the normal way around, use longest match */
+                        if (brace_count[no] <= brace_max[no])
                         {
-                            reg_save(&rp->rs_un.regsave, &backpos);
-                            /* We continue and handle the result when done. */
+                            rp = regstack_push(RS_BRCPLX_LONG, scan);
+                            if (rp == NULL)
+                                status = RA_FAIL;
+                            else
+                            {
+                                rp->rs_no = no;
+                                reg_save(&rp->rs_un.regsave, &backpos);
+                                next = OPERAND(scan);
+                                /* We continue and handle the result when done. */
+                            }
+                        }
+                    }
+                    else
+                    {
+                        /* Range is backwards, use shortest match first */
+                        if (brace_count[no] <= brace_min[no])
+                        {
+                            rp = regstack_push(RS_BRCPLX_SHORT, scan);
+                            if (rp == NULL)
+                                status = RA_FAIL;
+                            else
+                            {
+                                reg_save(&rp->rs_un.regsave, &backpos);
+                                /* We continue and handle the result when done. */
+                            }
                         }
                     }
                 }
-            }
-            break;
+                break;
 
-          case BRACE_SIMPLE:
-          case STAR:
-          case PLUS:
-            {
-                regstar_T       rst;
-
-                /*
-                 * Lookahead to avoid useless match attempts when we know
-                 * what character comes next.
-                 */
-                if (OP(next) == EXACTLY)
+            case BRACE_SIMPLE:
+            case STAR:
+            case PLUS:
                 {
-                    rst.nextb = *OPERAND(next);
-                    if (ireg_ic)
+                    regstar_T       rst;
+
+                    /*
+                     * Lookahead to avoid useless match attempts when we know
+                     * what character comes next.
+                     */
+                    if (OP(next) == EXACTLY)
                     {
-                        if (MB_ISUPPER(rst.nextb))
-                            rst.nextb_ic = MB_TOLOWER(rst.nextb);
+                        rst.nextb = *OPERAND(next);
+                        if (ireg_ic)
+                        {
+                            if (vim_isupper(rst.nextb))
+                                rst.nextb_ic = vim_tolower(rst.nextb);
+                            else
+                                rst.nextb_ic = vim_toupper(rst.nextb);
+                        }
                         else
-                            rst.nextb_ic = MB_TOUPPER(rst.nextb);
+                            rst.nextb_ic = rst.nextb;
                     }
                     else
-                        rst.nextb_ic = rst.nextb;
-                }
-                else
-                {
-                    rst.nextb = NUL;
-                    rst.nextb_ic = NUL;
-                }
-                if (op != BRACE_SIMPLE)
-                {
-                    rst.minval = (op == STAR) ? 0 : 1;
-                    rst.maxval = MAX_LIMIT;
-                }
-                else
-                {
-                    rst.minval = bl_minval;
-                    rst.maxval = bl_maxval;
-                }
+                    {
+                        rst.nextb = NUL;
+                        rst.nextb_ic = NUL;
+                    }
+                    if (op != BRACE_SIMPLE)
+                    {
+                        rst.minval = (op == STAR) ? 0 : 1;
+                        rst.maxval = MAX_LIMIT;
+                    }
+                    else
+                    {
+                        rst.minval = bl_minval;
+                        rst.maxval = bl_maxval;
+                    }
 
-                /*
-                 * When maxval > minval, try matching as much as possible, up
-                 * to maxval.  When maxval < minval, try matching at least the
-                 * minimal number (since the range is backwards, that's also maxval!).
-                 */
-                rst.count = regrepeat(OPERAND(scan), rst.maxval);
-                if (got_int)
-                {
-                    status = RA_FAIL;
-                    break;
-                }
-                if (rst.minval <= rst.maxval ? rst.count >= rst.minval : rst.count >= rst.maxval)
-                {
-                    /* It could match.  Prepare for trying to match what
-                     * follows.  The code is below.  Parameters are stored in
-                     * a regstar_T on the regstack. */
-                    if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
+                    /*
+                     * When maxval > minval, try matching as much as possible, up
+                     * to maxval.  When maxval < minval, try matching at least the
+                     * minimal number (since the range is backwards, that's also maxval!).
+                     */
+                    rst.count = regrepeat(OPERAND(scan), rst.maxval);
+                    if (got_int)
                     {
-                        EMSG((char *)e_maxmempat);
                         status = RA_FAIL;
+                        break;
                     }
-                    else if (ga_grow(&regstack, sizeof(regstar_T)) == FAIL)
-                        status = RA_FAIL;
-                    else
+                    if (rst.minval <= rst.maxval ? rst.count >= rst.minval : rst.count >= rst.maxval)
                     {
-                        regstack.ga_len += sizeof(regstar_T);
-                        rp = regstack_push(rst.minval <= rst.maxval ? RS_STAR_LONG : RS_STAR_SHORT, scan);
-                        if (rp == NULL)
+                        /* It could match.  Prepare for trying to match what
+                         * follows.  The code is below.  Parameters are stored in
+                         * a regstar_T on the regstack. */
+                        if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
+                        {
+                            EMSG((char *)e_maxmempat);
+                            status = RA_FAIL;
+                        }
+                        else if (ga_grow(&regstack, sizeof(regstar_T)) == FAIL)
                             status = RA_FAIL;
                         else
                         {
-                            *(((regstar_T *)rp) - 1) = rst;
-                            status = RA_BREAK;      /* skip the restore bits */
+                            regstack.ga_len += sizeof(regstar_T);
+                            rp = regstack_push(rst.minval <= rst.maxval ? RS_STAR_LONG : RS_STAR_SHORT, scan);
+                            if (rp == NULL)
+                                status = RA_FAIL;
+                            else
+                            {
+                                *(((regstar_T *)rp) - 1) = rst;
+                                status = RA_BREAK;      /* skip the restore bits */
+                            }
                         }
                     }
+                    else
+                        status = RA_NOMATCH;
                 }
-                else
-                    status = RA_NOMATCH;
-            }
-            break;
+                break;
 
-          case NOMATCH:
-          case MATCH:
-          case SUBPAT:
-            rp = regstack_push(RS_NOMATCH, scan);
-            if (rp == NULL)
-                status = RA_FAIL;
-            else
-            {
-                rp->rs_no = op;
-                reg_save(&rp->rs_un.regsave, &backpos);
-                next = OPERAND(scan);
-                /* We continue and handle the result when done. */
-            }
-            break;
-
-          case BEHIND:
-          case NOBEHIND:
-            /* Need a bit of room to store extra positions. */
-            if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
-            {
-                EMSG((char *)e_maxmempat);
-                status = RA_FAIL;
-            }
-            else if (ga_grow(&regstack, sizeof(regbehind_T)) == FAIL)
-                status = RA_FAIL;
-            else
-            {
-                regstack.ga_len += sizeof(regbehind_T);
-                rp = regstack_push(RS_BEHIND1, scan);
+            case NOMATCH:
+            case MATCH:
+            case SUBPAT:
+                rp = regstack_push(RS_NOMATCH, scan);
                 if (rp == NULL)
                     status = RA_FAIL;
                 else
                 {
-                    /* Need to save the subexpr to be able to restore them
-                     * when there is a match but we don't use it. */
-                    save_subexpr(((regbehind_T *)rp) - 1);
-
                     rp->rs_no = op;
                     reg_save(&rp->rs_un.regsave, &backpos);
-                    /* First try if what follows matches.  If it does then we
-                     * check the behind match by looping. */
+                    next = OPERAND(scan);
+                    /* We continue and handle the result when done. */
                 }
-            }
-            break;
+                break;
 
-          case BHPOS:
-            if (REG_MULTI)
-            {
-                if (behind_pos.rs_u.pos.col != (colnr_T)(reginput - regline)
-                        || behind_pos.rs_u.pos.lnum != reglnum)
+            case BEHIND:
+            case NOBEHIND:
+                /* Need a bit of room to store extra positions. */
+                if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
+                {
+                    EMSG((char *)e_maxmempat);
+                    status = RA_FAIL;
+                }
+                else if (ga_grow(&regstack, sizeof(regbehind_T)) == FAIL)
+                    status = RA_FAIL;
+                else
+                {
+                    regstack.ga_len += sizeof(regbehind_T);
+                    rp = regstack_push(RS_BEHIND1, scan);
+                    if (rp == NULL)
+                        status = RA_FAIL;
+                    else
+                    {
+                        /* Need to save the subexpr to be able to restore them
+                         * when there is a match but we don't use it. */
+                        save_subexpr(((regbehind_T *)rp) - 1);
+
+                        rp->rs_no = op;
+                        reg_save(&rp->rs_un.regsave, &backpos);
+                        /* First try if what follows matches.  If it does then we
+                         * check the behind match by looping. */
+                    }
+                }
+                break;
+
+            case BHPOS:
+                if (REG_MULTI)
+                {
+                    if (behind_pos.rs_u.pos.col != (colnr_T)(reginput - regline)
+                            || behind_pos.rs_u.pos.lnum != reglnum)
+                        status = RA_NOMATCH;
+                }
+                else if (behind_pos.rs_u.ptr != reginput)
                     status = RA_NOMATCH;
+                break;
+
+            case NEWL:
+                if ((c != NUL || !REG_MULTI || reglnum > reg_maxline
+                                || reg_line_lbr) && (c != '\n' || !reg_line_lbr))
+                    status = RA_NOMATCH;
+                else if (reg_line_lbr)
+                    reginput += utfc_ptr2len(reginput);
+                else
+                    reg_nextline();
+                break;
+
+            case END:
+                status = RA_MATCH;  /* Success! */
+                break;
+
+            default:
+                EMSG((char *)e_re_corr);
+                status = RA_FAIL;
+                break;
             }
-            else if (behind_pos.rs_u.ptr != reginput)
-                status = RA_NOMATCH;
-            break;
-
-          case NEWL:
-            if ((c != NUL || !REG_MULTI || reglnum > reg_maxline
-                             || reg_line_lbr) && (c != '\n' || !reg_line_lbr))
-                status = RA_NOMATCH;
-            else if (reg_line_lbr)
-                ADVANCE_REGINPUT();
-            else
-                reg_nextline();
-            break;
-
-          case END:
-            status = RA_MATCH;  /* Success! */
-            break;
-
-          default:
-            EMSG((char *)e_re_corr);
-            status = RA_FAIL;
-            break;
-          }
         }
 
         /* If we can't continue sequentially, break the inner loop. */
@@ -5159,10 +5070,7 @@ regmatch(scan)
                     }
                     else
                     {
-                        if (has_mbyte)
-                            rp->rs_un.regsave.rs_u.pos.col -= (*mb_head_off)(regline, regline + rp->rs_un.regsave.rs_u.pos.col - 1) + 1;
-                        else
-                            --rp->rs_un.regsave.rs_u.pos.col;
+                        rp->rs_un.regsave.rs_u.pos.col -= utf_head_off(regline, regline + rp->rs_un.regsave.rs_u.pos.col - 1) + 1;
                     }
                 }
                 else
@@ -5393,7 +5301,7 @@ regrepeat(p, maxcount)
             while (*scan != NUL && count < maxcount)
             {
                 ++count;
-                mb_ptr_adv(scan);
+                scan += utfc_ptr2len(scan);
             }
             if (!REG_MULTI || !WITH_NL(OP(p)) || reglnum > reg_maxline || reg_line_lbr || count == maxcount)
                 break;
@@ -5413,9 +5321,9 @@ regrepeat(p, maxcount)
       case SIDENT + ADD_NL:
         while (count < maxcount)
         {
-            if (vim_isIDc(PTR2CHAR(scan)) && (testval || !VIM_ISDIGIT(*scan)))
+            if (vim_isIDc(utf_ptr2char(scan)) && (testval || !VIM_ISDIGIT(*scan)))
             {
-                mb_ptr_adv(scan);
+                scan += utfc_ptr2len(scan);
             }
             else if (*scan == NUL)
             {
@@ -5444,7 +5352,7 @@ regrepeat(p, maxcount)
         {
             if (vim_iswordp_buf(scan, reg_buf) && (testval || !VIM_ISDIGIT(*scan)))
             {
-                mb_ptr_adv(scan);
+                scan += utfc_ptr2len(scan);
             }
             else if (*scan == NUL)
             {
@@ -5471,9 +5379,9 @@ regrepeat(p, maxcount)
       case SFNAME + ADD_NL:
         while (count < maxcount)
         {
-            if (vim_isfilec(PTR2CHAR(scan)) && (testval || !VIM_ISDIGIT(*scan)))
+            if (vim_isfilec(utf_ptr2char(scan)) && (testval || !VIM_ISDIGIT(*scan)))
             {
-                mb_ptr_adv(scan);
+                scan += utfc_ptr2len(scan);
             }
             else if (*scan == NUL)
             {
@@ -5509,9 +5417,9 @@ regrepeat(p, maxcount)
                 if (got_int)
                     break;
             }
-            else if (vim_isprintc(PTR2CHAR(scan)) == 1 && (testval || !VIM_ISDIGIT(*scan)))
+            else if (vim_isprintc(utf_ptr2char(scan)) == 1 && (testval || !VIM_ISDIGIT(*scan)))
             {
-                mb_ptr_adv(scan);
+                scan += utfc_ptr2len(scan);
             }
             else if (reg_line_lbr && *scan == '\n' && WITH_NL(OP(p)))
                 ++scan;
@@ -5537,7 +5445,7 @@ do_class:
                 if (got_int)
                     break;
             }
-            else if (has_mbyte && (l = (*mb_ptr2len)(scan)) > 1)
+            else if ((l = utfc_ptr2len(scan)) > 1)
             {
                 if (testval != 0)
                     break;
@@ -5631,8 +5539,8 @@ do_class:
              * characters, such as latin1. */
             if (ireg_ic)
             {
-                cu = MB_TOUPPER(*opnd);
-                cl = MB_TOLOWER(*opnd);
+                cu = vim_toupper(*opnd);
+                cl = vim_tolower(*opnd);
                 while (count < maxcount && (*scan == cu || *scan == cl))
                 {
                     count++;
@@ -5657,16 +5565,16 @@ do_class:
 
             /* Safety check (just in case 'encoding' was changed since
              * compiling the program). */
-            if ((len = (*mb_ptr2len)(opnd)) > 1)
+            if ((len = utfc_ptr2len(opnd)) > 1)
             {
-                if (ireg_ic && enc_utf8)
+                if (ireg_ic)
                     cf = utf_fold(utf_ptr2char(opnd));
                 while (count < maxcount)
                 {
                     for (i = 0; i < len; ++i)
                         if (opnd[i] != scan[i])
                             break;
-                    if (i < len && (!ireg_ic || !enc_utf8 || utf_fold(utf_ptr2char(scan)) != cf))
+                    if (i < len && (!ireg_ic || utf_fold(utf_ptr2char(scan)) != cf))
                         break;
                     scan += len;
                     ++count;
@@ -5696,9 +5604,9 @@ do_class:
             }
             else if (reg_line_lbr && *scan == '\n' && WITH_NL(OP(p)))
                 ++scan;
-            else if (has_mbyte && (len = (*mb_ptr2len)(scan)) > 1)
+            else if ((len = utfc_ptr2len(scan)) > 1)
             {
-                if ((cstrchr(opnd, (*mb_ptr2char)(scan)) == NULL) == testval)
+                if ((cstrchr(opnd, utf_ptr2char(scan)) == NULL) == testval)
                     break;
                 scan += len;
             }
@@ -5719,7 +5627,7 @@ do_class:
         {
             count++;
             if (reg_line_lbr)
-                ADVANCE_REGINPUT();
+                reginput += utfc_ptr2len(reginput);
             else
                 reg_nextline();
             scan = reginput;
@@ -6177,7 +6085,7 @@ cstrncmp(s1, s2, n)
         result = MB_STRNICMP(s1, s2, *n);
 
     /* if it failed and it's utf8 and we want to combineignore: */
-    if (result != 0 && enc_utf8 && ireg_icombine)
+    if (result != 0 && ireg_icombine)
     {
         char_u  *str1, *str2;
         int     c1, c2, c11, c12;
@@ -6226,39 +6134,31 @@ cstrchr(s, c)
     char_u      *p;
     int         cc;
 
-    if (!ireg_ic || (!enc_utf8 && mb_char2len(c) > 1))
+    if (!ireg_ic)
         return vim_strchr(s, c);
 
     /* tolower() and toupper() can be slow, comparing twice should be a lot
      * faster (esp. when using MS Visual C++!).
      * For UTF-8 need to use folded case. */
-    if (enc_utf8 && c > 0x80)
+    if (c > 0x80)
         cc = utf_fold(c);
-    else if (MB_ISUPPER(c))
-        cc = MB_TOLOWER(c);
-    else if (MB_ISLOWER(c))
-        cc = MB_TOUPPER(c);
+    else if (vim_isupper(c))
+        cc = vim_tolower(c);
+    else if (vim_islower(c))
+        cc = vim_toupper(c);
     else
         return vim_strchr(s, c);
 
-    if (has_mbyte)
+    for (p = s; *p != NUL; p += utfc_ptr2len(p))
     {
-        for (p = s; *p != NUL; p += (*mb_ptr2len)(p))
+        if (c > 0x80)
         {
-            if (enc_utf8 && c > 0x80)
-            {
-                if (utf_fold(utf_ptr2char(p)) == cc)
-                    return p;
-            }
-            else if (*p == c || *p == cc)
+            if (utf_fold(utf_ptr2char(p)) == cc)
                 return p;
         }
+        else if (*p == c || *p == cc)
+            return p;
     }
-    else
-        /* Faster version for when there are no multi-byte characters. */
-        for (p = s; *p != NUL; ++p)
-            if (*p == c || *p == cc)
-                return p;
 
     return NULL;
 }
@@ -6287,7 +6187,7 @@ do_upper(d, c)
     int         *d;
     int         c;
 {
-    *d = MB_TOUPPER(c);
+    *d = vim_toupper(c);
 
     return (fptr_T)NULL;
 }
@@ -6297,7 +6197,7 @@ do_Upper(d, c)
     int         *d;
     int         c;
 {
-    *d = MB_TOUPPER(c);
+    *d = vim_toupper(c);
 
     return (fptr_T)do_Upper;
 }
@@ -6307,7 +6207,7 @@ do_lower(d, c)
     int         *d;
     int         c;
 {
-    *d = MB_TOLOWER(c);
+    *d = vim_tolower(c);
 
     return (fptr_T)NULL;
 }
@@ -6317,7 +6217,7 @@ do_Lower(d, c)
     int         *d;
     int         c;
 {
-    *d = MB_TOLOWER(c);
+    *d = vim_tolower(c);
 
     return (fptr_T)do_Lower;
 }
@@ -6382,8 +6282,7 @@ regtilde(source, magic)
         {
             if (*p == '\\' && p[1])             /* skip escaped characters */
                 ++p;
-            if (has_mbyte)
-                p += (*mb_ptr2len)(p) - 1;
+            p += utfc_ptr2len(p) - 1;
         }
     }
 
@@ -6535,7 +6434,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
             {
                 int had_backslash = FALSE;
 
-                for (s = eval_result; *s != NUL; mb_ptr_adv(s))
+                for (s = eval_result; *s != NUL; s += utfc_ptr2len(s))
                 {
                     /* Change NL to CR, so that it becomes a line break,
                      * unless called from vim_regexec_nl().
@@ -6656,8 +6555,8 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                                 c = *src++;
                 }
             }
-            else if (has_mbyte)
-                c = mb_ptr2char(src - 1);
+            else
+                c = utf_ptr2char(src - 1);
 
             /* Write to buffer, if copy is set. */
             if (func_one != (fptr_T)NULL)
@@ -6669,14 +6568,13 @@ vim_regsub_both(source, dest, copy, magic, backslash)
             else /* just copy */
                 cc = c;
 
-            if (has_mbyte)
             {
-                int totlen = mb_ptr2len(src - 1);
+                int totlen = utfc_ptr2len(src - 1);
 
                 if (copy)
-                    mb_char2bytes(cc, dst);
-                dst += mb_char2len(cc) - 1;
-                if (enc_utf8)
+                    utf_char2bytes(cc, dst);
+                dst += utf_char2len(cc) - 1;
+
                 {
                     int clen = utf_ptr2len(src - 1);
 
@@ -6689,10 +6587,10 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                         dst += totlen - clen;
                     }
                 }
+
                 src += totlen - 1;
             }
-            else if (copy)
-                *dst = cc;
+
             dst++;
         }
         else
@@ -6765,10 +6663,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                         }
                         else
                         {
-                            if (has_mbyte)
-                                c = mb_ptr2char(s);
-                            else
-                                c = *s;
+                            c = utf_ptr2char(s);
 
                             if (func_one != (fptr_T)NULL)
                                 /* Turbo C complains without the typecast */
@@ -6779,24 +6674,19 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                             else /* just copy */
                                 cc = c;
 
-                            if (has_mbyte)
                             {
                                 int l;
 
                                 /* Copy composing characters separately, one at a time. */
-                                if (enc_utf8)
-                                    l = utf_ptr2len(s) - 1;
-                                else
-                                    l = mb_ptr2len(s) - 1;
+                                l = utf_ptr2len(s) - 1;
 
                                 s += l;
                                 len -= l;
                                 if (copy)
-                                    mb_char2bytes(cc, dst);
-                                dst += mb_char2len(cc) - 1;
+                                    utf_char2bytes(cc, dst);
+                                dst += utf_char2len(cc) - 1;
                             }
-                            else if (copy)
-                                *dst = cc;
+
                             dst++;
                         }
 
@@ -7509,7 +7399,7 @@ nfa_get_match_text(start)
     p = p->out;
     while (p->c > 0)
     {
-        len += MB_CHAR2LEN(p->c);
+        len += utf_char2len(p->c);
         p = p->out;
     }
     if (p->c != NFA_MCLOSE || p->out->c != NFA_MATCH)
@@ -7523,10 +7413,7 @@ nfa_get_match_text(start)
         s = ret;
         while (p->c > 0)
         {
-            if (has_mbyte)
-                s += (*mb_char2bytes)(p->c, s);
-            else
-                *s++ = p->c;
+            s += utf_char2bytes(p->c, s);
             p = p->out;
         }
         *s = NUL;
@@ -7720,340 +7607,337 @@ nfa_emit_equi_class(c)
     int     c;
 {
 #define EMIT2(c)    EMIT(c); EMIT(NFA_CONCAT);
-#define EMITMBC(c) EMIT(c); EMIT(NFA_CONCAT);
+#define EMITMBC(c)  EMIT(c); EMIT(NFA_CONCAT);
 
-    if (enc_utf8 || STRCMP(p_enc, "latin1") == 0 || STRCMP(p_enc, "iso-8859-15") == 0)
+    switch (c)
     {
-        switch (c)
-        {
-            case 'A': case 0300: case 0301: case 0302:
-            case 0303: case 0304: case 0305:
-            CASEMBC(0x100) CASEMBC(0x102) CASEMBC(0x104) CASEMBC(0x1cd)
-            CASEMBC(0x1de) CASEMBC(0x1e0) CASEMBC(0x1ea2)
-                    EMIT2('A'); EMIT2(0300); EMIT2(0301); EMIT2(0302);
-                    EMIT2(0303); EMIT2(0304); EMIT2(0305);
-                    EMITMBC(0x100) EMITMBC(0x102) EMITMBC(0x104)
-                    EMITMBC(0x1cd) EMITMBC(0x1de) EMITMBC(0x1e0)
-                    EMITMBC(0x1ea2)
-                    return OK;
+        case 'A': case 0300: case 0301: case 0302:
+        case 0303: case 0304: case 0305:
+        CASEMBC(0x100) CASEMBC(0x102) CASEMBC(0x104) CASEMBC(0x1cd)
+        CASEMBC(0x1de) CASEMBC(0x1e0) CASEMBC(0x1ea2)
+                EMIT2('A'); EMIT2(0300); EMIT2(0301); EMIT2(0302);
+                EMIT2(0303); EMIT2(0304); EMIT2(0305);
+                EMITMBC(0x100) EMITMBC(0x102) EMITMBC(0x104)
+                EMITMBC(0x1cd) EMITMBC(0x1de) EMITMBC(0x1e0)
+                EMITMBC(0x1ea2)
+                return OK;
 
-            case 'B': CASEMBC(0x1e02) CASEMBC(0x1e06)
-                    EMIT2('B'); EMITMBC(0x1e02) EMITMBC(0x1e06)
-                    return OK;
+        case 'B': CASEMBC(0x1e02) CASEMBC(0x1e06)
+                EMIT2('B'); EMITMBC(0x1e02) EMITMBC(0x1e06)
+                return OK;
 
-            case 'C': case 0307:
-            CASEMBC(0x106) CASEMBC(0x108) CASEMBC(0x10a) CASEMBC(0x10c)
-                    EMIT2('C'); EMIT2(0307); EMITMBC(0x106) EMITMBC(0x108)
-                    EMITMBC(0x10a) EMITMBC(0x10c)
-                    return OK;
+        case 'C': case 0307:
+        CASEMBC(0x106) CASEMBC(0x108) CASEMBC(0x10a) CASEMBC(0x10c)
+                EMIT2('C'); EMIT2(0307); EMITMBC(0x106) EMITMBC(0x108)
+                EMITMBC(0x10a) EMITMBC(0x10c)
+                return OK;
 
-            case 'D': CASEMBC(0x10e) CASEMBC(0x110) CASEMBC(0x1e0a)
-            CASEMBC(0x1e0e) CASEMBC(0x1e10)
-                    EMIT2('D'); EMITMBC(0x10e) EMITMBC(0x110) EMITMBC(0x1e0a)
-                    EMITMBC(0x1e0e) EMITMBC(0x1e10)
-                    return OK;
+        case 'D': CASEMBC(0x10e) CASEMBC(0x110) CASEMBC(0x1e0a)
+        CASEMBC(0x1e0e) CASEMBC(0x1e10)
+                EMIT2('D'); EMITMBC(0x10e) EMITMBC(0x110) EMITMBC(0x1e0a)
+                EMITMBC(0x1e0e) EMITMBC(0x1e10)
+                return OK;
 
-            case 'E': case 0310: case 0311: case 0312: case 0313:
-            CASEMBC(0x112) CASEMBC(0x114) CASEMBC(0x116) CASEMBC(0x118)
-            CASEMBC(0x11a) CASEMBC(0x1eba) CASEMBC(0x1ebc)
-                    EMIT2('E'); EMIT2(0310); EMIT2(0311); EMIT2(0312);
-                    EMIT2(0313);
-                    EMITMBC(0x112) EMITMBC(0x114) EMITMBC(0x116)
-                    EMITMBC(0x118) EMITMBC(0x11a) EMITMBC(0x1eba)
-                    EMITMBC(0x1ebc)
-                    return OK;
+        case 'E': case 0310: case 0311: case 0312: case 0313:
+        CASEMBC(0x112) CASEMBC(0x114) CASEMBC(0x116) CASEMBC(0x118)
+        CASEMBC(0x11a) CASEMBC(0x1eba) CASEMBC(0x1ebc)
+                EMIT2('E'); EMIT2(0310); EMIT2(0311); EMIT2(0312);
+                EMIT2(0313);
+                EMITMBC(0x112) EMITMBC(0x114) EMITMBC(0x116)
+                EMITMBC(0x118) EMITMBC(0x11a) EMITMBC(0x1eba)
+                EMITMBC(0x1ebc)
+                return OK;
 
-            case 'F': CASEMBC(0x1e1e)
-                    EMIT2('F'); EMITMBC(0x1e1e)
-                    return OK;
+        case 'F': CASEMBC(0x1e1e)
+                EMIT2('F'); EMITMBC(0x1e1e)
+                return OK;
 
-            case 'G': CASEMBC(0x11c) CASEMBC(0x11e) CASEMBC(0x120)
-            CASEMBC(0x122) CASEMBC(0x1e4) CASEMBC(0x1e6) CASEMBC(0x1f4)
-            CASEMBC(0x1e20)
-                    EMIT2('G'); EMITMBC(0x11c) EMITMBC(0x11e) EMITMBC(0x120)
-                    EMITMBC(0x122) EMITMBC(0x1e4) EMITMBC(0x1e6)
-                    EMITMBC(0x1f4) EMITMBC(0x1e20)
-                    return OK;
+        case 'G': CASEMBC(0x11c) CASEMBC(0x11e) CASEMBC(0x120)
+        CASEMBC(0x122) CASEMBC(0x1e4) CASEMBC(0x1e6) CASEMBC(0x1f4)
+        CASEMBC(0x1e20)
+                EMIT2('G'); EMITMBC(0x11c) EMITMBC(0x11e) EMITMBC(0x120)
+                EMITMBC(0x122) EMITMBC(0x1e4) EMITMBC(0x1e6)
+                EMITMBC(0x1f4) EMITMBC(0x1e20)
+                return OK;
 
-            case 'H': CASEMBC(0x124) CASEMBC(0x126) CASEMBC(0x1e22)
-            CASEMBC(0x1e26) CASEMBC(0x1e28)
-                    EMIT2('H'); EMITMBC(0x124) EMITMBC(0x126) EMITMBC(0x1e22)
-                    EMITMBC(0x1e26) EMITMBC(0x1e28)
-                    return OK;
+        case 'H': CASEMBC(0x124) CASEMBC(0x126) CASEMBC(0x1e22)
+        CASEMBC(0x1e26) CASEMBC(0x1e28)
+                EMIT2('H'); EMITMBC(0x124) EMITMBC(0x126) EMITMBC(0x1e22)
+                EMITMBC(0x1e26) EMITMBC(0x1e28)
+                return OK;
 
-            case 'I': case 0314: case 0315: case 0316: case 0317:
-            CASEMBC(0x128) CASEMBC(0x12a) CASEMBC(0x12c) CASEMBC(0x12e)
-            CASEMBC(0x130) CASEMBC(0x1cf) CASEMBC(0x1ec8)
-                    EMIT2('I'); EMIT2(0314); EMIT2(0315); EMIT2(0316);
-                    EMIT2(0317); EMITMBC(0x128) EMITMBC(0x12a)
-                    EMITMBC(0x12c) EMITMBC(0x12e) EMITMBC(0x130)
-                    EMITMBC(0x1cf) EMITMBC(0x1ec8)
-                    return OK;
+        case 'I': case 0314: case 0315: case 0316: case 0317:
+        CASEMBC(0x128) CASEMBC(0x12a) CASEMBC(0x12c) CASEMBC(0x12e)
+        CASEMBC(0x130) CASEMBC(0x1cf) CASEMBC(0x1ec8)
+                EMIT2('I'); EMIT2(0314); EMIT2(0315); EMIT2(0316);
+                EMIT2(0317); EMITMBC(0x128) EMITMBC(0x12a)
+                EMITMBC(0x12c) EMITMBC(0x12e) EMITMBC(0x130)
+                EMITMBC(0x1cf) EMITMBC(0x1ec8)
+                return OK;
 
-            case 'J': CASEMBC(0x134)
-                    EMIT2('J'); EMITMBC(0x134)
-                    return OK;
+        case 'J': CASEMBC(0x134)
+                EMIT2('J'); EMITMBC(0x134)
+                return OK;
 
-            case 'K': CASEMBC(0x136) CASEMBC(0x1e8) CASEMBC(0x1e30)
-            CASEMBC(0x1e34)
-                    EMIT2('K'); EMITMBC(0x136) EMITMBC(0x1e8) EMITMBC(0x1e30)
-                    EMITMBC(0x1e34)
-                    return OK;
+        case 'K': CASEMBC(0x136) CASEMBC(0x1e8) CASEMBC(0x1e30)
+        CASEMBC(0x1e34)
+                EMIT2('K'); EMITMBC(0x136) EMITMBC(0x1e8) EMITMBC(0x1e30)
+                EMITMBC(0x1e34)
+                return OK;
 
-            case 'L': CASEMBC(0x139) CASEMBC(0x13b) CASEMBC(0x13d)
-            CASEMBC(0x13f) CASEMBC(0x141) CASEMBC(0x1e3a)
-                    EMIT2('L'); EMITMBC(0x139) EMITMBC(0x13b) EMITMBC(0x13d)
-                    EMITMBC(0x13f) EMITMBC(0x141) EMITMBC(0x1e3a)
-                    return OK;
+        case 'L': CASEMBC(0x139) CASEMBC(0x13b) CASEMBC(0x13d)
+        CASEMBC(0x13f) CASEMBC(0x141) CASEMBC(0x1e3a)
+                EMIT2('L'); EMITMBC(0x139) EMITMBC(0x13b) EMITMBC(0x13d)
+                EMITMBC(0x13f) EMITMBC(0x141) EMITMBC(0x1e3a)
+                return OK;
 
-            case 'M': CASEMBC(0x1e3e) CASEMBC(0x1e40)
-                    EMIT2('M'); EMITMBC(0x1e3e) EMITMBC(0x1e40)
-                    return OK;
+        case 'M': CASEMBC(0x1e3e) CASEMBC(0x1e40)
+                EMIT2('M'); EMITMBC(0x1e3e) EMITMBC(0x1e40)
+                return OK;
 
-            case 'N': case 0321:
-            CASEMBC(0x143) CASEMBC(0x145) CASEMBC(0x147) CASEMBC(0x1e44)
-            CASEMBC(0x1e48)
-                    EMIT2('N'); EMIT2(0321); EMITMBC(0x143) EMITMBC(0x145)
-                    EMITMBC(0x147) EMITMBC(0x1e44) EMITMBC(0x1e48)
-                    return OK;
+        case 'N': case 0321:
+        CASEMBC(0x143) CASEMBC(0x145) CASEMBC(0x147) CASEMBC(0x1e44)
+        CASEMBC(0x1e48)
+                EMIT2('N'); EMIT2(0321); EMITMBC(0x143) EMITMBC(0x145)
+                EMITMBC(0x147) EMITMBC(0x1e44) EMITMBC(0x1e48)
+                return OK;
 
-            case 'O': case 0322: case 0323: case 0324: case 0325:
-            case 0326: case 0330:
-            CASEMBC(0x14c) CASEMBC(0x14e) CASEMBC(0x150) CASEMBC(0x1a0)
-            CASEMBC(0x1d1) CASEMBC(0x1ea) CASEMBC(0x1ec) CASEMBC(0x1ece)
-                    EMIT2('O'); EMIT2(0322); EMIT2(0323); EMIT2(0324);
-                    EMIT2(0325); EMIT2(0326); EMIT2(0330);
-                    EMITMBC(0x14c) EMITMBC(0x14e) EMITMBC(0x150)
-                    EMITMBC(0x1a0) EMITMBC(0x1d1) EMITMBC(0x1ea)
-                    EMITMBC(0x1ec) EMITMBC(0x1ece)
-                    return OK;
+        case 'O': case 0322: case 0323: case 0324: case 0325:
+        case 0326: case 0330:
+        CASEMBC(0x14c) CASEMBC(0x14e) CASEMBC(0x150) CASEMBC(0x1a0)
+        CASEMBC(0x1d1) CASEMBC(0x1ea) CASEMBC(0x1ec) CASEMBC(0x1ece)
+                EMIT2('O'); EMIT2(0322); EMIT2(0323); EMIT2(0324);
+                EMIT2(0325); EMIT2(0326); EMIT2(0330);
+                EMITMBC(0x14c) EMITMBC(0x14e) EMITMBC(0x150)
+                EMITMBC(0x1a0) EMITMBC(0x1d1) EMITMBC(0x1ea)
+                EMITMBC(0x1ec) EMITMBC(0x1ece)
+                return OK;
 
-            case 'P': case 0x1e54: case 0x1e56:
-                    EMIT2('P'); EMITMBC(0x1e54) EMITMBC(0x1e56)
-                    return OK;
+        case 'P': case 0x1e54: case 0x1e56:
+                EMIT2('P'); EMITMBC(0x1e54) EMITMBC(0x1e56)
+                return OK;
 
-            case 'R': CASEMBC(0x154) CASEMBC(0x156) CASEMBC(0x158)
-            CASEMBC(0x1e58) CASEMBC(0x1e5e)
-                    EMIT2('R'); EMITMBC(0x154) EMITMBC(0x156) EMITMBC(0x158)
-                    EMITMBC(0x1e58) EMITMBC(0x1e5e)
-                    return OK;
+        case 'R': CASEMBC(0x154) CASEMBC(0x156) CASEMBC(0x158)
+        CASEMBC(0x1e58) CASEMBC(0x1e5e)
+                EMIT2('R'); EMITMBC(0x154) EMITMBC(0x156) EMITMBC(0x158)
+                EMITMBC(0x1e58) EMITMBC(0x1e5e)
+                return OK;
 
-            case 'S': CASEMBC(0x15a) CASEMBC(0x15c) CASEMBC(0x15e)
-            CASEMBC(0x160) CASEMBC(0x1e60)
-                    EMIT2('S'); EMITMBC(0x15a) EMITMBC(0x15c) EMITMBC(0x15e)
-                    EMITMBC(0x160) EMITMBC(0x1e60)
-                    return OK;
+        case 'S': CASEMBC(0x15a) CASEMBC(0x15c) CASEMBC(0x15e)
+        CASEMBC(0x160) CASEMBC(0x1e60)
+                EMIT2('S'); EMITMBC(0x15a) EMITMBC(0x15c) EMITMBC(0x15e)
+                EMITMBC(0x160) EMITMBC(0x1e60)
+                return OK;
 
-            case 'T': CASEMBC(0x162) CASEMBC(0x164) CASEMBC(0x166)
-            CASEMBC(0x1e6a) CASEMBC(0x1e6e)
-                    EMIT2('T'); EMITMBC(0x162) EMITMBC(0x164) EMITMBC(0x166)
-                    EMITMBC(0x1e6a) EMITMBC(0x1e6e)
-                    return OK;
+        case 'T': CASEMBC(0x162) CASEMBC(0x164) CASEMBC(0x166)
+        CASEMBC(0x1e6a) CASEMBC(0x1e6e)
+                EMIT2('T'); EMITMBC(0x162) EMITMBC(0x164) EMITMBC(0x166)
+                EMITMBC(0x1e6a) EMITMBC(0x1e6e)
+                return OK;
 
-            case 'U': case 0331: case 0332: case 0333: case 0334:
-            CASEMBC(0x168) CASEMBC(0x16a) CASEMBC(0x16c) CASEMBC(0x16e)
-            CASEMBC(0x170) CASEMBC(0x172) CASEMBC(0x1af) CASEMBC(0x1d3)
-            CASEMBC(0x1ee6)
-                    EMIT2('U'); EMIT2(0331); EMIT2(0332); EMIT2(0333);
-                    EMIT2(0334); EMITMBC(0x168) EMITMBC(0x16a)
-                    EMITMBC(0x16c) EMITMBC(0x16e) EMITMBC(0x170)
-                    EMITMBC(0x172) EMITMBC(0x1af) EMITMBC(0x1d3)
-                    EMITMBC(0x1ee6)
-                    return OK;
+        case 'U': case 0331: case 0332: case 0333: case 0334:
+        CASEMBC(0x168) CASEMBC(0x16a) CASEMBC(0x16c) CASEMBC(0x16e)
+        CASEMBC(0x170) CASEMBC(0x172) CASEMBC(0x1af) CASEMBC(0x1d3)
+        CASEMBC(0x1ee6)
+                EMIT2('U'); EMIT2(0331); EMIT2(0332); EMIT2(0333);
+                EMIT2(0334); EMITMBC(0x168) EMITMBC(0x16a)
+                EMITMBC(0x16c) EMITMBC(0x16e) EMITMBC(0x170)
+                EMITMBC(0x172) EMITMBC(0x1af) EMITMBC(0x1d3)
+                EMITMBC(0x1ee6)
+                return OK;
 
-            case 'V': CASEMBC(0x1e7c)
-                    EMIT2('V'); EMITMBC(0x1e7c)
-                    return OK;
+        case 'V': CASEMBC(0x1e7c)
+                EMIT2('V'); EMITMBC(0x1e7c)
+                return OK;
 
-            case 'W': CASEMBC(0x174) CASEMBC(0x1e80) CASEMBC(0x1e82)
-            CASEMBC(0x1e84) CASEMBC(0x1e86)
-                    EMIT2('W'); EMITMBC(0x174) EMITMBC(0x1e80) EMITMBC(0x1e82)
-                    EMITMBC(0x1e84) EMITMBC(0x1e86)
-                    return OK;
+        case 'W': CASEMBC(0x174) CASEMBC(0x1e80) CASEMBC(0x1e82)
+        CASEMBC(0x1e84) CASEMBC(0x1e86)
+                EMIT2('W'); EMITMBC(0x174) EMITMBC(0x1e80) EMITMBC(0x1e82)
+                EMITMBC(0x1e84) EMITMBC(0x1e86)
+                return OK;
 
-            case 'X': CASEMBC(0x1e8a) CASEMBC(0x1e8c)
-                    EMIT2('X'); EMITMBC(0x1e8a) EMITMBC(0x1e8c)
-                    return OK;
+        case 'X': CASEMBC(0x1e8a) CASEMBC(0x1e8c)
+                EMIT2('X'); EMITMBC(0x1e8a) EMITMBC(0x1e8c)
+                return OK;
 
-            case 'Y': case 0335:
-            CASEMBC(0x176) CASEMBC(0x178) CASEMBC(0x1e8e) CASEMBC(0x1ef2)
-            CASEMBC(0x1ef6) CASEMBC(0x1ef8)
-                    EMIT2('Y'); EMIT2(0335); EMITMBC(0x176) EMITMBC(0x178)
-                    EMITMBC(0x1e8e) EMITMBC(0x1ef2) EMITMBC(0x1ef6)
-                    EMITMBC(0x1ef8)
-                    return OK;
+        case 'Y': case 0335:
+        CASEMBC(0x176) CASEMBC(0x178) CASEMBC(0x1e8e) CASEMBC(0x1ef2)
+        CASEMBC(0x1ef6) CASEMBC(0x1ef8)
+                EMIT2('Y'); EMIT2(0335); EMITMBC(0x176) EMITMBC(0x178)
+                EMITMBC(0x1e8e) EMITMBC(0x1ef2) EMITMBC(0x1ef6)
+                EMITMBC(0x1ef8)
+                return OK;
 
-            case 'Z': CASEMBC(0x179) CASEMBC(0x17b) CASEMBC(0x17d)
-            CASEMBC(0x1b5) CASEMBC(0x1e90) CASEMBC(0x1e94)
-                    EMIT2('Z'); EMITMBC(0x179) EMITMBC(0x17b) EMITMBC(0x17d)
-                    EMITMBC(0x1b5) EMITMBC(0x1e90) EMITMBC(0x1e94)
-                    return OK;
+        case 'Z': CASEMBC(0x179) CASEMBC(0x17b) CASEMBC(0x17d)
+        CASEMBC(0x1b5) CASEMBC(0x1e90) CASEMBC(0x1e94)
+                EMIT2('Z'); EMITMBC(0x179) EMITMBC(0x17b) EMITMBC(0x17d)
+                EMITMBC(0x1b5) EMITMBC(0x1e90) EMITMBC(0x1e94)
+                return OK;
 
-            case 'a': case 0340: case 0341: case 0342:
-            case 0343: case 0344: case 0345:
-            CASEMBC(0x101) CASEMBC(0x103) CASEMBC(0x105) CASEMBC(0x1ce)
-            CASEMBC(0x1df) CASEMBC(0x1e1) CASEMBC(0x1ea3)
-                    EMIT2('a'); EMIT2(0340); EMIT2(0341); EMIT2(0342);
-                    EMIT2(0343); EMIT2(0344); EMIT2(0345);
-                    EMITMBC(0x101) EMITMBC(0x103) EMITMBC(0x105)
-                    EMITMBC(0x1ce) EMITMBC(0x1df) EMITMBC(0x1e1)
-                    EMITMBC(0x1ea3)
-                    return OK;
+        case 'a': case 0340: case 0341: case 0342:
+        case 0343: case 0344: case 0345:
+        CASEMBC(0x101) CASEMBC(0x103) CASEMBC(0x105) CASEMBC(0x1ce)
+        CASEMBC(0x1df) CASEMBC(0x1e1) CASEMBC(0x1ea3)
+                EMIT2('a'); EMIT2(0340); EMIT2(0341); EMIT2(0342);
+                EMIT2(0343); EMIT2(0344); EMIT2(0345);
+                EMITMBC(0x101) EMITMBC(0x103) EMITMBC(0x105)
+                EMITMBC(0x1ce) EMITMBC(0x1df) EMITMBC(0x1e1)
+                EMITMBC(0x1ea3)
+                return OK;
 
-            case 'b': CASEMBC(0x1e03) CASEMBC(0x1e07)
-                    EMIT2('b'); EMITMBC(0x1e03) EMITMBC(0x1e07)
-                    return OK;
+        case 'b': CASEMBC(0x1e03) CASEMBC(0x1e07)
+                EMIT2('b'); EMITMBC(0x1e03) EMITMBC(0x1e07)
+                return OK;
 
-            case 'c': case 0347:
-            CASEMBC(0x107) CASEMBC(0x109) CASEMBC(0x10b) CASEMBC(0x10d)
-                    EMIT2('c'); EMIT2(0347); EMITMBC(0x107) EMITMBC(0x109)
-                    EMITMBC(0x10b) EMITMBC(0x10d)
-                    return OK;
+        case 'c': case 0347:
+        CASEMBC(0x107) CASEMBC(0x109) CASEMBC(0x10b) CASEMBC(0x10d)
+                EMIT2('c'); EMIT2(0347); EMITMBC(0x107) EMITMBC(0x109)
+                EMITMBC(0x10b) EMITMBC(0x10d)
+                return OK;
 
-            case 'd': CASEMBC(0x10f) CASEMBC(0x111) CASEMBC(0x1d0b)
-            CASEMBC(0x1e11)
-                    EMIT2('d'); EMITMBC(0x10f) EMITMBC(0x111) EMITMBC(0x1e0b)
-                    EMITMBC(0x01e0f) EMITMBC(0x1e11)
-                    return OK;
+        case 'd': CASEMBC(0x10f) CASEMBC(0x111) CASEMBC(0x1d0b)
+        CASEMBC(0x1e11)
+                EMIT2('d'); EMITMBC(0x10f) EMITMBC(0x111) EMITMBC(0x1e0b)
+                EMITMBC(0x01e0f) EMITMBC(0x1e11)
+                return OK;
 
-            case 'e': case 0350: case 0351: case 0352: case 0353:
-            CASEMBC(0x113) CASEMBC(0x115) CASEMBC(0x117) CASEMBC(0x119)
-            CASEMBC(0x11b) CASEMBC(0x1ebb) CASEMBC(0x1ebd)
-                    EMIT2('e'); EMIT2(0350); EMIT2(0351); EMIT2(0352);
-                    EMIT2(0353); EMITMBC(0x113) EMITMBC(0x115)
-                    EMITMBC(0x117) EMITMBC(0x119) EMITMBC(0x11b)
-                    EMITMBC(0x1ebb) EMITMBC(0x1ebd)
-                    return OK;
+        case 'e': case 0350: case 0351: case 0352: case 0353:
+        CASEMBC(0x113) CASEMBC(0x115) CASEMBC(0x117) CASEMBC(0x119)
+        CASEMBC(0x11b) CASEMBC(0x1ebb) CASEMBC(0x1ebd)
+                EMIT2('e'); EMIT2(0350); EMIT2(0351); EMIT2(0352);
+                EMIT2(0353); EMITMBC(0x113) EMITMBC(0x115)
+                EMITMBC(0x117) EMITMBC(0x119) EMITMBC(0x11b)
+                EMITMBC(0x1ebb) EMITMBC(0x1ebd)
+                return OK;
 
-            case 'f': CASEMBC(0x1e1f)
-                    EMIT2('f'); EMITMBC(0x1e1f)
-                    return OK;
+        case 'f': CASEMBC(0x1e1f)
+                EMIT2('f'); EMITMBC(0x1e1f)
+                return OK;
 
-            case 'g': CASEMBC(0x11d) CASEMBC(0x11f) CASEMBC(0x121)
-            CASEMBC(0x123) CASEMBC(0x1e5) CASEMBC(0x1e7) CASEMBC(0x1f5)
-            CASEMBC(0x1e21)
-                    EMIT2('g'); EMITMBC(0x11d) EMITMBC(0x11f) EMITMBC(0x121)
-                    EMITMBC(0x123) EMITMBC(0x1e5) EMITMBC(0x1e7)
-                    EMITMBC(0x1f5) EMITMBC(0x1e21)
-                    return OK;
+        case 'g': CASEMBC(0x11d) CASEMBC(0x11f) CASEMBC(0x121)
+        CASEMBC(0x123) CASEMBC(0x1e5) CASEMBC(0x1e7) CASEMBC(0x1f5)
+        CASEMBC(0x1e21)
+                EMIT2('g'); EMITMBC(0x11d) EMITMBC(0x11f) EMITMBC(0x121)
+                EMITMBC(0x123) EMITMBC(0x1e5) EMITMBC(0x1e7)
+                EMITMBC(0x1f5) EMITMBC(0x1e21)
+                return OK;
 
-            case 'h': CASEMBC(0x125) CASEMBC(0x127) CASEMBC(0x1e23)
-            CASEMBC(0x1e27) CASEMBC(0x1e29) CASEMBC(0x1e96)
-                    EMIT2('h'); EMITMBC(0x125) EMITMBC(0x127) EMITMBC(0x1e23)
-                    EMITMBC(0x1e27) EMITMBC(0x1e29) EMITMBC(0x1e96)
-                    return OK;
+        case 'h': CASEMBC(0x125) CASEMBC(0x127) CASEMBC(0x1e23)
+        CASEMBC(0x1e27) CASEMBC(0x1e29) CASEMBC(0x1e96)
+                EMIT2('h'); EMITMBC(0x125) EMITMBC(0x127) EMITMBC(0x1e23)
+                EMITMBC(0x1e27) EMITMBC(0x1e29) EMITMBC(0x1e96)
+                return OK;
 
-            case 'i': case 0354: case 0355: case 0356: case 0357:
-            CASEMBC(0x129) CASEMBC(0x12b) CASEMBC(0x12d) CASEMBC(0x12f)
-            CASEMBC(0x1d0) CASEMBC(0x1ec9)
-                    EMIT2('i'); EMIT2(0354); EMIT2(0355); EMIT2(0356);
-                    EMIT2(0357); EMITMBC(0x129) EMITMBC(0x12b)
-                    EMITMBC(0x12d) EMITMBC(0x12f) EMITMBC(0x1d0)
-                    EMITMBC(0x1ec9)
-                    return OK;
+        case 'i': case 0354: case 0355: case 0356: case 0357:
+        CASEMBC(0x129) CASEMBC(0x12b) CASEMBC(0x12d) CASEMBC(0x12f)
+        CASEMBC(0x1d0) CASEMBC(0x1ec9)
+                EMIT2('i'); EMIT2(0354); EMIT2(0355); EMIT2(0356);
+                EMIT2(0357); EMITMBC(0x129) EMITMBC(0x12b)
+                EMITMBC(0x12d) EMITMBC(0x12f) EMITMBC(0x1d0)
+                EMITMBC(0x1ec9)
+                return OK;
 
-            case 'j': CASEMBC(0x135) CASEMBC(0x1f0)
-                    EMIT2('j'); EMITMBC(0x135) EMITMBC(0x1f0)
-                    return OK;
+        case 'j': CASEMBC(0x135) CASEMBC(0x1f0)
+                EMIT2('j'); EMITMBC(0x135) EMITMBC(0x1f0)
+                return OK;
 
-            case 'k': CASEMBC(0x137) CASEMBC(0x1e9) CASEMBC(0x1e31)
-            CASEMBC(0x1e35)
-                    EMIT2('k'); EMITMBC(0x137) EMITMBC(0x1e9) EMITMBC(0x1e31)
-                    EMITMBC(0x1e35)
-                    return OK;
+        case 'k': CASEMBC(0x137) CASEMBC(0x1e9) CASEMBC(0x1e31)
+        CASEMBC(0x1e35)
+                EMIT2('k'); EMITMBC(0x137) EMITMBC(0x1e9) EMITMBC(0x1e31)
+                EMITMBC(0x1e35)
+                return OK;
 
-            case 'l': CASEMBC(0x13a) CASEMBC(0x13c) CASEMBC(0x13e)
-            CASEMBC(0x140) CASEMBC(0x142) CASEMBC(0x1e3b)
-                    EMIT2('l'); EMITMBC(0x13a) EMITMBC(0x13c) EMITMBC(0x13e)
-                    EMITMBC(0x140) EMITMBC(0x142) EMITMBC(0x1e3b)
-                    return OK;
+        case 'l': CASEMBC(0x13a) CASEMBC(0x13c) CASEMBC(0x13e)
+        CASEMBC(0x140) CASEMBC(0x142) CASEMBC(0x1e3b)
+                EMIT2('l'); EMITMBC(0x13a) EMITMBC(0x13c) EMITMBC(0x13e)
+                EMITMBC(0x140) EMITMBC(0x142) EMITMBC(0x1e3b)
+                return OK;
 
-            case 'm': CASEMBC(0x1e3f) CASEMBC(0x1e41)
-                    EMIT2('m'); EMITMBC(0x1e3f) EMITMBC(0x1e41)
-                    return OK;
+        case 'm': CASEMBC(0x1e3f) CASEMBC(0x1e41)
+                EMIT2('m'); EMITMBC(0x1e3f) EMITMBC(0x1e41)
+                return OK;
 
-            case 'n': case 0361:
-            CASEMBC(0x144) CASEMBC(0x146) CASEMBC(0x148) CASEMBC(0x149)
-            CASEMBC(0x1e45) CASEMBC(0x1e49)
-                    EMIT2('n'); EMIT2(0361); EMITMBC(0x144) EMITMBC(0x146)
-                    EMITMBC(0x148) EMITMBC(0x149) EMITMBC(0x1e45)
-                    EMITMBC(0x1e49)
-                    return OK;
+        case 'n': case 0361:
+        CASEMBC(0x144) CASEMBC(0x146) CASEMBC(0x148) CASEMBC(0x149)
+        CASEMBC(0x1e45) CASEMBC(0x1e49)
+                EMIT2('n'); EMIT2(0361); EMITMBC(0x144) EMITMBC(0x146)
+                EMITMBC(0x148) EMITMBC(0x149) EMITMBC(0x1e45)
+                EMITMBC(0x1e49)
+                return OK;
 
-            case 'o': case 0362: case 0363: case 0364: case 0365:
-            case 0366: case 0370:
-            CASEMBC(0x14d) CASEMBC(0x14f) CASEMBC(0x151) CASEMBC(0x1a1)
-            CASEMBC(0x1d2) CASEMBC(0x1eb) CASEMBC(0x1ed) CASEMBC(0x1ecf)
-                    EMIT2('o'); EMIT2(0362); EMIT2(0363); EMIT2(0364);
-                    EMIT2(0365); EMIT2(0366); EMIT2(0370);
-                    EMITMBC(0x14d) EMITMBC(0x14f) EMITMBC(0x151)
-                    EMITMBC(0x1a1) EMITMBC(0x1d2) EMITMBC(0x1eb)
-                    EMITMBC(0x1ed) EMITMBC(0x1ecf)
-                    return OK;
+        case 'o': case 0362: case 0363: case 0364: case 0365:
+        case 0366: case 0370:
+        CASEMBC(0x14d) CASEMBC(0x14f) CASEMBC(0x151) CASEMBC(0x1a1)
+        CASEMBC(0x1d2) CASEMBC(0x1eb) CASEMBC(0x1ed) CASEMBC(0x1ecf)
+                EMIT2('o'); EMIT2(0362); EMIT2(0363); EMIT2(0364);
+                EMIT2(0365); EMIT2(0366); EMIT2(0370);
+                EMITMBC(0x14d) EMITMBC(0x14f) EMITMBC(0x151)
+                EMITMBC(0x1a1) EMITMBC(0x1d2) EMITMBC(0x1eb)
+                EMITMBC(0x1ed) EMITMBC(0x1ecf)
+                return OK;
 
-            case 'p': CASEMBC(0x1e55) CASEMBC(0x1e57)
-                    EMIT2('p'); EMITMBC(0x1e55) EMITMBC(0x1e57)
-                    return OK;
+        case 'p': CASEMBC(0x1e55) CASEMBC(0x1e57)
+                EMIT2('p'); EMITMBC(0x1e55) EMITMBC(0x1e57)
+                return OK;
 
-            case 'r': CASEMBC(0x155) CASEMBC(0x157) CASEMBC(0x159)
-            CASEMBC(0x1e59) CASEMBC(0x1e5f)
-                    EMIT2('r'); EMITMBC(0x155) EMITMBC(0x157) EMITMBC(0x159)
-                    EMITMBC(0x1e59) EMITMBC(0x1e5f)
-                    return OK;
+        case 'r': CASEMBC(0x155) CASEMBC(0x157) CASEMBC(0x159)
+        CASEMBC(0x1e59) CASEMBC(0x1e5f)
+                EMIT2('r'); EMITMBC(0x155) EMITMBC(0x157) EMITMBC(0x159)
+                EMITMBC(0x1e59) EMITMBC(0x1e5f)
+                return OK;
 
-            case 's': CASEMBC(0x15b) CASEMBC(0x15d) CASEMBC(0x15f)
-            CASEMBC(0x161) CASEMBC(0x1e61)
-                    EMIT2('s'); EMITMBC(0x15b) EMITMBC(0x15d) EMITMBC(0x15f)
-                    EMITMBC(0x161) EMITMBC(0x1e61)
-                    return OK;
+        case 's': CASEMBC(0x15b) CASEMBC(0x15d) CASEMBC(0x15f)
+        CASEMBC(0x161) CASEMBC(0x1e61)
+                EMIT2('s'); EMITMBC(0x15b) EMITMBC(0x15d) EMITMBC(0x15f)
+                EMITMBC(0x161) EMITMBC(0x1e61)
+                return OK;
 
-            case 't': CASEMBC(0x163) CASEMBC(0x165) CASEMBC(0x167)
-            CASEMBC(0x1e6b) CASEMBC(0x1e6f) CASEMBC(0x1e97)
-                    EMIT2('t'); EMITMBC(0x163) EMITMBC(0x165) EMITMBC(0x167)
-                    EMITMBC(0x1e6b) EMITMBC(0x1e6f) EMITMBC(0x1e97)
-                    return OK;
+        case 't': CASEMBC(0x163) CASEMBC(0x165) CASEMBC(0x167)
+        CASEMBC(0x1e6b) CASEMBC(0x1e6f) CASEMBC(0x1e97)
+                EMIT2('t'); EMITMBC(0x163) EMITMBC(0x165) EMITMBC(0x167)
+                EMITMBC(0x1e6b) EMITMBC(0x1e6f) EMITMBC(0x1e97)
+                return OK;
 
-            case 'u': case 0371: case 0372: case 0373: case 0374:
-            CASEMBC(0x169) CASEMBC(0x16b) CASEMBC(0x16d) CASEMBC(0x16f)
-            CASEMBC(0x171) CASEMBC(0x173) CASEMBC(0x1b0) CASEMBC(0x1d4)
-            CASEMBC(0x1ee7)
-                    EMIT2('u'); EMIT2(0371); EMIT2(0372); EMIT2(0373);
-                    EMIT2(0374); EMITMBC(0x169) EMITMBC(0x16b)
-                    EMITMBC(0x16d) EMITMBC(0x16f) EMITMBC(0x171)
-                    EMITMBC(0x173) EMITMBC(0x1b0) EMITMBC(0x1d4)
-                    EMITMBC(0x1ee7)
-                    return OK;
+        case 'u': case 0371: case 0372: case 0373: case 0374:
+        CASEMBC(0x169) CASEMBC(0x16b) CASEMBC(0x16d) CASEMBC(0x16f)
+        CASEMBC(0x171) CASEMBC(0x173) CASEMBC(0x1b0) CASEMBC(0x1d4)
+        CASEMBC(0x1ee7)
+                EMIT2('u'); EMIT2(0371); EMIT2(0372); EMIT2(0373);
+                EMIT2(0374); EMITMBC(0x169) EMITMBC(0x16b)
+                EMITMBC(0x16d) EMITMBC(0x16f) EMITMBC(0x171)
+                EMITMBC(0x173) EMITMBC(0x1b0) EMITMBC(0x1d4)
+                EMITMBC(0x1ee7)
+                return OK;
 
-            case 'v': CASEMBC(0x1e7d)
-                    EMIT2('v'); EMITMBC(0x1e7d)
-                    return OK;
+        case 'v': CASEMBC(0x1e7d)
+                EMIT2('v'); EMITMBC(0x1e7d)
+                return OK;
 
-            case 'w': CASEMBC(0x175) CASEMBC(0x1e81) CASEMBC(0x1e83)
-            CASEMBC(0x1e85) CASEMBC(0x1e87) CASEMBC(0x1e98)
-                    EMIT2('w'); EMITMBC(0x175) EMITMBC(0x1e81) EMITMBC(0x1e83)
-                    EMITMBC(0x1e85) EMITMBC(0x1e87) EMITMBC(0x1e98)
-                    return OK;
+        case 'w': CASEMBC(0x175) CASEMBC(0x1e81) CASEMBC(0x1e83)
+        CASEMBC(0x1e85) CASEMBC(0x1e87) CASEMBC(0x1e98)
+                EMIT2('w'); EMITMBC(0x175) EMITMBC(0x1e81) EMITMBC(0x1e83)
+                EMITMBC(0x1e85) EMITMBC(0x1e87) EMITMBC(0x1e98)
+                return OK;
 
-            case 'x': CASEMBC(0x1e8b) CASEMBC(0x1e8d)
-                    EMIT2('x'); EMITMBC(0x1e8b) EMITMBC(0x1e8d)
-                    return OK;
+        case 'x': CASEMBC(0x1e8b) CASEMBC(0x1e8d)
+                EMIT2('x'); EMITMBC(0x1e8b) EMITMBC(0x1e8d)
+                return OK;
 
-            case 'y': case 0375: case 0377:
-            CASEMBC(0x177) CASEMBC(0x1e8f) CASEMBC(0x1e99)
-            CASEMBC(0x1ef3) CASEMBC(0x1ef7) CASEMBC(0x1ef9)
-                    EMIT2('y'); EMIT2(0375); EMIT2(0377); EMITMBC(0x177)
-                    EMITMBC(0x1e8f) EMITMBC(0x1e99) EMITMBC(0x1ef3)
-                    EMITMBC(0x1ef7) EMITMBC(0x1ef9)
-                    return OK;
+        case 'y': case 0375: case 0377:
+        CASEMBC(0x177) CASEMBC(0x1e8f) CASEMBC(0x1e99)
+        CASEMBC(0x1ef3) CASEMBC(0x1ef7) CASEMBC(0x1ef9)
+                EMIT2('y'); EMIT2(0375); EMIT2(0377); EMITMBC(0x177)
+                EMITMBC(0x1e8f) EMITMBC(0x1e99) EMITMBC(0x1ef3)
+                EMITMBC(0x1ef7) EMITMBC(0x1ef9)
+                return OK;
 
-            case 'z': CASEMBC(0x17a) CASEMBC(0x17c) CASEMBC(0x17e)
-            CASEMBC(0x1b6) CASEMBC(0x1e91) CASEMBC(0x1e95)
-                    EMIT2('z'); EMITMBC(0x17a) EMITMBC(0x17c) EMITMBC(0x17e)
-                    EMITMBC(0x1b6) EMITMBC(0x1e91) EMITMBC(0x1e95)
-                    return OK;
+        case 'z': CASEMBC(0x17a) CASEMBC(0x17c) CASEMBC(0x17e)
+        CASEMBC(0x1b6) CASEMBC(0x1e91) CASEMBC(0x1e95)
+                EMIT2('z'); EMITMBC(0x17a) EMITMBC(0x17c) EMITMBC(0x17e)
+                EMITMBC(0x1b6) EMITMBC(0x1e91) EMITMBC(0x1e95)
+                return OK;
 
-            /* default: character itself */
-        }
+        /* default: character itself */
     }
 
     EMIT2(c);
@@ -8194,7 +8078,7 @@ nfa_regatom()
             }
             /* When '.' is followed by a composing char ignore the dot, so that
              * the composing char is matched here. */
-            if (enc_utf8 && c == Magic('.') && utf_iscomposing(peekchr()))
+            if (c == Magic('.') && utf_iscomposing(peekchr()))
             {
                 old_regparse = regparse;
                 c = getchr();
@@ -8253,9 +8137,9 @@ nfa_regatom()
                     EMSG((char *)e_nopresub);
                     return FAIL;
                 }
-                for (lp = reg_prev_sub; *lp != NUL; mb_cptr_adv(lp))
+                for (lp = reg_prev_sub; *lp != NUL; lp += utf_ptr2len(lp))
                 {
-                    EMIT(PTR2CHAR(lp));
+                    EMIT(utf_ptr2char(lp));
                     if (lp != reg_prev_sub)
                         EMIT(NFA_CONCAT);
                 }
@@ -8487,7 +8371,7 @@ collection:
                     else
                         EMIT(result);
                     regparse = endp;
-                    mb_ptr_adv(regparse);
+                    regparse += utfc_ptr2len(regparse);
                     return OK;
                 }
                 /*
@@ -8499,7 +8383,7 @@ collection:
                 if (*regparse == '^')                   /* negated range */
                 {
                     negated = TRUE;
-                    mb_ptr_adv(regparse);
+                    regparse += utfc_ptr2len(regparse);
                     EMIT(NFA_START_NEG_COLL);
                 }
                 else
@@ -8509,7 +8393,7 @@ collection:
                     startc = '-';
                     EMIT(startc);
                     EMIT(NFA_CONCAT);
-                    mb_ptr_adv(regparse);
+                    regparse += utfc_ptr2len(regparse);
                 }
                 /* Emit the OR branches for each character in the [] */
                 emit_range = FALSE;
@@ -8611,7 +8495,7 @@ collection:
                     {
                         emit_range = TRUE;
                         startc = oldstartc;
-                        mb_ptr_adv(regparse);
+                        regparse += utfc_ptr2len(regparse);
                         continue;           /* reading the end of the range */
                     }
 
@@ -8629,7 +8513,7 @@ collection:
                             )
                         )
                     {
-                        mb_ptr_adv(regparse);
+                        regparse += utfc_ptr2len(regparse);
 
                         if (*regparse == 'n')
                             startc = reg_string ? NL : NFA_NEWL;
@@ -8654,7 +8538,7 @@ collection:
 
                     /* Normal printable char */
                     if (startc == -1)
-                        startc = PTR2CHAR(regparse);
+                        startc = utf_ptr2char(regparse);
 
                     /* Previous char was '-', so this char is end of range. */
                     if (emit_range)
@@ -8677,7 +8561,7 @@ collection:
                             EMIT(NFA_RANGE);
                             EMIT(NFA_CONCAT);
                         }
-                        else if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
+                        else if (utf_char2len(startc) > 1 || utf_char2len(endc) > 1)
                         {
                             /* Emit the characters in the range.
                              * "startc" was already emitted, so skip it.
@@ -8724,7 +8608,7 @@ collection:
                         }
                     }
 
-                    mb_ptr_adv(regparse);
+                    regparse += utfc_ptr2len(regparse);
                 }
 
                 mb_ptr_back(old_regparse, regparse);
@@ -8736,7 +8620,7 @@ collection:
 
                 /* skip the trailing ] */
                 regparse = endp;
-                mb_ptr_adv(regparse);
+                regparse += utfc_ptr2len(regparse);
 
                 /* Mark end of the collection. */
                 if (negated == TRUE)
@@ -8764,8 +8648,7 @@ collection:
 
 nfa_do_multibyte:
                 /* plen is length of current char with composing chars */
-                if (enc_utf8 && ((*mb_char2len)(c) != (plen = (*mb_ptr2len)(old_regparse))
-                                                       || utf_iscomposing(c)))
+                if (utf_char2len(c) != (plen = utfc_ptr2len(old_regparse)) || utf_iscomposing(c))
                 {
                     int i = 0;
 
@@ -9452,12 +9335,7 @@ nfa_max_width(startstate, depth)
             case NFA_START_COLL:
             case NFA_START_NEG_COLL:
                 /* matches some character, including composing chars */
-                if (enc_utf8)
-                    len += MB_MAXBYTES;
-                else if (has_mbyte)
-                    len += 2;
-                else
-                    ++len;
+                len += MB_MAXBYTES;
                 if (state->c != NFA_ANY)
                 {
                     /* skip over the characters */
@@ -9502,10 +9380,7 @@ nfa_max_width(startstate, depth)
             case NFA_NUPPER_IC:
             case NFA_ANY_COMPOSING:
                 /* possibly non-ascii */
-                if (has_mbyte)
-                    len += 3;
-                else
-                    ++len;
+                len += 3;
                 break;
 
             case NFA_START_INVISIBLE:
@@ -9619,7 +9494,7 @@ nfa_max_width(startstate, depth)
                     /* don't know what this is */
                     return -1;
                 /* normal character */
-                len += MB_CHAR2LEN(state->c);
+                len += utf_char2len(state->c);
                 break;
         }
 
@@ -10764,8 +10639,8 @@ skip_add:
                     subs = &temp_subs;
                 }
 
-                /* TODO: check for vim_realloc() returning NULL. */
-                l->t = vim_realloc(l->t, newlen * sizeof(nfa_thread_T));
+                /* TODO: check for realloc() returning NULL. */
+                l->t = realloc(l->t, newlen * sizeof(nfa_thread_T));
                 l->len = newlen;
             }
 
@@ -11120,7 +10995,7 @@ check_char_class(class, c)
                 return OK;
             break;
         case NFA_CLASS_LOWER:
-            if (MB_ISLOWER(c))
+            if (vim_islower(c))
                 return OK;
             break;
         case NFA_CLASS_PRINT:
@@ -11136,7 +11011,7 @@ check_char_class(class, c)
                 return OK;
             break;
         case NFA_CLASS_UPPER:
-            if (MB_ISUPPER(c))
+            if (vim_isupper(c))
                 return OK;
             break;
         case NFA_CLASS_XDIGIT:
@@ -11403,8 +11278,7 @@ recursive_regmatch(state, pim, prog, submatch, m, listids)
             if ((int)(reginput - regline) >= state->val)
             {
                 reginput -= state->val;
-                if (has_mbyte)
-                    reginput -= mb_head_off(regline, reginput);
+                reginput -= utf_head_off(regline, reginput);
             }
             else
                 reginput = regline;
@@ -11640,10 +11514,7 @@ skip_to_start(c, colp)
     char_u *s;
 
     /* Used often, do some work to avoid call overhead. */
-    if (!ireg_ic && !has_mbyte)
-        s = vim_strbyte(regline + *colp, c);
-    else
-        s = cstrchr(regline + *colp, c);
+    s = cstrchr(regline + *colp, c);
     if (s == NULL)
         return FAIL;
     *colp = (int)(s - regline);
@@ -11669,21 +11540,21 @@ find_match_text(startcol, regstart, match_text)
     for (;;)
     {
         match = TRUE;
-        len2 = MB_CHAR2LEN(regstart); /* skip regstart */
-        for (len1 = 0; match_text[len1] != NUL; len1 += MB_CHAR2LEN(c1))
+        len2 = utf_char2len(regstart); /* skip regstart */
+        for (len1 = 0; match_text[len1] != NUL; len1 += utf_char2len(c1))
         {
-            c1 = PTR2CHAR(match_text + len1);
-            c2 = PTR2CHAR(regline + col + len2);
-            if (c1 != c2 && (!ireg_ic || MB_TOLOWER(c1) != MB_TOLOWER(c2)))
+            c1 = utf_ptr2char(match_text + len1);
+            c2 = utf_ptr2char(regline + col + len2);
+            if (c1 != c2 && (!ireg_ic || vim_tolower(c1) != vim_tolower(c2)))
             {
                 match = FALSE;
                 break;
             }
-            len2 += MB_CHAR2LEN(c2);
+            len2 += utf_char2len(c2);
         }
         if (match
                 /* check that no composing char follows */
-                && !(enc_utf8 && utf_iscomposing(PTR2CHAR(regline + col + len2))))
+                && !utf_iscomposing(utf_ptr2char(regline + col + len2)))
         {
             cleanup_subexpr();
             if (REG_MULTI)
@@ -11702,7 +11573,7 @@ find_match_text(startcol, regstart, match_text)
         }
 
         /* Try finding regstart after the current match. */
-        col += MB_CHAR2LEN(regstart); /* skip regstart */
+        col += utf_char2len(regstart); /* skip regstart */
         if (skip_to_start(regstart, &col) == FAIL)
             break;
     }
@@ -11798,19 +11669,8 @@ nfa_regmatch(prog, start, submatch, m)
      */
     for (;;)
     {
-        int     curc;
-        int     clen;
-
-        if (has_mbyte)
-        {
-            curc = (*mb_ptr2char)(reginput);
-            clen = (*mb_ptr2len)(reginput);
-        }
-        else
-        {
-            curc = *reginput;
-            clen = 1;
-        }
+        int curc = utf_ptr2char(reginput);
+        int clen = utfc_ptr2len(reginput);
         if (curc == NUL)
         {
             clen = 0;
@@ -11857,7 +11717,7 @@ nfa_regmatch(prog, start, submatch, m)
               {
                 /* If the match ends before a composing characters and
                  * ireg_icombine is not set, that is not really a match. */
-                if (enc_utf8 && !ireg_icombine && utf_iscomposing(curc))
+                if (!ireg_icombine && utf_iscomposing(curc))
                     break;
                 nfa_match = TRUE;
                 copy_sub(&submatch->norm, &t->subs.norm);
@@ -12090,7 +11950,7 @@ nfa_regmatch(prog, start, submatch, m)
 
                 if (curc == NUL)
                     result = FALSE;
-                else if (has_mbyte)
+                else
                 {
                     int this_class;
 
@@ -12101,9 +11961,6 @@ nfa_regmatch(prog, start, submatch, m)
                     else if (reg_prev_class() == this_class)
                         result = FALSE;
                 }
-                else if (!vim_iswordc_buf(curc, reg_buf)
-                           || (reginput > regline && vim_iswordc_buf(reginput[-1], reg_buf)))
-                    result = FALSE;
                 if (result)
                 {
                     add_here = TRUE;
@@ -12115,7 +11972,7 @@ nfa_regmatch(prog, start, submatch, m)
                 result = TRUE;
                 if (reginput == regline)
                     result = FALSE;
-                else if (has_mbyte)
+                else
                 {
                     int this_class, prev_class;
 
@@ -12125,9 +11982,6 @@ nfa_regmatch(prog, start, submatch, m)
                     if (this_class == prev_class || prev_class == 0 || prev_class == 1)
                         result = FALSE;
                 }
-                else if (!vim_iswordc_buf(reginput[-1], reg_buf)
-                        || (reginput[0] != NUL && vim_iswordc_buf(curc, reg_buf)))
-                    result = FALSE;
                 if (result)
                 {
                     add_here = TRUE;
@@ -12168,7 +12022,7 @@ nfa_regmatch(prog, start, submatch, m)
                     /* Only match composing character(s), ignore base
                      * character.  Used for ".{composing}" and "{composing}"
                      * (no preceding character). */
-                    len += mb_char2len(mc);
+                    len += utf_char2len(mc);
                 }
                 if (ireg_icombine && len == 0)
                 {
@@ -12187,7 +12041,7 @@ nfa_regmatch(prog, start, submatch, m)
                 {
                     if (len == 0)
                     {
-                        len += mb_char2len(mc);
+                        len += utf_char2len(mc);
                         sta = sta->out;
                     }
 
@@ -12195,9 +12049,9 @@ nfa_regmatch(prog, start, submatch, m)
                      * Get them into cchars[] first. */
                     while (len < clen)
                     {
-                        mc = mb_ptr2char(reginput + len);
+                        mc = utf_ptr2char(reginput + len);
                         cchars[ccount++] = mc;
-                        len += mb_char2len(mc);
+                        len += utf_char2len(mc);
                         if (ccount == MAX_MCO)
                             break;
                     }
@@ -12279,11 +12133,11 @@ nfa_regmatch(prog, start, submatch, m)
                         }
                         if (ireg_ic)
                         {
-                            int curc_low = MB_TOLOWER(curc);
+                            int curc_low = vim_tolower(curc);
                             int done = FALSE;
 
                             for ( ; c1 <= c2; ++c1)
-                                if (MB_TOLOWER(c1) == curc_low)
+                                if (vim_tolower(c1) == curc_low)
                                 {
                                     result = result_if_matched;
                                     done = TRUE;
@@ -12295,7 +12149,7 @@ nfa_regmatch(prog, start, submatch, m)
                     }
                     else if (state->c < 0 ? check_char_class(state->c, curc)
                                 : (curc == state->c
-                                   || (ireg_ic && MB_TOLOWER(curc) == MB_TOLOWER(state->c))))
+                                   || (ireg_ic && vim_tolower(curc) == vim_tolower(state->c))))
                     {
                         result = result_if_matched;
                         break;
@@ -12324,7 +12178,7 @@ nfa_regmatch(prog, start, submatch, m)
             case NFA_ANY_COMPOSING:
                 /* On a composing character skip over it.  Otherwise do
                  * nothing.  Always matches. */
-                if (enc_utf8 && utf_iscomposing(curc))
+                if (utf_iscomposing(curc))
                 {
                     add_off = clen;
                 }
@@ -12370,12 +12224,12 @@ nfa_regmatch(prog, start, submatch, m)
                 break;
 
             case NFA_PRINT:     /*  \p  */
-                result = vim_isprintc(PTR2CHAR(reginput));
+                result = vim_isprintc(utf_ptr2char(reginput));
                 ADD_STATE_IF_MATCH(t->state);
                 break;
 
             case NFA_SPRINT:    /*  \P  */
-                result = !VIM_ISDIGIT(curc) && vim_isprintc(PTR2CHAR(reginput));
+                result = !VIM_ISDIGIT(curc) && vim_isprintc(utf_ptr2char(reginput));
                 ADD_STATE_IF_MATCH(t->state);
                 break;
 
@@ -12600,7 +12454,7 @@ nfa_regmatch(prog, start, submatch, m)
 
                     /* Bail out quickly when there can't be a match, avoid the
                      * overhead of win_linetabsize() on long lines. */
-                    if (op != 1 && col > t->state->val * (has_mbyte ? MB_MAXBYTES : 1))
+                    if (op != 1 && col > t->state->val * MB_MAXBYTES)
                         break;
                     result = FALSE;
                     if (op == 1 && col - 1 > t->state->val && col > 100)
@@ -12702,10 +12556,10 @@ nfa_regmatch(prog, start, submatch, m)
                 result = (c == curc);
 
                 if (!result && ireg_ic)
-                    result = MB_TOLOWER(c) == MB_TOLOWER(curc);
+                    result = vim_tolower(c) == vim_tolower(curc);
                 /* If ireg_icombine is not set only skip over the character
                  * itself.  When it is set skip over composing characters. */
-                if (result && enc_utf8 && !ireg_icombine)
+                if (result && !ireg_icombine)
                     clen = utf_char2len(curc);
                 ADD_STATE_IF_MATCH(t->state);
                 break;
@@ -12829,8 +12683,8 @@ nfa_regmatch(prog, start, submatch, m)
                     {
                         /* Checking if the required start character matches is
                          * cheaper than adding a state that won't match. */
-                        c = PTR2CHAR(reginput + clen);
-                        if (c != prog->regstart && (!ireg_ic || MB_TOLOWER(c) != MB_TOLOWER(prog->regstart)))
+                        c = utf_ptr2char(reginput + clen);
+                        if (c != prog->regstart && (!ireg_ic || vim_tolower(c) != vim_tolower(prog->regstart)))
                         {
                             add = FALSE;
                         }

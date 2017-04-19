@@ -115,7 +115,6 @@ static void next_search_hl(win_T *win, match_T *shl, linenr_T lnum, colnr_T minc
 static int next_search_hl_pos(match_T *shl, linenr_T lnum, posmatch_T *pos, colnr_T mincol);
 static void screen_start_highlight(int attr);
 static void screen_char(unsigned off, int row, int col);
-static void screen_char_2(unsigned off, int row, int col);
 static void screenclear2(void);
 static void lineclear(unsigned off, int width);
 static void lineinvalid(unsigned off, int width);
@@ -241,19 +240,17 @@ redraw_asap(type)
                            (long_u)(rows * Columns * sizeof(sattr_T)), FALSE);
     if (screenline == NULL || screenattr == NULL)
         ret = 2;
-    if (enc_utf8)
+
+    screenlineUC = (u8char_T *)lalloc(
+                        (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
+    if (screenlineUC == NULL)
+        ret = 2;
+    for (i = 0; i < p_mco; ++i)
     {
-        screenlineUC = (u8char_T *)lalloc(
-                          (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
-        if (screenlineUC == NULL)
+        screenlineC[i] = (u8char_T *)lalloc(
+                        (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
+        if (screenlineC[i] == NULL)
             ret = 2;
-        for (i = 0; i < p_mco; ++i)
-        {
-            screenlineC[i] = (u8char_T *)lalloc(
-                          (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
-            if (screenlineC[i] == NULL)
-                ret = 2;
-        }
     }
 
     if (ret != 2)
@@ -267,16 +264,13 @@ redraw_asap(type)
             mch_memmove(screenattr + r * Columns,
                         ScreenAttrs + LineOffset[cmdline_row + r],
                         (size_t)Columns * sizeof(sattr_T));
-            if (enc_utf8)
-            {
-                mch_memmove(screenlineUC + r * Columns,
-                            ScreenLinesUC + LineOffset[cmdline_row + r],
+            mch_memmove(screenlineUC + r * Columns,
+                        ScreenLinesUC + LineOffset[cmdline_row + r],
+                        (size_t)Columns * sizeof(u8char_T));
+            for (i = 0; i < p_mco; ++i)
+                mch_memmove(screenlineC[i] + r * Columns,
+                            ScreenLinesC[r] + LineOffset[cmdline_row + r],
                             (size_t)Columns * sizeof(u8char_T));
-                for (i = 0; i < p_mco; ++i)
-                    mch_memmove(screenlineC[i] + r * Columns,
-                                ScreenLinesC[r] + LineOffset[cmdline_row + r],
-                                (size_t)Columns * sizeof(u8char_T));
-            }
         }
 
         update_screen(0);
@@ -295,16 +289,13 @@ redraw_asap(type)
                 mch_memmove(ScreenAttrs + off,
                             screenattr + r * Columns,
                             (size_t)Columns * sizeof(sattr_T));
-                if (enc_utf8)
-                {
-                    mch_memmove(ScreenLinesUC + off,
-                                screenlineUC + r * Columns,
+                mch_memmove(ScreenLinesUC + off,
+                            screenlineUC + r * Columns,
+                            (size_t)Columns * sizeof(u8char_T));
+                for (i = 0; i < p_mco; ++i)
+                    mch_memmove(ScreenLinesC[i] + off,
+                                screenlineC[i] + r * Columns,
                                 (size_t)Columns * sizeof(u8char_T));
-                    for (i = 0; i < p_mco; ++i)
-                        mch_memmove(ScreenLinesC[i] + off,
-                                    screenlineC[i] + r * Columns,
-                                    (size_t)Columns * sizeof(u8char_T));
-                }
                 SCREEN_LINE(cmdline_row + r, 0, Columns, Columns, FALSE);
             }
             ret = 4;
@@ -313,12 +304,9 @@ redraw_asap(type)
 
     vim_free(screenline);
     vim_free(screenattr);
-    if (enc_utf8)
-    {
-        vim_free(screenlineUC);
-        for (i = 0; i < p_mco; ++i)
-            vim_free(screenlineC[i]);
-    }
+    vim_free(screenlineUC);
+    for (i = 0; i < p_mco; ++i)
+        vim_free(screenlineC[i]);
 
     /* Show the intro message when appropriate. */
     maybe_intro_message();
@@ -1917,7 +1905,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
             c = win_lbr_chartabsize(wp, line, ptr, (colnr_T)vcol, NULL);
             vcol += c;
             prev_ptr = ptr;
-            mb_ptr_adv(ptr);
+            ptr += utfc_ptr2len(ptr);
         }
 
         /* When:
@@ -2020,8 +2008,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
             /* Highlight one character for an empty match. */
             if (shl->startcol == shl->endcol)
             {
-                if (has_mbyte && line[shl->endcol] != NUL)
-                    shl->endcol += (*mb_ptr2len)(line + shl->endcol);
+                if (line[shl->endcol] != NUL)
+                    shl->endcol += utfc_ptr2len(line + shl->endcol);
                 else
                     ++shl->endcol;
             }
@@ -2161,7 +2149,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     n_extra = (int)STRLEN(p_sbr);
                     char_attr = hl_attr(HLF_AT);
                     need_showbreak = FALSE;
-                    vcol_sbr = vcol + MB_CHARLEN(p_sbr);
+                    vcol_sbr = vcol + mb_charlen(p_sbr);
                     /* Correct end of highlighted area for 'showbreak',
                      * required when 'linebreak' is also set. */
                     if (tocol == vcol)
@@ -2205,8 +2193,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
         {
             /* handle Visual or match highlighting in this line */
             if (vcol == fromcol
-                    || (has_mbyte && vcol + 1 == fromcol && n_extra == 0
-                        && (*mb_ptr2cells)(ptr) > 1)
+                    || (vcol + 1 == fromcol && n_extra == 0
+                        && utf_ptr2cells(ptr) > 1)
                     || ((int)vcol_prev == fromcol_prev
                         && vcol_prev < vcol     /* not at margin */
                         && vcol < tocol))
@@ -2247,7 +2235,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                 && v >= (long)shl->startcol
                                 && v < (long)shl->endcol)
                         {
-                            int tmp_col = v + MB_PTR2LEN(ptr);
+                            int tmp_col = v + utfc_ptr2len(ptr);
 
                             if (shl->endcol < tmp_col)
                                 shl->endcol = tmp_col;
@@ -2275,10 +2263,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                 if (shl->startcol == shl->endcol)
                                 {
                                     /* highlight empty match, try again after it */
-                                    if (has_mbyte)
-                                        shl->endcol += (*mb_ptr2len)(line + shl->endcol);
-                                    else
-                                        ++shl->endcol;
+                                    shl->endcol += utfc_ptr2len(line + shl->endcol);
                                 }
 
                                 /* Loop to check if the match starts at the
@@ -2350,7 +2335,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
          * The "p_extra" points to the extra stuff that is inserted to
          * represent special characters (non-printable stuff) and other
          * things.  When all characters are the same, c_extra is used.
-         * "p_extra" must end in a NUL to avoid mb_ptr2len() reads past
+         * "p_extra" must end in a NUL to avoid utfc_ptr2len() reads past
          * "p_extra[n_extra]".
          * For the '$' of the 'list' option, n_extra == 1, p_extra == "".
          */
@@ -2360,7 +2345,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
             {
                 c = c_extra;
                 mb_c = c;       /* doesn't handle non-utf-8 multi-byte! */
-                if (enc_utf8 && (*mb_char2len)(c) > 1)
+                if (utf_char2len(c) > 1)
                 {
                     mb_utf8 = TRUE;
                     u8cc[0] = 0;
@@ -2372,55 +2357,43 @@ win_line(wp, lnum, startrow, endrow, nochange)
             else
             {
                 c = *p_extra;
-                if (has_mbyte)
-                {
-                    mb_c = c;
-                    if (enc_utf8)
-                    {
-                        /* If the UTF-8 character is more than one byte:
-                         * Decode it into "mb_c". */
-                        mb_l = (*mb_ptr2len)(p_extra);
-                        mb_utf8 = FALSE;
-                        if (mb_l > n_extra)
-                            mb_l = 1;
-                        else if (mb_l > 1)
-                        {
-                            mb_c = utfc_ptr2char(p_extra, u8cc);
-                            mb_utf8 = TRUE;
-                            c = 0xc0;
-                        }
-                    }
-                    else
-                    {
-                        /* if this is a DBCS character, put it in "mb_c" */
-                        mb_l = MB_BYTE2LEN(c);
-                        if (mb_l >= n_extra)
-                            mb_l = 1;
-                        else if (mb_l > 1)
-                            mb_c = (c << 8) + p_extra[1];
-                    }
-                    if (mb_l == 0)  /* at the NUL at end-of-line */
-                        mb_l = 1;
 
-                    /* If a double-width char doesn't fit display a '>' in the last column. */
-                    if ((wp->w_p_rl ? (col <= 0) : (col >= W_WIDTH(wp) - 1)) && (*mb_char2cells)(mb_c) == 2)
-                    {
-                        c = '>';
-                        mb_c = c;
-                        mb_l = 1;
-                        mb_utf8 = FALSE;
-                        multi_attr = hl_attr(HLF_AT);
-                        /* put the pointer back to output the double-width
-                         * character at the start of the next line. */
-                        ++n_extra;
-                        --p_extra;
-                    }
-                    else
-                    {
-                        n_extra -= mb_l - 1;
-                        p_extra += mb_l - 1;
-                    }
+                mb_c = c;
+
+                /* If the UTF-8 character is more than one byte, decode it into "mb_c". */
+                mb_l = utfc_ptr2len(p_extra);
+                mb_utf8 = FALSE;
+                if (mb_l > n_extra)
+                    mb_l = 1;
+                else if (mb_l > 1)
+                {
+                    mb_c = utfc_ptr2char(p_extra, u8cc);
+                    mb_utf8 = TRUE;
+                    c = 0xc0;
                 }
+
+                if (mb_l == 0)  /* at the NUL at end-of-line */
+                    mb_l = 1;
+
+                /* If a double-width char doesn't fit display a '>' in the last column. */
+                if ((wp->w_p_rl ? (col <= 0) : (col >= W_WIDTH(wp) - 1)) && utf_char2cells(mb_c) == 2)
+                {
+                    c = '>';
+                    mb_c = c;
+                    mb_l = 1;
+                    mb_utf8 = FALSE;
+                    multi_attr = hl_attr(HLF_AT);
+                    /* put the pointer back to output the double-width
+                     * character at the start of the next line. */
+                    ++n_extra;
+                    --p_extra;
+                }
+                else
+                {
+                    n_extra -= mb_l - 1;
+                    p_extra += mb_l - 1;
+                }
+
                 ++p_extra;
             }
             --n_extra;
@@ -2432,158 +2405,103 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 vim_free(p_extra_free);
                 p_extra_free = NULL;
             }
+
             /*
              * Get a character from the line itself.
              */
             c = *ptr;
-            if (has_mbyte)
+
+            mb_c = c;
+
+            /* If the UTF-8 character is more than one byte, decode it into "mb_c". */
+            mb_l = utfc_ptr2len(ptr);
+            mb_utf8 = FALSE;
+            if (mb_l > 1)
             {
-                mb_c = c;
-                if (enc_utf8)
+                mb_c = utfc_ptr2char(ptr, u8cc);
+                /* Overlong encoded ASCII or ASCII with composing char
+                 * is displayed normally, except a NUL. */
+                if (mb_c < 0x80)
+                    c = mb_c;
+                mb_utf8 = TRUE;
+
+                /* At start of the line we can have a composing char.
+                 * Draw it as a space with a composing char. */
+                if (utf_iscomposing(mb_c))
                 {
-                    /* If the UTF-8 character is more than one byte: Decode it into "mb_c". */
-                    mb_l = (*mb_ptr2len)(ptr);
-                    mb_utf8 = FALSE;
-                    if (mb_l > 1)
-                    {
-                        mb_c = utfc_ptr2char(ptr, u8cc);
-                        /* Overlong encoded ASCII or ASCII with composing char
-                         * is displayed normally, except a NUL. */
-                        if (mb_c < 0x80)
-                            c = mb_c;
-                        mb_utf8 = TRUE;
+                    int i;
 
-                        /* At start of the line we can have a composing char.
-                         * Draw it as a space with a composing char. */
-                        if (utf_iscomposing(mb_c))
-                        {
-                            int i;
-
-                            for (i = Screen_mco - 1; i > 0; --i)
-                                u8cc[i] = u8cc[i - 1];
-                            u8cc[0] = mb_c;
-                            mb_c = ' ';
-                        }
-                    }
-
-                    if ((mb_l == 1 && c >= 0x80)
-                            || (mb_l >= 1 && mb_c == 0)
-                            || (mb_l > 1 && (!vim_isprintc(mb_c)
-#if defined(UNICODE16)
-                                                         || mb_c >= 0x10000
-#endif
-                                                         )))
-                    {
-                        /*
-                         * Illegal UTF-8 byte: display as <xx>.
-                         * Non-BMP character : display as ? or fullwidth ?.
-                         */
-#if defined(UNICODE16)
-                        if (mb_c < 0x10000)
-#endif
-                        {
-                            transchar_hex(extra, mb_c);
-                            if (wp->w_p_rl)             /* reverse */
-                                rl_mirror(extra);
-                        }
-#if defined(UNICODE16)
-                        else if (utf_char2cells(mb_c) != 2)
-                            STRCPY(extra, "?");
-                        else
-                            /* 0xff1f in UTF-8: full-width '?' */
-                            STRCPY(extra, "\357\274\237");
-#endif
-
-                        p_extra = extra;
-                        c = *p_extra;
-                        mb_c = mb_ptr2char_adv(&p_extra);
-                        mb_utf8 = (c >= 0x80);
-                        n_extra = (int)STRLEN(p_extra);
-                        c_extra = NUL;
-                        if (area_attr == 0 && search_attr == 0)
-                        {
-                            n_attr = n_extra + 1;
-                            extra_attr = hl_attr(HLF_8);
-                            saved_attr2 = char_attr; /* save current attr */
-                        }
-                    }
-                    else if (mb_l == 0)  /* at the NUL at end-of-line */
-                        mb_l = 1;
-                }
-                else    /* enc_dbcs */
-                {
-                    mb_l = MB_BYTE2LEN(c);
-                    if (mb_l == 0)  /* at the NUL at end-of-line */
-                        mb_l = 1;
-                    else if (mb_l > 1)
-                    {
-                        /* We assume a second byte below 32 is illegal.
-                         * Hopefully this is OK for all double-byte encodings!
-                         */
-                        if (ptr[1] >= 32)
-                            mb_c = (c << 8) + ptr[1];
-                        else
-                        {
-                            if (ptr[1] == NUL)
-                            {
-                                /* head byte at end of line */
-                                mb_l = 1;
-                                transchar_nonprint(extra, c);
-                            }
-                            else
-                            {
-                                /* illegal tail byte */
-                                mb_l = 2;
-                                STRCPY(extra, "XX");
-                            }
-                            p_extra = extra;
-                            n_extra = (int)STRLEN(extra) - 1;
-                            c_extra = NUL;
-                            c = *p_extra++;
-                            if (area_attr == 0 && search_attr == 0)
-                            {
-                                n_attr = n_extra + 1;
-                                extra_attr = hl_attr(HLF_8);
-                                saved_attr2 = char_attr; /* save current attr */
-                            }
-                            mb_c = c;
-                        }
-                    }
-                }
-                /* If a double-width char doesn't fit display a '>' in the
-                 * last column; the character is displayed at the start of the next line. */
-                if ((wp->w_p_rl ? (col <= 0) : (col >= W_WIDTH(wp) - 1)) && (*mb_char2cells)(mb_c) == 2)
-                {
-                    c = '>';
-                    mb_c = c;
-                    mb_utf8 = FALSE;
-                    mb_l = 1;
-                    multi_attr = hl_attr(HLF_AT);
-                    /* Put pointer back so that the character will be
-                     * displayed at the start of the next line. */
-                    --ptr;
-                }
-                else if (*ptr != NUL)
-                    ptr += mb_l - 1;
-
-                /* If a double-width char doesn't fit at the left side display
-                 * a '<' in the first column.  Don't do this for unprintable characters. */
-                if (n_skip > 0 && mb_l > 1 && n_extra == 0)
-                {
-                    n_extra = 1;
-                    c_extra = MB_FILLER_CHAR;
-                    c = ' ';
-                    if (area_attr == 0 && search_attr == 0)
-                    {
-                        n_attr = n_extra + 1;
-                        extra_attr = hl_attr(HLF_AT);
-                        saved_attr2 = char_attr; /* save current attr */
-                    }
-                    mb_c = c;
-                    mb_utf8 = FALSE;
-                    mb_l = 1;
+                    for (i = Screen_mco - 1; i > 0; --i)
+                        u8cc[i] = u8cc[i - 1];
+                    u8cc[0] = mb_c;
+                    mb_c = ' ';
                 }
             }
+
+            if ((mb_l == 1 && c >= 0x80)
+                    || (mb_l >= 1 && mb_c == 0)
+                    || (mb_l > 1 && (!vim_isprintc(mb_c))))
+            {
+                /*
+                 * Illegal UTF-8 byte: display as <xx>.
+                 * Non-BMP character : display as ? or fullwidth ?.
+                 */
+                {
+                    transchar_hex(extra, mb_c);
+                    if (wp->w_p_rl)             /* reverse */
+                        rl_mirror(extra);
+                }
+
+                p_extra = extra;
+                c = *p_extra;
+                mb_c = mb_ptr2char_adv(&p_extra);
+                mb_utf8 = (c >= 0x80);
+                n_extra = (int)STRLEN(p_extra);
+                c_extra = NUL;
+                if (area_attr == 0 && search_attr == 0)
+                {
+                    n_attr = n_extra + 1;
+                    extra_attr = hl_attr(HLF_8);
+                    saved_attr2 = char_attr; /* save current attr */
+                }
+            }
+            else if (mb_l == 0)  /* at the NUL at end-of-line */
+                mb_l = 1;
+
+            /* If a double-width char doesn't fit display a '>' in the
+             * last column; the character is displayed at the start of the next line. */
+            if ((wp->w_p_rl ? (col <= 0) : (col >= W_WIDTH(wp) - 1)) && utf_char2cells(mb_c) == 2)
+            {
+                c = '>';
+                mb_c = c;
+                mb_utf8 = FALSE;
+                mb_l = 1;
+                multi_attr = hl_attr(HLF_AT);
+                /* Put pointer back so that the character will be
+                 * displayed at the start of the next line. */
+                --ptr;
+            }
+            else if (*ptr != NUL)
+                ptr += mb_l - 1;
+
+            /* If a double-width char doesn't fit at the left side display
+             * a '<' in the first column.  Don't do this for unprintable characters. */
+            if (n_skip > 0 && mb_l > 1 && n_extra == 0)
+            {
+                n_extra = 1;
+                c_extra = MB_FILLER_CHAR;
+                c = ' ';
+                if (area_attr == 0 && search_attr == 0)
+                {
+                    n_attr = n_extra + 1;
+                    extra_attr = hl_attr(HLF_AT);
+                    saved_attr2 = char_attr; /* save current attr */
+                }
+                mb_c = c;
+                mb_utf8 = FALSE;
+                mb_l = 1;
+            }
+
             ++ptr;
 
             /* 'list' : change char 160 to lcs_nbsp. */
@@ -2597,7 +2515,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     saved_attr2 = char_attr; /* save current attr */
                 }
                 mb_c = c;
-                if (enc_utf8 && (*mb_char2len)(c) > 1)
+                if (utf_char2len(c) > 1)
                 {
                     mb_utf8 = TRUE;
                     u8cc[0] = 0;
@@ -2651,7 +2569,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  */
                 if (wp->w_p_lbr && vim_isbreak(c) && !vim_isbreak(*ptr))
                 {
-                    int mb_off = has_mbyte ? (*mb_head_off)(line, ptr - 1) : 0;
+                    int mb_off = utf_head_off(line, ptr - 1);
                     char_u *p = ptr - (mb_off + 1);
 
                     /* TODO: is passing p for start of the line OK? */
@@ -2680,7 +2598,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         saved_attr2 = char_attr; /* save current attr */
                     }
                     mb_c = c;
-                    if (enc_utf8 && (*mb_char2len)(c) > 1)
+                    if (utf_char2len(c) > 1)
                     {
                         mb_utf8 = TRUE;
                         u8cc[0] = 0;
@@ -2708,7 +2626,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     /* only adjust the tab_len, when at the first column
                      * after the showbreak value was drawn */
                     if (*p_sbr != NUL && vcol == vcol_sbr && wp->w_p_wrap)
-                        vcol_adjusted = vcol - MB_CHARLEN(p_sbr);
+                        vcol_adjusted = vcol - mb_charlen(p_sbr);
                     /* tab amount depends on current column */
                     tab_len = (int)wp->w_buffer->b_p_ts - vcol_adjusted % (int)wp->w_buffer->b_p_ts - 1;
 
@@ -2732,7 +2650,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
                         /* if n_extra > 0, it gives the number of chars, to
                          * use for a tab, else we need to calculate the width for a tab */
-                        len = (tab_len * mb_char2len(lcs_tab2));
+                        len = (tab_len * utf_char2len(lcs_tab2));
                         if (n_extra > 0)
                             len += n_extra - tab_len;
                         c = lcs_tab1;
@@ -2742,9 +2660,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         p_extra_free = p;
                         for (i = 0; i < tab_len; i++)
                         {
-                            mb_char2bytes(lcs_tab2, p);
-                            p += mb_char2len(lcs_tab2);
-                            n_extra += mb_char2len(lcs_tab2) - (saved_nextra > 0 ? 1 : 0);
+                            utf_char2bytes(lcs_tab2, p);
+                            p += utf_char2len(lcs_tab2);
+                            n_extra += utf_char2len(lcs_tab2) - (saved_nextra > 0 ? 1 : 0);
                         }
                         p_extra = p_extra_free;
                         /* n_extra will be increased by FIX_FOX_BOGUSCOLS
@@ -2752,6 +2670,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         if (vcol_off > 0)
                             n_extra -= vcol_off;
                     }
+
                     {
                         int vc_saved = vcol_off;
 
@@ -2769,6 +2688,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         if (n_extra == tab_len + vc_saved && wp->w_p_list && lcs_tab1)
                             tab_len += vc_saved;
                     }
+
                     mb_utf8 = FALSE;    /* don't draw as UTF-8 */
                     if (wp->w_p_list)
                     {
@@ -2781,7 +2701,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         extra_attr = hl_attr(HLF_8);
                         saved_attr2 = char_attr; /* save current attr */
                         mb_c = c;
-                        if (enc_utf8 && (*mb_char2len)(c) > 1)
+                        if (utf_char2len(c) > 1)
                         {
                             mb_utf8 = TRUE;
                             u8cc[0] = 0;
@@ -2841,7 +2761,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                         n_attr = 1;
                     }
                     mb_c = c;
-                    if (enc_utf8 && (*mb_char2len)(c) > 1)
+                    if (utf_char2len(c) > 1)
                     {
                         mb_utf8 = TRUE;
                         u8cc[0] = 0;
@@ -2954,7 +2874,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     n_skip = 1;
                 }
                 mb_c = c;
-                if (enc_utf8 && (*mb_char2len)(c) > 1)
+                if (utf_char2len(c) > 1)
                 {
                     mb_utf8 = TRUE;
                     u8cc[0] = 0;
@@ -3001,7 +2921,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
         {
             c = lcs_prec;
             lcs_prec_todo = NUL;
-            if (has_mbyte && (*mb_char2cells)(mb_c) > 1)
+            if (utf_char2cells(mb_c) > 1)
             {
                 /* Double-width character being overwritten by the "precedes"
                  * character, need to fill up half the character. */
@@ -3011,7 +2931,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 extra_attr = hl_attr(HLF_AT);
             }
             mb_c = c;
-            if (enc_utf8 && (*mb_char2len)(c) > 1)
+            if (utf_char2len(c) > 1)
             {
                 mb_utf8 = TRUE;
                 u8cc[0] = 0;
@@ -3099,8 +3019,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 {
                     /* Add a blank character to highlight. */
                     ScreenLines[off] = ' ';
-                    if (enc_utf8)
-                        ScreenLinesUC[off] = 0;
+                    ScreenLinesUC[off] = 0;
                 }
                 if (area_attr == 0)
                 {
@@ -3195,8 +3114,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 while (col < W_WIDTH(wp))
                 {
                     ScreenLines[off] = ' ';
-                    if (enc_utf8)
-                        ScreenLinesUC[off] = 0;
+                    ScreenLinesUC[off] = 0;
                     ++col;
                     if (draw_color_col)
                         draw_color_col = advance_color_col(VCOL_HLC, &color_cols);
@@ -3245,7 +3163,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
             c = lcs_ext;
             char_attr = hl_attr(HLF_AT);
             mb_c = c;
-            if (enc_utf8 && (*mb_char2len)(c) > 1)
+            if (utf_char2len(c) > 1)
             {
                 mb_utf8 = TRUE;
                 u8cc[0] = 0;
@@ -3287,32 +3205,27 @@ win_line(wp, lnum, startrow, endrow, nochange)
             /*
              * Store the character.
              */
-            if (has_mbyte && wp->w_p_rl && (*mb_char2cells)(mb_c) > 1)
+            if (wp->w_p_rl && utf_char2cells(mb_c) > 1)
             {
                 /* A double-wide character is: put first halve in left cell. */
                 --off;
                 --col;
             }
             ScreenLines[off] = c;
-            if (enc_utf8)
+            if (mb_utf8)
             {
-                if (mb_utf8)
+                ScreenLinesUC[off] = mb_c;
+                if ((c & 0xff) == 0)
+                    ScreenLines[off] = 0x80;   /* avoid storing zero */
+                for (int i = 0; i < Screen_mco; ++i)
                 {
-                    int i;
-
-                    ScreenLinesUC[off] = mb_c;
-                    if ((c & 0xff) == 0)
-                        ScreenLines[off] = 0x80;   /* avoid storing zero */
-                    for (i = 0; i < Screen_mco; ++i)
-                    {
-                        ScreenLinesC[i][off] = u8cc[i];
-                        if (u8cc[i] == 0)
-                            break;
-                    }
+                    ScreenLinesC[i][off] = u8cc[i];
+                    if (u8cc[i] == 0)
+                        break;
                 }
-                else
-                    ScreenLinesUC[off] = 0;
             }
+            else
+                ScreenLinesUC[off] = 0;
             if (multi_attr)
             {
                 ScreenAttrs[off] = multi_attr;
@@ -3321,17 +3234,13 @@ win_line(wp, lnum, startrow, endrow, nochange)
             else
                 ScreenAttrs[off] = char_attr;
 
-            if (has_mbyte && (*mb_char2cells)(mb_c) > 1)
+            if (utf_char2cells(mb_c) > 1)
             {
                 /* Need to fill two screen columns. */
                 ++off;
                 ++col;
-                if (enc_utf8)
-                    /* UTF-8: Put a 0 in the second screen char. */
-                    ScreenLines[off] = 0;
-                else
-                    /* DBCS: Put second byte in the second screen char. */
-                    ScreenLines[off] = mb_c & 0xff;
+                /* UTF-8: Put a 0 in the second screen char. */
+                ScreenLines[off] = 0;
                 ++vcol;
                 /* When "tocol" is halfway a character, set it to the end of
                  * the character, otherwise highlighting won't stop. */
@@ -3393,7 +3302,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     n_attr = 0;
                 }
 
-                if (has_mbyte && (*mb_char2cells)(mb_c) > 1)
+                if (utf_char2cells(mb_c) > 1)
                 {
                     /* Need to fill two screen columns. */
                     if (wp->w_p_rl)
@@ -3499,11 +3408,10 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  * Don't do this for a window not at the right screen border.
                  */
                 if (p_tf
-                         && !(has_mbyte
-                             && ((*mb_off2cells)(LineOffset[screen_row],
+                         && !(utf_off2cells(LineOffset[screen_row],
                                      LineOffset[screen_row] + screen_Columns) == 2
-                                 || (*mb_off2cells)(LineOffset[screen_row - 1] + (int)Columns - 2,
-                                     LineOffset[screen_row] + screen_Columns) == 2))
+                                 || utf_off2cells(LineOffset[screen_row - 1] + (int)Columns - 2,
+                                     LineOffset[screen_row] + screen_Columns) == 2)
                    )
                 {
                     /* First make sure we are at the end of the screen line,
@@ -3516,7 +3424,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
                     /* When there is a multi-byte character, just output a
                      * space to keep it simple. */
-                    if (has_mbyte && MB_BYTE2LEN(ScreenLines[LineOffset[screen_row - 1] + (Columns - 1)]) > 1)
+                    if (MB_BYTE2LEN(ScreenLines[LineOffset[screen_row - 1] + (Columns - 1)]) > 1)
                         out_char(' ');
                     else
                         out_char(ScreenLines[LineOffset[screen_row - 1] + (Columns - 1)]);
@@ -3588,12 +3496,11 @@ char_needs_redraw(off_from, off_to, cols)
     if (cols > 0
             && ((ScreenLines[off_from] != ScreenLines[off_to]
                     || ScreenAttrs[off_from] != ScreenAttrs[off_to])
-                || (enc_utf8
-                    && (ScreenLinesUC[off_from] != ScreenLinesUC[off_to]
+                || (ScreenLinesUC[off_from] != ScreenLinesUC[off_to]
                         || (ScreenLinesUC[off_from] != 0
                             && comp_char_differs(off_from, off_to))
-                        || ((*mb_off2cells)(off_from, off_from + cols) > 1
-                            && ScreenLines[off_from + 1] != ScreenLines[off_to + 1])))
+                        || (utf_off2cells(off_from, off_from + cols) > 1
+                            && ScreenLines[off_from + 1] != ScreenLines[off_to + 1]))
                ))
         return TRUE;
     return FALSE;
@@ -3652,8 +3559,8 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
         if (clear_width > 0)
         {
             while (col <= endcol && ScreenLines[off_to] == ' '
-                    && ScreenAttrs[off_to] == 0
-                                  && (!enc_utf8 || ScreenLinesUC[off_to] == 0))
+                                 && ScreenAttrs[off_to] == 0
+                                 && ScreenLinesUC[off_to] == 0)
             {
                 ++off_to;
                 ++col;
@@ -3671,8 +3578,8 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
 
     while (col < endcol)
     {
-        if (has_mbyte && (col + 1 < endcol))
-            char_cells = (*mb_off2cells)(off_from, max_off_from);
+        if (col + 1 < endcol)
+            char_cells = utf_off2cells(off_from, max_off_from);
         else
             char_cells = 1;
 
@@ -3724,25 +3631,22 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
              * the right halve of the old character.
              * Also required when writing the right halve of a double-width
              * char over the left halve of an existing one. */
-            if (has_mbyte && col + char_cells == endcol
+            if (col + char_cells == endcol
                     && ((char_cells == 1
-                            && (*mb_off2cells)(off_to, max_off_to) > 1)
+                            && utf_off2cells(off_to, max_off_to) > 1)
                         || (char_cells == 2
-                            && (*mb_off2cells)(off_to, max_off_to) == 1
-                            && (*mb_off2cells)(off_to + 1, max_off_to) > 1)))
+                            && utf_off2cells(off_to, max_off_to) == 1
+                            && utf_off2cells(off_to + 1, max_off_to) > 1)))
                 clear_next = TRUE;
 
             ScreenLines[off_to] = ScreenLines[off_from];
-            if (enc_utf8)
+            ScreenLinesUC[off_to] = ScreenLinesUC[off_from];
+            if (ScreenLinesUC[off_from] != 0)
             {
-                ScreenLinesUC[off_to] = ScreenLinesUC[off_from];
-                if (ScreenLinesUC[off_from] != 0)
-                {
-                    int     i;
+                int     i;
 
-                    for (i = 0; i < Screen_mco; ++i)
-                        ScreenLinesC[i][off_to] = ScreenLinesC[i][off_from];
-                }
+                for (i = 0; i < Screen_mco; ++i)
+                    ScreenLinesC[i][off_to] = ScreenLinesC[i][off_from];
             }
             if (char_cells == 2)
                 ScreenLines[off_to + 1] = ScreenLines[off_from + 1];
@@ -3791,8 +3695,7 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
         /* Clear the second half of a double-wide character of which the left
          * half was overwritten with a single-wide character. */
         ScreenLines[off_to] = ' ';
-        if (enc_utf8)
-            ScreenLinesUC[off_to] = 0;
+        ScreenLinesUC[off_to] = 0;
         screen_char(off_to, row, col + coloff);
     }
 
@@ -3800,8 +3703,8 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
     {
         /* blank out the rest of the line */
         while (col < clear_width && ScreenLines[off_to] == ' '
-                                                  && ScreenAttrs[off_to] == 0
-                                  && (!enc_utf8 || ScreenLinesUC[off_to] == 0))
+                                 && ScreenAttrs[off_to] == 0
+                                 && ScreenLinesUC[off_to] == 0)
         {
             ++off_to;
             ++col;
@@ -3823,21 +3726,18 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
 
             c = fillchar_vsep(&hl);
             if (ScreenLines[off_to] != (schar_T)c
-                    || (enc_utf8 && (int)ScreenLinesUC[off_to] != (c >= 0x80 ? c : 0))
+                    || (int)ScreenLinesUC[off_to] != (c >= 0x80 ? c : 0)
                     || ScreenAttrs[off_to] != hl)
             {
                 ScreenLines[off_to] = c;
                 ScreenAttrs[off_to] = hl;
-                if (enc_utf8)
+                if (c >= 0x80)
                 {
-                    if (c >= 0x80)
-                    {
-                        ScreenLinesUC[off_to] = c;
-                        ScreenLinesC[0][off_to] = 0;
-                    }
-                    else
-                        ScreenLinesUC[off_to] = 0;
+                    ScreenLinesUC[off_to] = c;
+                    ScreenLinesC[0][off_to] = 0;
                 }
+                else
+                    ScreenLinesUC[off_to] = 0;
                 screen_char(off_to, row, col + coloff);
             }
         }
@@ -4002,7 +3902,7 @@ win_redr_status(wp)
             p = (char_u *)"<";          /* No room for file name! */
             len = 1;
         }
-        else if (has_mbyte)
+        else
         {
             int     clen = 0, i;
 
@@ -4011,8 +3911,8 @@ win_redr_status(wp)
 
             /* Find first character that will fit.
              * Going from start to end is much faster for DBCS. */
-            for (i = 0; p[i] != NUL && clen >= this_ru_col - 1; i += (*mb_ptr2len)(p + i))
-                clen -= (*mb_ptr2cells)(p + i);
+            for (i = 0; p[i] != NUL && clen >= this_ru_col - 1; i += utfc_ptr2len(p + i))
+                clen -= utf_ptr2cells(p + i);
             len = clen;
             if (i > 0)
             {
@@ -4020,12 +3920,6 @@ win_redr_status(wp)
                 *p = '<';
                 ++len;
             }
-        }
-        else if (len > this_ru_col - 1)
-        {
-            p += len - (this_ru_col - 1);
-            *p = '<';
-            len = this_ru_col - 1;
         }
 
         row = W_WINROW(wp) + wp->w_height;
@@ -4278,7 +4172,7 @@ win_redr_custom(wp, draw_ruler)
     len = (int)STRLEN(buf);
     while (width < maxwidth && len < (int)sizeof(buf) - 1)
     {
-        len += (*mb_char2bytes)(fillchar, buf + len);
+        len += utf_char2bytes(fillchar, buf + len);
         ++width;
     }
     buf[len] = NUL;
@@ -4340,13 +4234,7 @@ screen_putchar(c, row, col, attr)
 {
     char_u      buf[MB_MAXBYTES + 1];
 
-    if (has_mbyte)
-        buf[(*mb_char2bytes)(c, buf)] = NUL;
-    else
-    {
-        buf[0] = c;
-        buf[1] = NUL;
-    }
+    buf[utf_char2bytes(c, buf)] = NUL;
     screen_puts(buf, row, col, attr);
 }
 
@@ -4370,7 +4258,7 @@ screen_getbytes(row, col, bytes, attrp)
         bytes[0] = ScreenLines[off];
         bytes[1] = NUL;
 
-        if (enc_utf8 && ScreenLinesUC[off] != 0)
+        if (ScreenLinesUC[off] != 0)
             bytes[utfc_char2bytes(off, bytes)] = NUL;
     }
 }
@@ -4446,15 +4334,12 @@ screen_puts_len(text, textlen, row, col, attr)
 
     /* When drawing over the right halve of a double-wide char clear out the
      * left halve.  Only needed in a terminal. */
-    if (has_mbyte && col > 0 && col < screen_Columns && mb_fix_col(col, row) != col)
+    if (col > 0 && col < screen_Columns && mb_fix_col(col, row) != col)
     {
         ScreenLines[off - 1] = ' ';
         ScreenAttrs[off - 1] = 0;
-        if (enc_utf8)
-        {
-            ScreenLinesUC[off - 1] = 0;
-            ScreenLinesC[0][off - 1] = 0;
-        }
+        ScreenLinesUC[off - 1] = 0;
+        ScreenLinesC[0][off - 1] = 0;
         /* redraw the previous cell, make it empty */
         screen_char(off - 1, row, col - 1);
         /* force the cell at "col" to be redrawn */
@@ -4465,35 +4350,26 @@ screen_puts_len(text, textlen, row, col, attr)
     while (col < screen_Columns && (len < 0 || (int)(ptr - text) < len) && *ptr != NUL)
     {
         c = *ptr;
-        /* check if this is the first byte of a multibyte */
-        if (has_mbyte)
-        {
-            if (enc_utf8 && len > 0)
-                mbyte_blen = utfc_ptr2len_len(ptr, (int)((text + len) - ptr));
-            else
-                mbyte_blen = (*mb_ptr2len)(ptr);
 
-            if (len >= 0)
-                u8c = utfc_ptr2char_len(ptr, u8cc, (int)((text + len) - ptr));
-            else
-                u8c = utfc_ptr2char(ptr, u8cc);
-            mbyte_cells = utf_char2cells(u8c);
-#if defined(UNICODE16)
-            /* Non-BMP character: display as ? or fullwidth ?. */
-            if (u8c >= 0x10000)
-            {
-                u8c = (mbyte_cells == 2) ? 0xff1f : (int)'?';
-                if (attr == 0)
-                    attr = hl_attr(HLF_8);
-            }
-#endif
-            if (col + mbyte_cells > screen_Columns)
-            {
-                /* Only 1 cell left, but character requires 2 cells:
-                 * display a '>' in the last column to avoid wrapping. */
-                c = '>';
-                mbyte_cells = 1;
-            }
+        /* check if this is the first byte of a multibyte */
+        if (len > 0)
+            mbyte_blen = utfc_ptr2len_len(ptr, (int)((text + len) - ptr));
+        else
+            mbyte_blen = utfc_ptr2len(ptr);
+
+        if (len >= 0)
+            u8c = utfc_ptr2char_len(ptr, u8cc, (int)((text + len) - ptr));
+        else
+            u8c = utfc_ptr2char(ptr, u8cc);
+
+        mbyte_cells = utf_char2cells(u8c);
+
+        if (col + mbyte_cells > screen_Columns)
+        {
+            /* Only 1 cell left, but character requires 2 cells:
+             * display a '>' in the last column to avoid wrapping. */
+            c = '>';
+            mbyte_cells = 1;
         }
 
         force_redraw_this = force_redraw_next;
@@ -4501,9 +4377,8 @@ screen_puts_len(text, textlen, row, col, attr)
 
         need_redraw = ScreenLines[off] != c
                 || (mbyte_cells == 2 && ScreenLines[off + 1] != 0)
-                || (enc_utf8
-                    && (ScreenLinesUC[off] != (u8char_T)(c < 0x80 && u8cc[0] == 0 ? 0 : u8c)
-                        || (ScreenLinesUC[off] != 0 && screen_comp_differs(off, u8cc))))
+                || (ScreenLinesUC[off] != (u8char_T)(c < 0x80 && u8cc[0] == 0 ? 0 : u8c)
+                        || (ScreenLinesUC[off] != 0 && screen_comp_differs(off, u8cc)))
                 || ScreenAttrs[off] != attr
                 || exmode_active;
 
@@ -4513,7 +4388,7 @@ screen_puts_len(text, textlen, row, col, attr)
              * character.  When a bold character is removed, the next
              * character should be redrawn too.  This happens for our own GUI
              * and for some xterms. */
-            if (need_redraw && ScreenLines[off] != ' ' && (term_is_xterm))
+            if (need_redraw && ScreenLines[off] != ' ' && term_is_xterm)
             {
                 int     n = ScreenAttrs[off];
 
@@ -4526,68 +4401,49 @@ screen_puts_len(text, textlen, row, col, attr)
              * character with a one-cell character, need to clear the next
              * cell.  Also when overwriting the left halve of a two-cell char
              * with the right halve of a two-cell char.  Do this only once
-             * (mb_off2cells() may return 2 on the right halve). */
+             * (utf_off2cells() may return 2 on the right halve). */
             if (clear_next_cell)
                 clear_next_cell = FALSE;
-            else if (has_mbyte
-                    && (len < 0 ? ptr[mbyte_blen] == NUL : ptr + mbyte_blen >= text + len)
-                    && ((mbyte_cells == 1 && (*mb_off2cells)(off, max_off) > 1)
+            else if ((len < 0 ? ptr[mbyte_blen] == NUL : ptr + mbyte_blen >= text + len)
+                    && ((mbyte_cells == 1 && utf_off2cells(off, max_off) > 1)
                         || (mbyte_cells == 2
-                            && (*mb_off2cells)(off, max_off) == 1
-                            && (*mb_off2cells)(off + 1, max_off) > 1)))
+                            && utf_off2cells(off, max_off) == 1
+                            && utf_off2cells(off + 1, max_off) > 1)))
                 clear_next_cell = TRUE;
 
             ScreenLines[off] = c;
             ScreenAttrs[off] = attr;
-            if (enc_utf8)
-            {
-                if (c < 0x80 && u8cc[0] == 0)
-                    ScreenLinesUC[off] = 0;
-                else
-                {
-                    int     i;
 
-                    ScreenLinesUC[off] = u8c;
-                    for (i = 0; i < Screen_mco; ++i)
-                    {
-                        ScreenLinesC[i][off] = u8cc[i];
-                        if (u8cc[i] == 0)
-                            break;
-                    }
-                }
-                if (mbyte_cells == 2)
-                {
-                    ScreenLines[off + 1] = 0;
-                    ScreenAttrs[off + 1] = attr;
-                }
-                screen_char(off, row, col);
-            }
-            else if (mbyte_cells == 2)
-            {
-                ScreenLines[off + 1] = ptr[1];
-                ScreenAttrs[off + 1] = attr;
-                screen_char_2(off, row, col);
-            }
+            if (c < 0x80 && u8cc[0] == 0)
+                ScreenLinesUC[off] = 0;
             else
-                screen_char(off, row, col);
-        }
-        if (has_mbyte)
-        {
-            off += mbyte_cells;
-            col += mbyte_cells;
-            ptr += mbyte_blen;
-            if (clear_next_cell)
             {
-                /* This only happens at the end, display one space next. */
-                ptr = (char_u *)" ";
-                len = -1;
+                int     i;
+
+                ScreenLinesUC[off] = u8c;
+                for (i = 0; i < Screen_mco; ++i)
+                {
+                    ScreenLinesC[i][off] = u8cc[i];
+                    if (u8cc[i] == 0)
+                        break;
+                }
             }
+            if (mbyte_cells == 2)
+            {
+                ScreenLines[off + 1] = 0;
+                ScreenAttrs[off + 1] = attr;
+            }
+            screen_char(off, row, col);
         }
-        else
+
+        off += mbyte_cells;
+        col += mbyte_cells;
+        ptr += mbyte_blen;
+        if (clear_next_cell)
         {
-            ++off;
-            ++col;
-            ++ptr;
+            /* This only happens at the end, display one space next. */
+            ptr = (char_u *)" ";
+            len = -1;
         }
     }
 
@@ -4791,10 +4647,7 @@ next_search_hl(win, shl, lnum, mincol, cur)
                 shl->lnum = 0;
                 break;
             }
-            if (has_mbyte)
-                matchcol += mb_ptr2len(ml);
-            else
-                ++matchcol;
+            matchcol += utfc_ptr2len(ml);
         }
         else
             matchcol = shl->rm.endpos[0].col;
@@ -5113,7 +4966,7 @@ screen_char(off, row, col)
     if (screen_attr != attr)
         screen_start_highlight(attr);
 
-    if (enc_utf8 && ScreenLinesUC[off] != 0)
+    if (ScreenLinesUC[off] != 0)
     {
         char_u      buf[MB_MAXBYTES + 1];
 
@@ -5132,37 +4985,6 @@ screen_char(off, row, col)
     }
 
     screen_cur_col++;
-}
-
-/*
- * Used for enc_dbcs only: Put one double-wide character at ScreenLines["off"]
- * on the screen at position 'row' and 'col'.
- * The attributes of the first byte is used for all.  This is required to
- * output the two bytes of a double-byte character with nothing in between.
- */
-    static void
-screen_char_2(off, row, col)
-    unsigned    off;
-    int         row;
-    int         col;
-{
-    /* Check for illegal values (could be wrong when screen was resized). */
-    if (off + 1 >= (unsigned)(screen_Rows * screen_Columns))
-        return;
-
-    /* Outputting the last character on the screen may scrollup the screen.
-     * Don't to it!  Mark the character invalid (update it when scrolled up) */
-    if (row == screen_Rows - 1 && col >= screen_Columns - 2)
-    {
-        ScreenAttrs[off] = (sattr_T)-1;
-        return;
-    }
-
-    /* Output the first byte normally (positions the cursor), then write the
-     * second byte directly. */
-    screen_char(off, row, col);
-    out_char(ScreenLines[off + 1]);
-    ++screen_cur_col;
 }
 
 /*
@@ -5259,20 +5081,18 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
         return;
 
     /* it's a "normal" terminal when not in a GUI or cterm */
-    norm_term = (
-                            t_colors <= 1);
+    norm_term = (t_colors <= 1);
+
     for (row = start_row; row < end_row; ++row)
     {
-        if (has_mbyte)
-        {
-            /* When drawing over the right halve of a double-wide char clear
-             * out the left halve.  When drawing over the left halve of a
-             * double wide-char clear out the right halve.  Only needed in a terminal. */
-            if (start_col > 0 && mb_fix_col(start_col, row) != start_col)
-                screen_puts_len((char_u *)" ", 1, row, start_col - 1, 0);
-            if (end_col < screen_Columns && mb_fix_col(end_col, row) != end_col)
-                screen_puts_len((char_u *)" ", 1, row, end_col, 0);
-        }
+        /* When drawing over the right halve of a double-wide char clear
+         * out the left halve.  When drawing over the left halve of a
+         * double wide-char clear out the right halve.  Only needed in a terminal. */
+        if (start_col > 0 && mb_fix_col(start_col, row) != start_col)
+            screen_puts_len((char_u *)" ", 1, row, start_col - 1, 0);
+        if (end_col < screen_Columns && mb_fix_col(end_col, row) != end_col)
+            screen_puts_len((char_u *)" ", 1, row, end_col, 0);
+
         /*
          * Try to use delete-line termcap code, when no attributes or in a
          * "normal" terminal, where a bold/italic space is just a space.
@@ -5297,14 +5117,10 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
             end_off = LineOffset[row] + end_col;
 
             /* skip blanks (used often, keep it fast!) */
-            if (enc_utf8)
-                while (off < end_off && ScreenLines[off] == ' '
-                          && ScreenAttrs[off] == 0 && ScreenLinesUC[off] == 0)
-                    ++off;
-            else
-                while (off < end_off && ScreenLines[off] == ' '
-                                                     && ScreenAttrs[off] == 0)
-                    ++off;
+            while (off < end_off && ScreenLines[off] == ' '
+                                 && ScreenAttrs[off] == 0
+                                 && ScreenLinesUC[off] == 0)
+                ++off;
             if (off < end_off)          /* something to be cleared */
             {
                 col = off - LineOffset[row];
@@ -5316,8 +5132,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
                 while (col--)           /* clear chars in ScreenLines */
                 {
                     ScreenLines[off] = ' ';
-                    if (enc_utf8)
-                        ScreenLinesUC[off] = 0;
+                    ScreenLinesUC[off] = 0;
                     ScreenAttrs[off] = 0;
                     ++off;
                 }
@@ -5330,7 +5145,7 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
         for (col = start_col; col < end_col; ++col)
         {
             if (ScreenLines[off] != c
-                    || (enc_utf8 && (int)ScreenLinesUC[off] != (c >= 0x80 ? c : 0))
+                    || (int)ScreenLinesUC[off] != (c >= 0x80 ? c : 0)
                     || ScreenAttrs[off] != attr
                     || force_next)
             {
@@ -5346,16 +5161,13 @@ screen_fill(start_row, end_row, start_col, end_col, c1, c2, attr)
                         force_next = FALSE;
                 }
                 ScreenLines[off] = c;
-                if (enc_utf8)
+                if (c >= 0x80)
                 {
-                    if (c >= 0x80)
-                    {
-                        ScreenLinesUC[off] = c;
-                        ScreenLinesC[0][off] = 0;
-                    }
-                    else
-                        ScreenLinesUC[off] = 0;
+                    ScreenLinesUC[off] = c;
+                    ScreenLinesC[0][off] = 0;
                 }
+                else
+                    ScreenLinesUC[off] = 0;
                 ScreenAttrs[off] = attr;
                 if (!did_delete || c != ' ')
                     screen_char(off, row, col);
@@ -5454,7 +5266,7 @@ retry:
     if ((ScreenLines != NULL
                 && Rows == screen_Rows
                 && Columns == screen_Columns
-                && enc_utf8 == (ScreenLinesUC != NULL)
+                && ScreenLinesUC != NULL
                 && p_mco == Screen_mco
                 )
             || Rows == 0
@@ -5498,14 +5310,12 @@ retry:
     new_ScreenLines = (schar_T *)lalloc((long_u)(
                               (Rows + 1) * Columns * sizeof(schar_T)), FALSE);
     vim_memset(new_ScreenLinesC, 0, sizeof(u8char_T *) * MAX_MCO);
-    if (enc_utf8)
-    {
-        new_ScreenLinesUC = (u8char_T *)lalloc((long_u)(
-                             (Rows + 1) * Columns * sizeof(u8char_T)), FALSE);
-        for (i = 0; i < p_mco; ++i)
-            new_ScreenLinesC[i] = (u8char_T *)lalloc_clear((long_u)(
-                             (Rows + 1) * Columns * sizeof(u8char_T)), FALSE);
-    }
+    new_ScreenLinesUC = (u8char_T *)lalloc((long_u)(
+                            (Rows + 1) * Columns * sizeof(u8char_T)), FALSE);
+    for (i = 0; i < p_mco; ++i)
+        new_ScreenLinesC[i] = (u8char_T *)lalloc_clear((long_u)(
+                            (Rows + 1) * Columns * sizeof(u8char_T)), FALSE);
+
     new_ScreenAttrs = (sattr_T *)lalloc((long_u)((Rows + 1) * Columns * sizeof(sattr_T)), FALSE);
     new_LineOffset = (unsigned *)lalloc((long_u)(Rows * sizeof(unsigned)), FALSE);
     new_LineWraps = (char_u *)lalloc((long_u)(Rows * sizeof(char_u)), FALSE);
@@ -5527,7 +5337,7 @@ give_up:
         if (new_ScreenLinesC[i] == NULL)
             break;
     if (new_ScreenLines == NULL
-            || (enc_utf8 && (new_ScreenLinesUC == NULL || i != p_mco))
+            || (new_ScreenLinesUC == NULL || i != p_mco)
             || new_ScreenAttrs == NULL
             || new_LineOffset == NULL
             || new_LineWraps == NULL
@@ -5579,14 +5389,11 @@ give_up:
             {
                 (void)vim_memset(new_ScreenLines + new_row * Columns,
                                       ' ', (size_t)Columns * sizeof(schar_T));
-                if (enc_utf8)
-                {
-                    (void)vim_memset(new_ScreenLinesUC + new_row * Columns,
-                                       0, (size_t)Columns * sizeof(u8char_T));
-                    for (i = 0; i < p_mco; ++i)
-                        (void)vim_memset(new_ScreenLinesC[i] + new_row * Columns,
-                                       0, (size_t)Columns * sizeof(u8char_T));
-                }
+                (void)vim_memset(new_ScreenLinesUC + new_row * Columns,
+                                    0, (size_t)Columns * sizeof(u8char_T));
+                for (i = 0; i < p_mco; ++i)
+                    (void)vim_memset(new_ScreenLinesC[i] + new_row * Columns,
+                                    0, (size_t)Columns * sizeof(u8char_T));
                 (void)vim_memset(new_ScreenAttrs + new_row * Columns,
                                         0, (size_t)Columns * sizeof(sattr_T));
                 old_row = new_row + (screen_Rows - Rows);
@@ -5598,11 +5405,11 @@ give_up:
                         len = Columns;
                     /* When switching to utf-8 don't copy characters, they
                      * may be invalid now.  Also when p_mco changes. */
-                    if (!(enc_utf8 && ScreenLinesUC == NULL) && p_mco == Screen_mco)
+                    if (ScreenLinesUC != NULL && p_mco == Screen_mco)
                         mch_memmove(new_ScreenLines + new_LineOffset[new_row],
                                 ScreenLines + LineOffset[old_row],
                                 (size_t)len * sizeof(schar_T));
-                    if (enc_utf8 && ScreenLinesUC != NULL && p_mco == Screen_mco)
+                    if (ScreenLinesUC != NULL && p_mco == Screen_mco)
                     {
                         mch_memmove(new_ScreenLinesUC + new_LineOffset[new_row],
                                 ScreenLinesUC + LineOffset[old_row],
@@ -5742,8 +5549,7 @@ lineclear(off, width)
     int         width;
 {
     (void)vim_memset(ScreenLines + off, ' ', (size_t)width * sizeof(schar_T));
-    if (enc_utf8)
-        (void)vim_memset(ScreenLinesUC + off, 0, (size_t)width * sizeof(u8char_T));
+    (void)vim_memset(ScreenLinesUC + off, 0, (size_t)width * sizeof(u8char_T));
     (void)vim_memset(ScreenAttrs + off, 0, (size_t)width * sizeof(sattr_T));
 }
 
@@ -5771,14 +5577,9 @@ linecopy(to, from, wp)
     unsigned    off_from = LineOffset[from] + wp->w_wincol;
 
     mch_memmove(ScreenLines + off_to, ScreenLines + off_from, wp->w_width * sizeof(schar_T));
-    if (enc_utf8)
-    {
-        int     i;
-
-        mch_memmove(ScreenLinesUC + off_to, ScreenLinesUC + off_from, wp->w_width * sizeof(u8char_T));
-        for (i = 0; i < p_mco; ++i)
-            mch_memmove(ScreenLinesC[i] + off_to, ScreenLinesC[i] + off_from, wp->w_width * sizeof(u8char_T));
-    }
+    mch_memmove(ScreenLinesUC + off_to, ScreenLinesUC + off_from, wp->w_width * sizeof(u8char_T));
+    for (int i = 0; i < p_mco; ++i)
+        mch_memmove(ScreenLinesC[i] + off_to, ScreenLinesC[i] + off_from, wp->w_width * sizeof(u8char_T));
     mch_memmove(ScreenAttrs + off_to, ScreenAttrs + off_from, wp->w_width * sizeof(sattr_T));
 }
 
@@ -5955,16 +5756,14 @@ windgoto(row, col)
                     if (i != 0)
                         cost = 999;     /* different attributes, don't do it */
                 }
-                if (enc_utf8)
-                {
-                    /* Don't use an UTF-8 char for positioning, it's slow. */
-                    for (i = wouldbe_col; i < col; ++i)
-                        if (ScreenLinesUC[LineOffset[row] + i] != 0)
-                        {
-                            cost = 999;
-                            break;
-                        }
-                }
+
+                /* Don't use an UTF-8 char for positioning, it's slow. */
+                for (i = wouldbe_col; i < col; ++i)
+                    if (ScreenLinesUC[LineOffset[row] + i] != 0)
+                    {
+                        cost = 999;
+                        break;
+                    }
             }
 
             /*
@@ -6057,16 +5856,10 @@ setcursor()
     if (redrawing())
     {
         validate_cursor();
-        windgoto(W_WINROW(curwin) + curwin->w_wrow,
-                W_WINCOL(curwin) + (
+        windgoto(W_WINROW(curwin) + curwin->w_wrow, W_WINCOL(curwin) + (
                 /* With 'rightleft' set and the cursor on a double-wide
                  * character, position it on the leftmost column. */
-                curwin->w_p_rl ? ((int)W_WIDTH(curwin) - curwin->w_wcol - (
-                        (has_mbyte
-                           && (*mb_ptr2cells)(ml_get_cursor()) == 2
-                           && vim_isprintc(gchar_cursor())) ? 2 :
-                        1)) :
-                                                            curwin->w_wcol));
+                curwin->w_p_rl ? ((int)W_WIDTH(curwin) - curwin->w_wcol - ((utf_ptr2cells(ml_get_cursor()) == 2 && vim_isprintc(gchar_cursor())) ? 2 : 1)) : curwin->w_wcol));
     }
 }
 
@@ -6735,48 +6528,47 @@ showmode()
         if (do_mode)
         {
             MSG_PUTS_ATTR("--", attr);
+
+            if (State & VREPLACE_FLAG)
+                MSG_PUTS_ATTR(" VREPLACE", attr);
+            else if (State & REPLACE_FLAG)
+                MSG_PUTS_ATTR(" REPLACE", attr);
+            else if (State & INSERT)
             {
-                if (State & VREPLACE_FLAG)
-                    MSG_PUTS_ATTR(" VREPLACE", attr);
-                else if (State & REPLACE_FLAG)
-                    MSG_PUTS_ATTR(" REPLACE", attr);
-                else if (State & INSERT)
-                {
-                    if (p_ri)
-                        MSG_PUTS_ATTR(" REVERSE", attr);
-                    MSG_PUTS_ATTR(" INSERT", attr);
-                }
-                else if (restart_edit == 'I')
-                    MSG_PUTS_ATTR(" (insert)", attr);
-                else if (restart_edit == 'R')
-                    MSG_PUTS_ATTR(" (replace)", attr);
-                else if (restart_edit == 'V')
-                    MSG_PUTS_ATTR(" (vreplace)", attr);
-                if (p_hkmap)
-                    MSG_PUTS_ATTR(" Hebrew", attr);
-                if ((State & INSERT) && p_paste)
-                    MSG_PUTS_ATTR(" (paste)", attr);
-
-                if (VIsual_active)
-                {
-                    char *p;
-
-                    /* Don't concatenate separate words to avoid translation problems. */
-                    switch ((VIsual_select ? 4 : 0)
-                            + (VIsual_mode == Ctrl_V) * 2
-                            + (VIsual_mode == 'V'))
-                    {
-                        case 0: p = " VISUAL"; break;
-                        case 1: p = " VISUAL LINE"; break;
-                        case 2: p = " VISUAL BLOCK"; break;
-                        case 4: p = " SELECT"; break;
-                        case 5: p = " SELECT LINE"; break;
-                        default: p = " SELECT BLOCK"; break;
-                    }
-                    MSG_PUTS_ATTR((char *)p, attr);
-                }
-                MSG_PUTS_ATTR(" --", attr);
+                if (p_ri)
+                    MSG_PUTS_ATTR(" REVERSE", attr);
+                MSG_PUTS_ATTR(" INSERT", attr);
             }
+            else if (restart_edit == 'I')
+                MSG_PUTS_ATTR(" (insert)", attr);
+            else if (restart_edit == 'R')
+                MSG_PUTS_ATTR(" (replace)", attr);
+            else if (restart_edit == 'V')
+                MSG_PUTS_ATTR(" (vreplace)", attr);
+            if (p_hkmap)
+                MSG_PUTS_ATTR(" Hebrew", attr);
+            if ((State & INSERT) && p_paste)
+                MSG_PUTS_ATTR(" (paste)", attr);
+
+            if (VIsual_active)
+            {
+                char *p;
+
+                /* Don't concatenate separate words to avoid translation problems. */
+                switch ((VIsual_select ? 4 : 0)
+                        + (VIsual_mode == Ctrl_V) * 2
+                        + (VIsual_mode == 'V'))
+                {
+                    case 0: p = " VISUAL"; break;
+                    case 1: p = " VISUAL LINE"; break;
+                    case 2: p = " VISUAL BLOCK"; break;
+                    case 4: p = " SELECT"; break;
+                    case 5: p = " SELECT LINE"; break;
+                    default: p = " SELECT BLOCK"; break;
+                }
+                MSG_PUTS_ATTR((char *)p, attr);
+            }
+            MSG_PUTS_ATTR(" --", attr);
 
             need_clear = TRUE;
         }
@@ -6959,17 +6751,13 @@ draw_tabline()
                 shorten_dir(NameBuff);
                 len = vim_strsize(NameBuff);
                 p = NameBuff;
-                if (has_mbyte)
-                    while (len > room)
-                    {
-                        len -= ptr2cells(p);
-                        mb_ptr_adv(p);
-                    }
-                else if (len > room)
+
+                while (len > room)
                 {
-                    p += len - room;
-                    len = room;
+                    len -= ptr2cells(p);
+                    p += utfc_ptr2len(p);
                 }
+
                 if (len > Columns - col - 1)
                     len = Columns - col - 1;
 
@@ -7233,30 +7021,23 @@ win_redr_ruler(wp, always)
             /* need at least 3 chars left for get_rel_pos() + NUL */
             while (this_ru_col + o < WITH_WIDTH(width) && RULER_BUF_LEN > i + 4)
             {
-                if (has_mbyte)
-                    i += (*mb_char2bytes)(fillchar, buffer + i);
-                else
-                    buffer[i++] = fillchar;
+                i += utf_char2bytes(fillchar, buffer + i);
                 ++o;
             }
             get_rel_pos(wp, buffer + i, RULER_BUF_LEN - i);
         }
+
         /* Truncate at window boundary. */
-        if (has_mbyte)
+        o = 0;
+        for (i = 0; buffer[i] != NUL; i += utfc_ptr2len(buffer + i))
         {
-            o = 0;
-            for (i = 0; buffer[i] != NUL; i += (*mb_ptr2len)(buffer + i))
+            o += utf_ptr2cells(buffer + i);
+            if (this_ru_col + o > WITH_WIDTH(width))
             {
-                o += (*mb_ptr2cells)(buffer + i);
-                if (this_ru_col + o > WITH_WIDTH(width))
-                {
-                    buffer[i] = NUL;
-                    break;
-                }
+                buffer[i] = NUL;
+                break;
             }
         }
-        else if (this_ru_col + (int)STRLEN(buffer) > WITH_WIDTH(width))
-            buffer[WITH_WIDTH(width) - this_ru_col] = NUL;
 
         screen_puts(buffer, row, this_ru_col + WITH_OFF(off), attr);
         i = redraw_cmdline;

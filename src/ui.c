@@ -17,20 +17,7 @@ ui_write(s, len)
     /* Don't output anything in silent mode ("ex -s") unless 'verbose' set */
     if (!(silent_mode && p_verbose == 0))
     {
-        char_u  *tofree = NULL;
-
-        if (output_conv.vc_type != CONV_NONE)
-        {
-            /* Convert characters from 'encoding' to 'termencoding'. */
-            tofree = string_convert(&output_conv, s, &len);
-            if (tofree != NULL)
-                s = tofree;
-        }
-
         mch_write(s, len);
-
-        if (output_conv.vc_type != CONV_NONE)
-            vim_free(tofree);
     }
 }
 
@@ -285,8 +272,7 @@ clip_update_selection(clip)
         {
             start = VIsual;
             end = curwin->w_cursor;
-            if (has_mbyte)
-                end.col += (*mb_ptr2len)(ml_get_cursor()) - 1;
+            end.col += utfc_ptr2len(ml_get_cursor()) - 1;
         }
         else
         {
@@ -660,7 +646,7 @@ clip_process_selection(button, col, row, repeated_click)
                             cb->origin_start_col, row, (int)Columns);
                 else
                 {
-                    if (has_mbyte && mb_lefthalve(row, col))
+                    if (mb_lefthalve(row, col))
                         slen = 2;
                     clip_update_modeless_selection(cb, cb->origin_row,
                             cb->origin_start_col, row, col + slen);
@@ -668,7 +654,7 @@ clip_process_selection(button, col, row, repeated_click)
             }
             else
             {
-                if (has_mbyte && mb_lefthalve(cb->origin_row, cb->origin_start_col))
+                if (mb_lefthalve(cb->origin_row, cb->origin_start_col))
                     slen = 2;
                 if (col >= (int)cb->word_end_col)
                     clip_update_modeless_selection(cb, row, cb->word_end_col,
@@ -889,13 +875,12 @@ clip_copy_modeless_selection(both)
     }
     /* correct starting point for being on right halve of double-wide char */
     p = ScreenLines + LineOffset[row1];
-    if (enc_utf8 && p[col1] == 0)
+    if (p[col1] == 0)
         --col1;
 
     /* Create a temporary buffer for storing the text */
     len = (row2 - row1 + 1) * Columns + 1;
-    if (enc_utf8)
-        len *= MB_MAXBYTES;
+    len *= MB_MAXBYTES;
     buffer = lalloc((long_u)len, TRUE);
     if (buffer == NULL)     /* out of memory */
         return;
@@ -934,38 +919,30 @@ clip_copy_modeless_selection(both)
 
         if (row < screen_Rows && end_col <= screen_Columns)
         {
-            if (enc_utf8)
-            {
-                int     off;
-                int     i;
-                int     ci;
+            int     off;
+            int     i;
+            int     ci;
 
-                off = LineOffset[row];
-                for (i = start_col; i < end_col; ++i)
-                {
-                    /* The base character is either in ScreenLinesUC[] or ScreenLines[]. */
-                    if (ScreenLinesUC[off + i] == 0)
-                        *bufp++ = ScreenLines[off + i];
-                    else
-                    {
-                        bufp += utf_char2bytes(ScreenLinesUC[off + i], bufp);
-                        for (ci = 0; ci < Screen_mco; ++ci)
-                        {
-                            /* Add a composing character. */
-                            if (ScreenLinesC[ci][off + i] == 0)
-                                break;
-                            bufp += utf_char2bytes(ScreenLinesC[ci][off + i], bufp);
-                        }
-                    }
-                    /* Skip right halve of double-wide character. */
-                    if (ScreenLines[off + i + 1] == 0)
-                        ++i;
-                }
-            }
-            else
+            off = LineOffset[row];
+            for (i = start_col; i < end_col; ++i)
             {
-                STRNCPY(bufp, ScreenLines + LineOffset[row] + start_col, end_col - start_col);
-                bufp += end_col - start_col;
+                /* The base character is either in ScreenLinesUC[] or ScreenLines[]. */
+                if (ScreenLinesUC[off + i] == 0)
+                    *bufp++ = ScreenLines[off + i];
+                else
+                {
+                    bufp += utf_char2bytes(ScreenLinesUC[off + i], bufp);
+                    for (ci = 0; ci < Screen_mco; ++ci)
+                    {
+                        /* Add a composing character. */
+                        if (ScreenLinesC[ci][off + i] == 0)
+                            break;
+                        bufp += utf_char2bytes(ScreenLinesC[ci][off + i], bufp);
+                    }
+                }
+                /* Skip right halve of double-wide character. */
+                if (ScreenLines[off + i + 1] == 0)
+                    ++i;
             }
         }
     }
@@ -1008,19 +985,19 @@ clip_get_word_boundaries(cb, row, col)
 
     p = ScreenLines + LineOffset[row];
     /* Correct for starting in the right halve of a double-wide char */
-    if (enc_utf8 && p[col] == 0)
+    if (p[col] == 0)
         --col;
     start_class = CHAR_CLASS(p[col]);
 
     temp_col = col;
     for ( ; temp_col > 0; temp_col--)
-        if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
+        if (CHAR_CLASS(p[temp_col - 1]) != start_class && p[temp_col - 1] != 0)
             break;
     cb->word_start_col = temp_col;
 
     temp_col = col;
     for ( ; temp_col < screen_Columns; temp_col++)
-        if (CHAR_CLASS(p[temp_col]) != start_class && !(enc_utf8 && p[temp_col] == 0))
+        if (CHAR_CLASS(p[temp_col]) != start_class && p[temp_col] != 0)
             break;
     cb->word_end_col = temp_col;
 }
@@ -1295,7 +1272,7 @@ fill_input_buf(exit_on_error)
     len = 0;    /* to avoid gcc warning */
     for (try = 0; try < 100; ++try)
     {
-        len = read(read_cmd_fd, (char *)inbuf + inbufcount, (size_t)((INBUFLEN - inbufcount) / input_conv.vc_factor));
+        len = read(read_cmd_fd, (char *)inbuf + inbufcount, (size_t)(INBUFLEN - inbufcount));
 
         if (len > 0 || got_int)
             break;
@@ -1338,13 +1315,6 @@ fill_input_buf(exit_on_error)
          * Don't do this in the unlikely event that the input buffer is too
          * small ("rest" still contains more bytes).
          */
-        if (input_conv.vc_type != CONV_NONE)
-        {
-            inbufcount -= unconverted;
-            len = convert_input_safe(inbuf + inbufcount,
-                                     len + unconverted, INBUFLEN - inbufcount,
-                                       rest == NULL ? &rest : NULL, &restlen);
-        }
         while (len-- > 0)
         {
             /*
@@ -1639,9 +1609,7 @@ retnomove:
                 if (!first && count > -row)
                     break;
                 first = FALSE;
-                {
-                    --curwin->w_topline;
-                }
+                --curwin->w_topline;
             }
             curwin->w_valid &= ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);
             redraw_later(VALID);
@@ -1656,9 +1624,7 @@ retnomove:
                 if (!first && count > row - curwin->w_height + 1)
                     break;
                 first = FALSE;
-                {
-                    ++curwin->w_topline;
-                }
+                ++curwin->w_topline;
             }
             redraw_later(VALID);
             curwin->w_valid &= ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);

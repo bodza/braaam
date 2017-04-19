@@ -196,11 +196,8 @@ msg_strtrunc(s, force)
             room = (int)(Rows - msg_row - 1) * Columns + sc_col - 1;
         if (len > room && room > 0)
         {
-            if (enc_utf8)
-                /* may have up to 18 bytes per cell (6 per char, up to two composing chars) */
-                len = (room + 2) * 18;
-            else
-                len = room + 2;
+            /* may have up to 18 bytes per cell (6 per char, up to two composing chars) */
+            len = (room + 2) * 18;
             buf = alloc(len);
             if (buf != NULL)
                 trunc_string(s, buf, room, len);
@@ -239,42 +236,36 @@ trunc_string(s, buf, room, buflen)
             buf[e] = NUL;
             return;
         }
+
         n = ptr2cells(s + e);
         if (len + n >= half)
             break;
         len += n;
         buf[e] = s[e];
-        if (has_mbyte)
-            for (n = (*mb_ptr2len)(s + e); --n > 0; )
-            {
-                if (++e == buflen)
-                    break;
-                buf[e] = s[e];
-            }
+
+        for (n = utfc_ptr2len(s + e); --n > 0; )
+        {
+            if (++e == buflen)
+                break;
+            buf[e] = s[e];
+        }
     }
 
     /* Last part: End of the string. */
     i = e;
-    if (enc_utf8)
+
+    /* For UTF-8 we can go backwards easily. */
+    half = i = (int)STRLEN(s);
+    for (;;)
     {
-        /* For UTF-8 we can go backwards easily. */
-        half = i = (int)STRLEN(s);
-        for (;;)
-        {
-            do
-                half = half - (*mb_head_off)(s, s + half - 1) - 1;
-            while (utf_iscomposing(utf_ptr2char(s + half)) && half > 0);
-            n = ptr2cells(s + half);
-            if (len + n > room)
-                break;
-            len += n;
-            i = half;
-        }
-    }
-    else
-    {
-        for (i = (int)STRLEN(s); len + (n = ptr2cells(s + i - 1)) <= room; --i)
-            len += n;
+        do
+            half = half - utf_head_off(s, s + half - 1) - 1;
+        while (utf_iscomposing(utf_ptr2char(s + half)) && half > 0);
+        n = ptr2cells(s + half);
+        if (len + n > room)
+            break;
+        len += n;
+        i = half;
     }
 
     /* Set the middle and copy the last part. */
@@ -622,21 +613,19 @@ msg_may_trunc(force, s)
     room = (int)(Rows - cmdline_row - 1) * Columns + sc_col - 1;
     if ((force || (shortmess(SHM_TRUNC) && !exmode_active)) && (n = (int)STRLEN(s) - room) > 0)
     {
-        if (has_mbyte)
+        int size = vim_strsize(s);
+
+        /* There may be room anyway when there are multibyte chars. */
+        if (size <= room)
+            return s;
+
+        for (n = 0; size >= room; )
         {
-            int size = vim_strsize(s);
-
-            /* There may be room anyway when there are multibyte chars. */
-            if (size <= room)
-                return s;
-
-            for (n = 0; size >= room; )
-            {
-                size -= (*mb_ptr2cells)(s + n);
-                n += (*mb_ptr2len)(s + n);
-            }
-            --n;
+            size -= utf_ptr2cells(s + n);
+            n += utfc_ptr2len(s + n);
         }
+        --n;
+
         s += n;
         *s = '<';
     }
@@ -1095,7 +1084,7 @@ msg_putchar_attr(c, attr)
     }
     else
     {
-        buf[(*mb_char2bytes)(c, buf)] = NUL;
+        buf[utf_char2bytes(c, buf)] = NUL;
     }
     msg_puts_attr(buf, attr);
 }
@@ -1170,7 +1159,7 @@ msg_outtrans_one(p, attr)
 {
     int         l;
 
-    if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+    if ((l = utfc_ptr2len(p)) > 1)
     {
         msg_outtrans_len_attr(p, l, attr);
         return p + l;
@@ -1201,7 +1190,7 @@ msg_outtrans_len_attr(msgstr, len, attr)
 
     /* If the string starts with a composing character first draw a space on
      * which the composing char can be drawn. */
-    if (enc_utf8 && utf_iscomposing(utf_ptr2char(msgstr)))
+    if (utf_iscomposing(utf_ptr2char(msgstr)))
         msg_puts_attr((char_u *)" ", attr);
 
     /*
@@ -1210,19 +1199,14 @@ msg_outtrans_len_attr(msgstr, len, attr)
      */
     while (--len >= 0)
     {
-        if (enc_utf8)
-            /* Don't include composing chars after the end. */
-            mb_l = utfc_ptr2len_len(str, len + 1);
-        else if (has_mbyte)
-            mb_l = (*mb_ptr2len)(str);
-        else
-            mb_l = 1;
-        if (has_mbyte && mb_l > 1)
+        /* Don't include composing chars after the end. */
+        mb_l = utfc_ptr2len_len(str, len + 1);
+        if (mb_l > 1)
         {
-            c = (*mb_ptr2char)(str);
+            c = utf_ptr2char(str);
             if (vim_isprintc(c))
                 /* printable multi-byte char: count the cells. */
-                retval += (*mb_ptr2cells)(str);
+                retval += utf_ptr2cells(str);
             else
             {
                 /* unprintable multi-byte char: print the printable chars so
@@ -1300,7 +1284,7 @@ msg_outtrans_special(strstart, from)
             string = str2special(&str, from);
         len = vim_strsize(string);
         /* Highlight special keys */
-        msg_puts_attr(string, len > 1 && (*mb_ptr2len)(string) <= 1 ? attr : 0);
+        msg_puts_attr(string, len > 1 && utfc_ptr2len(string) <= 1 ? attr : 0);
         retval += len;
     }
     return retval;
@@ -1341,7 +1325,6 @@ str2special(sp, from)
     int                 modifiers = 0;
     int                 special = FALSE;
 
-    if (has_mbyte)
     {
         char_u  *p;
 
@@ -1372,12 +1355,12 @@ str2special(sp, from)
             special = TRUE;
     }
 
-    if (has_mbyte && !IS_SPECIAL(c))
+    if (!IS_SPECIAL(c))
     {
-        int len = (*mb_ptr2len)(str);
+        int len = utfc_ptr2len(str);
 
         /* For multi-byte characters check for an illegal byte. */
-        if (has_mbyte && MB_BYTE2LEN(*str) > len)
+        if (MB_BYTE2LEN(*str) > len)
         {
             transchar_nonprint(buf, c);
             *sp = str + 1;
@@ -1385,7 +1368,7 @@ str2special(sp, from)
         }
         /* Since 'special' is TRUE the multi-byte character 'c' will be
          * processed by get_special_key_name() */
-        c = (*mb_ptr2char)(str);
+        c = utf_ptr2char(str);
         *sp = str + len;
     }
     else
@@ -1464,13 +1447,13 @@ msg_prt_line(s, list)
             else
                 c = *p_extra++;
         }
-        else if (has_mbyte && (l = (*mb_ptr2len)(s)) > 1)
+        else if ((l = utfc_ptr2len(s)) > 1)
         {
-            col += (*mb_ptr2cells)(s);
-            if (lcs_nbsp != NUL && list && mb_ptr2char(s) == 160)
+            col += utf_ptr2cells(s);
+            if (lcs_nbsp != NUL && list && utf_ptr2char(s) == 160)
             {
-                mb_char2bytes(lcs_nbsp, buf);
-                buf[(*mb_ptr2len)(buf)] = NUL;
+                utf_char2bytes(lcs_nbsp, buf);
+                buf[utfc_ptr2len(buf)] = NUL;
             }
             else
             {
@@ -1554,7 +1537,7 @@ screen_puts_mbyte(s, l, attr)
     int         cw;
 
     msg_didout = TRUE;          /* remember that line is not empty */
-    cw = (*mb_ptr2cells)(s);
+    cw = utf_ptr2cells(s);
     if (cw > 1 && (cmdmsg_rl ? msg_col <= 1 : msg_col == Columns - 1))
     {
         /* Doesn't fit, print a highlighted '>' to fill it up. */
@@ -1729,12 +1712,12 @@ msg_puts_display(str, maxlen, attr, recurse)
                     ? (
                         msg_col <= 1
                         || (*s == TAB && msg_col <= 7)
-                        || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col <= 2)
+                        || (utf_ptr2cells(s) > 1 && msg_col <= 2)
                       )
                     :
                       (msg_col + t_col >= Columns - 1
                        || (*s == TAB && msg_col + t_col >= ((Columns - 1) & ~7))
-                       || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col + t_col >= Columns - 2)
+                       || (utf_ptr2cells(s) > 1 && msg_col + t_col >= Columns - 2)
                       ))))
         {
             /*
@@ -1759,17 +1742,13 @@ msg_puts_display(str, maxlen, attr, recurse)
             /* Display char in last column before showing more-prompt. */
             if (*s >= ' ' && !cmdmsg_rl)
             {
-                if (has_mbyte)
-                {
-                    if (enc_utf8 && maxlen >= 0)
-                        /* avoid including composing chars after the end */
-                        l = utfc_ptr2len_len(s, (int)((str + maxlen) - s));
-                    else
-                        l = (*mb_ptr2len)(s);
-                    s = screen_puts_mbyte(s, l, attr);
-                }
+                if (maxlen >= 0)
+                    /* avoid including composing chars after the end */
+                    l = utfc_ptr2len_len(s, (int)((str + maxlen) - s));
                 else
-                    msg_screen_putchar(*s++, attr);
+                    l = utfc_ptr2len(s);
+                s = screen_puts_mbyte(s, l, attr);
+
                 did_last_char = TRUE;
             }
             else
@@ -1807,7 +1786,7 @@ msg_puts_display(str, maxlen, attr, recurse)
 
         wrap = *s == '\n'
                     || msg_col + t_col >= Columns
-                    || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col + t_col >= Columns - 1)
+                    || (utf_ptr2cells(s) > 1 && msg_col + t_col >= Columns - 1)
                     ;
         if (t_col > 0 && (wrap || *s == '\r' || *s == '\b' || *s == '\t' || *s == BELL))
             /* output any postponed text */
@@ -1846,20 +1825,13 @@ msg_puts_display(str, maxlen, attr, recurse)
             vim_beep();
         else
         {
-            if (has_mbyte)
-            {
-                cw = (*mb_ptr2cells)(s);
-                if (enc_utf8 && maxlen >= 0)
-                    /* avoid including composing chars after the end */
-                    l = utfc_ptr2len_len(s, (int)((str + maxlen) - s));
-                else
-                    l = (*mb_ptr2len)(s);
-            }
+            cw = utf_ptr2cells(s);
+            if (maxlen >= 0)
+                /* avoid including composing chars after the end */
+                l = utfc_ptr2len_len(s, (int)((str + maxlen) - s));
             else
-            {
-                cw = 1;
-                l = 1;
-            }
+                l = utfc_ptr2len(s);
+
             /* When drawing from right to left or when a double-wide character
              * doesn't fit, draw a single character here.  Otherwise collect
              * characters and draw them all at once later. */
@@ -2132,7 +2104,7 @@ t_puts(t_col, t_s, s, attr)
     *t_col = 0;
     /* If the string starts with a composing character don't increment the
      * column position for it. */
-    if (enc_utf8 && utf_iscomposing(utf_ptr2char(t_s)))
+    if (utf_iscomposing(utf_ptr2char(t_s)))
         --msg_col;
     if (msg_col >= Columns)
     {
@@ -2909,18 +2881,13 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
                 }
 
                 /* Make the character lowercase, as chars in "hotkeys" are. */
-                c = MB_TOLOWER(c);
+                c = vim_tolower(c);
                 retval = 1;
                 for (i = 0; hotkeys[i]; ++i)
                 {
-                    if (has_mbyte)
-                    {
-                        if ((*mb_ptr2char)(hotkeys + i) == c)
-                            break;
-                        i += (*mb_ptr2len)(hotkeys + i) - 1;
-                    }
-                    else if (hotkeys[i] == c)
+                    if (utf_ptr2char(hotkeys + i) == c)
                         break;
+                    i += utfc_ptr2len(hotkeys + i) - 1;
                     ++retval;
                 }
                 if (hotkeys[i])
@@ -2957,27 +2924,16 @@ copy_char(from, to, lowercase)
     int         len;
     int         c;
 
-    if (has_mbyte)
+    if (lowercase)
     {
-        if (lowercase)
-        {
-            c = MB_TOLOWER((*mb_ptr2char)(from));
-            return (*mb_char2bytes)(c, to);
-        }
-        else
-        {
-            len = (*mb_ptr2len)(from);
-            mch_memmove(to, from, (size_t)len);
-            return len;
-        }
+        c = vim_tolower(utf_ptr2char(from));
+        return utf_char2bytes(c, to);
     }
     else
     {
-        if (lowercase)
-            *to = (char_u)TOLOWER_LOC(*from);
-        else
-            *to = *from;
-        return 1;
+        len = utfc_ptr2len(from);
+        mch_memmove(to, from, (size_t)len);
+        return len;
     }
 }
 
@@ -2997,14 +2953,14 @@ msg_show_console_dialog(message, buttons, dfltbutton)
     int         dfltbutton;
 {
     int         len = 0;
-#define HOTK_LEN (has_mbyte ? MB_MAXBYTES : 1)
+#define HOTK_LEN        MB_MAXBYTES
     int         lenhotkey = HOTK_LEN;   /* count first button */
     char_u      *hotk = NULL;
     char_u      *msgp = NULL;
     char_u      *hotkp = NULL;
     char_u      *r;
     int         copy;
-#define HAS_HOTKEY_LEN 30
+#define HAS_HOTKEY_LEN  30
     char_u      has_hotkey[HAS_HOTKEY_LEN];
     int         first_hotkey = FALSE;   /* first char of button is hotkey */
     int         idx;
@@ -3029,10 +2985,7 @@ msg_show_console_dialog(message, buttons, dfltbutton)
                     *msgp++ = ' ';          /* '\n' -> ', ' */
 
                     /* advance to next hotkey and set default hotkey */
-                    if (has_mbyte)
-                        hotkp += STRLEN(hotkp);
-                    else
-                        ++hotkp;
+                    hotkp += STRLEN(hotkp);
                     hotkp[copy_char(r + 1, hotkp, TRUE)] = NUL;
                     if (dfltbutton)
                         --dfltbutton;
@@ -3084,7 +3037,7 @@ msg_show_console_dialog(message, buttons, dfltbutton)
             }
 
             /* advance to the next character */
-            mb_ptr_adv(r);
+            r += utfc_ptr2len(r);
         }
 
         if (copy)
@@ -3588,7 +3541,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             size_t i;
 
                             for (i = 0; i < precision && *p1; i++)
-                                p1 += mb_ptr2len(p1);
+                                p1 += utfc_ptr2len(p1);
 
                             str_arg_l = precision = p1 - (char_u *)str_arg;
                         }

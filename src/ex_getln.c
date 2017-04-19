@@ -579,7 +579,7 @@ getcmdline(firstc, count, indent)
                  */
                 if (c == K_DEL && ccline.cmdpos != ccline.cmdlen)
                     ++ccline.cmdpos;
-                if (has_mbyte && c == K_DEL)
+                if (c == K_DEL)
                     ccline.cmdpos += mb_off_next(ccline.cmdbuff, ccline.cmdbuff + ccline.cmdpos);
                 if (ccline.cmdpos > 0)
                 {
@@ -587,30 +587,19 @@ getcmdline(firstc, count, indent)
 
                     j = ccline.cmdpos;
                     p = ccline.cmdbuff + j;
-                    if (has_mbyte)
+
+                    p = mb_prevptr(ccline.cmdbuff, p);
+                    if (c == Ctrl_W)
                     {
-                        p = mb_prevptr(ccline.cmdbuff, p);
-                        if (c == Ctrl_W)
-                        {
-                            while (p > ccline.cmdbuff && vim_isspace(*p))
-                                p = mb_prevptr(ccline.cmdbuff, p);
-                            i = mb_get_class(p);
-                            while (p > ccline.cmdbuff && mb_get_class(p) == i)
-                                p = mb_prevptr(ccline.cmdbuff, p);
-                            if (mb_get_class(p) != i)
-                                p += (*mb_ptr2len)(p);
-                        }
+                        while (p > ccline.cmdbuff && vim_isspace(*p))
+                            p = mb_prevptr(ccline.cmdbuff, p);
+                        i = mb_get_class(p);
+                        while (p > ccline.cmdbuff && mb_get_class(p) == i)
+                            p = mb_prevptr(ccline.cmdbuff, p);
+                        if (mb_get_class(p) != i)
+                            p += utfc_ptr2len(p);
                     }
-                    else if (c == Ctrl_W)
-                    {
-                        while (p > ccline.cmdbuff && vim_isspace(p[-1]))
-                            --p;
-                        i = vim_iswordc(p[-1]);
-                        while (p > ccline.cmdbuff && !vim_isspace(p[-1]) && vim_iswordc(p[-1]) == i)
-                            --p;
-                    }
-                    else
-                        --p;
+
                     ccline.cmdpos = (int)(p - ccline.cmdbuff);
                     ccline.cmdlen -= j - ccline.cmdpos;
                     i = ccline.cmdpos;
@@ -778,15 +767,11 @@ getcmdline(firstc, count, indent)
                     if (KeyTyped && ccline.cmdspos + i >= Columns * Rows)
                         break;
                     ccline.cmdspos += i;
-                    if (has_mbyte)
-                        ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos);
-                    else
-                        ++ccline.cmdpos;
+                    ccline.cmdpos += utfc_ptr2len(ccline.cmdbuff + ccline.cmdpos);
                 }
                 while ((c == K_S_RIGHT || c == K_C_RIGHT || (mod_mask & (MOD_MASK_SHIFT|MOD_MASK_CTRL)))
                         && ccline.cmdbuff[ccline.cmdpos] != ' ');
-                if (has_mbyte)
-                    set_cmdspos_cursor();
+                set_cmdspos_cursor();
                 goto cmdline_not_changed;
 
         case K_LEFT:
@@ -797,16 +782,15 @@ getcmdline(firstc, count, indent)
                 do
                 {
                     --ccline.cmdpos;
-                    if (has_mbyte)      /* move to first byte of char */
-                        ccline.cmdpos -= (*mb_head_off)(ccline.cmdbuff, ccline.cmdbuff + ccline.cmdpos);
+                    /* move to first byte of char */
+                    ccline.cmdpos -= utf_head_off(ccline.cmdbuff, ccline.cmdbuff + ccline.cmdpos);
                     ccline.cmdspos -= cmdline_charsize(ccline.cmdpos);
                 }
                 while (ccline.cmdpos > 0
                         && (c == K_S_LEFT || c == K_C_LEFT
                                || (mod_mask & (MOD_MASK_SHIFT|MOD_MASK_CTRL)))
                         && ccline.cmdbuff[ccline.cmdpos - 1] != ' ');
-                if (has_mbyte)
-                    set_cmdspos_cursor();
+                set_cmdspos_cursor();
                 goto cmdline_not_changed;
 
         case K_IGNORE:
@@ -873,12 +857,11 @@ getcmdline(firstc, count, indent)
                     if (mouse_row <= cmdline_row + ccline.cmdspos / Columns
                                   && mouse_col < ccline.cmdspos % Columns + i)
                         break;
-                    if (has_mbyte)
-                    {
-                        /* Count ">" for double-wide char that doesn't fit. */
-                        correct_cmdspos(ccline.cmdpos, i);
-                        ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos) - 1;
-                    }
+
+                    /* Count ">" for double-wide char that doesn't fit. */
+                    correct_cmdspos(ccline.cmdpos, i);
+                    ccline.cmdpos += utfc_ptr2len(ccline.cmdbuff + ccline.cmdpos) - 1;
+
                     ccline.cmdspos += i;
                 }
                 goto cmdline_not_changed;
@@ -934,7 +917,7 @@ getcmdline(firstc, count, indent)
                          * command line has no uppercase characters, convert
                          * the character to lowercase */
                         if (p_ic && p_scs && !pat_has_uppercase(ccline.cmdbuff))
-                            c = MB_TOLOWER(c);
+                            c = vim_tolower(c);
                         if (c != NUL)
                         {
                             if (c == firstc || vim_strchr((char_u *)(p_magic ? "\\^$.*[" : "\\^$"), c) != NULL)
@@ -1107,7 +1090,7 @@ getcmdline(firstc, count, indent)
                 c = get_literal();          /* get next (two) character(s) */
                 do_abbr = FALSE;            /* don't do abbreviation now */
                 /* may need to remove ^ when composing char was typed */
-                if (enc_utf8 && utf_iscomposing(c) && !cmd_silent)
+                if (utf_iscomposing(c) && !cmd_silent)
                 {
                     draw_cmdline(ccline.cmdpos, ccline.cmdlen - ccline.cmdpos);
                     msg_putchar(' ');
@@ -1158,7 +1141,7 @@ getcmdline(firstc, count, indent)
         if (do_abbr && (IS_SPECIAL(c) || !vim_iswordc(c)) && (ccheck_abbr(
                         /* Add ABBR_OFF for characters above 0x100, this is
                          * what check_abbr() expects. */
-                        (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) : c) || c == Ctrl_RSB))
+                        (c >= 0x100) ? (c + ABBR_OFF) : c) || c == Ctrl_RSB))
             goto cmdline_changed;
 
         /*
@@ -1168,17 +1151,9 @@ getcmdline(firstc, count, indent)
             put_on_cmdline(get_special_key_name(c, mod_mask), -1, TRUE);
         else
         {
-            if (has_mbyte)
-            {
-                j = (*mb_char2bytes)(c, IObuff);
-                IObuff[j] = NUL;        /* exclude composing chars */
-                put_on_cmdline(IObuff, j, TRUE);
-            }
-            else
-            {
-                IObuff[0] = c;
-                put_on_cmdline(IObuff, 1, TRUE);
-            }
+            j = utf_char2bytes(c, IObuff);
+            IObuff[j] = NUL;        /* exclude composing chars */
+            put_on_cmdline(IObuff, j, TRUE);
         }
         goto cmdline_changed;
 
@@ -1503,8 +1478,7 @@ set_cmdspos_cursor()
     {
         c = cmdline_charsize(i);
         /* Count ">" for double-wide multi-byte char that doesn't fit. */
-        if (has_mbyte)
-            correct_cmdspos(i, c);
+        correct_cmdspos(i, c);
         /* If the cmdline doesn't fit, show cursor on last visible char.
          * Don't move the cursor itself, so we can still append. */
         if ((ccline.cmdspos += c) >= m)
@@ -1512,8 +1486,7 @@ set_cmdspos_cursor()
             ccline.cmdspos -= c;
             break;
         }
-        if (has_mbyte)
-            i += (*mb_ptr2len)(ccline.cmdbuff + i) - 1;
+        i += utfc_ptr2len(ccline.cmdbuff + i) - 1;
     }
 }
 
@@ -1526,8 +1499,8 @@ correct_cmdspos(idx, cells)
     int         idx;
     int         cells;
 {
-    if ((*mb_ptr2len)(ccline.cmdbuff + idx) > 1
-                && (*mb_ptr2cells)(ccline.cmdbuff + idx) > 1
+    if (utfc_ptr2len(ccline.cmdbuff + idx) > 1
+                && utf_ptr2cells(ccline.cmdbuff + idx) > 1
                 && ccline.cmdspos % Columns + cells > Columns)
         ccline.cmdspos++;
 }
@@ -1645,15 +1618,11 @@ getexmodeline(promptc, cookie, indent)
             {
                 if (line_ga.ga_len > 0)
                 {
-                    if (has_mbyte)
-                    {
-                        p = (char_u *)line_ga.ga_data;
-                        p[line_ga.ga_len] = NUL;
-                        len = (*mb_head_off)(p, p + line_ga.ga_len - 1) + 1;
-                        line_ga.ga_len -= len;
-                    }
-                    else
-                        --line_ga.ga_len;
+                    p = (char_u *)line_ga.ga_data;
+                    p[line_ga.ga_len] = NUL;
+                    len = utf_head_off(p, p + line_ga.ga_len - 1) + 1;
+                    line_ga.ga_len -= len;
+
                     goto redraw;
                 }
                 continue;
@@ -1702,7 +1671,7 @@ redraw:
                     }
                     else
                     {
-                        len = MB_PTR2LEN(p);
+                        len = utfc_ptr2len(p);
                         msg_outtrans_len(p, len);
                         vcol += ptr2cells(p);
                         p += len;
@@ -1756,14 +1725,7 @@ redraw:
 
         if (IS_SPECIAL(c1))
             c1 = '?';
-        if (has_mbyte)
-            len = (*mb_char2bytes)(c1,
-                                  (char_u *)line_ga.ga_data + line_ga.ga_len);
-        else
-        {
-            len = 1;
-            ((char_u *)line_ga.ga_data)[line_ga.ga_len] = c1;
-        }
+        len = utf_char2bytes(c1, (char_u *)line_ga.ga_data + line_ga.ga_len);
         if (c1 == '\n')
             msg_putchar('\n');
         else if (c1 == TAB)
@@ -1907,8 +1869,7 @@ draw_cmdline(start, len)
         for (i = 0; i < len; ++i)
         {
             msg_putchar('*');
-            if (has_mbyte)
-                i += (*mb_ptr2len)(ccline.cmdbuff + start + i) - 1;
+            i += utfc_ptr2len(ccline.cmdbuff + start + i) - 1;
         }
     else
         msg_outtrans_len(ccline.cmdbuff + start, len);
@@ -1945,11 +1906,8 @@ unputcmdline()
     msg_no_more = TRUE;
     if (ccline.cmdlen == ccline.cmdpos)
         msg_putchar(' ');
-    else if (has_mbyte)
-        draw_cmdline(ccline.cmdpos,
-                               (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos));
     else
-        draw_cmdline(ccline.cmdpos, 1);
+        draw_cmdline(ccline.cmdpos, utfc_ptr2len(ccline.cmdbuff + ccline.cmdpos));
     msg_no_more = FALSE;
     cursorcmd();
 }
@@ -1992,55 +1950,47 @@ put_on_cmdline(str, len, redraw)
         }
         else
         {
-            if (has_mbyte)
+            /* Count nr of characters in the new string. */
+            m = 0;
+            for (i = 0; i < len; i += utfc_ptr2len(str + i))
+                ++m;
+            /* Count nr of bytes in cmdline that are overwritten by these characters. */
+            for (i = ccline.cmdpos; i < ccline.cmdlen && m > 0; i += utfc_ptr2len(ccline.cmdbuff + i))
+                --m;
+            if (i < ccline.cmdlen)
             {
-                /* Count nr of characters in the new string. */
-                m = 0;
-                for (i = 0; i < len; i += (*mb_ptr2len)(str + i))
-                    ++m;
-                /* Count nr of bytes in cmdline that are overwritten by these characters. */
-                for (i = ccline.cmdpos; i < ccline.cmdlen && m > 0; i += (*mb_ptr2len)(ccline.cmdbuff + i))
-                    --m;
-                if (i < ccline.cmdlen)
-                {
-                    mch_memmove(ccline.cmdbuff + ccline.cmdpos + len,
-                            ccline.cmdbuff + i, (size_t)(ccline.cmdlen - i));
-                    ccline.cmdlen += ccline.cmdpos + len - i;
-                }
-                else
-                    ccline.cmdlen = ccline.cmdpos + len;
+                mch_memmove(ccline.cmdbuff + ccline.cmdpos + len,
+                        ccline.cmdbuff + i, (size_t)(ccline.cmdlen - i));
+                ccline.cmdlen += ccline.cmdpos + len - i;
             }
-            else if (ccline.cmdpos + len > ccline.cmdlen)
+            else
                 ccline.cmdlen = ccline.cmdpos + len;
         }
         mch_memmove(ccline.cmdbuff + ccline.cmdpos, str, (size_t)len);
         ccline.cmdbuff[ccline.cmdlen] = NUL;
 
-        if (enc_utf8)
+        /* When the inserted text starts with a composing character,
+         * backup to the character before it.  There could be two of them.
+         */
+        i = 0;
+        c = utf_ptr2char(ccline.cmdbuff + ccline.cmdpos);
+        while (ccline.cmdpos > 0 && utf_iscomposing(c))
         {
-            /* When the inserted text starts with a composing character,
-             * backup to the character before it.  There could be two of them.
-             */
-            i = 0;
+            i = utf_head_off(ccline.cmdbuff, ccline.cmdbuff + ccline.cmdpos - 1) + 1;
+            ccline.cmdpos -= i;
+            len += i;
             c = utf_ptr2char(ccline.cmdbuff + ccline.cmdpos);
-            while (ccline.cmdpos > 0 && utf_iscomposing(c))
+        }
+        if (i != 0)
+        {
+            /* Also backup the cursor position. */
+            i = ptr2cells(ccline.cmdbuff + ccline.cmdpos);
+            ccline.cmdspos -= i;
+            msg_col -= i;
+            if (msg_col < 0)
             {
-                i = (*mb_head_off)(ccline.cmdbuff, ccline.cmdbuff + ccline.cmdpos - 1) + 1;
-                ccline.cmdpos -= i;
-                len += i;
-                c = utf_ptr2char(ccline.cmdbuff + ccline.cmdpos);
-            }
-            if (i != 0)
-            {
-                /* Also backup the cursor position. */
-                i = ptr2cells(ccline.cmdbuff + ccline.cmdpos);
-                ccline.cmdspos -= i;
-                msg_col -= i;
-                if (msg_col < 0)
-                {
-                    msg_col += Columns;
-                    --msg_row;
-                }
+                msg_col += Columns;
+                --msg_row;
             }
         }
 
@@ -2055,36 +2005,33 @@ put_on_cmdline(str, len, redraw)
                 msg_clr_eos();
             msg_no_more = FALSE;
         }
+
+        if (KeyTyped)
         {
-            if (KeyTyped)
-            {
-                m = Columns * Rows;
-                if (m < 0)      /* overflow, Columns or Rows at weird value */
-                    m = MAXCOL;
-            }
-            else
+            m = Columns * Rows;
+            if (m < 0)      /* overflow, Columns or Rows at weird value */
                 m = MAXCOL;
-            for (i = 0; i < len; ++i)
-            {
-                c = cmdline_charsize(ccline.cmdpos);
-                /* count ">" for a double-wide char that doesn't fit. */
-                if (has_mbyte)
-                    correct_cmdspos(ccline.cmdpos, c);
-                /* Stop cursor at the end of the screen, but do increment the
-                 * insert position, so that entering a very long command
-                 * works, even though you can't see it. */
-                if (ccline.cmdspos + c < m)
-                    ccline.cmdspos += c;
-                if (has_mbyte)
-                {
-                    c = (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos) - 1;
-                    if (c > len - i - 1)
-                        c = len - i - 1;
-                    ccline.cmdpos += c;
-                    i += c;
-                }
-                ++ccline.cmdpos;
-            }
+        }
+        else
+            m = MAXCOL;
+        for (i = 0; i < len; ++i)
+        {
+            c = cmdline_charsize(ccline.cmdpos);
+            /* count ">" for a double-wide char that doesn't fit. */
+            correct_cmdspos(ccline.cmdpos, c);
+            /* Stop cursor at the end of the screen, but do increment the
+             * insert position, so that entering a very long command
+             * works, even though you can't see it. */
+            if (ccline.cmdspos + c < m)
+                ccline.cmdspos += c;
+
+            c = utfc_ptr2len(ccline.cmdbuff + ccline.cmdpos) - 1;
+            if (c > len - i - 1)
+                c = len - i - 1;
+            ccline.cmdpos += c;
+            i += c;
+
+            ++ccline.cmdpos;
         }
     }
     if (redraw)
@@ -2216,19 +2163,10 @@ cmdline_paste(regname, literally, remcr)
             /* Locate start of last word in the cmd buffer. */
             for (w = ccline.cmdbuff + ccline.cmdpos; w > ccline.cmdbuff; )
             {
-                if (has_mbyte)
-                {
-                    len = (*mb_head_off)(ccline.cmdbuff, w - 1) + 1;
-                    if (!vim_iswordc(mb_ptr2char(w - len)))
-                        break;
-                    w -= len;
-                }
-                else
-                {
-                    if (!vim_iswordc(w[-1]))
-                        break;
-                    --w;
-                }
+                len = utf_head_off(ccline.cmdbuff, w - 1) + 1;
+                if (!vim_iswordc(utf_ptr2char(w - len)))
+                    break;
+                w -= len;
             }
             len = (int)((ccline.cmdbuff + ccline.cmdpos) - w);
             if (p_ic ? STRNICMP(w, arg, len) == 0 : STRNCMP(w, arg, len) == 0)
@@ -2264,10 +2202,7 @@ cmdline_paste_str(s, literally)
             cv = *s;
             if (cv == Ctrl_V && s[1])
                 ++s;
-            if (has_mbyte)
-                c = mb_cptr2char_adv(&s);
-            else
-                c = *s++;
+            c = mb_cptr2char_adv(&s);
             if (cv == Ctrl_V || c == ESC || c == Ctrl_C
                     || c == CAR || c == NL || c == Ctrl_L
                     || c == intr_char
@@ -2734,7 +2669,7 @@ ExpandOne(xp, str, orig, options, mode)
                         || xp->xp_context == EXPAND_SHELLCMD
                         || xp->xp_context == EXPAND_BUFFERS))
                 {
-                    if (TOLOWER_LOC(xp->xp_files[i][len]) != TOLOWER_LOC(xp->xp_files[0][len]))
+                    if (tolower(xp->xp_files[i][len]) != tolower(xp->xp_files[0][len]))
                         break;
                 }
                 else if (xp->xp_files[i][len] != xp->xp_files[0][len])
@@ -3122,7 +3057,7 @@ sm_gettail(s)
             t = p;
             had_sep = FALSE;
         }
-        mb_ptr_adv(p);
+        p += utfc_ptr2len(p);
     }
     return t;
 }

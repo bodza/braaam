@@ -330,9 +330,6 @@ static struct vimoption
     {"breakindentopt", "briopt", P_STRING|P_ALLOCED|P_VI_DEF|P_RBUF|P_COMMA|P_NODUP,
                             (char_u *)VAR_WIN, PV_BRIOPT,
                             {(char_u *)"", (char_u *)NULL}, 0},
-    {"browsedir",   "bsdir",P_STRING|P_VI_DEF,
-                            (char_u *)NULL, PV_NONE,
-                            {(char_u *)0L, (char_u *)0L}, 0},
     {"buflisted",   "bl",   P_BOOL|P_VI_DEF|P_NOGLOB,
                             (char_u *)&p_bl, PV_BL,
                             {(char_u *)1L, (char_u *)0L}, 0},
@@ -431,9 +428,6 @@ static struct vimoption
     {"edcompatible","ed",   P_BOOL|P_VI_DEF,
                             (char_u *)&p_ed, PV_NONE,
                             {(char_u *)FALSE, (char_u *)0L}, 0},
-    {"encoding",    "enc",  P_STRING|P_VI_DEF|P_RCLR|P_NO_ML,
-                            (char_u *)&p_enc, PV_NONE,
-                            {(char_u *)ENC_DFLT, (char_u *)0L}, 0},
     {"endofline",   "eol",  P_BOOL|P_NO_MKRC|P_VI_DEF|P_RSTAT,
                             (char_u *)&p_eol, PV_EOL,
                             {(char_u *)TRUE, (char_u *)0L}, 0},
@@ -878,9 +872,6 @@ static struct vimoption
     {"term",        NULL,   P_STRING|P_EXPAND|P_NODEFAULT|P_NO_MKRC|P_VI_DEF|P_RALL,
                             (char_u *)&T_NAME, PV_NONE,
                             {(char_u *)"", (char_u *)0L}, 0},
-    {"termencoding", "tenc", P_STRING|P_VI_DEF|P_RCLR,
-                            (char_u *)&p_tenc, PV_NONE,
-                            {(char_u *)"", (char_u *)0L}, 0},
     {"terse",       NULL,   P_BOOL|P_VI_DEF,
                             (char_u *)&p_terse, PV_NONE,
                             {(char_u *)FALSE, (char_u *)0L}, 0},
@@ -1192,16 +1183,12 @@ set_init_1()
     opt_idx = findoption((char_u *)"maxmemtot");
     if (opt_idx >= 0)
     {
-        {
-            /* Use amount of memory available to Vim. */
-            n = (mch_total_mem(FALSE) >> 1);
+        /* Use amount of memory available to Vim. */
+        n = (mch_total_mem(FALSE) >> 1);
+        options[opt_idx].def_val[VI_DEFAULT] = (char_u *)n;
+        opt_idx = findoption((char_u *)"maxmem");
+        if (opt_idx >= 0)
             options[opt_idx].def_val[VI_DEFAULT] = (char_u *)n;
-            opt_idx = findoption((char_u *)"maxmem");
-            if (opt_idx >= 0)
-            {
-                options[opt_idx].def_val[VI_DEFAULT] = (char_u *)n;
-            }
-        }
     }
 
     /*
@@ -1267,31 +1254,7 @@ set_init_1()
     /* Parse default for 'clipboard' */
     (void)check_clipboard_option();
 
-    /* enc_locale() will try to find the encoding of the current locale. */
-    p = enc_locale();
-    if (p != NULL)
-    {
-        char_u *save_enc;
-
-        /* Try setting 'encoding' and check if the value is valid.
-         * If not, go back to the default "latin1". */
-        save_enc = p_enc;
-        p_enc = p;
-        if (mb_init() == NULL)
-        {
-            opt_idx = findoption((char_u *)"encoding");
-            if (opt_idx >= 0)
-            {
-                options[opt_idx].def_val[VI_DEFAULT] = p_enc;
-                options[opt_idx].flags |= P_DEF_ALLOCED;
-            }
-        }
-        else
-        {
-            vim_free(p_enc);
-            p_enc = save_enc;
-        }
-    }
+    mb_init(FALSE);
 }
 
 /*
@@ -2181,7 +2144,7 @@ do_set(arg, opt_flags)
                             {
                                 if (*arg == '\\' && arg[1] != NUL)
                                     ++arg;      /* remove backslash */
-                                if (has_mbyte && (i = (*mb_ptr2len)(arg)) > 1)
+                                if ((i = utfc_ptr2len(arg)) > 1)
                                 {
                                     /* copy multibyte char */
                                     mch_memmove(s, arg, (size_t)i);
@@ -3075,25 +3038,22 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
             errmsg = e_invarg;
     }
 
-    /* 'encoding' and 'fileencoding' */
-    else if (varp == &p_enc || gvarp == &p_fenc || varp == &p_tenc)
+    /* 'fileencoding' */
+    else if (gvarp == &p_fenc)
     {
-        if (gvarp == &p_fenc)
+        if (!curbuf->b_p_ma && opt_flags != OPT_GLOBAL)
+            errmsg = e_modifiable;
+        else if (vim_strchr(*varp, ',') != NULL)
+            /* No comma allowed in 'fileencoding'; catches confusing it with 'fileencodings'. */
+            errmsg = e_invarg;
+        else
         {
-            if (!curbuf->b_p_ma && opt_flags != OPT_GLOBAL)
-                errmsg = e_modifiable;
-            else if (vim_strchr(*varp, ',') != NULL)
-                /* No comma allowed in 'fileencoding'; catches confusing it
-                 * with 'fileencodings'. */
-                errmsg = e_invarg;
-            else
-            {
-                /* May show a "+" in the title now. */
-                redraw_titles();
-                /* Add 'fileencoding' to the swap file. */
-                ml_setflags(curbuf);
-            }
+            /* May show a "+" in the title now. */
+            redraw_titles();
+            /* Add 'fileencoding' to the swap file. */
+            ml_setflags(curbuf);
         }
+
         if (errmsg == NULL)
         {
             /* canonize the value, so that STRCMP() can be used on it */
@@ -3102,23 +3062,6 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
             {
                 vim_free(*varp);
                 *varp = p;
-            }
-            if (varp == &p_enc)
-            {
-                errmsg = mb_init();
-                redraw_titles();
-            }
-        }
-
-        if (errmsg == NULL)
-        {
-            /* When 'termencoding' is not empty and 'encoding' changes or when
-             * 'termencoding' changes, need to setup for keyboard input and
-             * display output conversion. */
-            if (((varp == &p_enc && *p_tenc != NUL) || varp == &p_tenc))
-            {
-                convert_setup(&input_conv, p_tenc, p_enc);
-                convert_setup(&output_conv, p_enc, p_tenc);
             }
         }
     }
@@ -3165,44 +3108,27 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
     /* 'matchpairs' */
     else if (gvarp == &p_mps)
     {
-        if (has_mbyte)
+        for (p = *varp; *p != NUL; ++p)
         {
-            for (p = *varp; *p != NUL; ++p)
-            {
-                int x2 = -1;
-                int x3 = -1;
+            int x2 = -1;
+            int x3 = -1;
 
-                if (*p != NUL)
-                    p += mb_ptr2len(p);
-                if (*p != NUL)
-                    x2 = *p++;
-                if (*p != NUL)
-                {
-                    x3 = mb_ptr2char(p);
-                    p += mb_ptr2len(p);
-                }
-                if (x2 != ':' || x3 == -1 || (*p != NUL && *p != ','))
-                {
-                    errmsg = e_invarg;
-                    break;
-                }
-                if (*p == NUL)
-                    break;
-            }
-        }
-        else
-        {
-            /* Check for "x:y,x:y" */
-            for (p = *varp; *p != NUL; p += 4)
+            if (*p != NUL)
+                p += utfc_ptr2len(p);
+            if (*p != NUL)
+                x2 = *p++;
+            if (*p != NUL)
             {
-                if (p[1] != ':' || p[2] == NUL || (p[3] != NUL && p[3] != ','))
-                {
-                    errmsg = e_invarg;
-                    break;
-                }
-                if (p[3] == NUL)
-                    break;
+                x3 = utf_ptr2char(p);
+                p += utfc_ptr2len(p);
             }
+            if (x2 != ':' || x3 == -1 || (*p != NUL && *p != ','))
+            {
+                errmsg = e_invarg;
+                break;
+            }
+            if (*p == NUL)
+                break;
         }
     }
 
@@ -3301,7 +3227,7 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
         {
             if (ptr2cells(s) != 1)
                 errmsg = (char_u *)"E595: contains unprintable or wide character";
-            mb_ptr_adv(s);
+            s += utfc_ptr2len(s);
         }
     }
 
@@ -3745,14 +3671,14 @@ set_chars_option(varp)
                 {
                     s = p + len + 1;
                     c1 = mb_ptr2char_adv(&s);
-                    if (mb_char2cells(c1) > 1)
+                    if (utf_char2cells(c1) > 1)
                         continue;
                     if (tab[i].cp == &lcs_tab2)
                     {
                         if (*s == NUL)
                             continue;
                         c2 = mb_ptr2char_adv(&s);
-                        if (mb_char2cells(c2) > 1)
+                        if (utf_char2cells(c2) > 1)
                             continue;
                     }
                     if (*s == ',' || *s == NUL)
@@ -4442,10 +4368,6 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
             curwin->w_p_cole = 3;
         }
     }
-#if defined(MZSCHEME_GUI_THREADS)
-    else if (pp == &p_mzq)
-        mzvim_reset_timer();
-#endif
 
     /* sync undo before 'undolevels' changes */
     else if (pp == &p_ul)
@@ -4486,6 +4408,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
             errmsg = e_positive;
             curbuf->b_p_tw = 0;
         }
+
         {
             win_T       *wp;
             tabpage_T   *tp;
@@ -4874,17 +4797,6 @@ get_highlight_default()
     return (char_u *)NULL;
 }
 
-    char_u *
-get_encoding_default()
-{
-    int i;
-
-    i = findoption((char_u *)"enc");
-    if (i >= 0)
-        return options[i].def_val[VI_DEFAULT];
-    return (char_u *)NULL;
-}
-
 /*
  * Translate a string like "t_xx", "<t_xx>" or "<S-Tab>" to a key number.
  */
@@ -5037,7 +4949,7 @@ optval_default(p, varp)
     if (p->flags & P_NUM)
         return (*(long *)varp == (long)(long_i)p->def_val[dvi]);
     if (p->flags & P_BOOL)
-                        /* the cast to long is required for Manx C, long_i is needed for MSVC */
+        /* the cast to long is required for Manx C, long_i is needed for MSVC */
         return (*(int *)varp == (int)(long)(long_i)p->def_val[dvi]);
     /* P_STRING */
     return (STRCMP(*(char_u **)varp, p->def_val[dvi]) == 0);
@@ -5085,8 +4997,7 @@ showoneopt(p, opt_flags)
  *
  * There are three values for "opt_flags":
  * OPT_GLOBAL:             Write global option values and fresh values of
- *                         buffer-local options (used for start of a session
- *                         file).
+ *                         buffer-local options.
  * OPT_GLOBAL + OPT_LOCAL: Idem, add fresh values of window-local options for
  *                         curwin (used for a vimrc file).
  * OPT_LOCAL:              Write buffer-local option values for curbuf, fresh
@@ -5094,10 +5005,9 @@ showoneopt(p, opt_flags)
  *                         curwin.  Local values are also written when at the
  *                         default value, because a modeline or autocommand
  *                         may have set them when doing ":edit file" and the
- *                         user has set them back at the default or fresh
- *                         value.
+ *                         user has set them back at the default or fresh value.
  *                         When "local_only" is TRUE, don't write fresh
- *                         values, only local values (for ":mkview").
+ *                         values, only local values.
  * (fresh value = value used for a new buffer or window for a local option).
  *
  * Return FAIL on error, OK otherwise.
@@ -6834,79 +6744,42 @@ find_mps_values(initc, findc, backwards, switchit)
     ptr = curbuf->b_p_mps;
     while (*ptr != NUL)
     {
-        if (has_mbyte)
-        {
-            char_u *prev;
+        char_u *prev;
 
-            if (mb_ptr2char(ptr) == *initc)
-            {
-                if (switchit)
-                {
-                    *findc = *initc;
-                    *initc = mb_ptr2char(ptr + mb_ptr2len(ptr) + 1);
-                    *backwards = TRUE;
-                }
-                else
-                {
-                    *findc = mb_ptr2char(ptr + mb_ptr2len(ptr) + 1);
-                    *backwards = FALSE;
-                }
-                return;
-            }
-            prev = ptr;
-            ptr += mb_ptr2len(ptr) + 1;
-            if (mb_ptr2char(ptr) == *initc)
-            {
-                if (switchit)
-                {
-                    *findc = *initc;
-                    *initc = mb_ptr2char(prev);
-                    *backwards = FALSE;
-                }
-                else
-                {
-                    *findc = mb_ptr2char(prev);
-                    *backwards = TRUE;
-                }
-                return;
-            }
-            ptr += mb_ptr2len(ptr);
-        }
-        else
+        if (utf_ptr2char(ptr) == *initc)
         {
-            if (*ptr == *initc)
+            if (switchit)
             {
-                if (switchit)
-                {
-                    *backwards = TRUE;
-                    *findc = *initc;
-                    *initc = ptr[2];
-                }
-                else
-                {
-                    *backwards = FALSE;
-                    *findc = ptr[2];
-                }
-                return;
+                *findc = *initc;
+                *initc = utf_ptr2char(ptr + utfc_ptr2len(ptr) + 1);
+                *backwards = TRUE;
             }
-            ptr += 2;
-            if (*ptr == *initc)
+            else
             {
-                if (switchit)
-                {
-                    *backwards = FALSE;
-                    *findc = *initc;
-                    *initc = ptr[-2];
-                }
-                else
-                {
-                    *backwards = TRUE;
-                    *findc =  ptr[-2];
-                }
-                return;
+                *findc = utf_ptr2char(ptr + utfc_ptr2len(ptr) + 1);
+                *backwards = FALSE;
             }
-            ++ptr;
+            return;
         }
+        prev = ptr;
+        ptr += utfc_ptr2len(ptr) + 1;
+        if (utf_ptr2char(ptr) == *initc)
+        {
+            if (switchit)
+            {
+                *findc = *initc;
+                *initc = utf_ptr2char(prev);
+                *backwards = FALSE;
+            }
+            else
+            {
+                *findc = utf_ptr2char(prev);
+                *backwards = TRUE;
+            }
+            return;
+        }
+        ptr += utfc_ptr2len(ptr);
+
         if (*ptr == ',')
             ++ptr;
     }

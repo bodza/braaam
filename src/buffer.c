@@ -2730,8 +2730,7 @@ maketitle()
             if (len > 100)
             {
                 len -= 100;
-                if (has_mbyte)
-                    len += (*mb_tail_off)(i_name, i_name + len) + 1;
+                len += mb_tail_off(i_name, i_name + len) + 1;
                 i_name += len;
             }
             STRCPY(i_str, i_name);
@@ -2871,7 +2870,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
     if (fillchar == 0)
         fillchar = ' ';
     /* Can't handle a multi-byte fill character yet. */
-    else if (mb_char2len(fillchar) > 1)
+    else if (utf_char2len(fillchar) > 1)
         fillchar = '-';
 
     /* Get line & check if empty (cursorpos will show "0-1").  Note that
@@ -2884,7 +2883,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
     if (wp->w_cursor.col > (colnr_T)STRLEN(p))
         byteval = 0;
     else
-        byteval = (*mb_ptr2char)(p + wp->w_cursor.col);
+        byteval = utf_ptr2char(p + wp->w_cursor.col);
 
     groupdepth = 0;
     p = out;
@@ -2971,18 +2970,14 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             if (l > item[groupitem[groupdepth]].maxwid)
             {
                 /* truncate, remove n bytes of text at the start */
-                if (has_mbyte)
+
+                /* Find the first character that should be included. */
+                n = 0;
+                while (l >= item[groupitem[groupdepth]].maxwid)
                 {
-                    /* Find the first character that should be included. */
-                    n = 0;
-                    while (l >= item[groupitem[groupdepth]].maxwid)
-                    {
-                        l -= ptr2cells(t + n);
-                        n += (*mb_ptr2len)(t + n);
-                    }
+                    l -= ptr2cells(t + n);
+                    n += utfc_ptr2len(t + n);
                 }
-                else
-                    n = (long)(p - t) - item[groupitem[groupdepth]].maxwid + 1;
 
                 *t = '<';
                 mch_memmove(t + 1, t + n, (size_t)(p - (t + n)));
@@ -3280,7 +3275,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             {
                 vim_snprintf((char *)tmp, sizeof(tmp), ",%s", wp->w_buffer->b_p_ft);
                 for (t = tmp; *t != 0; t++)
-                    *t = TOUPPER_LOC(*t);
+                    *t = toupper(*t);
                 str = tmp;
             }
             break;
@@ -3325,8 +3320,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             if (itemisflag)
             {
                 if ((t[0] && t[1])
-                        && ((!prevchar_isitem && *t == ',')
-                              || (prevchar_isflag && *t == ' ')))
+                        && ((!prevchar_isitem && *t == ',') || (prevchar_isflag && *t == ' ')))
                     t++;
                 prevchar_isflag = TRUE;
             }
@@ -3336,13 +3330,10 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             if (l > maxwid)
             {
                 while (l >= maxwid)
-                    if (has_mbyte)
-                    {
-                        l -= ptr2cells(t);
-                        t += (*mb_ptr2len)(t);
-                    }
-                    else
-                        l -= byte2cells(*t++);
+                {
+                    l -= ptr2cells(t);
+                    t += utfc_ptr2len(t);
+                }
                 if (p + 1 >= out + outlen)
                     break;
                 *p++ = '<';
@@ -3455,23 +3446,18 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
         if (width - vim_strsize(s) >= maxwidth)
         {
             /* Truncation mark is beyond max length */
-            if (has_mbyte)
+            s = out;
+            width = 0;
+            for (;;)
             {
-                s = out;
-                width = 0;
-                for (;;)
-                {
-                    width += ptr2cells(s);
-                    if (width >= maxwidth)
-                        break;
-                    s += (*mb_ptr2len)(s);
-                }
-                /* Fill up for half a double-wide character. */
-                while (++width < maxwidth)
-                    *s++ = fillchar;
+                width += ptr2cells(s);
+                if (width >= maxwidth)
+                    break;
+                s += utfc_ptr2len(s);
             }
-            else
-                s = out + maxwidth - 1;
+            /* Fill up for half a double-wide character. */
+            while (++width < maxwidth)
+                *s++ = fillchar;
             for (l = 0; l < itemcnt; l++)
                 if (item[l].start > s)
                     break;
@@ -3481,17 +3467,13 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
         }
         else
         {
-            if (has_mbyte)
+            n = 0;
+            while (width >= maxwidth)
             {
-                n = 0;
-                while (width >= maxwidth)
-                {
-                    width -= ptr2cells(s + n);
-                    n += (*mb_ptr2len)(s + n);
-                }
+                width -= ptr2cells(s + n);
+                n += utfc_ptr2len(s + n);
             }
-            else
-                n = width - maxwidth + 1;
+
             p = s + n;
             STRMOVE(s + 1, p);
             *s = '<';

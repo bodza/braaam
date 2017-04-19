@@ -2146,7 +2146,6 @@ struct source_cookie
     char_u      *fname;         /* name of sourced file */
     int         dbg_tick;       /* debug_tick when breakpoint was set */
     int         level;          /* top nesting level of sourced file */
-    vimconv_T   conv;           /* type of conversion */
 };
 
 /*
@@ -2331,16 +2330,13 @@ do_source(fname, check_other, is_vimrc)
     save_sourcing_lnum = sourcing_lnum;
     sourcing_lnum = 0;
 
-    cookie.conv.vc_type = CONV_NONE;            /* no conversion */
-
     /* Read the first line so we can check for a UTF-8 BOM. */
     firstline = getsourceline(0, (void *)&cookie, 0);
     if (firstline != NULL && STRLEN(firstline) >= 3 && firstline[0] == 0xef
                               && firstline[1] == 0xbb && firstline[2] == 0xbf)
     {
         /* Found BOM; setup conversion, skip over BOM and recode the line. */
-        convert_setup(&cookie.conv, (char_u *)"utf-8", p_enc);
-        p = string_convert(&cookie.conv, firstline + 3, NULL);
+        p = string_convert(firstline + 3, NULL);
         if (p == NULL)
             p = vim_strsave(firstline + 3);
         if (p != NULL)
@@ -2431,7 +2427,6 @@ almosttheend:
     fclose(cookie.fp);
     vim_free(cookie.nextline);
     vim_free(firstline);
-    convert_setup(&cookie.conv, NULL, NULL);
 
 theend:
     vim_free(fname_exp);
@@ -2568,19 +2563,6 @@ getsourceline(c, cookie, indent)
         }
     }
 
-    if (line != NULL && sp->conv.vc_type != CONV_NONE)
-    {
-        char_u  *s;
-
-        /* Convert the encoding of the script line. */
-        s = string_convert(&sp->conv, line, NULL);
-        if (s != NULL)
-        {
-            vim_free(line);
-            line = s;
-        }
-    }
-
     /* Did we encounter a breakpoint? */
     if (sp->breakpoint != 0 && sp->breakpoint <= sourcing_lnum)
     {
@@ -2656,40 +2638,6 @@ get_one_sourceline(sp)
 
     vim_free(ga.ga_data);
     return NULL;
-}
-
-/*
- * ":scriptencoding": Set encoding conversion for a sourced script.
- * Without the multi-byte feature it's simply ignored.
- */
-    void
-ex_scriptencoding(eap)
-    exarg_T     *eap UNUSED;
-{
-    struct source_cookie        *sp;
-    char_u                      *name;
-
-    if (!getline_equal(eap->getline, eap->cookie, getsourceline))
-    {
-        EMSG("E167: :scriptencoding used outside of a sourced file");
-        return;
-    }
-
-    if (*eap->arg != NUL)
-    {
-        name = enc_canonize(eap->arg);
-        if (name == NULL)       /* out of memory */
-            return;
-    }
-    else
-        name = eap->arg;
-
-    /* Setup for conversion from the specified encoding to 'encoding'. */
-    sp = (struct source_cookie *)getline_cookie(eap->getline, eap->cookie);
-    convert_setup(&sp->conv, name, p_enc);
-
-    if (name != eap->arg)
-        vim_free(name);
 }
 
 /*

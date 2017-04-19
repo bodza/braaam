@@ -619,10 +619,7 @@ open_line(dir, flags, second_line_indent)
         p = saved_line + curwin->w_cursor.col;
         while (*p != NUL)
         {
-            if (has_mbyte)
-                p += replace_push_mb(p);
-            else
-                replace_push(*p++);
+            p += replace_push_mb(p);
         }
         saved_line[curwin->w_cursor.col] = NUL;
     }
@@ -1059,7 +1056,7 @@ open_line(dir, flags, second_line_indent)
                         /* blank-out any other chars from the old leader. */
                         while (--p >= leader)
                         {
-                            int l = mb_head_off(leader, p);
+                            int l = utf_head_off(leader, p);
 
                             if (l > 1)
                             {
@@ -1091,7 +1088,7 @@ open_line(dir, flags, second_line_indent)
 
                             for (i = 0; p[i] != NUL && i < lead_len; i += l)
                             {
-                                l = (*mb_ptr2len)(p + i);
+                                l = utfc_ptr2len(p + i);
                                 if (vim_strnsize(p, i + l) > repl_size)
                                     break;
                             }
@@ -1118,7 +1115,7 @@ open_line(dir, flags, second_line_indent)
                                 }
                                 else
                                 {
-                                    int     l = (*mb_ptr2len)(p);
+                                    int     l = utfc_ptr2len(p);
 
                                     if (l > 1)
                                     {
@@ -1227,8 +1224,7 @@ open_line(dir, flags, second_line_indent)
             replace_push(NUL);      /* end of extra blanks */
         if (curbuf->b_p_ai || (flags & OPENLINE_DELSPACES))
         {
-            while ((*p_extra == ' ' || *p_extra == '\t')
-                    && (!enc_utf8 || !utf_iscomposing(utf_ptr2char(p_extra + 1))))
+            while ((*p_extra == ' ' || *p_extra == '\t') && !utf_iscomposing(utf_ptr2char(p_extra + 1)))
             {
                 if (REPLACE_NORMAL(State))
                     replace_push(*p_extra);
@@ -1849,7 +1845,7 @@ plines_win_col(wp, lnum, column)
     while (*s != NUL && --column >= 0)
     {
         col += win_lbr_chartabsize(wp, line, s, (colnr_T)col, NULL);
-        mb_ptr_adv(s);
+        s += utfc_ptr2len(s);
     }
 
     /*
@@ -1913,19 +1909,12 @@ ins_bytes_len(p, len)
     int         i;
     int         n;
 
-    if (has_mbyte)
-        for (i = 0; i < len; i += n)
-        {
-            if (enc_utf8)
-                /* avoid reading past p[len] */
-                n = utfc_ptr2len_len(p + i, len - i);
-            else
-                n = (*mb_ptr2len)(p + i);
-            ins_char_bytes(p + i, n);
-        }
-    else
-        for (i = 0; i < len; ++i)
-            ins_char(p[i]);
+    for (i = 0; i < len; i += n)
+    {
+        /* avoid reading past p[len] */
+        n = utfc_ptr2len_len(p + i, len - i);
+        ins_char_bytes(p + i, n);
+    }
 }
 
 /*
@@ -1942,7 +1931,7 @@ ins_char(c)
     char_u      buf[MB_MAXBYTES + 1];
     int         n;
 
-    n = (*mb_char2bytes)(c, buf);
+    n = utf_char2bytes(c, buf);
 
     /* When "c" is 0x100, 0x200, etc. we don't want to insert a NUL byte.
      * Happens for CTRL-Vu9900. */
@@ -1957,7 +1946,6 @@ ins_char_bytes(buf, charlen)
     char_u      *buf;
     int         charlen;
 {
-    int         c = buf[0];
     int         newlen;         /* nr of bytes inserted */
     int         oldlen;         /* nr of bytes deleted (0 when not replacing) */
     char_u      *p;
@@ -2011,7 +1999,7 @@ ins_char_bytes(buf, charlen)
                 /* Don't need to remove a TAB that takes us to the right position. */
                 if (vcol > new_vcol && oldp[col + oldlen] == TAB)
                     break;
-                oldlen += (*mb_ptr2len)(oldp + col + oldlen);
+                oldlen += utfc_ptr2len(oldp + col + oldlen);
                 /* Deleted a bit too much, insert spaces. */
                 if (vcol > new_vcol)
                     newlen += vcol - new_vcol;
@@ -2021,7 +2009,7 @@ ins_char_bytes(buf, charlen)
         else if (oldp[col] != NUL)
         {
             /* normal replace */
-            oldlen = (*mb_ptr2len)(oldp + col);
+            oldlen = utfc_ptr2len(oldp + col);
         }
 
         /* Push the replaced bytes onto the replace stack, so that they can be
@@ -2031,10 +2019,7 @@ ins_char_bytes(buf, charlen)
         replace_push(NUL);
         for (i = 0; i < oldlen; ++i)
         {
-            if (has_mbyte)
-                i += replace_push_mb(oldp + col + i) - 1;
-            else
-                replace_push(oldp[col + i]);
+            i += replace_push_mb(oldp + col + i) - 1;
         }
     }
 
@@ -2068,14 +2053,9 @@ ins_char_bytes(buf, charlen)
      * If we're in Insert or Replace mode and 'showmatch' is set, then briefly
      * show the match for right parens and braces.
      */
-    if (p_sm && (State & INSERT)
-            && msg_silent == 0
-       )
+    if (p_sm && (State & INSERT) && msg_silent == 0)
     {
-        if (has_mbyte)
-            showmatch(mb_ptr2char(buf));
-        else
-            showmatch(c);
+        showmatch(utf_ptr2char(buf));
     }
 
     if (!p_ri || (State & REPLACE_FLAG))
@@ -2133,15 +2113,11 @@ ins_str(s)
 del_char(fixpos)
     int         fixpos;
 {
-    if (has_mbyte)
-    {
-        /* Make sure the cursor is at the start of a character. */
-        mb_adjust_cursor();
-        if (*ml_get_cursor() == NUL)
-            return FAIL;
-        return del_chars(1L, fixpos);
-    }
-    return del_bytes(1L, fixpos, TRUE);
+    /* Make sure the cursor is at the start of a character. */
+    mb_adjust_cursor();
+    if (*ml_get_cursor() == NUL)
+        return FAIL;
+    return del_chars(1L, fixpos);
 }
 
 /*
@@ -2160,7 +2136,7 @@ del_chars(count, fixpos)
     p = ml_get_cursor();
     for (i = 0; i < count && *p != NUL; ++i)
     {
-        l = (*mb_ptr2len)(p);
+        l = utfc_ptr2len(p);
         bytes += l;
         p += l;
     }
@@ -2199,7 +2175,7 @@ del_bytes(count, fixpos_arg, use_delcombine)
 
     /* If 'delcombine' is set and deleting (less than) one character, only
      * delete the last combining character. */
-    if (p_deco && use_delcombine && enc_utf8 && utfc_ptr2len(oldp + col) >= count)
+    if (p_deco && use_delcombine && utfc_ptr2len(oldp + col) >= count)
     {
         int     cc[MAX_MCO];
         int     n;
@@ -2234,8 +2210,7 @@ del_bytes(count, fixpos_arg, use_delcombine)
         {
             --curwin->w_cursor.col;
             curwin->w_cursor.coladd = 0;
-            if (has_mbyte)
-                curwin->w_cursor.col -= (*mb_head_off)(oldp, oldp + curwin->w_cursor.col);
+            curwin->w_cursor.col -= utf_head_off(oldp, oldp + curwin->w_cursor.col);
         }
         count = oldlen - col;
         movelen = 1;
@@ -2351,17 +2326,13 @@ gchar_pos(pos)
 {
     char_u      *ptr = ml_get_pos(pos);
 
-    if (has_mbyte)
-        return (*mb_ptr2char)(ptr);
-    return (int)*ptr;
+    return utf_ptr2char(ptr);
 }
 
     int
 gchar_cursor()
 {
-    if (has_mbyte)
-        return (*mb_ptr2char)(ml_get_cursor());
-    return (int)*ml_get_cursor();
+    return utf_ptr2char(ml_get_cursor());
 }
 
 /*
@@ -2969,7 +2940,7 @@ get_keystroke()
             /* Need some more space. This might happen when receiving a long
              * escape sequence. */
             buflen += 100;
-            buf = vim_realloc(buf, buflen);
+            buf = realloc(buf, buflen);
             if (buf == NULL)
                 vim_free(t_buf);
             maxlen = (buflen - 6 - len) / 3;
@@ -3032,13 +3003,12 @@ get_keystroke()
             }
             break;
         }
-        if (has_mbyte)
-        {
-            if (MB_BYTE2LEN(n) > len)
-                continue;       /* more bytes to get */
-            buf[len >= buflen ? buflen - 1 : len] = NUL;
-            n = (*mb_ptr2char)(buf);
-        }
+
+        if (MB_BYTE2LEN(n) > len)
+            continue;       /* more bytes to get */
+        buf[len >= buflen ? buflen - 1 : len] = NUL;
+        n = utf_ptr2char(buf);
+
         if (n == intr_char)
             n = ESC;
         break;
@@ -3903,7 +3873,7 @@ gettail(fname)
     {
         if (vim_ispathsep_nocolon(*p2))
             p1 = p2 + 1;
-        mb_ptr_adv(p2);
+        p2 += utfc_ptr2len(p2);
     }
     return p1;
 }
@@ -3935,7 +3905,7 @@ getnextcomp(fname)
     char_u *fname;
 {
     while (*fname && !vim_ispathsep(*fname))
-        mb_ptr_adv(fname);
+        fname += utfc_ptr2len(fname);
     if (*fname)
         ++fname;
     return fname;
@@ -4013,9 +3983,9 @@ shorten_dir(str)
             *d++ = *s;              /* copy next char */
             if (*s != '~' && *s != '.') /* and leading "~" and "." */
                 skip = TRUE;
-            if (has_mbyte)
+
             {
-                int l = mb_ptr2len(s);
+                int l = utfc_ptr2len(s);
 
                 while (--l > 0)
                     *d++ = *++s;
@@ -8489,17 +8459,13 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
         else if (path_end >= path + wildoff
                          && (vim_strchr((char_u *)"*?[{~$", *path_end) != NULL
                              || (!p_fic && (flags & EW_ICASE)
-                                             && isalpha(PTR2CHAR(path_end)))))
+                                             && isalpha(utf_ptr2char(path_end)))))
             e = p;
-        if (has_mbyte)
-        {
-            len = (*mb_ptr2len)(path_end);
-            STRNCPY(p, path_end, len);
-            p += len;
-            path_end += len;
-        }
-        else
-            *p++ = *path_end++;
+
+        len = utfc_ptr2len(path_end);
+        STRNCPY(p, path_end, len);
+        p += len;
+        path_end += len;
     }
     e = p;
     *e = NUL;
@@ -8654,7 +8620,7 @@ static int has_env_var(char_u *p);
 has_env_var(p)
     char_u *p;
 {
-    for ( ; *p; mb_ptr_adv(p))
+    for ( ; *p; p += utfc_ptr2len(p))
     {
         if (*p == '\\' && p[1] != NUL)
             ++p;
@@ -8675,7 +8641,7 @@ static int has_special_wildchar(char_u *p);
 has_special_wildchar(p)
     char_u  *p;
 {
-    for ( ; *p; mb_ptr_adv(p))
+    for ( ; *p; p += utfc_ptr2len(p))
     {
         if (*p == '\\' && p[1] != NUL)
             ++p;
@@ -9004,7 +8970,7 @@ get_cmd_output(cmd, infile, flags, ret_len)
     if (buffer != NULL)
         i = (int)fread((char *)buffer, (size_t)1, (size_t)len, fd);
     fclose(fd);
-    mch_remove(tempname);
+    unlink((char *)tempname);
     if (buffer == NULL)
         goto done;
     if (i != len)
@@ -9081,7 +9047,7 @@ get_isolated_shell_name()
 
         /* Find the last path separator before the space. */
         p1 = p_sh;
-        for (p2 = p_sh; p2 < p; mb_ptr_adv(p2))
+        for (p2 = p_sh; p2 < p; p2 += utfc_ptr2len(p2))
             if (vim_ispathsep(*p2))
                 p1 = p2 + 1;
         p = vim_strnsave(p1, (int)(p - p1));

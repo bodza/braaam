@@ -649,7 +649,7 @@ u_get_undo_file_name(buf_ffname, reading)
                     munged_name = vim_strsave(ffname);
                     if (munged_name == NULL)
                         return NULL;
-                    for (p = munged_name; *p != NUL; mb_ptr_adv(p))
+                    for (p = munged_name; *p != NUL; p += utfc_ptr2len(p))
                         if (vim_ispathsep(*p))
                             *p = '%';
                 }
@@ -1252,7 +1252,7 @@ u_write_undo(name, forceit, buf, hash)
                 }
             }
         }
-        mch_remove(file_name);
+        unlink((char *)file_name);
     }
 
     /* If there is no undo information at all, quit here after deleting any
@@ -1296,7 +1296,7 @@ u_write_undo(name, forceit, buf, hash)
     {
         EMSG2((char *)e_not_open, file_name);
         close(fd);
-        mch_remove(file_name);
+        unlink((char *)file_name);
         goto theend;
     }
 

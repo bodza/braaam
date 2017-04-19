@@ -80,8 +80,7 @@ static char *(main_errors[]) =
 static char_u *start_dir = NULL;        /* current working dir on startup */
 
     int
-main
-(argc, argv)
+main(argc, argv)
     int         argc;
     char        **argv;
 {
@@ -107,8 +106,8 @@ main
 
     starttime = time(NULL);
 
-    (void)mb_init();    /* init mb_bytelen_tab[] to ones */
-    eval_init();        /* init global variables */
+    mb_init(TRUE);  /* init mb_bytelen_tab[] to ones */
+    eval_init();    /* init global variables */
 
     /* Init the table of Normal mode commands. */
     init_normal_cmds();
@@ -118,7 +117,6 @@ main
      */
     if ((IObuff = alloc(IOSIZE)) == NULL || (NameBuff = alloc(MAXPATHL)) == NULL)
         mch_exit(0);
-    TIME_MSG("Allocated generic buffers");
 
     /*
      * Do a first scan of the arguments in "argv[]":
@@ -130,7 +128,6 @@ main
     early_arg_scan(&params);
 
     clip_init(FALSE);           /* Initialise clipboard stuff */
-    TIME_MSG("clipboard setup");
 
     /*
      * Check if we have an interactive window.
@@ -139,7 +136,6 @@ main
      * -dev argument.
      */
     params.stdout_isatty = (mch_check_win(params.argc, params.argv) != FAIL);
-    TIME_MSG("window checked");
 
     /*
      * Allocate the first window and buffer.
@@ -155,14 +151,10 @@ main
 
     /*
      * Set the default values for the options.
-     * NOTE: Non-latin1 translated messages are working only after this,
-     * because this is where "has_mbyte" will be set, which is used by
-     * msg_outtrans_len_attr().
      * First find out the home directory, needed to expand "~" in options.
      */
     init_homedir();             /* find real value of $HOME */
     set_init_1();
-    TIME_MSG("inits 1");
 
     set_lang_var();             /* set v:lang and v:ctype */
 
@@ -177,7 +169,6 @@ main
      * argument list "global_alist".
      */
     command_line_scan(&params);
-    TIME_MSG("parsing arguments");
 
     /*
      * On some systems, when we compile with the GUI, we always use it.  On Mac
@@ -188,8 +179,6 @@ main
     {
         fname = alist_name(&GARGLIST[0]);
     }
-
-    TIME_MSG("expanding arguments");
 
     /* Don't redraw until much later. */
     ++RedrawingDisabled;
@@ -212,7 +201,6 @@ main
      * Note that we may use mch_exit() before mch_init()!
      */
     mch_init();
-    TIME_MSG("shell init");
 
     /*
      * Print a warning if stdout is not a terminal.
@@ -229,7 +217,6 @@ main
         termcapinit(params.term);       /* set terminal name and get terminal
                                    capabilities (will set full_screen) */
         screen_start();         /* don't know where cursor is now */
-        TIME_MSG("Termcap init");
     }
 
     /*
@@ -242,7 +229,6 @@ main
     msg_row = cmdline_row;
     screenalloc(FALSE);         /* allocate screen buffers */
     set_init_2();
-    TIME_MSG("inits 2");
 
     msg_scroll = TRUE;
     no_wait_return = TRUE;
@@ -250,7 +236,6 @@ main
     init_mappings();            /* set up initial mappings */
 
     init_highlight(TRUE, FALSE); /* set the default highlight groups */
-    TIME_MSG("init highlight");
 
     /* Set the break level after the terminal is initialized. */
     debug_break_level = params.use_debug_break_level;
@@ -268,7 +253,6 @@ main
     if (p_lpl)
     {
         source_runtime((char_u *)"plugin/**/*.vim", TRUE);
-        TIME_MSG("loading plugins");
     }
 
     /*
@@ -287,7 +271,6 @@ main
      * 'title' and 'icon', Unix: 'shellpipe' and 'shellredir'.
      */
     set_init_3();
-    TIME_MSG("inits 3");
 
     /*
      * "-n" argument: Disable swap file by setting 'updatecount' to 0.
@@ -334,16 +317,13 @@ main
      * defined by termcapinit and redefined in .exrc.
      */
     settmode(TMODE_RAW);
-    TIME_MSG("setting raw mode");
 
     if (need_wait_return || msg_didany)
     {
         wait_return(TRUE);
-        TIME_MSG("waiting for return");
     }
 
     starttermcap();         /* start termcap if not done by wait_return() */
-    TIME_MSG("start termcap");
 #if defined(FEAT_TERMRESPONSE)
     may_req_ambiguous_char_width();
 #endif
@@ -359,10 +339,7 @@ main
     if (exmode_active)
         must_redraw = CLEAR;
     else
-    {
         screenclear();                  /* clear screen */
-        TIME_MSG("clearing screen");
-    }
 
     no_wait_return = TRUE;
 
@@ -371,7 +348,6 @@ main
      * Also does recovery if "recoverymode" set.
      */
     create_windows(&params);
-    TIME_MSG("opening buffers");
 
     /* clear v:swapcommand */
     set_vim_var_string(VV_SWAPCOMMAND, NULL, -1);
@@ -381,7 +357,6 @@ main
         curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
 
     apply_autocmds(EVENT_BUFENTER, NULL, NULL, FALSE, curbuf);
-    TIME_MSG("BufEnter autocommands");
     setpcmark();
 
     /*
@@ -395,7 +370,7 @@ main
      */
     shorten_fnames(FALSE);
 
-    /* Execute any "+", "-c" and "-S" arguments. */
+    /* Execute any "+" and "-c" arguments. */
     if (params.n_commands > 0)
         exe_commands(&params);
 
@@ -415,7 +390,6 @@ main
         need_start_insertmode = TRUE;
 
     apply_autocmds(EVENT_VIMENTER, NULL, NULL, FALSE, curbuf);
-    TIME_MSG("VimEnter autocommands");
 
     /* Adjust default register name for "unnamed" in 'clipboard'. Can only be
      * done after the clipboard is available and all initial commands that may
@@ -431,8 +405,6 @@ main
      * call normal_cmd(), which will then start Insert mode. */
     if (restart_edit != 0)
         stuffcharReadbuff(K_NOP);
-
-    TIME_MSG("before starting main loop");
 
     /*
      * Call the main command loop.  This never returns.
@@ -1059,7 +1031,6 @@ command_line_scan(parmp)
                     break;
                 }
                 /*FALLTHROUGH*/
-            case 'S':           /* "-S {file}" execute Vim script */
             case 'i':           /* "-i {viminfo}" use for viminfo */
             case 'd':           /* "-d {device}" device (for Amiga) */
             case 'T':           /* "-T {terminal}" terminal name */
@@ -1085,7 +1056,7 @@ command_line_scan(parmp)
                     mainerr(ME_GARBAGE, (char_u *)argv[0]);
 
                 --argc;
-                if (argc < 1 && c != 'S')  /* -S has an optional argument */
+                if (argc < 1)
                     mainerr_arg_missing((char_u *)argv[0]);
                 ++argv;
                 argv_idx = -1;
@@ -1093,35 +1064,9 @@ command_line_scan(parmp)
                 switch (c)
                 {
                 case 'c':       /* "-c {command}" execute command */
-                case 'S':       /* "-S {file}" execute Vim script */
                     if (parmp->n_commands >= MAX_ARG_CMDS)
                         mainerr(ME_EXTRA_CMD, NULL);
-                    if (c == 'S')
-                    {
-                        char    *a;
-
-                        if (argc < 1)
-                            /* "-S" without argument: use default session file name. */
-                            a = SESSION_FILE;
-                        else if (argv[0][0] == '-')
-                        {
-                            /* "-S" followed by another option: use default
-                             * session file name. */
-                            a = SESSION_FILE;
-                            ++argc;
-                            --argv;
-                        }
-                        else
-                            a = argv[0];
-                        p = alloc((unsigned)(STRLEN(a) + 4));
-                        if (p == NULL)
-                            mch_exit(2);
-                        sprintf((char *)p, "so %s", a);
-                        parmp->cmds_tofree[parmp->n_commands] = TRUE;
-                        parmp->commands[parmp->n_commands++] = p;
-                    }
-                    else
-                        parmp->commands[parmp->n_commands++] = (char_u *)argv[0];
+                    parmp->commands[parmp->n_commands++] = (char_u *)argv[0];
                     break;
 
                 case '-':
@@ -1275,7 +1220,6 @@ check_tty(parmp)
         out_flush();
         if (scriptin[0] == NULL)
             ui_delay(2000L, TRUE);
-        TIME_MSG("Warning delay");
     }
 }
 
@@ -1295,7 +1239,6 @@ read_stdin()
     (void)open_buffer(TRUE, NULL, 0);   /* create memfile and read file */
     no_wait_return = FALSE;
     msg_didany = i;
-    TIME_MSG("reading stdin");
     check_swap_exists_action();
     /*
      * Close stdin and dup it from stderr.  Required for GPM to work
@@ -1333,12 +1276,10 @@ create_windows(parmp)
         if (parmp->window_layout == WIN_TABS)
         {
             parmp->window_count = make_tabpages(parmp->window_count);
-            TIME_MSG("making tab pages");
         }
         else if (firstwin->w_next == NULL)
         {
             parmp->window_count = make_windows(parmp->window_count, parmp->window_layout == WIN_VER);
-            TIME_MSG("making windows");
         }
         else
             parmp->window_count = win_count();
@@ -1537,7 +1478,6 @@ edit_buffers(parmp, cwd)
     win_enter(win, FALSE);
 
     --autocmd_no_leave;
-    TIME_MSG("editing files in windows");
     if (parmp->window_count > 1 && parmp->window_layout != WIN_TABS)
         win_equal(curwin, FALSE, 'b');  /* adjust heights */
 }
@@ -1562,12 +1502,11 @@ exe_pre_commands(parmp)
             do_cmdline_cmd(cmds[i]);
         sourcing_name = NULL;
         current_SID = 0;
-        TIME_MSG("--cmd commands");
     }
 }
 
 /*
- * Execute "+", "-c" and "-S" arguments.
+ * Execute "+" and "-c" arguments.
  */
     static void
 exe_commands(parmp)
@@ -1598,8 +1537,6 @@ exe_commands(parmp)
 
     if (!exmode_active)
         msg_scroll = FALSE;
-
-    TIME_MSG("executing command arguments");
 }
 
 /*
@@ -1616,10 +1553,7 @@ source_startup_scripts(parmp)
      * any things he doesn't like.
      */
     if (parmp->evim_mode)
-    {
         (void)do_source((char_u *)EVIM_FILE, FALSE, DOSO_NONE);
-        TIME_MSG("source evim file");
-    }
 
     /*
      * If -u argument given, use only the initializations from that file and nothing else.
@@ -1697,7 +1631,6 @@ source_startup_scripts(parmp)
             need_wait_return = TRUE;
         secure = 0;
     }
-    TIME_MSG("sourcing vimrc file(s)");
 }
 
 /*
@@ -1862,7 +1795,6 @@ usage()
     main_msg("+<lnum>\t\tStart at line <lnum>");
     main_msg("--cmd <command>\tExecute <command> before loading any vimrc file");
     main_msg("-c <command>\t\tExecute <command> after loading the first file");
-    main_msg("-S <session>\t\tSource file <session> after loading the first file");
     main_msg("-s <scriptin>\tRead Normal mode commands from file <scriptin>");
     main_msg("-w <scriptout>\tAppend all typed commands to file <scriptout>");
     main_msg("-W <scriptout>\tWrite all typed commands to file <scriptout>");

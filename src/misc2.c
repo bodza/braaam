@@ -175,7 +175,7 @@ coladvance2(pos, addspaces, finetune, wcol)
         {
             /* Count a tab for what it's worth (if list mode not on) */
             csize = win_lbr_chartabsize(curwin, line, ptr, col, &head);
-            mb_ptr_adv(ptr);
+            ptr += utfc_ptr2len(ptr);
             col += csize;
         }
         idx = (int)(ptr - line);
@@ -288,8 +288,7 @@ coladvance2(pos, addspaces, finetune, wcol)
     }
 
     /* prevent from moving onto a trail byte */
-    if (has_mbyte)
-        mb_adjustpos(curbuf, pos);
+    mb_adjustpos(curbuf, pos);
 
     if (col < wcol)
         return FAIL;
@@ -320,16 +319,10 @@ inc(lp)
 
     if (*p != NUL)      /* still within line, move to next char (may be NUL) */
     {
-        if (has_mbyte)
-        {
-            int l = (*mb_ptr2len)(p);
+        int l = utfc_ptr2len(p);
 
-            lp->col += l;
-            return ((p[l] != NUL) ? 0 : 2);
-        }
-        lp->col++;
-        lp->coladd = 0;
-        return ((p[1] != NUL) ? 0 : 2);
+        lp->col += l;
+        return ((p[l] != NUL) ? 0 : 2);
     }
     if (lp->lnum != curbuf->b_ml.ml_line_count)     /* there is a next line */
     {
@@ -377,11 +370,8 @@ dec(lp)
     if (lp->col > 0)            /* still within line */
     {
         lp->col--;
-        if (has_mbyte)
-        {
-            p = ml_get(lp->lnum);
-            lp->col -= (*mb_head_off)(p, p + lp->col);
-        }
+        p = ml_get(lp->lnum);
+        lp->col -= utf_head_off(p, p + lp->col);
         return 0;
     }
     if (lp->lnum > 1)           /* there is a prior line */
@@ -389,8 +379,7 @@ dec(lp)
         lp->lnum--;
         p = ml_get(lp->lnum);
         lp->col = (colnr_T)STRLEN(p);
-        if (has_mbyte)
-            lp->col -= (*mb_head_off)(p, p + lp->col);
+        lp->col -= utf_head_off(p, p + lp->col);
         return 1;
     }
     return -1;                  /* at start of file */
@@ -480,8 +469,7 @@ check_cursor_col_win(win)
         {
             win->w_cursor.col = len - 1;
             /* Move the cursor to the head byte. */
-            if (has_mbyte)
-                mb_adjustpos(win->w_buffer, &win->w_cursor);
+            mb_adjustpos(win->w_buffer, &win->w_cursor);
         }
     }
     else if (win->w_cursor.col < 0)
@@ -708,9 +696,9 @@ theend:
 }
 
 /*
-* Avoid repeating the error message many times (they take 1 second each).
-* Did_outofmem_msg is reset when a character is read.
-*/
+ * Avoid repeating the error message many times (they take 1 second each).
+ * Did_outofmem_msg is reset when a character is read.
+ */
     void
 do_outofmem_msg(size)
     long_u      size;
@@ -926,7 +914,7 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
     length = 1;                         /* count the trailing NUL */
     for (p = string; *p; p++)
     {
-        if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+        if ((l = utfc_ptr2len(p)) > 1)
         {
             length += l;                /* count a multibyte char */
             p += l - 1;
@@ -942,7 +930,7 @@ vim_strsave_escaped_ext(string, esc_chars, cc, bsl)
         p2 = escaped_string;
         for (p = string; *p; p++)
         {
-            if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+            if ((l = utfc_ptr2len(p)) > 1)
             {
                 mch_memmove(p2, p, (size_t)l);
                 p2 += l;
@@ -998,7 +986,7 @@ vim_strsave_shellescape(string, do_special, do_newline)
 
     /* First count the number of extra bytes required. */
     length = (unsigned)STRLEN(string) + 3;  /* two quotes and a trailing NUL */
-    for (p = string; *p != NUL; mb_ptr_adv(p))
+    for (p = string; *p != NUL; p += utfc_ptr2len(p))
     {
         if (*p == '\'')
             length += 3;                /* ' => '\'' */
@@ -1051,7 +1039,7 @@ vim_strsave_shellescape(string, do_special, do_newline)
                 continue;
             }
 
-            MB_COPY_CHAR(p, d);
+            mb_copy_char(&p, &d);
         }
 
         /* add terminating quote and finish with a NUL */
@@ -1128,43 +1116,33 @@ strup_save(orig)
     if (res != NULL)
         while (*p != NUL)
         {
-            int         l;
+            int     c, uc;
+            int     l, newl;
 
-            if (enc_utf8)
+            c = utf_ptr2char(p);
+            uc = utf_toupper(c);
+
+            /* Reallocate string when byte count changes.  This is rare,
+             * thus it's OK to do another malloc()/free(). */
+            l = utf_ptr2len(p);
+            newl = utf_char2len(uc);
+            if (newl != l)
             {
-                int     c, uc;
-                int     newl;
                 char_u  *s;
 
-                c = utf_ptr2char(p);
-                uc = utf_toupper(c);
+                s = alloc((unsigned)STRLEN(res) + 1 + newl - l);
+                if (s == NULL)
+                    break;
 
-                /* Reallocate string when byte count changes.  This is rare,
-                 * thus it's OK to do another malloc()/free(). */
-                l = utf_ptr2len(p);
-                newl = utf_char2len(uc);
-                if (newl != l)
-                {
-                    s = alloc((unsigned)STRLEN(res) + 1 + newl - l);
-                    if (s == NULL)
-                        break;
-                    mch_memmove(s, res, p - res);
-                    STRCPY(s + (p - res) + newl, p + l);
-                    p = s + (p - res);
-                    vim_free(res);
-                    res = s;
-                }
+                mch_memmove(s, res, p - res);
+                STRCPY(s + (p - res) + newl, p + l);
+                p = s + (p - res);
+                vim_free(res);
+                res = s;
+            }
 
-                utf_char2bytes(uc, p);
-                p += newl;
-            }
-            else if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
-                p += l;         /* skip multi-byte character */
-            else
-            {
-                *p = TOUPPER_LOC(*p); /* note that toupper() can be a macro */
-                p++;
-            }
+            utf_char2bytes(uc, p);
+            p += newl;
         }
 
     return res;
@@ -1345,31 +1323,22 @@ vim_strchr(string, c)
     int         b;
 
     p = string;
-    if (enc_utf8 && c >= 0x80)
+    if (c >= 0x80)
     {
         while (*p != NUL)
         {
             if (utf_ptr2char(p) == c)
                 return p;
-            p += (*mb_ptr2len)(p);
+            p += utfc_ptr2len(p);
         }
         return NULL;
     }
-    if (has_mbyte)
-    {
-        while ((b = *p) != NUL)
-        {
-            if (b == c)
-                return p;
-            p += (*mb_ptr2len)(p);
-        }
-        return NULL;
-    }
+
     while ((b = *p) != NUL)
     {
         if (b == c)
             return p;
-        ++p;
+        p += utfc_ptr2len(p);
     }
     return NULL;
 }
@@ -1412,7 +1381,7 @@ vim_strrchr(string, c)
     {
         if (*p == c)
             retval = p;
-        mb_ptr_adv(p);
+        p += utfc_ptr2len(p);
     }
     return retval;
 }
@@ -1499,7 +1468,7 @@ ga_grow(gap, n)
         if (n < gap->ga_growsize)
             n = gap->ga_growsize;
         new_len = gap->ga_itemsize * (gap->ga_len + n);
-        pp = (gap->ga_data == NULL) ? alloc((unsigned)new_len) : vim_realloc(gap->ga_data, new_len);
+        pp = (gap->ga_data == NULL) ? alloc((unsigned)new_len) : realloc(gap->ga_data, new_len);
         if (pp == NULL)
             return FAIL;
         old_len = gap->ga_itemsize * gap->ga_maxlen;
@@ -2030,7 +1999,7 @@ get_special_key_name(c, modifiers)
     /*
      * When not a known special key, and not a printable character, try to extract modifiers.
      */
-    if (c > 0 && (*mb_char2len)(c) == 1)
+    if (c > 0 && utf_char2len(c) == 1)
     {
         if (table_idx < 0
                 && (!vim_isprintc(c) || (c & 0x7f) == ' ')
@@ -2068,8 +2037,8 @@ get_special_key_name(c, modifiers)
         /* Not a special key, only modifiers, output directly */
         else
         {
-            if (has_mbyte && (*mb_char2len)(c) > 1)
-                idx += (*mb_char2bytes)(c, string + idx);
+            if (utf_char2len(c) > 1)
+                idx += utf_char2bytes(c, string + idx);
             else if (vim_isprintc(c))
                 string[idx++] = c;
             else
@@ -2124,8 +2093,8 @@ trans_special(srcp, dst, keycode)
         dst[dlen++] = KEY2TERMCAP0(key);
         dst[dlen++] = KEY2TERMCAP1(key);
     }
-    else if (has_mbyte && !keycode)
-        dlen += (*mb_char2bytes)(key, dst + dlen);
+    else if (!keycode)
+        dlen += utf_char2bytes(key, dst + dlen);
     else if (keycode)
         dlen = (int)(add_char2buf(key, dst + dlen) - dst);
     else
@@ -2169,10 +2138,7 @@ find_special_key(srcp, modp, keycode, keep_x_key)
             last_dash = bp;
             if (bp[1] != NUL)
             {
-                if (has_mbyte)
-                    l = mb_ptr2len(bp + 1);
-                else
-                    l = 1;
+                l = utfc_ptr2len(bp + 1);
                 if (bp[l + 1] == '>')
                     bp += l;    /* anything accepted, like <C-?> */
             }
@@ -2220,12 +2186,9 @@ find_special_key(srcp, modp, keycode, keep_x_key)
                 /*
                  * Modifier with single letter, or special key name.
                  */
-                if (has_mbyte)
-                    l = mb_ptr2len(last_dash + 1);
-                else
-                    l = 1;
+                l = utfc_ptr2len(last_dash + 1);
                 if (modifiers != 0 && last_dash[l + 1] == '>')
-                    key = PTR2CHAR(last_dash + 1);
+                    key = utf_ptr2char(last_dash + 1);
                 else
                 {
                     key = get_special_key_code(last_dash + 1);
@@ -2603,7 +2566,7 @@ after_pathsep(b, p)
     char_u      *b;
     char_u      *p;
 {
-    return p > b && vim_ispathsep(p[-1]) && (!has_mbyte || (*mb_head_off)(b, p - 1) == 0);
+    return p > b && vim_ispathsep(p[-1]) && utf_head_off(b, p - 1) == 0;
 }
 
 /*
@@ -2917,10 +2880,10 @@ pathcmp(p, q, maxlen)
     int         c1, c2;
     const char  *s = NULL;
 
-    for (i = 0; maxlen < 0 || i < maxlen; i += MB_PTR2LEN((char_u *)p + i))
+    for (i = 0; maxlen < 0 || i < maxlen; i += utfc_ptr2len((char_u *)p + i))
     {
-        c1 = PTR2CHAR((char_u *)p + i);
-        c2 = PTR2CHAR((char_u *)q + i);
+        c1 = utf_ptr2char((char_u *)p + i);
+        c2 = utf_ptr2char((char_u *)q + i);
 
         /* End of "p": check if "q" also ends or just has a slash. */
         if (c1 == NUL)
@@ -2938,21 +2901,21 @@ pathcmp(p, q, maxlen)
             break;
         }
 
-        if ((p_fic ? MB_TOUPPER(c1) != MB_TOUPPER(c2) : c1 != c2))
+        if ((p_fic ? vim_toupper(c1) != vim_toupper(c2) : c1 != c2))
         {
             if (vim_ispathsep(c1))
                 return -1;
             if (vim_ispathsep(c2))
                 return 1;
-            return p_fic ? MB_TOUPPER(c1) - MB_TOUPPER(c2)
+            return p_fic ? vim_toupper(c1) - vim_toupper(c2)
                     : c1 - c2;  /* no match */
         }
     }
     if (s == NULL)      /* "i" ran into "maxlen" */
         return 0;
 
-    c1 = PTR2CHAR((char_u *)s + i);
-    c2 = PTR2CHAR((char_u *)s + i + MB_PTR2LEN((char_u *)s + i));
+    c1 = utf_ptr2char((char_u *)s + i);
+    c2 = utf_ptr2char((char_u *)s + i + utfc_ptr2len((char_u *)s + i));
     /* ignore a trailing slash, but not "//" or ":/" */
     if (c2 == NUL && i > 0 && !after_pathsep((char_u *)s, (char_u *)s + i) && c1 == '/')
         return 0;   /* match with trailing slash */

@@ -629,7 +629,7 @@ mark_line(mp, lead_len)
         return NULL;
     /* Truncate the line to fit it in the window */
     len = 0;
-    for (p = s; *p != NUL; mb_ptr_adv(p))
+    for (p = s; *p != NUL; p += utfc_ptr2len(p))
     {
         len += ptr2cells(p);
         if (len >= Columns - lead_len)

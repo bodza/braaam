@@ -995,8 +995,8 @@ vim_is_xterm(name)
     if (name == NULL)
         return FALSE;
     return (STRNICMP(name, "xterm", 5) == 0
-                || STRNICMP(name, "rxvt", 4) == 0
-                || STRCMP(name, "builtin_xterm") == 0);
+         || STRNICMP(name, "rxvt", 4) == 0
+         || STRCMP(name, "builtin_xterm") == 0);
 }
 
 /*
@@ -1015,16 +1015,10 @@ use_xterm_like_mouse(name)
  * Return non-zero when using an xterm mouse, according to 'ttymouse'.
  * Return 1 for "xterm".
  * Return 2 for "xterm2".
- * Return 3 for "urxvt".
- * Return 4 for "sgr".
  */
     int
 use_xterm_mouse()
 {
-    if (ttym_flags == TTYM_SGR)
-        return 4;
-    if (ttym_flags == TTYM_URXVT)
-        return 3;
     if (ttym_flags == TTYM_XTERM2)
         return 2;
     if (ttym_flags == TTYM_XTERM)
@@ -2337,8 +2331,7 @@ mch_call_shell(cmd, options)
                             }
                             else if (ta_buf[i] == '\r')
                                 ta_buf[i] = '\n';
-                            if (has_mbyte)
-                                i += (*mb_ptr2len_len)(ta_buf + i, ta_len + len - i) - 1;
+                            i += utfc_ptr2len_len(ta_buf + i, ta_len + len - i) - 1;
                         }
 
                         /*
@@ -2351,15 +2344,13 @@ mch_call_shell(cmd, options)
                             {
                                 if (ta_buf[i] == '\n' || ta_buf[i] == '\b')
                                     msg_putchar(ta_buf[i]);
-                                else if (has_mbyte)
+                                else
                                 {
-                                    int l = (*mb_ptr2len)(ta_buf + i);
+                                    int l = utfc_ptr2len(ta_buf + i);
 
                                     msg_outtrans_len(ta_buf + i, l);
                                     i += l - 1;
                                 }
-                                else
-                                    msg_outtrans_len(ta_buf + i, 1);
                             }
                             windgoto(msg_row, msg_col);
                             out_flush();
@@ -2428,7 +2419,7 @@ mch_call_shell(cmd, options)
                                     ga_append(&ga, buffer[i]);
                             }
                         }
-                        else if (has_mbyte)
+                        else
                         {
                             int         l;
 
@@ -2439,7 +2430,7 @@ mch_call_shell(cmd, options)
                              * incomplete, keep these bytes for the next round. */
                             for (p = buffer; p < buffer + len; p += l)
                             {
-                                l = mb_cptr2len(p);
+                                l = utf_ptr2len(p);
                                 if (l == 0)
                                     l = 1;  /* NUL byte? */
                                 else if (MB_BYTE2LEN(*p) != l)
@@ -2467,11 +2458,6 @@ mch_call_shell(cmd, options)
                                 continue;
                             }
                             buffer_off = 0;
-                        }
-                        else
-                        {
-                            buffer[len] = NUL;
-                            msg_puts(buffer);
                         }
 
                         windgoto(msg_row, msg_col);
@@ -2989,7 +2975,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
 
     if (i != 0)                         /* mch_call_shell() failed */
     {
-        mch_remove(tempname);
+        unlink((char *)tempname);
         vim_free(tempname);
         /*
          * With interactive completion, the error message is not printed.
@@ -3001,10 +2987,9 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
             redraw_later_clear();       /* probably messed up screen */
             msg_putchar('\n');          /* clear bottom line quickly */
             cmdline_row = Rows - 1;     /* continue on last line */
-            {
-                MSG((char *)e_wildexpand);
-                msg_start();            /* don't overwrite this message */
-            }
+
+            MSG((char *)e_wildexpand);
+            msg_start();                /* don't overwrite this message */
         }
         /* If a `cmd` expansion failed, don't list `cmd` as a match, even when
          * EW_NOTFOUND is given */
@@ -3035,14 +3020,14 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
     if (buffer == NULL)
     {
         /* out of memory */
-        mch_remove(tempname);
+        unlink((char *)tempname);
         vim_free(tempname);
         fclose(fd);
         return FAIL;
     }
     i = fread((char *)buffer, 1, len, fd);
     fclose(fd);
-    mch_remove(tempname);
+    unlink((char *)tempname);
     if (i != (int)len)
     {
         /* unexpected read error */
@@ -3243,7 +3228,7 @@ save_patterns(num_pat, pat, num_file, file)
 mch_has_exp_wildcard(p)
     char_u  *p;
 {
-    for ( ; *p; mb_ptr_adv(p))
+    for ( ; *p; p += utfc_ptr2len(p))
     {
         if (*p == '\\' && p[1] != NUL)
             ++p;
@@ -3261,7 +3246,7 @@ mch_has_exp_wildcard(p)
 mch_has_wildcard(p)
     char_u  *p;
 {
-    for ( ; *p; mb_ptr_adv(p))
+    for ( ; *p; p += utfc_ptr2len(p))
     {
         if (*p == '\\' && p[1] != NUL)
             ++p;

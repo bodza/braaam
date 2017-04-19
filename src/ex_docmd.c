@@ -2398,14 +2398,14 @@ append_command(cmd)
     d = IObuff + STRLEN(IObuff);
     while (*s != NUL && d - IObuff < IOSIZE - 7)
     {
-        if (enc_utf8 ? (s[0] == 0xc2 && s[1] == 0xa0) : *s == 0xa0)
+        if (s[0] == 0xc2 && s[1] == 0xa0)
         {
-            s += enc_utf8 ? 2 : 1;
+            s += 2;
             STRCPY(d, "<a0>");
             d += 4;
         }
         else
-            MB_COPY_CHAR(s, d);
+            mb_copy_char(&s, &d);
     }
     *d = NUL;
 }
@@ -2934,7 +2934,7 @@ set_one_cmd_context(xp, buff)
                     return NULL;    /* It's a comment */
                 }
             }
-            mb_ptr_adv(p);
+            p += utfc_ptr2len(p);
         }
     }
 
@@ -2957,7 +2957,7 @@ set_one_cmd_context(xp, buff)
         {
             if (*p == '\\' && *(p + 1) != NUL)
                 ++p; /* skip over escaped character */
-            mb_ptr_adv(p);
+            p += utfc_ptr2len(p);
         }
     }
 
@@ -2974,10 +2974,7 @@ set_one_cmd_context(xp, buff)
         p = xp->xp_pattern;
         while (*p != NUL)
         {
-            if (has_mbyte)
-                c = mb_ptr2char(p);
-            else
-                c = *p;
+            c = utf_ptr2char(p);
             if (c == '\\' && p[1] != NUL)
                 ++p;
             else if (c == '`')
@@ -3000,17 +2997,11 @@ set_one_cmd_context(xp, buff)
                 len = 0;  /* avoid getting stuck when space is in 'isfname' */
                 while (*p != NUL)
                 {
-                    if (has_mbyte)
-                        c = mb_ptr2char(p);
-                    else
-                        c = *p;
+                    c = utf_ptr2char(p);
                     if (c == '`' || vim_isfilec_or_wc(c))
                         break;
-                    if (has_mbyte)
-                        len = (*mb_ptr2len)(p);
-                    else
-                        len = 1;
-                    mb_ptr_adv(p);
+                    len = utfc_ptr2len(p);
+                    p += utfc_ptr2len(p);
                 }
                 if (in_quote)
                     bow = p;
@@ -3018,7 +3009,7 @@ set_one_cmd_context(xp, buff)
                     xp->xp_pattern = p;
                 p -= len;
             }
-            mb_ptr_adv(p);
+            p += utfc_ptr2len(p);
         }
 
         /*
@@ -3323,7 +3314,7 @@ set_one_cmd_context(xp, buff)
                             arg = p + 1;
                         else if (*p == '\\' && *(p + 1) != NUL)
                             ++p; /* skip over escaped character */
-                        mb_ptr_adv(p);
+                        p += utfc_ptr2len(p);
                     }
                     xp->xp_pattern = arg;
                 }
@@ -4112,7 +4103,7 @@ separate_nextcmd(eap)
 
     p = eap->arg;
 
-    for ( ; *p; mb_ptr_adv(p))
+    for ( ; *p; p += utfc_ptr2len(p))
     {
         if (*p == Ctrl_V)
         {
@@ -4210,7 +4201,7 @@ skip_cmd_arg(p, rembs)
             else
                 ++p;
         }
-        mb_ptr_adv(p);
+        p += utfc_ptr2len(p);
     }
     return p;
 }
@@ -5261,7 +5252,7 @@ uc_split_args(arg, lenp)
         }
         else
         {
-            int charlen = (*mb_ptr2len)(p);
+            int charlen = utfc_ptr2len(p);
             len += charlen;
             p += charlen;
         }
@@ -5306,7 +5297,7 @@ uc_split_args(arg, lenp)
         }
         else
         {
-            MB_COPY_CHAR(p, q);
+            mb_copy_char(&p, &q);
         }
     }
     *q++ = '"';
@@ -7131,52 +7122,52 @@ ex_cd(eap)
     char_u              *tofree;
 
     new_dir = eap->arg;
+
+    if (allbuf_locked())
+        return;
+
+    if (vim_strchr(p_cpo, CPO_CHDIR) != NULL && curbufIsChanged() && !eap->forceit)
     {
-        if (allbuf_locked())
-            return;
-        if (vim_strchr(p_cpo, CPO_CHDIR) != NULL && curbufIsChanged() && !eap->forceit)
-        {
-            EMSG("E747: Cannot change directory, buffer is modified (add ! to override)");
-            return;
-        }
-
-        /* ":cd -": Change to previous directory */
-        if (STRCMP(new_dir, "-") == 0)
-        {
-            if (prev_dir == NULL)
-            {
-                EMSG("E186: No previous directory");
-                return;
-            }
-            new_dir = prev_dir;
-        }
-
-        /* Save current directory for next ":cd -" */
-        tofree = prev_dir;
-        if (mch_dirname(NameBuff, MAXPATHL) == OK)
-            prev_dir = vim_strsave(NameBuff);
-        else
-            prev_dir = NULL;
-
-        /* for UNIX ":cd" means: go to home directory */
-        if (*new_dir == NUL)
-        {
-            /* use NameBuff for home directory name */
-            expand_env((char_u *)"$HOME", NameBuff, MAXPATHL);
-            new_dir = NameBuff;
-        }
-        if (new_dir == NULL || vim_chdir(new_dir))
-            EMSG((char *)e_failed);
-        else
-        {
-            post_chdir(eap->cmdidx == CMD_lcd || eap->cmdidx == CMD_lchdir);
-
-            /* Echo the new current directory if the command was typed. */
-            if (KeyTyped || p_verbose >= 5)
-                ex_pwd(eap);
-        }
-        vim_free(tofree);
+        EMSG("E747: Cannot change directory, buffer is modified (add ! to override)");
+        return;
     }
+
+    /* ":cd -": Change to previous directory */
+    if (STRCMP(new_dir, "-") == 0)
+    {
+        if (prev_dir == NULL)
+        {
+            EMSG("E186: No previous directory");
+            return;
+        }
+        new_dir = prev_dir;
+    }
+
+    /* Save current directory for next ":cd -" */
+    tofree = prev_dir;
+    if (mch_dirname(NameBuff, MAXPATHL) == OK)
+        prev_dir = vim_strsave(NameBuff);
+    else
+        prev_dir = NULL;
+
+    /* for UNIX ":cd" means: go to home directory */
+    if (*new_dir == NUL)
+    {
+        /* use NameBuff for home directory name */
+        expand_env((char_u *)"$HOME", NameBuff, MAXPATHL);
+        new_dir = NameBuff;
+    }
+    if (new_dir == NULL || vim_chdir(new_dir))
+        EMSG((char *)e_failed);
+    else
+    {
+        post_chdir(eap->cmdidx == CMD_lcd || eap->cmdidx == CMD_lchdir);
+
+        /* Echo the new current directory if the command was typed. */
+        if (KeyTyped || p_verbose >= 5)
+            ex_pwd(eap);
+    }
+    vim_free(tofree);
 }
 
 /*
@@ -7810,7 +7801,7 @@ close_redir()
 }
 
 /*
- * ":mkexrc", ":mkvimrc", ":mkview" and ":mksession".
+ * ":mkexrc" and ":mkvimrc"
  */
     static void
 ex_mkrc(eap)
@@ -7820,13 +7811,7 @@ ex_mkrc(eap)
     int         failed = FALSE;
     char_u      *fname;
 
-    if (eap->cmdidx == CMD_mksession || eap->cmdidx == CMD_mkview)
-    {
-        ex_ni(eap);
-        return;
-    }
-
-        if (*eap->arg != NUL)
+    if (*eap->arg != NUL)
         fname = eap->arg;
     else if (eap->cmdidx == CMD_mkvimrc)
         fname = (char_u *)VIMRC_FILE;
@@ -7840,16 +7825,14 @@ ex_mkrc(eap)
         if (eap->cmdidx == CMD_mkvimrc)
             (void)put_line(fd, "version 6.0");
 
-        {
-            /* Write setting 'compatible' first, because it has side effects.
-             * For that same reason only do it when needed. */
-            if (p_cp)
-                (void)put_line(fd, "if !&cp | set cp | endif");
-            else
-                (void)put_line(fd, "if &cp | set nocp | endif");
-        }
+        /* Write setting 'compatible' first, because it has side effects.
+         * For that same reason only do it when needed. */
+        if (p_cp)
+            (void)put_line(fd, "if !&cp | set cp | endif");
+        else
+            (void)put_line(fd, "if &cp | set nocp | endif");
 
-            failed |= (makemap(fd, NULL) == FAIL || makeset(fd, OPT_GLOBAL, FALSE) == FAIL);
+        failed |= (makemap(fd, NULL) == FAIL || makeset(fd, OPT_GLOBAL, FALSE) == FAIL);
 
         if (put_line(fd, "\" vim: set ft=vim :") == FAIL)
             failed = TRUE;
@@ -7860,21 +7843,6 @@ ex_mkrc(eap)
             EMSG((char *)e_write);
     }
 }
-
-#if defined(vim_mkdir)
-    int
-vim_mkdir_emsg(name, prot)
-    char_u      *name;
-    int         prot UNUSED;
-{
-    if (vim_mkdir(name, prot) != 0)
-    {
-        EMSG2("E739: Cannot create directory: %s", name);
-        return FAIL;
-    }
-    return OK;
-}
-#endif
 
 /*
  * Open a file for writing for an Ex command, with some checks.
@@ -7982,14 +7950,13 @@ ex_normal(eap)
      * vgetc() expects a CSI and K_SPECIAL to have been escaped.  Don't do
      * this for the K_SPECIAL leading byte, otherwise special keys will not work.
      */
-    if (has_mbyte)
     {
         int     len = 0;
 
         /* Count the number of characters to be escaped. */
         for (p = eap->arg; *p != NUL; ++p)
         {
-            for (l = (*mb_ptr2len)(p) - 1; l > 0; --l)
+            for (l = utfc_ptr2len(p) - 1; l > 0; --l)
                 if (*++p == K_SPECIAL     /* trailbyte K_SPECIAL or CSI */)
                     len += 2;
         }
@@ -8002,7 +7969,7 @@ ex_normal(eap)
                 for (p = eap->arg; *p != NUL; ++p)
                 {
                     arg[len++] = *p;
-                    for (l = (*mb_ptr2len)(p) - 1; l > 0; --l)
+                    for (l = utfc_ptr2len(p) - 1; l > 0; --l)
                     {
                         arg[len++] = *++p;
                         if (*p == K_SPECIAL)
@@ -8558,14 +8525,14 @@ expand_sfile(arg)
 }
 
 /*
- * Write end-of-line character(s) for ":mkexrc", ":mkvimrc" and ":mksession".
+ * Write end-of-line character(s) for ":mkexrc" and ":mkvimrc".
  * Return FAIL for a write error.
  */
     int
 put_eol(fd)
     FILE        *fd;
 {
-    if ((putc('\n', fd) < 0))
+    if (putc('\n', fd) < 0)
         return FAIL;
     return OK;
 }

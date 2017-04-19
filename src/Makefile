@@ -1,7 +1,7 @@
 VIM = vim
 
 CC = gcc
-CFLAGS = -O2 -fno-strength-reduce -Wall -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+CFLAGS = -O2 -fno-strength-reduce -Wall -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1 -std=gnu99
 LDFLAGS = -Wl,--as-needed
 LIBS = -lm -ltinfo
 CPP = gcc -E

@@ -909,8 +909,7 @@ getcount:
              * because if it's put back with vungetc() it's too late to apply
              * mapping. */
             --no_mapping;
-            while (enc_utf8 && lang && (c = vpeekc()) > 0
-                                 && (c >= 0x100 || MB_BYTE2LEN(vpeekc()) > 1))
+            while (lang && (c = vpeekc()) > 0 && (c >= 0x100 || MB_BYTE2LEN(vpeekc()) > 1))
             {
                 c = plain_vgetc();
                 if (!utf_iscomposing(c))
@@ -988,6 +987,7 @@ getcount:
             && (idx < 0 || !(nv_cmds[idx].cmd_flags & NV_KEEPREG)))
     {
         clearop(oap);
+
         {
             int regname = 0;
 
@@ -1099,8 +1099,7 @@ normal_end:
     checkpcmark();              /* check if we moved since setting pcmark */
     vim_free(ca.searchbuf);
 
-    if (has_mbyte)
-        mb_adjust_cursor();
+    mb_adjust_cursor();
 
     if (curwin->w_p_scb && toplevel)
     {
@@ -1546,11 +1545,11 @@ do_pending_operator(cap, old_col, gui_yank)
         }
 
         /* Include the trailing byte of a multi-byte char. */
-        if (has_mbyte && oap->inclusive)
+        if (oap->inclusive)
         {
             int         l;
 
-            l = (*mb_ptr2len)(ml_get_pos(&oap->end));
+            l = utfc_ptr2len(ml_get_pos(&oap->end));
             if (l > 1)
                 oap->end.col += l - 1;
         }
@@ -2586,7 +2585,7 @@ do_mouse(oap, c, dir, count, fixindent)
                 {
                     find_start_of_word(&VIsual);
                     if (*p_sel == 'e' && *ml_get_cursor() != NUL)
-                        curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
+                        curwin->w_cursor.col += utfc_ptr2len(ml_get_cursor());
                     find_end_of_word(&curwin->w_cursor);
                 }
             }
@@ -2628,7 +2627,7 @@ find_start_of_word(pos)
     while (pos->col > 0)
     {
         col = pos->col - 1;
-        col -= (*mb_head_off)(line, line + col);
+        col -= utf_head_off(line, line + col);
         if (get_mouse_class(line + col) != cclass)
             break;
         pos->col = col;
@@ -2651,12 +2650,12 @@ find_end_of_word(pos)
     if (*p_sel == 'e' && pos->col > 0)
     {
         --pos->col;
-        pos->col -= (*mb_head_off)(line, line + pos->col);
+        pos->col -= utf_head_off(line, line + pos->col);
     }
     cclass = get_mouse_class(line + pos->col);
     while (line[pos->col] != NUL)
     {
-        col = pos->col + (*mb_ptr2len)(line + pos->col);
+        col = pos->col + utfc_ptr2len(line + pos->col);
         if (get_mouse_class(line + col) != cclass)
         {
             if (*p_sel == 'e')
@@ -2680,7 +2679,7 @@ get_mouse_class(p)
 {
     int         c;
 
-    if (has_mbyte && MB_BYTE2LEN(p[0]) > 1)
+    if (MB_BYTE2LEN(p[0]) > 1)
         return mb_get_class(p);
 
     c = *p;
@@ -2842,62 +2841,37 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
          * 1. skip to start of identifier/string
          */
         col = startcol;
-        if (has_mbyte)
+        while (ptr[col] != NUL)
         {
-            while (ptr[col] != NUL)
-            {
-                this_class = mb_get_class(ptr + col);
-                if (this_class != 0 && (i == 1 || this_class != 1))
-                    break;
-                col += (*mb_ptr2len)(ptr + col);
-            }
+            this_class = mb_get_class(ptr + col);
+            if (this_class != 0 && (i == 1 || this_class != 1))
+                break;
+            col += utfc_ptr2len(ptr + col);
         }
-        else
-            while (ptr[col] != NUL && (i == 0 ? !vim_iswordc(ptr[col]) : vim_iswhite(ptr[col])))
-                ++col;
 
         /*
          * 2. Back up to start of identifier/string.
          */
-        if (has_mbyte)
+        /* Remember class of character under cursor. */
+        this_class = mb_get_class(ptr + col);
+        while (col > 0 && this_class != 0)
         {
-            /* Remember class of character under cursor. */
-                this_class = mb_get_class(ptr + col);
-            while (col > 0 && this_class != 0)
-            {
-                prevcol = col - 1 - (*mb_head_off)(ptr, ptr + col - 1);
-                prev_class = mb_get_class(ptr + prevcol);
-                if (this_class != prev_class && (i == 0 || prev_class == 0 || (find_type & FIND_IDENT)))
-                    break;
-                col = prevcol;
-            }
-
-            /* If we don't want just any old string, or we've found an
-             * identifier, stop searching. */
-            if (this_class > 2)
-                this_class = 2;
-            if (!(find_type & FIND_STRING) || this_class == 2)
+            prevcol = col - 1 - utf_head_off(ptr, ptr + col - 1);
+            prev_class = mb_get_class(ptr + prevcol);
+            if (this_class != prev_class && (i == 0 || prev_class == 0 || (find_type & FIND_IDENT)))
                 break;
+            col = prevcol;
         }
-        else
-        {
-            while (col > 0
-                    && ((i == 0
-                            ? vim_iswordc(ptr[col - 1])
-                            : (!vim_iswhite(ptr[col - 1])
-                                && (!(find_type & FIND_IDENT)
-                                    || !vim_iswordc(ptr[col - 1]))))
-                        ))
-                --col;
 
-            /* If we don't want just any old string, or we've found an
-             * identifier, stop searching. */
-            if (!(find_type & FIND_STRING) || vim_iswordc(ptr[col]))
-                break;
-        }
+        /* If we don't want just any old string, or we've found an
+         * identifier, stop searching. */
+        if (this_class > 2)
+            this_class = 2;
+        if (!(find_type & FIND_STRING) || this_class == 2)
+            break;
     }
 
-    if (ptr[col] == NUL || (i == 0 && (has_mbyte ? this_class != 2 : !vim_iswordc(ptr[col]))))
+    if (ptr[col] == NUL || (i == 0 && this_class != 2))
     {
         /*
          * didn't find an identifier or string
@@ -2915,20 +2889,11 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
      * 3. Find the end if the identifier/string.
      */
     col = 0;
-    if (has_mbyte)
-    {
-        /* Search for point of changing multibyte character class. */
-        this_class = mb_get_class(ptr);
-        while (ptr[col] != NUL
-                && ((i == 0 ? mb_get_class(ptr + col) == this_class : mb_get_class(ptr + col) != 0)
-                ))
-            col += (*mb_ptr2len)(ptr + col);
-    }
-    else
-        while ((i == 0 ? vim_iswordc(ptr[col]) : (ptr[col] != NUL && !vim_iswhite(ptr[col]))))
-        {
-            ++col;
-        }
+    /* Search for point of changing multibyte character class. */
+    this_class = mb_get_class(ptr);
+    while (ptr[col] != NUL
+            && ((i == 0 ? mb_get_class(ptr + col) == this_class : mb_get_class(ptr + col) != 0)))
+        col += utfc_ptr2len(ptr + col);
 
     return col;
 }
@@ -3114,7 +3079,7 @@ clear_showcmd()
             }
             while ((*p_sel != 'e') ? s <= e : s < e)
             {
-                l = (*mb_ptr2len)(s);
+                l = utfc_ptr2len(s);
                 if (l == 0)
                 {
                     ++bytes;
@@ -4438,7 +4403,7 @@ nv_ident(cap)
             vim_free(buf);
             return;
         }
-        newbuf = (char_u *)vim_realloc(buf, STRLEN(buf) + STRLEN(p) + 1);
+        newbuf = (char_u *)realloc(buf, STRLEN(buf) + STRLEN(p) + 1);
         if (newbuf == NULL)
         {
             vim_free(buf);
@@ -4466,15 +4431,16 @@ nv_ident(cap)
             /* put a backslash before \ and some others */
             if (vim_strchr(aux_ptr, *ptr) != NULL)
                 *p++ = '\\';
-            /* When current byte is a part of multibyte character, copy all bytes of that character. */
-            if (has_mbyte)
+
+            /* When current byte is part of multibyte character, copy all bytes of the character. */
             {
                 int i;
-                int len = (*mb_ptr2len)(ptr) - 1;
+                int len = utfc_ptr2len(ptr) - 1;
 
                 for (i = 0; i < len && n >= 1; ++i, --n)
                     *p++ = *ptr++;
             }
+
             *p++ = *ptr++;
         }
         *p = NUL;
@@ -4485,14 +4451,12 @@ nv_ident(cap)
      */
     if (cmdchar == '*' || cmdchar == '#')
     {
-        if (!g_cmd && (
-                has_mbyte ? vim_iswordp(mb_prevptr(ml_get_curline(), ptr)) :
-                vim_iswordc(ptr[-1])))
+        if (!g_cmd && vim_iswordp(mb_prevptr(ml_get_curline(), ptr)))
             STRCAT(buf, "\\>");
         /* put pattern in search history */
         init_history();
         add_to_history(HIST_SEARCH, buf, TRUE, NUL);
-        (void)normal_search(cap, cmdchar == '*' ? '/' : '?', buf, 0);
+        (void)normal_search(cap, (cmdchar == '*') ? '/' : '?', buf, 0);
     }
     else
         do_cmdline_cmd(buf);
@@ -4535,9 +4499,9 @@ get_visual_text(cap, pp, lenp)
             *pp = ml_get_pos(&VIsual);
             *lenp = curwin->w_cursor.col - VIsual.col + 1;
         }
-        if (has_mbyte)
-            /* Correct the length to include the whole last character. */
-            *lenp += (*mb_ptr2len)(*pp + (*lenp - 1)) - 1;
+
+        /* Correct the length to include the whole last character. */
+        *lenp += utfc_ptr2len(*pp + (*lenp - 1)) - 1;
     }
     reset_VIsual_and_resel();
     return OK;
@@ -4679,12 +4643,7 @@ nv_right(cap)
             if (virtual_active())
                 oneright();
             else
-            {
-                if (has_mbyte)
-                    curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
-                else
-                    ++curwin->w_cursor.col;
-            }
+                curwin->w_cursor.col += utfc_ptr2len(ml_get_cursor());
         }
     }
 }
@@ -4736,19 +4695,13 @@ nv_left(cap)
                  * put the cursor on the NUL after the previous line.
                  * This is a very special case, be careful!
                  * Don't adjust op_end now, otherwise it won't work. */
-                if (       (cap->oap->op_type == OP_DELETE
-                            || cap->oap->op_type == OP_CHANGE)
+                if ((cap->oap->op_type == OP_DELETE || cap->oap->op_type == OP_CHANGE)
                         && !lineempty(curwin->w_cursor.lnum))
                 {
                     char_u *cp = ml_get_cursor();
 
                     if (*cp != NUL)
-                    {
-                        if (has_mbyte)
-                            curwin->w_cursor.col += (*mb_ptr2len)(cp);
-                        else
-                            ++curwin->w_cursor.col;
-                    }
+                        curwin->w_cursor.col += utfc_ptr2len(cp);
                     cap->retval |= CA_NO_ADJ_OP_END;
                 }
                 continue;
@@ -5433,7 +5386,7 @@ nv_replace(cap)
 
     /* Abort if not enough characters to replace. */
     ptr = ml_get_cursor();
-    if (STRLEN(ptr) < (unsigned)cap->count1 || (has_mbyte && mb_charlen(ptr) < cap->count1))
+    if (STRLEN(ptr) < (unsigned)cap->count1 || mb_charlen(ptr) < cap->count1)
     {
         clearopbeep(cap->oap);
         return;
@@ -5480,7 +5433,7 @@ nv_replace(cap)
         prep_redo(cap->oap->regname, cap->count1, NUL, 'r', NUL, had_ctrl_v, cap->nchar);
 
         curbuf->b_op_start = curwin->w_cursor;
-        if (has_mbyte)
+
         {
             int         old_State = State;
 
@@ -5513,41 +5466,11 @@ nv_replace(cap)
                     ins_char(cap->ncharC2);
             }
         }
-        else
-        {
-            /*
-             * Replace the characters within one line.
-             */
-            for (n = cap->count1; n > 0; --n)
-            {
-                /*
-                 * Get ptr again, because u_save and/or showmatch() will have
-                 * released the line.  At the same time we let know that the
-                 * line will be changed.
-                 */
-                ptr = ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE);
-                if (cap->nchar == Ctrl_E || cap->nchar == Ctrl_Y)
-                {
-                    int c = ins_copychar(curwin->w_cursor.lnum + (cap->nchar == Ctrl_Y ? -1 : 1));
-                    if (c != NUL)
-                        ptr[curwin->w_cursor.col] = c;
-                }
-                else
-                    ptr[curwin->w_cursor.col] = cap->nchar;
-                if (p_sm && msg_silent == 0)
-                    showmatch(cap->nchar);
-                ++curwin->w_cursor.col;
-            }
 
-            /* mark the buffer as changed and prepare for displaying */
-            changed_bytes(curwin->w_cursor.lnum,
-                               (colnr_T)(curwin->w_cursor.col - cap->count1));
-        }
         --curwin->w_cursor.col;     /* cursor on the last replaced char */
         /* if the character on the left of the current cursor is a multi-byte
          * character, move two characters left */
-        if (has_mbyte)
-            mb_adjust_cursor();
+        mb_adjust_cursor();
         curbuf->b_op_end = curwin->w_cursor;
         curwin->w_set_curswant = TRUE;
         set_last_insert(cap->nchar);
@@ -6974,8 +6897,7 @@ adjust_cursor(oap)
     {
         --curwin->w_cursor.col;
         /* prevent cursor from moving on the trail byte */
-        if (has_mbyte)
-            mb_adjust_cursor();
+        mb_adjust_cursor();
         oap->inclusive = TRUE;
     }
 }
@@ -7005,10 +6927,7 @@ adjust_for_sel(cap)
     if (VIsual_active && cap->oap->inclusive && *p_sel == 'e'
             && gchar_cursor() != NUL && lt(VIsual, curwin->w_cursor))
     {
-        if (has_mbyte)
-            inc_cursor();
-        else
-            ++curwin->w_cursor.col;
+        inc_cursor();
         cap->oap->inclusive = FALSE;
     }
 }

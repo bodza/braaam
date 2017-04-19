@@ -300,7 +300,7 @@ add_char_buff(buf, c)
     if (IS_SPECIAL(c))
         len = 1;
     else
-        len = (*mb_char2bytes)(c, bytes);
+        len = utf_char2bytes(c, bytes);
     for (i = 0; i < len; ++i)
     {
         if (!IS_SPECIAL(c))
@@ -577,12 +577,9 @@ AppendToRedobuffLit(str, len)
         if (*s == NUL || (len >= 0 && s - str >= len))
             break;
 
-        /* Handle a special or multibyte character. */
-        if (has_mbyte)
-            /* Handle composing chars separately. */
-            c = mb_cptr2char_adv(&s);
-        else
-            c = *s++;
+        /* Handle a special or multibyte character.
+         * Handle composing chars separately. */
+        c = mb_cptr2char_adv(&s);
         if (c < ' ' || c == DEL || (*s == NUL && (c == '0' || c == '^')))
             add_char_buff(&redobuff, Ctrl_V);
 
@@ -732,7 +729,7 @@ read_redo(init, old_redo)
         /* Reverse the conversion done by add_char_buff() */
         /* For a multi-byte character get all the bytes and return the
          * converted character. */
-        if (has_mbyte && (c != K_SPECIAL || p[1] == KS_SPECIAL))
+        if (c != K_SPECIAL || p[1] == KS_SPECIAL)
             n = MB_BYTE2LEN_CHECK(c);
         else
             n = 1;
@@ -752,7 +749,7 @@ read_redo(init, old_redo)
             if (i == n - 1)     /* last byte of a character */
             {
                 if (n != 1)
-                    c = (*mb_ptr2char)(buf);
+                    c = utf_ptr2char(buf);
                 break;
             }
             c = *p;
@@ -1054,7 +1051,7 @@ ins_char_typebuf(c)
     }
     else
     {
-        buf[(*mb_char2bytes)(c, buf)] = NUL;
+        buf[utf_char2bytes(c, buf)] = NUL;
     }
     (void)ins_typebuf(buf, KeyNoremap, 0, !KeyTyped, cmd_silent);
 }
@@ -1597,7 +1594,7 @@ vgetc()
          * converted character.
          * Note: This will loop until enough bytes are received!
          */
-        if (has_mbyte && (n = MB_BYTE2LEN_CHECK(c)) > 1)
+        if ((n = MB_BYTE2LEN_CHECK(c)) > 1)
         {
             ++no_mapping;
             buf[0] = c;
@@ -1616,7 +1613,7 @@ vgetc()
                 }
             }
             --no_mapping;
-            c = (*mb_ptr2char)(buf);
+            c = utf_ptr2char(buf);
         }
 
         break;
@@ -1955,8 +1952,7 @@ vgetorpeek(advance)
                                     char_u *p1 = mp->m_keys;
                                     char_u *p2 = mb_unescape(&p1);
 
-                                    if (has_mbyte && p2 != NULL
-                                          && MB_BYTE2LEN(c1) > MB_PTR2LEN(p2))
+                                    if (p2 != NULL && MB_BYTE2LEN(c1) > utfc_ptr2len(p2))
                                         mlen = 0;
                                 }
                                 /*
@@ -2303,10 +2299,7 @@ vgetorpeek(advance)
                                     if (!vim_iswhite(ptr[col]))
                                         curwin->w_wcol = vcol;
                                     vcol += lbr_chartabsize(ptr, ptr + col, (colnr_T)vcol);
-                                    if (has_mbyte)
-                                        col += (*mb_ptr2len)(ptr + col);
-                                    else
-                                        ++col;
+                                    col += utfc_ptr2len(ptr + col);
                                 }
                                 curwin->w_wrow = curwin->w_cline_row + curwin->w_wcol / W_WIDTH(curwin);
                                 curwin->w_wcol %= W_WIDTH(curwin);
@@ -2325,13 +2318,13 @@ vgetorpeek(advance)
                             curwin->w_wcol = W_WIDTH(curwin) - 1;
                             col = curwin->w_cursor.col - 1;
                         }
-                        if (has_mbyte && col > 0 && curwin->w_wcol > 0)
+                        if (col > 0 && curwin->w_wcol > 0)
                         {
                             /* Correct when the cursor is on the right halve
                              * of a double-wide character. */
                             ptr = ml_get_curline();
-                            col -= (*mb_head_off)(ptr, ptr + col);
-                            if ((*mb_ptr2cells)(ptr + col) > 1)
+                            col -= utf_head_off(ptr, ptr + col);
+                            if (utf_ptr2cells(ptr + col) > 1)
                                 --curwin->w_wcol;
                         }
                     }
@@ -2929,14 +2922,13 @@ do_map(maptype, arg, mode, abbrev)
              * Otherwise we won't be able to find the start of it in a
              * vi-compatible way.
              */
-            if (has_mbyte)
             {
                 int     first, last;
                 int     same = -1;
 
                 first = vim_iswordp(keys);
                 last = first;
-                p = keys + (*mb_ptr2len)(keys);
+                p = keys + utfc_ptr2len(keys);
                 n = 1;
                 while (p < keys + len)
                 {
@@ -2944,7 +2936,7 @@ do_map(maptype, arg, mode, abbrev)
                     last = vim_iswordp(p);      /* type of last char */
                     if (same == -1 && last != first)
                         same = n - 1;           /* count of same char type */
-                    p += (*mb_ptr2len)(p);
+                    p += utfc_ptr2len(p);
                 }
                 if (last && n > 2 && same >= 0 && same < n - 1)
                 {
@@ -2952,13 +2944,7 @@ do_map(maptype, arg, mode, abbrev)
                     goto theend;
                 }
             }
-            else if (vim_iswordc(keys[len - 1])) /* ends in keyword char */
-                for (n = 0; n < len - 2; ++n)
-                    if (vim_iswordc(keys[n]) != vim_iswordc(keys[len - 2]))
-                    {
-                        retval = 1;
-                        goto theend;
-                    }
+
             /* An abbreviation cannot contain white space. */
             for (n = 0; n < len; ++n)
                 if (vim_iswhite(keys[n]))
@@ -3899,7 +3885,6 @@ check_abbr(c, ptr, col, mincol)
     if (col == 0)                               /* cannot be an abbr. */
         return FALSE;
 
-    if (has_mbyte)
     {
         char_u *p;
 
@@ -3918,26 +3903,12 @@ check_abbr(c, ptr, col, mincol)
             p = mb_prevptr(ptr, p);
             if (vim_isspace(*p) || (!vim_abbr && is_id != vim_iswordp(p)))
             {
-                p += (*mb_ptr2len)(p);
+                p += utfc_ptr2len(p);
                 break;
             }
             ++clen;
         }
         scol = (int)(p - ptr);
-    }
-    else
-    {
-        if (!vim_iswordc(ptr[col - 1]))
-            vim_abbr = TRUE;                    /* Vim added abbr. */
-        else
-        {
-            vim_abbr = FALSE;                   /* vi compatible abbr. */
-            if (col > 1)
-                is_id = vim_iswordc(ptr[col - 2]);
-        }
-        for (scol = col - 1; scol > 0 && !vim_isspace(ptr[scol - 1])
-                && (vim_abbr || is_id == vim_iswordc(ptr[scol - 1])); --scol)
-            ;
     }
 
     if (scol < mincol)
@@ -3953,9 +3924,7 @@ check_abbr(c, ptr, col, mincol)
             mp = mp2;
             mp2 = NULL;
         }
-        for ( ; mp;
-                mp->m_next == NULL ? (mp = mp2, mp2 = NULL) :
-                (mp = mp->m_next))
+        for ( ; mp; mp->m_next == NULL ? (mp = mp2, mp2 = NULL) : (mp = mp->m_next))
         {
             int         qlen = mp->m_keylen;
             char_u      *q = mp->m_keys;
@@ -4010,15 +3979,11 @@ check_abbr(c, ptr, col, mincol)
                 {
                     if (c < ABBR_OFF && (c < ' ' || c > '~'))
                         tb[j++] = Ctrl_V;       /* special char needs CTRL-V */
-                    if (has_mbyte)
-                    {
-                        /* if ABBR_OFF has been added, remove it here */
-                        if (c >= ABBR_OFF)
-                            c -= ABBR_OFF;
-                        j += (*mb_char2bytes)(c, tb + j);
-                    }
-                    else
-                        tb[j++] = c;
+
+                    /* if ABBR_OFF has been added, remove it here */
+                    if (c >= ABBR_OFF)
+                        c -= ABBR_OFF;
+                    j += utf_char2bytes(c, tb + j);
                 }
                 tb[j] = NUL;
                                         /* insert the last typed char */
@@ -4040,8 +4005,7 @@ check_abbr(c, ptr, col, mincol)
 
             tb[0] = Ctrl_H;
             tb[1] = NUL;
-            if (has_mbyte)
-                len = clen;     /* Delete characters instead of bytes */
+            len = clen;           /* Delete characters instead of bytes */
             while (len-- > 0)           /* delete the from string */
                 (void)ins_typebuf(tb, 1, 0, TRUE, mp->m_silent);
             return TRUE;
@@ -4135,18 +4099,18 @@ vim_strsave_escape_csi(p)
             }
             else
             {
-                int len  = mb_char2len(PTR2CHAR(s));
-                int len2 = mb_ptr2len(s);
+                int len  = utf_char2len(utf_ptr2char(s));
+                int len2 = utfc_ptr2len(s);
                 /* Add character, possibly multi-byte to destination, escaping
                  * CSI and K_SPECIAL. */
-                d = add_char2buf(PTR2CHAR(s), d);
+                d = add_char2buf(utf_ptr2char(s), d);
                 while (len < len2)
                 {
                     /* add following combining char */
-                    d = add_char2buf(PTR2CHAR(s + len), d);
-                    len += mb_char2len(PTR2CHAR(s + len));
+                    d = add_char2buf(utf_ptr2char(s + len), d);
+                    len += utf_char2len(utf_ptr2char(s + len));
                 }
-                mb_ptr_adv(s);
+                s += utfc_ptr2len(s);
             }
         }
         *d = NUL;

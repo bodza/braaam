@@ -352,12 +352,7 @@ shift_block(oap, amount)
         total += bd.pre_whitesp; /* all virtual WS upto & incl a split TAB */
         ws_vcol = bd.start_vcol - bd.pre_whitesp;
         if (bd.startspaces)
-        {
-            if (has_mbyte)
-                bd.textstart += (*mb_ptr2len)(bd.textstart);
-            else
-                ++bd.textstart;
-        }
+            bd.textstart += utfc_ptr2len(bd.textstart);
         for ( ; vim_iswhite(*bd.textstart); )
         {
             /* TODO: is passing bd.textstart for start of the line OK? */
@@ -414,7 +409,7 @@ shift_block(oap, amount)
          * the part of which is displayed at the block's beginning. Let's start
          * searching from the next character. */
         if (bd.startspaces)
-            mb_ptr_adv(non_white);
+            non_white += utfc_ptr2len(non_white);
 
         /* The character's column is in "bd.start_vcol". */
         non_white_col = bd.start_vcol;
@@ -451,7 +446,7 @@ shift_block(oap, amount)
             if (verbatim_copy_width + incr > destination_col)
                 break;
             verbatim_copy_width += incr;
-            mb_ptr_adv(verbatim_copy_end);
+            verbatim_copy_end += utfc_ptr2len(verbatim_copy_end);
         }
 
         /* If "destination_col" is different from the width of the initial
@@ -541,18 +536,18 @@ block_insert(oap, s, b_insert, bdp)
             }
         }
 
-        if (has_mbyte && spaces > 0)
+        if (spaces > 0)
         {
             int off;
 
             /* Avoid starting halfway a multi-byte character. */
             if (b_insert)
             {
-                off = (*mb_head_off)(oldp, oldp + offset + spaces);
+                off = utf_head_off(oldp, oldp + offset + spaces);
             }
             else
             {
-                off = (*mb_off_next)(oldp, oldp + offset);
+                off = mb_off_next(oldp, oldp + offset);
                 offset += off;
             }
             spaces -= off;
@@ -1345,10 +1340,7 @@ stuffescaped(arg, literally)
         /* stuff a single special character */
         if (*arg != NUL)
         {
-            if (has_mbyte)
-                c = mb_cptr2char_adv(&arg);
-            else
-                c = *arg++;
+            c = mb_cptr2char_adv(&arg);
             if (literally && ((c < ' ' && c != TAB) || c == DEL))
                 stuffcharReadbuff(Ctrl_V);
             stuffcharReadbuff(c);
@@ -1522,8 +1514,7 @@ op_delete(oap)
 
     adjust_clip_reg(&oap->regname);
 
-    if (has_mbyte)
-        mb_adjust_opend(oap);
+    mb_adjust_opend(oap);
 
     /*
      * Imitate the strange Vi behaviour: If the delete spans more than one
@@ -1901,8 +1892,7 @@ op_replace(oap, c)
     if (had_ctrl_v_cr)
         c = (c == -1 ? '\r' : '\n');
 
-    if (has_mbyte)
-        mb_adjust_opend(oap);
+    mb_adjust_opend(oap);
 
     if (u_save((linenr_T)(oap->start.lnum - 1), (linenr_T)(oap->end.lnum + 1)) == FAIL)
         return FAIL;
@@ -1949,7 +1939,7 @@ op_replace(oap, c)
                 numc -= (oap->end_vcol - bd.end_vcol) + 1;
 
             /* A double-wide character can be replaced only up to half the times. */
-            if ((*mb_char2cells)(c) > 1)
+            if (utf_char2cells(c) > 1)
             {
                 if ((numc & 1) && !bd.is_short)
                 {
@@ -1961,7 +1951,7 @@ op_replace(oap, c)
 
             /* Compute bytes needed, move character count to num_chars. */
             num_chars = numc;
-            numc *= (*mb_char2len)(c);
+            numc *= utf_char2len(c);
             /* oldlen includes textlen, so don't double count */
             n += numc - bd.textlen;
 
@@ -1980,14 +1970,10 @@ op_replace(oap, c)
             /* -1/-2 is used for entering CR literally. */
             if (had_ctrl_v_cr || (c != '\r' && c != '\n'))
             {
-                if (has_mbyte)
-                {
-                    n = (int)STRLEN(newp);
-                    while (--num_chars >= 0)
-                        n += (*mb_char2bytes)(c, newp + n);
-                }
-                else
-                    copy_chars(newp + STRLEN(newp), (size_t)numc, c);
+                n = (int)STRLEN(newp);
+                while (--num_chars >= 0)
+                    n += utf_char2bytes(c, newp + n);
+
                 if (!bd.is_short)
                 {
                     /* insert post-spaces */
@@ -2036,12 +2022,12 @@ op_replace(oap, c)
             n = gchar_cursor();
             if (n != NUL)
             {
-                if ((*mb_char2len)(c) > 1 || (*mb_char2len)(n) > 1)
+                if (utf_char2len(c) > 1 || utf_char2len(n) > 1)
                 {
                     /* This is slow, but it handles replacing a single-byte
                      * with a multi-byte and the other way around. */
                     if (curwin->w_cursor.lnum == oap->end.lnum)
-                        oap->end.col += (*mb_char2len)(c) - (*mb_char2len)(n);
+                        oap->end.col += utf_char2len(c) - utf_char2len(n);
                     n = State;
                     State = REPLACE;
                     ins_char(c);
@@ -2203,14 +2189,12 @@ swapchars(op_type, pos, length)
 
     for (todo = length; todo > 0; --todo)
     {
-        if (has_mbyte)
-        {
-            int len = (*mb_ptr2len)(ml_get_pos(pos));
+        int len = utfc_ptr2len(ml_get_pos(pos));
 
-            /* we're counting bytes, not characters */
-            if (len > 0)
-                todo -= len - 1;
-        }
+        /* we're counting bytes, not characters */
+        if (len > 0)
+            todo -= len - 1;
+
         did_change |= swapchar(op_type, pos);
         if (inc(pos) == -1)    /* at end of file */
             break;
@@ -2239,7 +2223,7 @@ swapchar(op_type, pos)
     if (c >= 0x80 && op_type == OP_ROT13)
         return FALSE;
 
-    if (op_type == OP_UPPER && c == 0xdf && (enc_latin1like || STRCMP(p_enc, "iso-8859-2") == 0))
+    if (op_type == OP_UPPER && c == 0xdf)
     {
         pos_T   sp = curwin->w_cursor;
 
@@ -2253,23 +2237,23 @@ swapchar(op_type, pos)
     }
 
     nc = c;
-    if (MB_ISLOWER(c))
+    if (vim_islower(c))
     {
         if (op_type == OP_ROT13)
             nc = ROT13(c, 'a');
         else if (op_type != OP_LOWER)
-            nc = MB_TOUPPER(c);
+            nc = vim_toupper(c);
     }
-    else if (MB_ISUPPER(c))
+    else if (vim_isupper(c))
     {
         if (op_type == OP_ROT13)
             nc = ROT13(c, 'A');
         else if (op_type != OP_UPPER)
-            nc = MB_TOLOWER(c);
+            nc = vim_tolower(c);
     }
     if (nc != c)
     {
-        if (enc_utf8 && (c >= 0x80 || nc >= 0x80))
+        if (c >= 0x80 || nc >= 0x80)
         {
             pos_T   sp = curwin->w_cursor;
 
@@ -2768,7 +2752,7 @@ op_yank(oap, deleting, mess)
                                         /* Don't add space for double-wide
                                          * char; endcol will be on last byte
                                          * of multi-byte char. */
-                                        && (*mb_head_off)(p, p + endcol) == 0
+                                        && utf_head_off(p, p + endcol) == 0
                                         ))
                             {
                                 if (oap->start.lnum == oap->end.lnum && oap->start.col == oap->end.col)
@@ -3187,11 +3171,9 @@ do_put(regname, dir, count, flags)
             else
                 getvcol(curwin, &curwin->w_cursor, NULL, NULL, &col);
 
-            if (has_mbyte)
-                /* move to start of next multi-byte character */
-                curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
-            else if (c != TAB || ve_flags != VE_ALL)
-                ++curwin->w_cursor.col;
+            /* move to start of next multi-byte character */
+            curwin->w_cursor.col += utfc_ptr2len(ml_get_cursor());
+
             ++col;
         }
         else
@@ -3252,8 +3234,7 @@ do_put(regname, dir, count, flags)
                 bd.startspaces = incr - bd.endspaces;
                 --bd.textcol;
                 delcount = 1;
-                if (has_mbyte)
-                    bd.textcol -= (*mb_head_off)(oldp, oldp + bd.textcol);
+                bd.textcol -= utf_head_off(oldp, oldp + bd.textcol);
                 if (oldp[bd.textcol] != TAB)
                 {
                     /* Only a Tab can be split into spaces.  Other
@@ -3346,26 +3327,14 @@ do_put(regname, dir, count, flags)
             /* if type is MCHAR, FORWARD is the same as BACKWARD on the next char */
             if (dir == FORWARD && gchar_cursor() != NUL)
             {
-                if (has_mbyte)
-                {
-                    int bytelen = (*mb_ptr2len)(ml_get_cursor());
+                int bytelen = utfc_ptr2len(ml_get_cursor());
 
-                    /* put it on the next of the multi-byte character. */
-                    col += bytelen;
-                    if (yanklen)
-                    {
-                        curwin->w_cursor.col += bytelen;
-                        curbuf->b_op_end.col += bytelen;
-                    }
-                }
-                else
+                /* put it on the next of the multi-byte character. */
+                col += bytelen;
+                if (yanklen)
                 {
-                    ++col;
-                    if (yanklen)
-                    {
-                        ++curwin->w_cursor.col;
-                        ++curbuf->b_op_end.col;
-                    }
+                    curwin->w_cursor.col += bytelen;
+                    curbuf->b_op_end.col += bytelen;
                 }
             }
             curbuf->b_op_start = curwin->w_cursor;
@@ -3676,7 +3645,7 @@ ex_display(eap)
         else
             yb = &(y_regs[i]);
 
-        if (name == MB_TOLOWER(redir_reg)
+        if (name == vim_tolower(redir_reg)
                 || (redir_reg == '"' && yb == y_previous))
             continue;       /* do not list register being written to, the
                              * pointer can be freed */
@@ -3698,7 +3667,7 @@ ex_display(eap)
                 }
                 for (p = yb->y_array[j]; *p && (n -= ptr2cells(p)) >= 0; ++p)
                 {
-                    clen = (*mb_ptr2len)(p);
+                    clen = utfc_ptr2len(p);
                     msg_outtrans_len(p, clen);
                     p += clen - 1;
                 }
@@ -3788,7 +3757,7 @@ dis_msg(p, skip_esc)
             && !(*p == ESC && skip_esc && *(p + 1) == NUL)
             && (n -= ptr2cells(p)) >= 0)
     {
-        if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+        if ((l = utfc_ptr2len(p)) > 1)
         {
             msg_outtrans_len(p, l);
             p += l;
@@ -3953,9 +3922,9 @@ do_join(count, insert_space, save_undo, use_formatoptions, setmark)
             curr = skipwhite(curr);
             if (*curr != ')' && currsize != 0 && endcurr1 != TAB
                     && (!has_format_option(FO_MBYTE_JOIN)
-                        || (mb_ptr2char(curr) < 0x100 && endcurr1 < 0x100))
+                        || (utf_ptr2char(curr) < 0x100 && endcurr1 < 0x100))
                     && (!has_format_option(FO_MBYTE_JOIN2)
-                        || mb_ptr2char(curr) < 0x100 || endcurr1 < 0x100)
+                        || utf_ptr2char(curr) < 0x100 || endcurr1 < 0x100)
                )
             {
                 /* don't add a space if the line is ending in a space */
@@ -3976,22 +3945,13 @@ do_join(count, insert_space, save_undo, use_formatoptions, setmark)
         endcurr1 = endcurr2 = NUL;
         if (insert_space && currsize > 0)
         {
-            if (has_mbyte)
+            cend = curr + currsize;
+            mb_ptr_back(curr, cend);
+            endcurr1 = utf_ptr2char(cend);
+            if (cend > curr)
             {
-                cend = curr + currsize;
                 mb_ptr_back(curr, cend);
-                endcurr1 = (*mb_ptr2char)(cend);
-                if (cend > curr)
-                {
-                    mb_ptr_back(curr, cend);
-                    endcurr2 = (*mb_ptr2char)(cend);
-                }
-            }
-            else
-            {
-                endcurr1 = *(curr + currsize - 1);
-                if (currsize > 1)
-                    endcurr2 = *(curr + currsize - 2);
+                endcurr2 = utf_ptr2char(cend);
             }
         }
         line_breakcheck();
@@ -4669,7 +4629,7 @@ block_prep(oap, bdp, lnum, is_del)
             bdp->pre_whitesp_c = 0;
         }
         prev_pstart = pstart;
-        mb_ptr_adv(pstart);
+        pstart += utfc_ptr2len(pstart);
     }
     bdp->start_char_vcols = incr;
     if (bdp->start_vcol < oap->start_vcol)      /* line too short */
@@ -5781,7 +5741,7 @@ line_count_info(line, wc, cc, limit, eol_size)
         else if (!vim_isspace(line[i]))
             is_word = 1;
         ++chars;
-        i += (*mb_ptr2len)(line + i);
+        i += utfc_ptr2len(line + i);
     }
 
     if (is_word)

@@ -211,7 +211,7 @@ mf_close(mfp, del_file)
             EMSG((char *)e_swapclose);
     }
     if (del_file && mfp->mf_fname != NULL)
-        mch_remove(mfp->mf_fname);
+        unlink((char *)mfp->mf_fname);
                                             /* free entries in used list */
     for (hp = mfp->mf_used_first; hp != NULL; hp = nextp)
     {
@@ -259,7 +259,7 @@ mf_close_file(buf, getlines)
 
     if (mfp->mf_fname != NULL)
     {
-        mch_remove(mfp->mf_fname);              /* delete the swap file */
+        unlink((char *)mfp->mf_fname);              /* delete the swap file */
         vim_free(mfp->mf_fname);
         vim_free(mfp->mf_ffname);
         mfp->mf_fname = NULL;

@@ -1502,40 +1502,13 @@ getexactdigraph(char1, char2, meta_char)
         }
     }
 
-    if (retval != 0 && !enc_utf8)
-    {
-        char_u      buf[6], *to;
-        vimconv_T   vc;
-
-        /*
-         * Convert the Unicode digraph to 'encoding'.
-         */
-        i = utf_char2bytes(retval, buf);
-        retval = 0;
-        vc.vc_type = CONV_NONE;
-        if (convert_setup(&vc, (char_u *)"utf-8", p_enc) == OK)
-        {
-            vc.vc_fail = TRUE;
-            to = string_convert(&vc, buf, &i);
-            if (to != NULL)
-            {
-                retval = (*mb_ptr2char)(to);
-                vim_free(to);
-            }
-            (void)convert_setup(&vc, NULL, NULL);
-        }
-    }
-
-    /* Ignore multi-byte characters when not in multi-byte mode. */
-    if (!has_mbyte && retval > 0xff)
-        retval = 0;
-
     if (retval == 0)            /* digraph deleted or not found */
     {
         if (char1 == ' ' && meta_char)  /* <space> <char> --> meta-char */
             return (char2 | 0x80);
         return char2;
     }
+
     return retval;
 }
 
@@ -1639,7 +1612,7 @@ listdigraphs()
         tmp.char1 = dp->char1;
         tmp.char2 = dp->char2;
         tmp.result = getexactdigraph(tmp.char1, tmp.char2, FALSE);
-        if (tmp.result != 0 && tmp.result != tmp.char2 && (has_mbyte || tmp.result <= 255))
+        if (tmp.result != 0 && tmp.result != tmp.char2)
             printdigraph(&tmp);
         ++dp;
         ui_breakcheck();
@@ -1665,10 +1638,7 @@ printdigraph(dp)
 
     int         list_width;
 
-    if ((dy_flags & DY_UHEX) || has_mbyte)
-        list_width = 13;
-    else
-        list_width = 11;
+    list_width = 13;
 
     if (dp->result != 0)
     {
@@ -1682,15 +1652,12 @@ printdigraph(dp)
         *p++ = dp->char1;
         *p++ = dp->char2;
         *p++ = ' ';
-        if (has_mbyte)
-        {
-            /* add a space to draw a composing char on */
-            if (enc_utf8 && utf_iscomposing(dp->result))
-                *p++ = ' ';
-            p += (*mb_char2bytes)(dp->result, p);
-        }
-        else
-            *p++ = (char_u)dp->result;
+
+        /* add a space to draw a composing char on */
+        if (utf_iscomposing(dp->result))
+            *p++ = ' ';
+        p += utf_char2bytes(dp->result, p);
+
         if (char2cells(dp->result) == 1)
             *p++ = ' ';
         vim_snprintf((char *)p, sizeof(buf) - (p - buf), " %3d", dp->result);

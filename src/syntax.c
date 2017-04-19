@@ -1845,11 +1845,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
               line = syn_getcurline();
               if (vim_iswordp_buf(line + current_col, syn_buf)
                       && (current_col == 0
-                          || !vim_iswordp_buf(line + current_col - 1
-                              - (has_mbyte
-                                  ? (*mb_head_off)(line, line + current_col - 1)
-                                  : 0)
-                               , syn_buf)))
+                          || !vim_iswordp_buf(line + current_col - 1 - utf_head_off(line, line + current_col - 1), syn_buf)))
               {
                 syn_id = check_keyword_id(line, (int)current_col,
                                          &endcol, &flags, &next_list, cur_si,
@@ -2986,7 +2982,7 @@ syn_add_end_off(result, regmatch, spp, idx, extra)
         if (off > 0)
         {
             while (off-- > 0 && *p != NUL)
-                mb_ptr_adv(p);
+                p += utfc_ptr2len(p);
         }
         else if (off < 0)
         {
@@ -3040,7 +3036,7 @@ syn_add_start_off(result, regmatch, spp, idx, extra)
         if (off > 0)
         {
             while (off-- && *p != NUL)
-                mb_ptr_adv(p);
+                p += utfc_ptr2len(p);
         }
         else if (off < 0)
         {
@@ -3114,10 +3110,7 @@ check_keyword_id(line, startcol, endcolp, flagsp, next_listp, cur_si, ccharp)
     kwlen = 0;
     do
     {
-        if (has_mbyte)
-            kwlen += (*mb_ptr2len)(kwp + kwlen);
-        else
-            ++kwlen;
+        kwlen += utfc_ptr2len(kwp + kwlen);
     }
     while (vim_iswordp_buf(kwp + kwlen, syn_buf));
 
@@ -4351,15 +4344,8 @@ get_syn_options(arg, opt, conceal_char)
         else if (flagtab[fidx].argtype == 11 && arg[5] == '=')
         {
             /* cchar=? */
-            if (has_mbyte)
-            {
-                *conceal_char = mb_ptr2char(arg + 6);
-                arg += mb_ptr2len(arg + 6) - 1;
-            }
-            else
-            {
-                *conceal_char = arg[6];
-            }
+            *conceal_char = utf_ptr2char(arg + 6);
+            arg += utfc_ptr2len(arg + 6) - 1;
             if (!vim_isprintc_strict(*conceal_char))
             {
                 EMSG("E844: invalid cchar value");
@@ -4608,17 +4594,12 @@ syn_cmd_keyword(eap, syncing)
                             kw = p + 1;         /* skip over the "]" */
                             break;
                         }
-                        if (has_mbyte)
+
                         {
-                            int l = (*mb_ptr2len)(p + 1);
+                            int l = utfc_ptr2len(p + 1);
 
                             mch_memmove(p, p + 1, l);
                             p += l;
-                        }
-                        else
-                        {
-                            p[0] = p[1];
-                            ++p;
                         }
                     }
                 }
@@ -6814,10 +6795,10 @@ do_highlight(line, forceit, init)
                             else if (t_colors == 16 || t_colors == 88 || t_colors == 256)
                             {
                                 /*
-                                * Guess: if the termcap entry ends in 'm', it is
-                                * probably an xterm-like terminal.  Use the changed
-                                * order for colors.
-                                */
+                                 * Guess: if the termcap entry ends in 'm', it is
+                                 * probably an xterm-like terminal.  Use the changed
+                                 * order for colors.
+                                 */
                                 if (*T_CAF != NUL)
                                     p = T_CAF;
                                 else
@@ -6847,11 +6828,10 @@ do_highlight(line, forceit, init)
                         {
                             cterm_normal_fg_color = color + 1;
                             cterm_normal_fg_bold = (HL_TABLE()[idx].sg_cterm & HL_BOLD);
-                            {
-                                must_redraw = CLEAR;
-                                if (termcap_active && color >= 0)
-                                    term_fg_color(color);
-                            }
+
+                            must_redraw = CLEAR;
+                            if (termcap_active && color >= 0)
+                                term_fg_color(color);
                         }
                     }
                     else
@@ -6860,22 +6840,20 @@ do_highlight(line, forceit, init)
                         if (is_normal_group)
                         {
                             cterm_normal_bg_color = color + 1;
+
+                            must_redraw = CLEAR;
+                            if (color >= 0)
                             {
-                                must_redraw = CLEAR;
-                                if (color >= 0)
-                                {
-                                    if (termcap_active)
-                                        term_bg_color(color);
-                                    if (t_colors < 16)
-                                        i = (color == 0 || color == 4);
-                                    else
-                                        i = (color < 7 || color == 8);
-                                    /* Set the 'background' option if the value is wrong. */
-                                    if (i != (*p_bg == 'd'))
-                                        set_option_value((char_u *)"bg", 0L,
-                                                i ? (char_u *)"dark"
-                                                : (char_u *)"light", 0);
-                                }
+                                if (termcap_active)
+                                    term_bg_color(color);
+                                if (t_colors < 16)
+                                    i = (color == 0 || color == 4);
+                                else
+                                    i = (color < 7 || color == 8);
+                                /* Set the 'background' option if the value is wrong. */
+                                if (i != (*p_bg == 'd'))
+                                    set_option_value((char_u *)"bg", 0L,
+                                            i ? (char_u *)"dark" : (char_u *)"light", 0);
                             }
                         }
                     }
@@ -6932,9 +6910,9 @@ do_highlight(line, forceit, init)
                     HL_TABLE()[idx].sg_set |= SG_TERM;
 
                 /*
-                * The "start" and "stop"  arguments can be a literal escape
-                * sequence, or a comma separated list of terminal codes.
-                */
+                 * The "start" and "stop"  arguments can be a literal escape
+                 * sequence, or a comma separated list of terminal codes.
+                 */
                 if (STRNCMP(arg, "t_", 2) == 0)
                 {
                     off = 0;
@@ -6974,8 +6952,8 @@ do_highlight(line, forceit, init)
                 else
                 {
                     /*
-                    * Copy characters from arg[] to buf[], translating <> codes.
-                    */
+                     * Copy characters from arg[] to buf[], translating <> codes.
+                     */
                     for (p = arg, off = 0; off < 100 - 6 && *p; )
                     {
                         len = trans_special(&p, buf + off, FALSE);
@@ -7012,14 +6990,14 @@ do_highlight(line, forceit, init)
             }
 
             /*
-            * When highlighting has been given for a group, don't link it.
-            */
+             * When highlighting has been given for a group, don't link it.
+             */
             if (!init || !(HL_TABLE()[idx].sg_set & SG_LINK))
                 HL_TABLE()[idx].sg_link = 0;
 
             /*
-            * Continue with next argument.
-            */
+             * Continue with next argument.
+             */
             linep = skipwhite(linep);
         }
 

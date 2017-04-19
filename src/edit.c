@@ -295,9 +295,9 @@ edit(cmdchar, startln, count)
         {
             if (ptr[1] == NUL)
                 ++curwin->w_cursor.col;
-            else if (has_mbyte)
+            else
             {
-                i = (*mb_ptr2len)(ptr);
+                i = utfc_ptr2len(ptr);
                 if (ptr[i] == NUL)
                     curwin->w_cursor.col += i;
             }
@@ -856,9 +856,9 @@ normalchar:
                     if (*str != NUL && stop_arrow() != FAIL)
                     {
                         /* Insert the new value of v:char literally. */
-                        for (p = str; *p != NUL; mb_ptr_adv(p))
+                        for (p = str; *p != NUL; p += utfc_ptr2len(p))
                         {
-                            c = PTR2CHAR(p);
+                            c = utf_ptr2char(p);
                             if (c == CAR || c == K_KENTER || c == NL)
                                 ins_eol(c);
                             else
@@ -891,7 +891,7 @@ normalchar:
              * special character.  Let CTRL-] expand abbreviations without inserting it. */
             if (vim_iswordc(c) || (!echeck_abbr(
                 /* Add ABBR_OFF for characters above 0x100, this is what check_abbr() expects. */
-                (has_mbyte && c >= 0x100) ? (c + ABBR_OFF) : c) && c != Ctrl_RSB))
+                (c >= 0x100) ? (c + ABBR_OFF) : c) && c != Ctrl_RSB))
             {
                 insert_special(c, FALSE, FALSE);
                 revins_legal++;
@@ -1067,7 +1067,7 @@ edit_putchar(c, highlight)
         if (curwin->w_p_rl)
         {
             pc_col += W_WIDTH(curwin) - 1 - curwin->w_wcol;
-            if (has_mbyte)
+
             {
                 int fix_col = mb_fix_col(pc_col, pc_row);
 
@@ -1129,14 +1129,15 @@ display_dollar(col)
     cursor_off();
     save_col = curwin->w_cursor.col;
     curwin->w_cursor.col = col;
-    if (has_mbyte)
+
     {
         char_u *p;
 
         /* If on the last byte of a multi-byte move to the first byte. */
         p = ml_get_curline();
-        curwin->w_cursor.col -= (*mb_head_off)(p, p + col);
+        curwin->w_cursor.col -= utf_head_off(p, p + col);
     }
+
     curs_columns(FALSE);            /* recompute w_wrow and w_wcol */
     if (curwin->w_wcol < W_WIDTH(curwin))
     {
@@ -1278,8 +1279,8 @@ change_indent(type, amount, round, replaced, call_changed_bytes)
         while (vcol <= (int)curwin->w_virtcol)
         {
             last_vcol = vcol;
-            if (has_mbyte && new_cursor_col >= 0)
-                new_cursor_col += (*mb_ptr2len)(ptr + new_cursor_col);
+            if (new_cursor_col >= 0)
+                new_cursor_col += utfc_ptr2len(ptr + new_cursor_col);
             else
                 ++new_cursor_col;
             vcol += lbr_chartabsize(ptr, ptr + new_cursor_col, (colnr_T)vcol);
@@ -1446,7 +1447,7 @@ backspace_until_column(col)
 del_char_after_col(limit_col)
     int limit_col UNUSED;
 {
-    if (enc_utf8 && limit_col >= 0)
+    if (limit_col >= 0)
     {
         colnr_T ecol = curwin->w_cursor.col + 1;
 
@@ -1620,7 +1621,7 @@ insert_special(c, allow_modmask, ctrlv)
  */
 #define ISSPECIAL(c)   ((c) < ' ' || (c) >= DEL || (c) == '0' || (c) == '^')
 
-#define WHITECHAR(cc) (vim_iswhite(cc) && (!enc_utf8 || !utf_iscomposing(utf_ptr2char(ml_get_cursor() + 1))))
+#define WHITECHAR(cc) (vim_iswhite(cc) && !utf_iscomposing(utf_ptr2char(ml_get_cursor() + 1)))
 
 /*
  * "flags": INSCHAR_FORMAT - force formatting
@@ -1764,7 +1765,7 @@ insertchar(c, flags, second_indent)
 #endif
 
     if (       !ISSPECIAL(c)
-            && (!has_mbyte || (*mb_char2len)(c) == 1)
+            && utf_char2len(c) == 1
             && vpeekc() != NUL
             && !(State & REPLACE_FLAG)
             && !cindent_on()
@@ -1791,7 +1792,7 @@ insertchar(c, flags, second_indent)
          */
         while (    (c = vpeekc()) != NUL
                 && !ISSPECIAL(c)
-                && (!has_mbyte || MB_BYTE2LEN_CHECK(c) == 1)
+                && MB_BYTE2LEN_CHECK(c) == 1
                 && i < INPUT_BUFLEN
                 && (textwidth == 0 || (virtcol += byte2cells(buf[i - 1])) < (colnr_T)textwidth)
                 && !(!no_abbr && !vim_iswordc(c) && vim_iswordc(buf[i - 1])))
@@ -1820,11 +1821,11 @@ insertchar(c, flags, second_indent)
     {
         int             cc;
 
-        if (has_mbyte && (cc = (*mb_char2len)(c)) > 1)
+        if ((cc = utf_char2len(c)) > 1)
         {
             char_u      buf[MB_MAXBYTES + 1];
 
-            (*mb_char2bytes)(c, buf);
+            utf_char2bytes(c, buf);
             buf[cc] = NUL;
             ins_char_bytes(buf, cc);
             AppendCharToRedobuff(c);
@@ -2621,7 +2622,7 @@ add_char2buf(c, s)
     int         i;
     int         len;
 
-    len = (*mb_char2bytes)(c, temp);
+    len = utf_char2bytes(c, temp);
     for (i = 0; i < len; ++i)
     {
         c = temp[i];
@@ -2688,7 +2689,7 @@ oneright()
 
         /* Adjust for multi-wide char (excluding TAB) */
         ptr = ml_get_cursor();
-        coladvance(getviscol() + ((*ptr != TAB && vim_isprintc((*mb_ptr2char)(ptr))) ? ptr2cells(ptr) : 1));
+        coladvance(getviscol() + ((*ptr != TAB && vim_isprintc(utf_ptr2char(ptr))) ? ptr2cells(ptr) : 1));
         curwin->w_set_curswant = TRUE;
         /* Return OK if the cursor moved, FAIL otherwise (at window edge). */
         return (prevpos.col != curwin->w_cursor.col || prevpos.coladd != curwin->w_cursor.coladd) ? OK : FAIL;
@@ -2698,10 +2699,7 @@ oneright()
     if (*ptr == NUL)
         return FAIL;        /* already at the very end */
 
-    if (has_mbyte)
-        l = (*mb_ptr2len)(ptr);
-    else
-        l = 1;
+    l = utfc_ptr2len(ptr);
 
     /* move "l" bytes right, but don't end up on the NUL, unless 'virtualedit'
      * contains "onemore". */
@@ -2731,7 +2729,7 @@ oneleft()
             coladvance(v - width);
             /* getviscol() is slow, skip it when 'showbreak' is empty,
              * 'breakindent' is not set and there are no multi-byte characters */
-            if ((*p_sbr == NUL && !curwin->w_p_bri && !has_mbyte) || getviscol() < v)
+            if (getviscol() < v)
                 break;
             ++width;
         }
@@ -2742,7 +2740,7 @@ oneleft()
 
             /* Adjust for multi-wide char (not a TAB) */
             ptr = ml_get_cursor();
-            if (*ptr != TAB && vim_isprintc((*mb_ptr2char)(ptr)) && ptr2cells(ptr) > 1)
+            if (*ptr != TAB && vim_isprintc(utf_ptr2char(ptr)) && ptr2cells(ptr) > 1)
                 curwin->w_cursor.coladd = 0;
         }
 
@@ -2758,8 +2756,7 @@ oneleft()
 
     /* if the character on the left of the current cursor is a multi-byte
      * character, move to its first byte */
-    if (has_mbyte)
-        mb_adjust_cursor();
+    mb_adjust_cursor();
     return OK;
 }
 
@@ -2982,8 +2979,7 @@ replace_push(c)
         }
         if (replace_stack != NULL)
         {
-            mch_memmove(p, replace_stack,
-                                 (size_t)(replace_stack_nr * sizeof(char_u)));
+            mch_memmove(p, replace_stack, (size_t)(replace_stack_nr * sizeof(char_u)));
             vim_free(replace_stack);
         }
         replace_stack = p;
@@ -3004,7 +3000,7 @@ replace_push(c)
 replace_push_mb(p)
     char_u *p;
 {
-    int l = (*mb_ptr2len)(p);
+    int l = utfc_ptr2len(p);
     int j;
 
     for (j = l - 1; j >= 0; --j)
@@ -3075,7 +3071,7 @@ mb_replace_pop_ins(cc)
     int         i;
     int         c;
 
-    if (has_mbyte && (n = MB_BYTE2LEN(cc)) > 1)
+    if ((n = MB_BYTE2LEN(cc)) > 1)
     {
         buf[0] = cc;
         for (i = 1; i < n; ++i)
@@ -3085,35 +3081,34 @@ mb_replace_pop_ins(cc)
     else
         ins_char(cc);
 
-    if (enc_utf8)
-        /* Handle composing chars. */
-        for (;;)
+    /* Handle composing chars. */
+    for (;;)
+    {
+        c = replace_pop();
+        if (c == -1)            /* stack empty */
+            break;
+        if ((n = MB_BYTE2LEN(c)) == 1)
         {
-            c = replace_pop();
-            if (c == -1)            /* stack empty */
-                break;
-            if ((n = MB_BYTE2LEN(c)) == 1)
-            {
-                /* Not a multi-byte char, put it back. */
-                replace_push(c);
-                break;
-            }
+            /* Not a multi-byte char, put it back. */
+            replace_push(c);
+            break;
+        }
+        else
+        {
+            buf[0] = c;
+            for (i = 1; i < n; ++i)
+                buf[i] = replace_pop();
+            if (utf_iscomposing(utf_ptr2char(buf)))
+                ins_bytes_len(buf, n);
             else
             {
-                buf[0] = c;
-                for (i = 1; i < n; ++i)
-                    buf[i] = replace_pop();
-                if (utf_iscomposing(utf_ptr2char(buf)))
-                    ins_bytes_len(buf, n);
-                else
-                {
-                    /* Not a composing char, put it back. */
-                    for (i = n - 1; i >= 0; --i)
-                        replace_push(buf[i]);
-                    break;
-                }
+                /* Not a composing char, put it back. */
+                for (i = n - 1; i >= 0; --i)
+                    replace_push(buf[i]);
+                break;
             }
         }
+    }
 }
 
 /*
@@ -3161,19 +3156,12 @@ replace_do_bs(limit_col)
             getvcol(curwin, &curwin->w_cursor, NULL, &start_vcol, NULL);
             orig_vcols = chartabsize(ml_get_cursor(), start_vcol);
         }
-        if (has_mbyte)
-        {
-            (void)del_char_after_col(limit_col);
-            if (State & VREPLACE_FLAG)
-                orig_len = (int)STRLEN(ml_get_cursor());
-            replace_push(cc);
-        }
-        else
-        {
-            pchar_cursor(cc);
-            if (State & VREPLACE_FLAG)
-                orig_len = (int)STRLEN(ml_get_cursor()) - 1;
-        }
+
+        (void)del_char_after_col(limit_col);
+        if (State & VREPLACE_FLAG)
+            orig_len = (int)STRLEN(ml_get_cursor());
+        replace_push(cc);
+
         replace_pop_ins();
 
         if (State & VREPLACE_FLAG)
@@ -3185,7 +3173,7 @@ replace_do_bs(limit_col)
             for (i = 0; i < ins_len; ++i)
             {
                 vcol += chartabsize(p + i, vcol);
-                i += (*mb_ptr2len)(p) - 1;
+                i += utfc_ptr2len(p) - 1;
             }
             vcol -= start_vcol;
 
@@ -3422,7 +3410,7 @@ in_cinkeys(keytyped, when, line_is_empty)
 
                     /* TODO: multi-byte */
                     if (keytyped == (int)p[-1] || (icase && keytyped < 256
-                         && TOLOWER_LOC(keytyped) == TOLOWER_LOC((int)p[-1])))
+                         && tolower(keytyped) == tolower((int)p[-1])))
                 {
                     line = ml_get_cursor();
                     if ((curwin->w_cursor.col == (colnr_T)(p - look)
@@ -3784,8 +3772,7 @@ ins_esc(count, cmdchar, nomove)
         {
             --curwin->w_cursor.col;
             /* Correct cursor for multi-byte character. */
-            if (has_mbyte)
-                mb_adjust_cursor();
+            mb_adjust_cursor();
         }
     }
 
@@ -4254,8 +4241,7 @@ ins_bs(c, mode, inserted_space_p)
         {
             int cclass = 0, prev_cclass = 0;
 
-            if (has_mbyte)
-                cclass = mb_get_class(ml_get_cursor());
+            cclass = mb_get_class(ml_get_cursor());
             do
             {
                 if (!revins_on) /* put cursor on char to be deleted */
@@ -4263,11 +4249,8 @@ ins_bs(c, mode, inserted_space_p)
 
                 cc = gchar_cursor();
                 /* look multi-byte character class */
-                if (has_mbyte)
-                {
-                    prev_cclass = cclass;
-                    cclass = mb_get_class(ml_get_cursor());
-                }
+                prev_cclass = cclass;
+                cclass = mb_get_class(ml_get_cursor());
 
                 /* start of word? */
                 if (mode == BACKSPACE_WORD && !vim_isspace(cc))
@@ -4289,14 +4272,14 @@ ins_bs(c, mode, inserted_space_p)
                     replace_do_bs(-1);
                 else
                 {
-                    if (enc_utf8 && p_deco)
+                    if (p_deco)
                         (void)utfc_ptr2char(ml_get_cursor(), cpc);
                     (void)del_char(FALSE);
                     /*
                      * If there are combining characters and 'delcombine' is set
                      * move the cursor back.  Don't back up before the base character.
                      */
-                    if (enc_utf8 && p_deco && cpc[0] != NUL)
+                    if (p_deco && cpc[0] != NUL)
                         inc_cursor();
                     if (revins_chars)
                     {
@@ -4513,12 +4496,7 @@ ins_right()
         if (virtual_active())
             oneright();
         else
-        {
-            if (has_mbyte)
-                curwin->w_cursor.col += (*mb_ptr2len)(ml_get_cursor());
-            else
-                ++curwin->w_cursor.col;
-        }
+            curwin->w_cursor.col += utfc_ptr2len(ml_get_cursor());
 
         revins_legal++;
         if (revins_chars)
@@ -5016,7 +4994,7 @@ ins_copychar(lnum)
     if ((colnr_T)temp > curwin->w_virtcol)
         ptr = prev_ptr;
 
-    c = (*mb_ptr2char)(ptr);
+    c = utf_ptr2char(ptr);
     if (c == NUL)
         vim_beep();
     return c;
@@ -5176,13 +5154,7 @@ do_insert_char_pre(c)
     if (!has_insertcharpre())
         return NULL;
 
-    if (has_mbyte)
-        buf[(*mb_char2bytes)(c, buf)] = NUL;
-    else
-    {
-        buf[0] = c;
-        buf[1] = NUL;
-    }
+    buf[utf_char2bytes(c, buf)] = NUL;
 
     /* Lock the text to avoid weird things from happening. */
     ++textlock;

@@ -26,10 +26,7 @@ do_ascii(eap)
     int         ci = 0;
     int         len;
 
-    if (enc_utf8)
-        c = utfc_ptr2char(ml_get_cursor(), cc);
-    else
-        c = gchar_cursor();
+    c = utfc_ptr2char(ml_get_cursor(), cc);
     if (c == NUL)
     {
         MSG("NUL");
@@ -37,7 +34,7 @@ do_ascii(eap)
     }
 
     IObuff[0] = NUL;
-    if (!has_mbyte || c < 0x80)
+    if (c < 0x80)
     {
         if (c == NL)        /* NUL is stored as NL */
             c = NUL;
@@ -58,32 +55,26 @@ do_ascii(eap)
             buf2[0] = NUL;
         vim_snprintf((char *)IObuff, IOSIZE, "<%s>%s%s  %d,  Hex %02x,  Octal %03o",
                                   transchar(c), buf1, buf2, cval, cval, cval);
-        if (enc_utf8)
-            c = cc[ci++];
-        else
-            c = 0;
+        c = cc[ci++];
     }
 
     /* Repeat for combining characters. */
-    while (has_mbyte && (c >= 0x100 || (enc_utf8 && c >= 0x80)))
+    while (c >= 0x100 || c >= 0x80)
     {
         len = (int)STRLEN(IObuff);
         /* This assumes every multi-byte char is printable... */
         if (len > 0)
             IObuff[len++] = ' ';
         IObuff[len++] = '<';
-        if (enc_utf8 && utf_iscomposing(c))
+        if (utf_iscomposing(c))
             IObuff[len++] = ' '; /* draw composing char on top of a space */
-        len += (*mb_char2bytes)(c, IObuff + len);
+        len += utf_char2bytes(c, IObuff + len);
         vim_snprintf((char *)IObuff + len, IOSIZE - len,
                         c < 0x10000 ? "> %d, Hex %04x, Octal %o"
                                     : "> %d, Hex %08x, Octal %o", c, c, c);
         if (ci == MAX_MCO)
             break;
-        if (enc_utf8)
-            c = cc[ci++];
-        else
-            c = 0;
+        c = cc[ci++];
     }
 
     msg(IObuff);
@@ -629,10 +620,7 @@ ex_retab(eap)
             if (ptr[col] == NUL)
                 break;
             vcol += chartabsize(ptr + col, (colnr_T)vcol);
-            if (has_mbyte)
-                col += (*mb_ptr2len)(ptr + col);
-            else
-                ++col;
+            col += utfc_ptr2len(ptr + col);
         }
         if (new_line == NULL)               /* out of memory */
             break;
@@ -1241,9 +1229,9 @@ filterend:
         EMSG("E135: *Filter* Autocommands must not change current buffer");
     }
     if (itmp != NULL)
-        mch_remove(itmp);
+        unlink((char *)itmp);
     if (otmp != NULL)
-        mch_remove(otmp);
+        unlink((char *)otmp);
     vim_free(itmp);
     vim_free(otmp);
 }
@@ -3087,7 +3075,7 @@ do_sub(eap)
             }
             if (cmd[0] == '\\' && cmd[1] != 0)  /* skip escaped characters */
                 ++cmd;
-            mb_ptr_adv(cmd);
+            cmd += utfc_ptr2len(cmd);
         }
 
         if (!eap->skip)
@@ -3421,10 +3409,7 @@ do_sub(eap)
                     else
                     {
                         /* search for a match at next column */
-                        if (has_mbyte)
-                            matchcol += mb_ptr2len(sub_firstline + matchcol);
-                        else
-                            ++matchcol;
+                        matchcol += utfc_ptr2len(sub_firstline + matchcol);
                     }
                     goto skip;
                 }
@@ -3801,8 +3786,8 @@ do_sub(eap)
                             p1 = new_start - 1;
                         }
                     }
-                    else if (has_mbyte)
-                        p1 += (*mb_ptr2len)(p1) - 1;
+                    else
+                        p1 += utfc_ptr2len(p1) - 1;
                 }
 
                 /*

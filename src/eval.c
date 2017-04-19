@@ -415,8 +415,6 @@ static void f_argv(typval_T *argvars, typval_T *rettv);
 static void f_asin(typval_T *argvars, typval_T *rettv);
 static void f_atan(typval_T *argvars, typval_T *rettv);
 static void f_atan2(typval_T *argvars, typval_T *rettv);
-static void f_browse(typval_T *argvars, typval_T *rettv);
-static void f_browsedir(typval_T *argvars, typval_T *rettv);
 static void f_bufexists(typval_T *argvars, typval_T *rettv);
 static void f_buflisted(typval_T *argvars, typval_T *rettv);
 static void f_bufloaded(typval_T *argvars, typval_T *rettv);
@@ -514,7 +512,6 @@ static void f_histnr(typval_T *argvars, typval_T *rettv);
 static void f_hlID(typval_T *argvars, typval_T *rettv);
 static void f_hlexists(typval_T *argvars, typval_T *rettv);
 static void f_hostname(typval_T *argvars, typval_T *rettv);
-static void f_iconv(typval_T *argvars, typval_T *rettv);
 static void f_indent(typval_T *argvars, typval_T *rettv);
 static void f_index(typval_T *argvars, typval_T *rettv);
 static void f_input(typval_T *argvars, typval_T *rettv);
@@ -530,7 +527,6 @@ static void f_islocked(typval_T *argvars, typval_T *rettv);
 static void f_items(typval_T *argvars, typval_T *rettv);
 static void f_join(typval_T *argvars, typval_T *rettv);
 static void f_keys(typval_T *argvars, typval_T *rettv);
-static void f_last_buffer_nr(typval_T *argvars, typval_T *rettv);
 static void f_len(typval_T *argvars, typval_T *rettv);
 static void f_line(typval_T *argvars, typval_T *rettv);
 static void f_line2byte(typval_T *argvars, typval_T *rettv);
@@ -551,9 +547,6 @@ static void f_matchlist(typval_T *argvars, typval_T *rettv);
 static void f_matchstr(typval_T *argvars, typval_T *rettv);
 static void f_max(typval_T *argvars, typval_T *rettv);
 static void f_min(typval_T *argvars, typval_T *rettv);
-#if defined(vim_mkdir)
-static void f_mkdir(typval_T *argvars, typval_T *rettv);
-#endif
 static void f_mode(typval_T *argvars, typval_T *rettv);
 static void f_nextnonblank(typval_T *argvars, typval_T *rettv);
 static void f_nr2char(typval_T *argvars, typval_T *rettv);
@@ -5005,6 +4998,7 @@ eval_index(arg, rettv, evaluate, verbose)
                         clear_tv(&var1);
                     return FAIL;
                 }
+
                 {
                     dictitem_T  *item;
 
@@ -5138,7 +5132,7 @@ get_string_tv(arg, rettv, evaluate)
     /*
      * Find the end of the string, skipping backslashed characters.
      */
-    for (p = *arg + 1; *p != NUL && *p != '"'; mb_ptr_adv(p))
+    for (p = *arg + 1; *p != NUL && *p != '"'; p += utfc_ptr2len(p))
     {
         if (*p == '\\' && p[1] != NUL)
         {
@@ -5207,7 +5201,7 @@ get_string_tv(arg, rettv, evaluate)
                               ++p;
                               /* For "\u" store the number according to 'encoding'. */
                               if (c != 'X')
-                                  name += (*mb_char2bytes)(nr, name);
+                                  name += utf_char2bytes(nr, name);
                               else
                                   *name++ = nr;
                           }
@@ -5240,12 +5234,12 @@ get_string_tv(arg, rettv, evaluate)
                           }
                           /* FALLTHROUGH */
 
-                default:  MB_COPY_CHAR(p, name);
+                default:  mb_copy_char(&p, &name);
                           break;
             }
         }
         else
-            MB_COPY_CHAR(p, name);
+            mb_copy_char(&p, &name);
     }
     *name = NUL;
     *arg = p + 1;
@@ -5270,7 +5264,7 @@ get_lit_string_tv(arg, rettv, evaluate)
     /*
      * Find the end of the string, skipping ''.
      */
-    for (p = *arg + 1; *p != NUL; mb_ptr_adv(p))
+    for (p = *arg + 1; *p != NUL; p += utfc_ptr2len(p))
     {
         if (*p == '\'')
         {
@@ -5311,7 +5305,7 @@ get_lit_string_tv(arg, rettv, evaluate)
                 break;
             ++p;
         }
-        MB_COPY_CHAR(p, str);
+        mb_copy_char(&p, &str);
     }
     *str = NUL;
     *arg = p + 1;
@@ -7306,7 +7300,7 @@ string_quote(str, function)
     if (str != NULL)
     {
         len += (unsigned)STRLEN(str);
-        for (p = str; *p != NUL; mb_ptr_adv(p))
+        for (p = str; *p != NUL; p += utfc_ptr2len(p))
             if (*p == '\'')
                 ++len;
     }
@@ -7325,7 +7319,7 @@ string_quote(str, function)
             {
                 if (*p == '\'')
                     *r++ = '\'';
-                MB_COPY_CHAR(p, r);
+                mb_copy_char(&p, &r);
             }
         *r++ = '\'';
         if (function)
@@ -7436,12 +7430,7 @@ static struct fst
     {"asin",            1, 1, f_asin},  /* WJMc */
     {"atan",            1, 1, f_atan},
     {"atan2",           2, 2, f_atan2},
-    {"browse",          4, 4, f_browse},
-    {"browsedir",       2, 2, f_browsedir},
     {"bufexists",       1, 1, f_bufexists},
-    {"buffer_exists",   1, 1, f_bufexists},     /* obsolete */
-    {"buffer_name",     1, 1, f_bufname},       /* obsolete */
-    {"buffer_number",   1, 1, f_bufnr},         /* obsolete */
     {"buflisted",       1, 1, f_buflisted},
     {"bufloaded",       1, 1, f_bufloaded},
     {"bufname",         1, 1, f_bufname},
@@ -7479,7 +7468,6 @@ static struct fst
     {"expand",          1, 3, f_expand},
     {"extend",          2, 3, f_extend},
     {"feedkeys",        1, 2, f_feedkeys},
-    {"file_readable",   1, 1, f_filereadable},  /* obsolete */
     {"filereadable",    1, 1, f_filereadable},
     {"filewritable",    1, 1, f_filewritable},
     {"filter",          2, 2, f_filter},
@@ -7532,8 +7520,6 @@ static struct fst
     {"has_key",         2, 2, f_has_key},
     {"haslocaldir",     0, 0, f_haslocaldir},
     {"hasmapto",        1, 3, f_hasmapto},
-    {"highlightID",     1, 1, f_hlID},          /* obsolete */
-    {"highlight_exists",1, 1, f_hlexists},      /* obsolete */
     {"histadd",         2, 2, f_histadd},
     {"histdel",         1, 2, f_histdel},
     {"histget",         1, 2, f_histget},
@@ -7541,7 +7527,6 @@ static struct fst
     {"hlID",            1, 1, f_hlID},
     {"hlexists",        1, 1, f_hlexists},
     {"hostname",        0, 0, f_hostname},
-    {"iconv",           3, 3, f_iconv},
     {"indent",          1, 1, f_indent},
     {"index",           2, 4, f_index},
     {"input",           1, 3, f_input},
@@ -7557,7 +7542,6 @@ static struct fst
     {"items",           1, 1, f_items},
     {"join",            1, 2, f_join},
     {"keys",            1, 1, f_keys},
-    {"last_buffer_nr",  0, 0, f_last_buffer_nr},/* obsolete */
     {"len",             1, 1, f_len},
     {"line",            1, 1, f_line},
     {"line2byte",       1, 1, f_line2byte},
@@ -7578,9 +7562,6 @@ static struct fst
     {"matchstr",        2, 4, f_matchstr},
     {"max",             1, 1, f_max},
     {"min",             1, 1, f_min},
-#if defined(vim_mkdir)
-    {"mkdir",           1, 3, f_mkdir},
-#endif
     {"mode",            0, 1, f_mode},
     {"nextnonblank",    1, 1, f_nextnonblank},
     {"nr2char",         1, 2, f_nr2char},
@@ -8009,19 +7990,20 @@ call_func(funcname, len, rettv, argcount, argvars, firstline, lastline, doesrang
                      * Save and restore search patterns, script variables and redo buffer.
                      */
                     save_search_patterns();
-                    {
-                        saveRedobuff();
-                        did_save_redo = TRUE;
-                    }
+                    saveRedobuff();
+                    did_save_redo = TRUE;
+
                     ++fp->uf_calls;
                     call_user_func(fp, argcount, argvars, rettv, firstline, lastline,
                                   (fp->uf_flags & FC_DICT) ? selfdict : NULL);
                     if (--fp->uf_calls <= 0 && isdigit(*fp->uf_name) && fp->uf_refcount <= 0)
                         /* Function was unreferenced while being used, free it now. */
                         func_free(fp);
+
                     if (did_save_redo)
                         restoreRedobuff();
                     restore_search_patterns();
+
                     error = ERROR_NONE;
                 }
             }
@@ -8432,30 +8414,6 @@ f_atan2(argvars, rettv)
         rettv->vval.v_float = 0.0;
 }
 
-/*
- * "browse(save, title, initdir, default)" function
- */
-    static void
-f_browse(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    rettv->vval.v_string = NULL;
-    rettv->v_type = VAR_STRING;
-}
-
-/*
- * "browsedir(title, initdir)" function
- */
-    static void
-f_browsedir(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    rettv->vval.v_string = NULL;
-    rettv->v_type = VAR_STRING;
-}
-
 static buf_T *find_buffer(typval_T *avar);
 
 /*
@@ -8681,10 +8639,10 @@ byteidx(argvars, rettv, comp)
     {
         if (*t == NUL)          /* EOL reached */
             return;
-        if (enc_utf8 && comp)
+        if (comp)
             t += utf_ptr2len(t);
         else
-            t += (*mb_ptr2len)(t);
+            t += utfc_ptr2len(t);
     }
     rettv->vval.v_number = (varnumber_T)(t - str);
 }
@@ -8824,20 +8782,12 @@ f_char2nr(argvars, rettv)
     typval_T    *argvars;
     typval_T    *rettv;
 {
-    if (has_mbyte)
-    {
-        int     utf8 = 0;
+    int     _utf8 = 0;
 
-        if (argvars[1].v_type != VAR_UNKNOWN)
-            utf8 = get_tv_number_chk(&argvars[1], NULL);
+    if (argvars[1].v_type != VAR_UNKNOWN)
+        _utf8 = get_tv_number_chk(&argvars[1], NULL);
 
-        if (utf8)
-            rettv->vval.v_number = (*utf_ptr2char)(get_tv_string(&argvars[0]));
-        else
-            rettv->vval.v_number = (*mb_ptr2char)(get_tv_string(&argvars[0]));
-    }
-    else
-    rettv->vval.v_number = get_tv_string(&argvars[0])[0];
+    rettv->vval.v_number = utf_ptr2char(get_tv_string(&argvars[0]));
 }
 
 /*
@@ -8911,7 +8861,7 @@ f_col(argvars, rettv)
                 {
                     int         l;
 
-                    if (*p != NUL && p[(l = (*mb_ptr2len)(p))] == NUL)
+                    if (*p != NUL && p[(l = utfc_ptr2len(p))] == NUL)
                         col += l;
                 }
             }
@@ -9144,8 +9094,7 @@ f_cursor(argvars, rettv)
     /* Make sure the cursor is in a valid position. */
     check_cursor();
     /* Correct cursor for multi-byte character. */
-    if (has_mbyte)
-        mb_adjust_cursor();
+    mb_adjust_cursor();
 
     curwin->w_set_curswant = TRUE;
     rettv->vval.v_number = 0;
@@ -9183,7 +9132,7 @@ f_delete(argvars, rettv)
     if (check_restricted() || check_secure())
         rettv->vval.v_number = -1;
     else
-        rettv->vval.v_number = mch_remove(get_tv_string(&argvars[0]));
+        rettv->vval.v_number = unlink((char *)get_tv_string(&argvars[0]));
 }
 
 /*
@@ -10388,10 +10337,8 @@ f_getchar(argvars, rettv)
             temp[i++] = K_SECOND(n);
             temp[i++] = K_THIRD(n);
         }
-        else if (has_mbyte)
-            i += (*mb_char2bytes)(n, temp + i);
         else
-            temp[i++] = n;
+            i += utf_char2bytes(n, temp + i);
         temp[i++] = NUL;
         rettv->v_type = VAR_STRING;
         rettv->vval.v_string = vim_strsave(temp);
@@ -11269,9 +11216,6 @@ f_has(argvars, rettv)
         "filterpipe",
         "float",
         "fork",
-#if defined(USE_ICONV)
-        "iconv",
-#endif
         "jumplist",
         "linebreak",
         "lispindent",
@@ -11347,7 +11291,7 @@ f_has(argvars, rettv)
         else if (STRICMP(name, "vim_starting") == 0)
             n = (starting != 0);
         else if (STRICMP(name, "multi_byte_encoding") == 0)
-            n = has_mbyte;
+            n = TRUE;
         else if (STRICMP(name, "syntax_items") == 0)
             n = syntax_present(curwin);
     }
@@ -11520,7 +11464,7 @@ f_histnr(argvars, rettv)
 }
 
 /*
- * "highlightID(name)" function
+ * "hlID(name)" function
  */
     static void
 f_hlID(argvars, rettv)
@@ -11531,7 +11475,7 @@ f_hlID(argvars, rettv)
 }
 
 /*
- * "highlight_exists()" function
+ * "hlexists()" function
  */
     static void
 f_hlexists(argvars, rettv)
@@ -11554,39 +11498,6 @@ f_hostname(argvars, rettv)
     mch_get_host_name(hostname, 256);
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = vim_strsave(hostname);
-}
-
-/*
- * iconv() function
- */
-    static void
-f_iconv(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    char_u      buf1[NUMBUFLEN];
-    char_u      buf2[NUMBUFLEN];
-    char_u      *from, *to, *str;
-    vimconv_T   vimconv;
-
-    rettv->v_type = VAR_STRING;
-    rettv->vval.v_string = NULL;
-
-    str = get_tv_string(&argvars[0]);
-    from = enc_canonize(get_tv_string_buf(&argvars[1], buf1));
-    to = enc_canonize(get_tv_string_buf(&argvars[2], buf2));
-    vimconv.vc_type = CONV_NONE;
-    convert_setup(&vimconv, from, to);
-
-    /* If the encodings are equal, no conversion needed. */
-    if (vimconv.vc_type == CONV_NONE)
-        rettv->vval.v_string = vim_strsave(str);
-    else
-        rettv->vval.v_string = string_convert(&vimconv, str, NULL);
-
-    convert_setup(&vimconv, NULL, NULL);
-    vim_free(from);
-    vim_free(to);
 }
 
 /*
@@ -12133,24 +12044,6 @@ f_keys(argvars, rettv)
 }
 
 /*
- * "last_buffer_nr()" function.
- */
-    static void
-f_last_buffer_nr(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    int         n = 0;
-    buf_T       *buf;
-
-    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
-        if (n < buf->b_fnum)
-            n = buf->b_fnum;
-
-    rettv->vval.v_number = n;
-}
-
-/*
  * "len()" function
  */
     static void
@@ -12520,7 +12413,7 @@ find_some_match(argvars, rettv, type)
             }
             else
             {
-                startcol = (colnr_T)(regmatch.startp[0] + (*mb_ptr2len)(regmatch.startp[0]) - str);
+                startcol = (colnr_T)(regmatch.startp[0] + utfc_ptr2len(regmatch.startp[0]) - str);
                 if (startcol > (colnr_T)len || str + startcol <= regmatch.startp[0])
                 {
                     match = FALSE;
@@ -12836,76 +12729,6 @@ f_min(argvars, rettv)
     max_min(argvars, rettv, FALSE);
 }
 
-static int mkdir_recurse(char_u *dir, int prot);
-
-/*
- * Create the directory in which "dir" is located, and higher levels when needed.
- */
-    static int
-mkdir_recurse(dir, prot)
-    char_u      *dir;
-    int         prot;
-{
-    char_u      *p;
-    char_u      *updir;
-    int         r = FAIL;
-
-    /* Get end of directory name in "dir".
-     * We're done when it's "/" or "c:/". */
-    p = gettail_sep(dir);
-    if (p <= get_past_head(dir))
-        return OK;
-
-    /* If the directory exists we're done.  Otherwise: create it. */
-    updir = vim_strnsave(dir, (int)(p - dir));
-    if (updir == NULL)
-        return FAIL;
-    if (mch_isdir(updir))
-        r = OK;
-    else if (mkdir_recurse(updir, prot) == OK)
-        r = vim_mkdir_emsg(updir, prot);
-    vim_free(updir);
-    return r;
-}
-
-#if defined(vim_mkdir)
-/*
- * "mkdir()" function
- */
-    static void
-f_mkdir(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    char_u      *dir;
-    char_u      buf[NUMBUFLEN];
-    int         prot = 0755;
-
-    rettv->vval.v_number = FAIL;
-    if (check_restricted() || check_secure())
-        return;
-
-    dir = get_tv_string_buf(&argvars[0], buf);
-    if (*dir == NUL)
-        rettv->vval.v_number = FAIL;
-    else
-    {
-        if (*gettail(dir) == NUL)
-            /* remove trailing slashes */
-            *gettail_sep(dir) = NUL;
-
-        if (argvars[1].v_type != VAR_UNKNOWN)
-        {
-            if (argvars[2].v_type != VAR_UNKNOWN)
-                prot = get_tv_number_chk(&argvars[2], NULL);
-            if (prot != -1 && STRCMP(get_tv_string(&argvars[1]), "p") == 0)
-                mkdir_recurse(dir, prot);
-        }
-        rettv->vval.v_number = prot == -1 ? FAIL : vim_mkdir_emsg(dir, prot);
-    }
-}
-#endif
-
 /*
  * "mode()" function
  */
@@ -13007,22 +12830,13 @@ f_nr2char(argvars, rettv)
 {
     char_u      buf[NUMBUFLEN];
 
-    if (has_mbyte)
-    {
-        int     utf8 = 0;
+    int     _utf8 = 0;
 
-        if (argvars[1].v_type != VAR_UNKNOWN)
-            utf8 = get_tv_number_chk(&argvars[1], NULL);
-        if (utf8)
-            buf[(*utf_char2bytes)((int)get_tv_number(&argvars[0]), buf)] = NUL;
-        else
-            buf[(*mb_char2bytes)((int)get_tv_number(&argvars[0]), buf)] = NUL;
-    }
-    else
-    {
-        buf[0] = (char_u)get_tv_number(&argvars[0]);
-        buf[1] = NUL;
-    }
+    if (argvars[1].v_type != VAR_UNKNOWN)
+        _utf8 = get_tv_number_chk(&argvars[1], NULL);
+
+    buf[utf_char2bytes((int)get_tv_number(&argvars[0]), buf)] = NUL;
+
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = vim_strsave(buf);
 }
@@ -13036,7 +12850,7 @@ f_or(argvars, rettv)
     typval_T    *rettv;
 {
     rettv->vval.v_number = get_tv_number_chk(&argvars[0], NULL)
-                                        | get_tv_number_chk(&argvars[1], NULL);
+                         | get_tv_number_chk(&argvars[1], NULL);
 }
 
 /*
@@ -13114,6 +12928,7 @@ f_printf(argvars, rettv)
 {
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
+
     {
         char_u  buf[NUMBUFLEN];
         int     len;
@@ -13267,7 +13082,7 @@ f_readfile(argvars, rettv)
                     /* Change "prev" buffer to be the right size.  This way
                      * the bytes are only copied once, and very long lines are
                      * allocated only once. */
-                    if ((s = vim_realloc(prev, prevlen + len + 1)) != NULL)
+                    if ((s = realloc(prev, prevlen + len + 1)) != NULL)
                     {
                         mch_memmove(s + prevlen, start, len);
                         s[prevlen + len] = NUL;
@@ -13301,7 +13116,7 @@ f_readfile(argvars, rettv)
                 *p = '\n';
             /* Check for utf8 "bom"; U+FEFF is encoded as EF BB BF.  Do this
              * when finding the BF and check the previous two bytes. */
-            else if (*p == 0xbf && enc_utf8 && !binary)
+            else if (*p == 0xbf && !binary)
             {
                 /* Find the two bytes before the 0xbf.  If p is at buf, or buf
                  * + 1, these may be in the "prev" string. */
@@ -13361,8 +13176,7 @@ f_readfile(argvars, rettv)
                     long growmin  = (long)((p - start) * 2 + prevlen);
                     prevsize = grow50pc > growmin ? grow50pc : growmin;
                 }
-                newprev = prev == NULL ? alloc(prevsize)
-                                                : vim_realloc(prev, prevsize);
+                newprev = prev == NULL ? alloc(prevsize) : realloc(prev, prevsize);
                 if (newprev == NULL)
                 {
                     do_outofmem_msg((long_u)prevsize);
@@ -13705,6 +13519,7 @@ f_resolve(argvars, rettv)
     char_u      *buf = NULL;
 
     p = get_tv_string(&argvars[0]);
+
     {
         char_u  *cpy;
         int     len;
@@ -14141,7 +13956,7 @@ f_screenchar(argvars, rettv)
     else
     {
         off = LineOffset[row] + col;
-        if (enc_utf8 && ScreenLinesUC[off] != 0)
+        if (ScreenLinesUC[off] != 0)
             c = ScreenLinesUC[off];
         else
             c = ScreenLines[off];
@@ -15556,7 +15371,7 @@ f_split(argvars, rettv)
             else
             {
                 /* Don't get stuck at the same match. */
-                col = (*mb_ptr2len)(regmatch.endp[0]);
+                col = utfc_ptr2len(regmatch.endp[0]);
             }
             str = regmatch.endp[0];
         }
@@ -15655,30 +15470,12 @@ f_strftime(argvars, rettv)
         rettv->vval.v_string = vim_strsave((char_u *)"(Invalid)");
     else
     {
-        vimconv_T   conv;
-        char_u      *enc;
-
-        conv.vc_type = CONV_NONE;
-        enc = enc_locale();
-        convert_setup(&conv, p_enc, enc);
-        if (conv.vc_type != CONV_NONE)
-            p = string_convert(&conv, p, NULL);
         if (p != NULL)
             (void)strftime((char *)result_buf, sizeof(result_buf), (char *)p, curtime);
         else
             result_buf[0] = NUL;
 
-        if (conv.vc_type != CONV_NONE)
-            vim_free(p);
-        convert_setup(&conv, enc, p_enc);
-        if (conv.vc_type != CONV_NONE)
-            rettv->vval.v_string = string_convert(&conv, result_buf, NULL);
-        else
-            rettv->vval.v_string = vim_strsave(result_buf);
-
-        /* Release conversion descriptors */
-        convert_setup(&conv, NULL, NULL);
-        vim_free(enc);
+        rettv->vval.v_string = vim_strsave(result_buf);
     }
 }
 
@@ -16133,12 +15930,7 @@ f_synconcealed(argvars, rettv)
                 if (cchar == NUL && curwin->w_p_cole == 1 && lcs_conceal != NUL)
                     cchar = lcs_conceal;
                 if (cchar != NUL)
-                {
-                    if (has_mbyte)
-                        (*mb_char2bytes)(cchar, str);
-                    else
-                        str[0] = cchar;
-                }
+                    utf_char2bytes(cchar, str);
             }
         }
 
@@ -16313,7 +16105,7 @@ get_cmd_output_as_rettv(argvars, rettv, retlist)
 errret:
     if (infile != NULL)
     {
-        mch_remove(infile);
+        unlink((char *)infile);
         vim_free(infile);
     }
     if (res != NULL)
@@ -16576,27 +16368,14 @@ f_tolower(argvars, rettv)
     if (p != NULL)
         while (*p != NUL)
         {
-            int         l;
+            int c = utf_ptr2char(p);
+            int lc = utf_tolower(c);
+            int l = utf_ptr2len(p);
 
-            if (enc_utf8)
-            {
-                int c, lc;
-
-                c = utf_ptr2char(p);
-                lc = utf_tolower(c);
-                l = utf_ptr2len(p);
-                /* TODO: reallocate string when byte count changes. */
-                if (utf_char2len(lc) == l)
-                    utf_char2bytes(lc, p);
-                p += l;
-            }
-            else if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
-                p += l;         /* skip multi-byte character */
-            else
-            {
-                *p = TOLOWER_LOC(*p); /* note that tolower() can be a macro */
-                ++p;
-            }
+            /* TODO: reallocate string when byte count changes. */
+            if (utf_char2len(lc) == l)
+                utf_char2bytes(lc, p);
+            p += l;
         }
 }
 
@@ -16646,78 +16425,60 @@ f_tr(argvars, rettv)
         return;             /* type error; errmsg already given */
     ga_init2(&ga, (int)sizeof(char), 80);
 
-    if (!has_mbyte)
-        /* not multi-byte: fromstr and tostr must be the same length */
-        if (STRLEN(fromstr) != STRLEN(tostr))
-        {
-error:
-            EMSG2((char *)e_invarg2, fromstr);
-            ga_clear(&ga);
-            return;
-        }
-
     /* fromstr and tostr have to contain the same number of chars */
     while (*in_str != NUL)
     {
-        if (has_mbyte)
+        inlen = utfc_ptr2len(in_str);
+        cpstr = in_str;
+        cplen = inlen;
+        idx = 0;
+        for (p = fromstr; *p != NUL; p += fromlen)
         {
-            inlen = (*mb_ptr2len)(in_str);
-            cpstr = in_str;
-            cplen = inlen;
-            idx = 0;
-            for (p = fromstr; *p != NUL; p += fromlen)
+            fromlen = utfc_ptr2len(p);
+            if (fromlen == inlen && STRNCMP(in_str, p, inlen) == 0)
             {
-                fromlen = (*mb_ptr2len)(p);
-                if (fromlen == inlen && STRNCMP(in_str, p, inlen) == 0)
-                {
-                    for (p = tostr; *p != NUL; p += tolen)
-                    {
-                        tolen = (*mb_ptr2len)(p);
-                        if (idx-- == 0)
-                        {
-                            cplen = tolen;
-                            cpstr = p;
-                            break;
-                        }
-                    }
-                    if (*p == NUL)      /* tostr is shorter than fromstr */
-                        goto error;
-                    break;
-                }
-                ++idx;
-            }
-
-            if (first && cpstr == in_str)
-            {
-                /* Check that fromstr and tostr have the same number of
-                 * (multi-byte) characters.  Done only once when a character
-                 * of in_str doesn't appear in fromstr. */
-                first = FALSE;
                 for (p = tostr; *p != NUL; p += tolen)
                 {
-                    tolen = (*mb_ptr2len)(p);
-                    --idx;
+                    tolen = utfc_ptr2len(p);
+                    if (idx-- == 0)
+                    {
+                        cplen = tolen;
+                        cpstr = p;
+                        break;
+                    }
                 }
-                if (idx != 0)
+                if (*p == NUL)      /* tostr is shorter than fromstr */
                     goto error;
+                break;
             }
-
-            ga_grow(&ga, cplen);
-            mch_memmove((char *)ga.ga_data + ga.ga_len, cpstr, (size_t)cplen);
-            ga.ga_len += cplen;
-
-            in_str += inlen;
+            ++idx;
         }
-        else
+
+        if (first && cpstr == in_str)
         {
-            /* When not using multi-byte chars we can do it faster. */
-            p = vim_strchr(fromstr, *in_str);
-            if (p != NULL)
-                ga_append(&ga, tostr[p - fromstr]);
-            else
-                ga_append(&ga, *in_str);
-            ++in_str;
+            /* Check that fromstr and tostr have the same number of
+             * (multi-byte) characters.  Done only once when a character
+             * of in_str doesn't appear in fromstr. */
+            first = FALSE;
+            for (p = tostr; *p != NUL; p += tolen)
+            {
+                tolen = utfc_ptr2len(p);
+                --idx;
+            }
+            if (idx != 0)
+            {
+error:
+                EMSG2((char *)e_invarg2, fromstr);
+                ga_clear(&ga);
+                return;
+            }
         }
+
+        ga_grow(&ga, cplen);
+        mch_memmove((char *)ga.ga_data + ga.ga_len, cpstr, (size_t)cplen);
+        ga.ga_len += cplen;
+
+        in_str += inlen;
     }
 
     /* add a terminating NUL */
@@ -16777,6 +16538,7 @@ f_undofile(argvars, rettv)
     typval_T    *rettv;
 {
     rettv->v_type = VAR_STRING;
+
     {
         char_u *fname = get_tv_string(&argvars[0]);
 
@@ -17499,12 +17261,12 @@ find_name_end(arg, expr_start, expr_end, flags)
                         || *p == '{'
                         || ((flags & FNE_INCL_BR) && (*p == '[' || *p == '.'))
                         || mb_nest != 0
-                        || br_nest != 0); mb_ptr_adv(p))
+                        || br_nest != 0); p += utfc_ptr2len(p))
     {
         if (*p == '\'')
         {
             /* skip over 'string' to avoid counting [ and ] inside it. */
-            for (p = p + 1; *p != NUL && *p != '\''; mb_ptr_adv(p))
+            for (p = p + 1; *p != NUL && *p != '\''; p += utfc_ptr2len(p))
                 ;
             if (*p == NUL)
                 break;
@@ -17512,7 +17274,7 @@ find_name_end(arg, expr_start, expr_end, flags)
         else if (*p == '"')
         {
             /* skip over "str\"ing" to avoid counting [ and ] inside it. */
-            for (p = p + 1; *p != NUL && *p != '"'; mb_ptr_adv(p))
+            for (p = p + 1; *p != NUL && *p != '"'; p += utfc_ptr2len(p))
                 if (*p == '\\' && p[1] != NUL)
                     ++p;
             if (*p == NUL)
@@ -17684,13 +17446,7 @@ set_vim_var_char(c)
 {
     char_u      buf[MB_MAXBYTES + 1];
 
-    if (has_mbyte)
-        buf[(*mb_char2bytes)(c, buf)] = NUL;
-    else
-    {
-        buf[0] = c;
-        buf[1] = NUL;
-    }
+    buf[utf_char2bytes(c, buf)] = NUL;
     set_vim_var_string(VV_CHAR, buf, -1);
 }
 
@@ -19051,15 +18807,10 @@ ex_echo(eap)
                     }
                     else
                     {
-                        if (has_mbyte)
-                        {
-                            int i = (*mb_ptr2len)(p);
+                        int i = utfc_ptr2len(p);
 
-                            (void)msg_outtrans_len_attr(p, i, echo_attr);
-                            p += i - 1;
-                        }
-                        else
-                            (void)msg_outtrans_len_attr(p, 1, echo_attr);
+                        (void)msg_outtrans_len_attr(p, i, echo_attr);
+                        p += i - 1;
                     }
                 }
             vim_free(tofree);
@@ -21230,7 +20981,7 @@ repeat:
         }
 
         /* When "/." or "/.." is used: force expansion to get rid of it. */
-        for (p = *fnamep; *p != NUL; mb_ptr_adv(p))
+        for (p = *fnamep; *p != NUL; p += utfc_ptr2len(p))
         {
             if (vim_ispathsep(*p)
                     && p[1] == '.'
@@ -21522,7 +21273,7 @@ do_string_sub(str, pat, sub, flags)
                 if (zero_width == regmatch.startp[0])
                 {
                     /* avoid getting stuck on a match with an empty string */
-                    i = MB_PTR2LEN(tail);
+                    i = utfc_ptr2len(tail);
                     mch_memmove((char_u *)ga.ga_data + ga.ga_len, tail, (size_t)i);
                     ga.ga_len += i;
                     tail += i;
@@ -21621,7 +21372,7 @@ simplify_filename(filename)
                 tail = p + 1;
                 if (p[1] != NUL)
                     while (vim_ispathsep(*tail))
-                        mb_ptr_adv(tail);
+                        tail += utfc_ptr2len(tail);
                 else if (p > start)
                     --p;                /* strip preceding path separator */
                 STRMOVE(p, tail);
@@ -21632,7 +21383,7 @@ simplify_filename(filename)
             /* Skip to after ".." or "../" or "..///". */
             tail = p + 2;
             while (vim_ispathsep(*tail))
-                mb_ptr_adv(tail);
+                tail += utfc_ptr2len(tail);
 
             if (components > 0)         /* strip one preceding component */
             {

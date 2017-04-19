@@ -34,24 +34,12 @@
  */
 #define MAX_MSG_HIST_LEN 200
 
-/* Define this if you want to use 16 bit Unicode only, reduces memory used for
- * the screen structures. */
-/* #define UNICODE16 */
-
-/* Use iconv() when it's available. */
-#define USE_ICONV
-
 /*
  * +xterm_save          The t_ti and t_te entries for the builtin xterm will
  *                      be set to save the screen when starting Vim and
  *                      restoring it when exiting.
  */
 /* #define FEAT_XTERM_SAVE */
-
-/*
- * SESSION_FILE         Name of the default ":mksession" file.
- */
-#define SESSION_FILE    "Session.vim"
 
 /*
  * SYS_OPTWIN_FILE      Name of the default optwin.vim file.
@@ -86,10 +74,6 @@
 #include <unistd.h>
 
 #include <sys/param.h>
-
-#define vim_mkdir(x, y) mkdir((char *)(x), y)
-#define mch_rmdir(x) rmdir((char *)(x))
-#define mch_remove(x) unlink((char *)(x))
 
 #define SIGDEFARG(s)  (s) int s UNUSED;
 
@@ -152,9 +136,7 @@
 #define DFLT_BDIR    ".,~/tmp,~/"    /* default for 'backupdir' */
 #define DFLT_DIR     ".,~/tmp,/var/tmp,/tmp" /* default for 'directory' */
 
-#define DFLT_ERRORFILE          "errors.err"
-
-#define DFLT_RUNTIMEPATH     "~/.vim,$VIM/vimfiles,$VIMRUNTIME,$VIM/vimfiles/after,~/.vim/after"
+#define DFLT_RUNTIMEPATH     "~/.vim,$VIMRUNTIME"
 
 #define TEMPDIRNAMES  "$TMPDIR", "/tmp", ".", "$HOME"
 #define TEMPNAMELEN    256
@@ -182,13 +164,10 @@
 #define DFLT_MAXMEMTOT        (10*1024)    /* use up to 10 Mbyte for Vim */
 #endif
 
-/* memmove is not present on all systems, use memmove, bcopy, memcpy or our
- * own version */
-/* Some systems have (void *) arguments, some (char *). If we use (char *) it
- * works for all */
+/* memmove is not present on all systems, use memmove, bcopy, memcpy or our own version */
+/* Some systems have (void *) arguments, some (char *). If we use (char *) it works for all */
 #define mch_memmove(to, from, len) memmove((char *)(to), (char *)(from), len)
 
-#define mch_rename(src, dst) rename(src, dst)
 #define mch_getenv(x) (char_u *)getenv((char *)(x))
 #define mch_setenv(name, val, x) setenv(name, val, x)
 
@@ -287,15 +266,10 @@ typedef unsigned short sattr_T;
 #define MAX_TYPENR 65535
 
 /*
- * The u8char_T can hold one decoded UTF-8 character.
- * We normally use 32 bits now, since some Asian characters don't fit in 16
- * bits.  u8char_T is only used for displaying, it could be 16 bits to save memory.
+ * u8char_T can hold one decoded UTF-8 character.
+ * u8char_T is only used for displaying.
  */
-#if defined(UNICODE16)
-typedef unsigned short u8char_T;    /* short should be 16 bits */
-#else
 typedef unsigned int u8char_T;      /* int is 32 bits */
-#endif
 
 /* ----------------------------------------------------------------------- */
 
@@ -446,12 +420,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define KS_HOR_SCROLLBAR        248
 
 /*
- * These are used for DEC mouse
- */
-#define KS_NETTERM_MOUSE        247
-#define KS_DEC_MOUSE            246
-
-/*
  * Used for switching Select mode back on after a mapping or menu.
  */
 #define KS_SELECT               245
@@ -462,26 +430,14 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
  */
 #define KS_TEAROFF              244
 
-/* Used for JSB term mouse. */
-#define KS_JSBTERM_MOUSE        243
-
 /* Used a termcap entry that produces a normal character. */
 #define KS_KEY                  242
-
-/* Used for the qnx pterm mouse. */
-#define KS_PTERM_MOUSE          241
 
 /* Used for click in a tab pages label. */
 #define KS_TABLINE              240
 
 /* Used for menu in a tab pages line. */
 #define KS_TABMENU              239
-
-/* Used for the urxvt mouse. */
-#define KS_URXVT_MOUSE          238
-
-/* Used for the sgr mouse. */
-#define KS_SGR_MOUSE            237
 
 /*
  * Filler used after KS_SPECIAL and others
@@ -779,13 +735,6 @@ enum key_extra
 #define K_VER_SCROLLBAR TERMCAP2KEY(KS_VER_SCROLLBAR, KE_FILLER)
 #define K_HOR_SCROLLBAR   TERMCAP2KEY(KS_HOR_SCROLLBAR, KE_FILLER)
 
-#define K_NETTERM_MOUSE TERMCAP2KEY(KS_NETTERM_MOUSE, KE_FILLER)
-#define K_DEC_MOUSE     TERMCAP2KEY(KS_DEC_MOUSE, KE_FILLER)
-#define K_JSBTERM_MOUSE TERMCAP2KEY(KS_JSBTERM_MOUSE, KE_FILLER)
-#define K_PTERM_MOUSE   TERMCAP2KEY(KS_PTERM_MOUSE, KE_FILLER)
-#define K_URXVT_MOUSE   TERMCAP2KEY(KS_URXVT_MOUSE, KE_FILLER)
-#define K_SGR_MOUSE     TERMCAP2KEY(KS_SGR_MOUSE, KE_FILLER)
-
 #define K_SELECT        TERMCAP2KEY(KS_SELECT, KE_FILLER)
 #define K_TEAROFF       TERMCAP2KEY(KS_TEAROFF, KE_FILLER)
 
@@ -1022,9 +971,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 /* ----------------------------------------------------------------------- */
 
 /* #include "macros.h" */
-/*
- * macros.h: macro definitions for often used code
- */
 
 /*
  * pchar(lp, c) - put character 'c' at position 'lp'
@@ -1059,30 +1005,9 @@ extern char_u *(term_strings[]);    /* current terminal strings */
  */
 #define bufempty() (curbuf->b_ml.ml_line_count == 1 && *ml_get((linenr_T)1) == NUL)
 
-/*
- * toupper() and tolower() that use the current locale.
- * On some systems toupper()/tolower() only work on lower/uppercase
- * characters, first use islower() or isupper() then.
- * Careful: Only call TOUPPER_LOC() and TOLOWER_LOC() with a character in the
- * range 0 - 255.  toupper()/tolower() on some systems can't handle others.
- * Note: It is often better to use MB_TOLOWER() and MB_TOUPPER(), because many
- * toupper() and tolower() implementations only work for ASCII.
- */
-#define TOUPPER_LOC           toupper
-#define TOLOWER_LOC           tolower
-
 /* toupper() and tolower() for ASCII only and ignore the current locale. */
 #define TOUPPER_ASC(c) (((c) < 'a' || (c) > 'z') ? (c) : (c) - ('a' - 'A'))
 #define TOLOWER_ASC(c) (((c) < 'A' || (c) > 'Z') ? (c) : (c) + ('a' - 'A'))
-
-/*
- * MB_ISLOWER() and MB_ISUPPER() are to be used on multi-byte characters.  But
- * don't use them for negative values!
- */
-#define MB_ISLOWER(c)  vim_islower(c)
-#define MB_ISUPPER(c)  vim_isupper(c)
-#define MB_TOLOWER(c)  vim_tolower(c)
-#define MB_TOUPPER(c)  vim_toupper(c)
 
 /* Use our own isdigit() replacement, because on MS-Windows isdigit() returns
  * non-zero for superscript 1.  Also avoids that isdigit() crashes for numbers
@@ -1096,11 +1021,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define ASCII_ISALPHA(c) (ASCII_ISUPPER(c) || ASCII_ISLOWER(c))
 #define ASCII_ISALNUM(c) (ASCII_ISALPHA(c) || VIM_ISDIGIT(c))
 
-/* macro version of chartab().
- * Only works with values 0-255!
- * Doesn't work for UTF-8 mode with chars >= 0x80. */
-#define CHARSIZE(c)     (chartab[c] & CT_CELL_MASK)
-
 #define LANGMAP_ADJUST(c, condition) /* nop */
 
 /*
@@ -1108,23 +1028,15 @@ extern char_u *(term_strings[]);    /* current terminal strings */
  */
 #define vim_isbreak(c) (breakat_flags[(char_u)(c)])
 
-/*
- * On VMS file names are different and require a translation.
- * On the Mac open() has only two arguments.
- */
-#define mch_access(n, p)     access((n), (p))
-#define mch_fopen(n, p)       fopen((n), (p))
-#define mch_fstat(n, p)        fstat((n), (p))
-#define mch_stat(n, p)       stat((n), (p))
-
-#define mch_lstat(n, p)        lstat((n), (p))
-
-#define mch_open(n, m, p)    open((n), (m), (p))
+#define mch_access(n, p)    access((n), (p))
+#define mch_fopen(n, p)     fopen((n), (p))
+#define mch_fstat(n, p)     fstat((n), (p))
+#define mch_stat(n, p)      stat((n), (p))
+#define mch_lstat(n, p)     lstat((n), (p))
+#define mch_open(n, m, p)   open((n), (m), (p))
 
 /* mch_open_rw(): invoke mch_open() with third argument for user R/W. */
 #define mch_open_rw(n, f)      mch_open((n), (f), (mode_t)0600)
-
-#define TIME_MSG(s)
 
 #define REPLACE_NORMAL(s) (((s) & REPLACE_FLAG) && !((s) & VREPLACE_FLAG))
 
@@ -1133,29 +1045,8 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 /* Whether to draw the vertical bar on the right side of the cell. */
 #define CURSOR_BAR_RIGHT (curwin->w_p_rl && (!(State & CMDLINE) || cmdmsg_rl))
 
-/*
- * mb_ptr_adv(): advance a pointer to the next character, taking care of
- * multi-byte characters if needed.
- * mb_ptr_back(): backup a pointer to the previous character, taking care of
- * multi-byte characters if needed.
- * MB_COPY_CHAR(f, t): copy one char from "f" to "t" and advance the pointers.
- * PTR2CHAR(): get character from pointer.
- */
-/* Get the length of the character p points to */
-#define MB_PTR2LEN(p)          (has_mbyte ? (*mb_ptr2len)(p) : 1)
-/* Advance multi-byte pointer, skip over composing chars. */
-#define mb_ptr_adv(p)      p += has_mbyte ? (*mb_ptr2len)(p) : 1
-/* Advance multi-byte pointer, do not skip over composing chars. */
-#define mb_cptr_adv(p)     p += enc_utf8 ? utf_ptr2len(p) : has_mbyte ? (*mb_ptr2len)(p) : 1
 /* Backup multi-byte pointer. Only use with "p" > "s" ! */
-#define mb_ptr_back(s, p)  p -= has_mbyte ? ((*mb_head_off)(s, p - 1) + 1) : 1
-/* get length of multi-byte char, not including composing chars */
-#define mb_cptr2len(p)     (enc_utf8 ? utf_ptr2len(p) : (*mb_ptr2len)(p))
-
-#define MB_COPY_CHAR(f, t) if (has_mbyte) mb_copy_char(&f, &t); else *t++ = *f++
-#define MB_CHARLEN(p)      (has_mbyte ? mb_charlen(p) : (int)STRLEN(p))
-#define MB_CHAR2LEN(c)     (has_mbyte ? mb_char2len(c) : 1)
-#define PTR2CHAR(p)        (has_mbyte ? mb_ptr2char(p) : (int)*(p))
+#define mb_ptr_back(s, p)  p -= (utf_head_off(s, p - 1) + 1)
 
 #define RESET_BINDING(wp)  (wp)->w_p_scb = FALSE; (wp)->w_p_crb = FALSE
 
@@ -2153,7 +2044,7 @@ typedef struct timeval proftime_T;
 #define ENC_UCSBOM     "ucs-bom"       /* check for BOM at start of file */
 
 /* default value for 'encoding' */
-#define ENC_DFLT       "latin1"
+#define ENC_DFLT       "utf-8"
 
 /* end-of-line style */
 #define EOL_UNKNOWN     -1      /* not defined yet */
@@ -2410,7 +2301,6 @@ static char *(p_cmp_values[]) = {"internal", "keepascii", NULL};
 #endif
 #define CMP_INTERNAL           0x001
 #define CMP_KEEPASCII          0x002
-EXTERN char_u   *p_enc;         /* 'encoding' */
 EXTERN int      p_deco;         /* 'delcombine' */
 EXTERN char_u   *p_ccv;         /* 'charconvert' */
 EXTERN char_u   *p_cedit;       /* 'cedit' */
@@ -2543,7 +2433,6 @@ static char *(p_swb_values[]) = {"useopen", "usetab", "split", "newtab", NULL};
 #define SWB_USETAB              0x002
 #define SWB_SPLIT               0x004
 #define SWB_NEWTAB              0x008
-EXTERN char_u   *p_tenc;        /* 'termencoding' */
 EXTERN int      p_terse;        /* 'terse' */
 EXTERN int      p_ta;           /* 'textauto' */
 EXTERN int      p_to;           /* 'tildeop' */
@@ -2561,16 +2450,10 @@ EXTERN long     p_ttyscroll;    /* 'ttyscroll' */
 EXTERN char_u   *p_ttym;        /* 'ttymouse' */
 EXTERN unsigned ttym_flags;
 #if defined(IN_OPTION_C)
-static char *(p_ttym_values[]) = {"xterm", "xterm2", "dec", "netterm", "jsbterm", "pterm", "urxvt", "sgr", NULL};
+static char *(p_ttym_values[]) = {"xterm", "xterm2", NULL};
 #endif
 #define TTYM_XTERM             0x01
 #define TTYM_XTERM2            0x02
-#define TTYM_DEC               0x04
-#define TTYM_NETTERM           0x08
-#define TTYM_JSBTERM           0x10
-#define TTYM_PTERM             0x20
-#define TTYM_URXVT             0x40
-#define TTYM_SGR               0x80
 EXTERN char_u   *p_udir;        /* 'undodir' */
 EXTERN long     p_ul;           /* 'undolevels' */
 EXTERN long     p_ur;           /* 'undoreload' */
@@ -3566,10 +3449,6 @@ typedef struct attr_entry
     } ae_u;
 } attrentry_T;
 
-#if defined(USE_ICONV)
-#include <iconv.h>
-#endif
-
 /*
  * Used for the typeahead buffer: typebuf.
  */
@@ -3597,36 +3476,6 @@ typedef struct
     buffheader_T        save_readbuf2;
     char_u              *save_inputbuf;
 } tasave_T;
-
-/*
- * Used for conversion of terminal I/O and script files.
- */
-typedef struct
-{
-    int         vc_type;        /* zero or one of the CONV_ values */
-    int         vc_factor;      /* max. expansion factor */
-#if defined(USE_ICONV)
-    iconv_t     vc_fd;          /* for CONV_ICONV */
-#endif
-    int         vc_fail;        /* fail for invalid char, don't use '?' */
-} vimconv_T;
-
-/*
- * Structure used for reading from the viminfo file.
- */
-typedef struct
-{
-    char_u      *vir_line;      /* text of the current line */
-    FILE        *vir_fd;        /* file descriptor */
-    vimconv_T   vir_conv;       /* encoding conversion */
-} vir_T;
-
-#define CONV_NONE               0
-#define CONV_TO_UTF8            1
-#define CONV_9_TO_UTF8          2
-#define CONV_TO_LATIN1          3
-#define CONV_TO_LATIN9          4
-#define CONV_ICONV              5
 
 /*
  * Structure used for mappings and abbreviations.
@@ -4764,12 +4613,6 @@ typedef struct {
 #define VV_PROGPATH     57
 #define VV_LEN          58      /* number of v: vars */
 
-/* VIM_ATOM_NAME is the older Vim-specific selection type for X11.  Still
- * supported for when a mix of Vim versions is used. VIMENC_ATOM_NAME includes
- * the encoding to support Vims using different 'encoding' values. */
-#define VIM_ATOM_NAME "_VIM_TEXT"
-#define VIMENC_ATOM_NAME "_VIMENC_TEXT"
-
 /* Selection states for modeless selection */
 #define SELECT_CLEARED         0
 #define SELECT_IN_PROGRESS     1
@@ -4853,7 +4696,6 @@ EXTERN char_u   *LineWraps INIT(= NULL);        /* line wraps to next line */
  * NUL when the character in ScreenLines[] is to be used (ASCII char).
  * The composing characters are to be drawn on top of the original character.
  * ScreenLinesC[0][off] is only to be used when ScreenLinesUC[off] != 0.
- * Note: These three are only allocated when enc_utf8 is set!
  */
 EXTERN u8char_T *ScreenLinesUC INIT(= NULL);    /* decoded UTF-8 characters */
 EXTERN u8char_T *ScreenLinesC[MAX_MCO];         /* composing characters */
@@ -5352,40 +5194,10 @@ EXTERN JMP_BUF lc_jump_env;     /* argument to SETJMP() */
 /* volatile because it is used in signal handler deathtrap(). */
 EXTERN volatile int lc_active INIT(= FALSE); /* TRUE when lc_jump_env is valid. */
 
-EXTERN int      enc_unicode INIT(= 0);          /* 2: UCS-2 or UTF-16, 4: UCS-4 */
-EXTERN int      enc_utf8 INIT(= FALSE);         /* UTF-8 encoded Unicode */
-EXTERN int      enc_latin1like INIT(= TRUE);    /* 'encoding' is latin1 comp. */
-EXTERN int      has_mbyte INIT(= 0);            /* any multi-byte encoding */
-
 /*
- * To speed up BYTELEN() we fill a table with the byte lengths whenever enc_utf8 changes.
+ * To speed up BYTELEN() we fill a table with the byte lengths.
  */
 EXTERN char     mb_bytelen_tab[256];
-
-/* Variables that tell what conversion is used for keyboard input and display
- * output. */
-EXTERN vimconv_T input_conv;                    /* type of input conversion */
-EXTERN vimconv_T output_conv;                   /* type of output conversion */
-
-/*
- * Function pointers, used to quickly get to the right function.  Each has
- * two possible values: latin_ (8-bit), utfc_ or utf_ (utf-8).
- * The value is set in mb_init();
- */
-/* length of char in bytes, including following composing chars */
-EXTERN int (*mb_ptr2len)(char_u *p) INIT(= latin_ptr2len);
-/* idem, with limit on string length */
-EXTERN int (*mb_ptr2len_len)(char_u *p, int size) INIT(= latin_ptr2len_len);
-/* byte length of char */
-EXTERN int (*mb_char2len)(int c) INIT(= latin_char2len);
-/* convert char to bytes, return the length */
-EXTERN int (*mb_char2bytes)(int c, char_u *buf) INIT(= latin_char2bytes);
-EXTERN int (*mb_ptr2cells)(char_u *p) INIT(= latin_ptr2cells);
-EXTERN int (*mb_ptr2cells_len)(char_u *p, int size) INIT(= latin_ptr2cells_len);
-EXTERN int (*mb_char2cells)(int c) INIT(= latin_char2cells);
-EXTERN int (*mb_off2cells)(unsigned off, unsigned max_off) INIT(= latin_off2cells);
-EXTERN int (*mb_ptr2char)(char_u *p) INIT(= latin_ptr2char);
-EXTERN int (*mb_head_off)(char_u *base, char_u *p) INIT(= latin_head_off);
 
 /*
  * "State" is the main state of Vim.
@@ -5724,9 +5536,6 @@ EXTERN char *ignoredp;
 
 /* ----------------------------------------------------------------------- */
 
-/* Note: a NULL argument for vim_realloc() is not portable, don't use it. */
-#define vim_realloc(ptr, size)  realloc((ptr), (size))
-
 /*
  * Return byte length of character that starts with byte "b".
  * Returns 1 for a single-byte character.
@@ -5736,21 +5545,8 @@ EXTERN char *ignoredp;
 #define MB_BYTE2LEN(b)         mb_bytelen_tab[b]
 #define MB_BYTE2LEN_CHECK(b)   (((b) < 0 || (b) > 255) ? 1 : mb_bytelen_tab[b])
 
-/* properties used in enc_canon_table[] (first three mutually exclusive) */
-#define ENC_8BIT       0x01
+/* properties used in enc_canon_table[] */
 #define ENC_UNICODE    0x04
-
-#define ENC_LATIN1     0x200       /* Latin1 */
-
-#if defined(USE_ICONV)
-#if !defined(EILSEQ)
-#define EILSEQ 123
-#endif
-#define ICONV_ERRNO errno
-#define ICONV_E2BIG  E2BIG
-#define ICONV_EINVAL EINVAL
-#define ICONV_EILSEQ EILSEQ
-#endif
 
 /* ISSYMLINK(mode) tests if a file is a symbolic link. */
 #if (defined(S_IFMT) && defined(S_IFLNK)) || defined(S_ISLNK)

@@ -1,11 +1,7 @@
 /*
  * mbyte.c: Code specifically for handling multi-byte characters.
  *
- * The encoding used in the core is set with 'encoding'.  When 'encoding' is
- * changed, the following four variables are set (for speed).
- * Currently these types of character encodings are supported:
- *
- * "enc_utf8"       When TRUE use Unicode characters in UTF-8 encoding.
+ * "enc_utf8"       Use Unicode characters in UTF-8 encoding.
  *                  The cell width on the display needs to be determined from
  *                  the character value.
  *                  Recognizing bytes is easy: 0xxx.xxxx is a single-byte
@@ -15,16 +11,6 @@
  *                  are allowed.  These are drawn on top of the first char.
  *                  For most editing the sequence of bytes with composing
  *                  characters included is considered to be one character.
- * "enc_unicode"    When 2 use 16-bit Unicode characters (or UTF-16).
- *                  When 4 use 32-but Unicode characters.
- *                  Internally characters are stored in UTF-8 encoding to
- *                  avoid NUL bytes.  Conversion happens when doing I/O.
- *                  "enc_utf8" will also be TRUE.
- *
- * "has_mbyte" is set when "enc_utf8" is non-zero.
- *
- * If none of these is TRUE, 8-bit bytes are used for a character.  The
- * encoding isn't currently specified (TODO).
  *
  * 'encoding' specifies the encoding used in the core.  This is in registers,
  * text manipulation, buffers, etc.  Conversion has to be done when characters
@@ -51,15 +37,9 @@
  *     might be required.
  * (3) For the GUI the correct font must be selected, no conversion done.
  *     Otherwise, conversion is to be done when 'encoding' differs from
- *     'termencoding'.  (Different in the GTK+ 2 port -- 'termencoding'
- *     is always used for both input and output and must always be set to
- *     "utf-8".  gui_mch_init() does this automatically.)
+ *     'termencoding'.
  * (4) The encoding of the file is specified with 'fileencoding'.  Conversion
  *     is to be done when it's different from 'encoding'.
- *
- * The viminfo file is a special case: Only text is converted, not file names.
- * Vim scripts may contain an ":encoding" command.  This has an effect for
- * some commands, like ":menutrans"
  */
 
 #include "vim.h"
@@ -107,30 +87,13 @@ static char utf8len_tab_zero[256] =
 
 /*
  * Canonical encoding names and their properties.
- * "iso-8859-n" is handled by enc_canonize() directly.
  */
 static struct
 {   char *name;         int prop;               int ___codepage;}
 enc_canon_table[] =
 {
-#define IDX_LATIN_1     0
-    {"latin1",          ENC_8BIT + ENC_LATIN1,  1252},
-#define IDX_UTF8        1
     {"utf-8",           ENC_UNICODE,            0},
-#define IDX_COUNT       2
-};
-
-/*
- * Aliases for encoding names.
- */
-static struct
-{   char *name;         int canon;}
-enc_alias_table[] =
-{
-    {"ansi",            IDX_LATIN_1},
-    {"iso-8859-1",      IDX_LATIN_1},
-    {"utf8",            IDX_UTF8},
-    {NULL,              0}
+#define IDX_COUNT       1
 };
 
 /*
@@ -162,127 +125,42 @@ enc_canon_props(name)
     i = enc_canon_search(name);
     if (i >= 0)
         return enc_canon_table[i].prop;
-    if (STRNCMP(name, "iso-8859-", 9) == 0)
-        return ENC_8BIT;
     return 0;
 }
 
 /*
  * Set up for using multi-byte characters.
- * Called in three cases:
- * - by main() to initialize (p_enc == NULL)
+ * Called in two cases:
+ * - by main() to initialize "early"
  * - by set_init_1() after 'encoding' was set to its default.
- * - by do_set() when 'encoding' has been set.
- * p_enc must have been passed through enc_canonize() already.
- * Sets the "enc_unicode", "enc_utf8" and "has_mbyte" flags.
- * Fills mb_bytelen_tab[] and returns NULL when there are no problems.
- * When there is something wrong: Returns an error message and doesn't change anything.
+ * Fills mb_bytelen_tab[].
  */
-    char_u *
-mb_init()
+    void
+mb_init(early)
+    int         early;
 {
     int         i;
-    int         idx;
     int         n;
-#if defined(USE_ICONV)
-#define LEN_FROM_CONV
-    vimconv_T   vimconv;
-#endif
 
-    if (p_enc == NULL)
+    if (early)
     {
         /* Just starting up: set the whole table to one's. */
         for (i = 0; i < 256; ++i)
             mb_bytelen_tab[i] = 1;
-        input_conv.vc_type = CONV_NONE;
-        input_conv.vc_factor = 1;
-        output_conv.vc_type = CONV_NONE;
-        return NULL;
-    }
-    else if (STRNCMP(p_enc, "iso-8859-", 9) == 0)
-    {
-        /* Accept any "iso-8859-" name. */
-        enc_unicode = 0;
-        enc_utf8 = FALSE;
-    }
-    else if ((idx = enc_canon_search(p_enc)) >= 0)
-    {
-        i = enc_canon_table[idx].prop;
-        if (i & ENC_UNICODE)
-        {
-            /* Unicode */
-            enc_utf8 = TRUE;
-            enc_unicode = 0;
-        }
-        else
-        {
-            /* Must be 8-bit. */
-            enc_unicode = 0;
-            enc_utf8 = FALSE;
-        }
-    }
-    else    /* Don't know what encoding this is, reject it. */
-        return e_invarg;
 
-    has_mbyte = enc_utf8;
-
-    /* Detect an encoding that uses latin1 characters. */
-    enc_latin1like = (enc_utf8 || STRCMP(p_enc, "latin1") == 0 || STRCMP(p_enc, "iso-8859-15") == 0);
-
-    /*
-     * Set the function pointers.
-     */
-    if (enc_utf8)
-    {
-        mb_ptr2len = utfc_ptr2len;
-        mb_ptr2len_len = utfc_ptr2len_len;
-        mb_char2len = utf_char2len;
-        mb_char2bytes = utf_char2bytes;
-        mb_ptr2cells = utf_ptr2cells;
-        mb_ptr2cells_len = utf_ptr2cells_len;
-        mb_char2cells = utf_char2cells;
-        mb_off2cells = utf_off2cells;
-        mb_ptr2char = utf_ptr2char;
-        mb_head_off = utf_head_off;
-    }
-    else
-    {
-        mb_ptr2len = latin_ptr2len;
-        mb_ptr2len_len = latin_ptr2len_len;
-        mb_char2len = latin_char2len;
-        mb_char2bytes = latin_char2bytes;
-        mb_ptr2cells = latin_ptr2cells;
-        mb_ptr2cells_len = latin_ptr2cells_len;
-        mb_char2cells = latin_char2cells;
-        mb_off2cells = latin_off2cells;
-        mb_ptr2char = latin_ptr2char;
-        mb_head_off = latin_head_off;
+        return;
     }
 
     /*
      * Fill the mb_bytelen_tab[] for MB_BYTE2LEN().
      */
-#if defined(LEN_FROM_CONV)
-    /* When 'encoding' is different from the current locale mblen() won't
-     * work.  Use conversion to "utf-8" instead. */
-    vimconv.vc_type = CONV_NONE;
-#endif
-
     for (i = 0; i < 256; ++i)
     {
-        /* Our own function to reliably check the length of UTF-8 characters,
-         * independent of mblen(). */
-        if (enc_utf8)
-            n = utf8len_tab[i];
-        else
-            n = 1;
+        /* Our own to reliably check the length of UTF-8 characters, independent of mblen(). */
+        n = utf8len_tab[i];
 
         mb_bytelen_tab[i] = n;
     }
-
-#if defined(LEN_FROM_CONV)
-    convert_setup(&vimconv, NULL, NULL);
-#endif
 
     /* The cell width depends on the type of multi-byte characters. */
     (void)init_chartab();
@@ -291,15 +169,8 @@ mb_init()
     screenalloc(FALSE);
 
     /* When using Unicode, set default for 'fileencodings'. */
-    if (enc_utf8 && !option_was_set((char_u *)"fencs"))
-        set_string_option_direct((char_u *)"fencs", -1,
-                       (char_u *)"ucs-bom,utf-8,default,latin1", OPT_FREE, 0);
-
-    /* Fire an autocommand to let people do custom font setup. This must be
-     * after Vim has been setup for the new encoding. */
-    apply_autocmds(EVENT_ENCODINGCHANGED, NULL, (char_u *)"", FALSE, curbuf);
-
-    return NULL;
+    if (!option_was_set((char_u *)"fencs"))
+        set_string_option_direct((char_u *)"fencs", -1, (char_u *)"ucs-bom,utf-8", OPT_FREE, 0);
 }
 
 /*
@@ -317,19 +188,11 @@ bomb_size()
     if (curbuf->b_p_bomb && !curbuf->b_p_bin)
     {
         if (*curbuf->b_p_fenc == NUL)
-        {
-            if (enc_utf8)
-            {
-                if (enc_unicode != 0)
-                    n = enc_unicode;
-                else
-                    n = 3;
-            }
-        }
+            n = 3;
         else if (STRCMP(curbuf->b_p_fenc, "utf-8") == 0)
             n = 3;
         else if (STRNCMP(curbuf->b_p_fenc, "ucs-2", 5) == 0
-                || STRNCMP(curbuf->b_p_fenc, "utf-16", 6) == 0)
+              || STRNCMP(curbuf->b_p_fenc, "utf-16", 6) == 0)
             n = 2;
         else if (STRNCMP(curbuf->b_p_fenc, "ucs-4", 5) == 0)
             n = 4;
@@ -344,17 +207,14 @@ bomb_size()
 remove_bom(s)
     char_u *s;
 {
-    if (enc_utf8)
-    {
-        char_u *p = s;
+    char_u *p = s;
 
-        while ((p = vim_strbyte(p, 0xef)) != NULL)
-        {
-            if (p[1] == 0xbb && p[2] == 0xbf)
-                STRMOVE(p, p + 3);
-            else
-                ++p;
-        }
+    while ((p = vim_strbyte(p, 0xef)) != NULL)
+    {
+        if (p[1] == 0xbb && p[2] == 0xbf)
+            STRMOVE(p, p + 3);
+        else
+            ++p;
     }
 }
 
@@ -385,64 +245,7 @@ mb_get_class_buf(p, buf)
             return 2;
         return 1;
     }
-    if (enc_utf8)
-        return utf_class(utf_ptr2char(p));
-    return 0;
-}
-
-/*
- * mb_char2len() function pointer.
- * Return length in bytes of character "c".
- * Returns 1 for a single-byte character.
- */
-    int
-latin_char2len(c)
-    int         c UNUSED;
-{
-    return 1;
-}
-
-/*
- * mb_char2bytes() function pointer.
- * Convert a character to its bytes.
- * Returns the length in bytes.
- */
-    int
-latin_char2bytes(c, buf)
-    int         c;
-    char_u      *buf;
-{
-    buf[0] = c;
-    return 1;
-}
-
-/*
- * mb_ptr2len() function pointer.
- * Get byte length of character at "*p" but stop at a NUL.
- * For UTF-8 this includes following composing characters.
- * Returns 0 when *p is NUL.
- */
-    int
-latin_ptr2len(p)
-    char_u      *p;
-{
-    return MB_BYTE2LEN(*p);
-}
-
-/*
- * mb_ptr2len_len() function pointer.
- * Like mb_ptr2len(), but limit to read "size" bytes.
- * Returns 0 for an empty string.
- * Returns 1 for an illegal char or an incomplete byte sequence.
- */
-    int
-latin_ptr2len_len(p, size)
-    char_u      *p;
-    int         size;
-{
-    if (size < 1 || *p == NUL)
-        return 0;
-    return 1;
+    return utf_class(utf_ptr2char(p));
 }
 
 struct interval
@@ -732,18 +535,6 @@ utf_char2cells(c)
     return 1;
 }
 
-/*
- * mb_ptr2cells() function pointer.
- * Return the number of display cells character at "*p" occupies.
- * This doesn't take care of unprintable characters, use ptr2cells() for that.
- */
-    int
-latin_ptr2cells(p)
-    char_u      *p UNUSED;
-{
-    return 1;
-}
-
     int
 utf_ptr2cells(p)
     char_u      *p;
@@ -762,19 +553,6 @@ utf_ptr2cells(p)
             return char2cells(c);
         return utf_char2cells(c);
     }
-    return 1;
-}
-
-/*
- * mb_ptr2cells_len() function pointer.
- * Like mb_ptr2cells(), but limit string length to "size".
- * For an empty string or truncated character returns 1.
- */
-    int
-latin_ptr2cells_len(p, size)
-    char_u      *p UNUSED;
-    int         size UNUSED;
-{
     return 1;
 }
 
@@ -803,18 +581,6 @@ utf_ptr2cells_len(p, size)
 }
 
 /*
- * mb_char2cells() function pointer.
- * Return the number of display cells character "c" occupies.
- * Only takes care of multi-byte chars, not "^C" and such.
- */
-    int
-latin_char2cells(c)
-    int         c UNUSED;
-{
-    return 1;
-}
-
-/*
  * Return the number of cells occupied by string "p".
  * Stop at a NUL character.  When "len" >= 0 stop at character "p[len]".
  */
@@ -826,22 +592,9 @@ mb_string2cells(p, len)
     int i;
     int clen = 0;
 
-    for (i = 0; (len < 0 || i < len) && p[i] != NUL; i += (*mb_ptr2len)(p + i))
-        clen += (*mb_ptr2cells)(p + i);
+    for (i = 0; (len < 0 || i < len) && p[i] != NUL; i += utfc_ptr2len(p + i))
+        clen += utf_ptr2cells(p + i);
     return clen;
-}
-
-/*
- * mb_off2cells() function pointer.
- * Return number of display cells for char at ScreenLines[off].
- * We make sure that the offset used is less than "max_off".
- */
-    int
-latin_off2cells(off, max_off)
-    unsigned    off UNUSED;
-    unsigned    max_off UNUSED;
-{
-    return 1;
 }
 
     int
@@ -850,17 +603,6 @@ utf_off2cells(off, max_off)
     unsigned    max_off;
 {
     return (off + 1 < max_off && ScreenLines[off + 1] == 0) ? 2 : 1;
-}
-
-/*
- * mb_ptr2char() function pointer.
- * Convert a byte sequence into a character.
- */
-    int
-latin_ptr2char(p)
-    char_u      *p;
-{
-    return *p;
 }
 
 /*
@@ -976,8 +718,8 @@ mb_ptr2char_adv(pp)
 {
     int         c;
 
-    c = (*mb_ptr2char)(*pp);
-    *pp += (*mb_ptr2len)(*pp);
+    c = utf_ptr2char(*pp);
+    *pp += utfc_ptr2len(*pp);
     return c;
 }
 
@@ -991,11 +733,9 @@ mb_cptr2char_adv(pp)
 {
     int         c;
 
-    c = (*mb_ptr2char)(*pp);
-    if (enc_utf8)
-        *pp += utf_ptr2len(*pp);
-    else
-        *pp += (*mb_ptr2len)(*pp);
+    c = utf_ptr2char(*pp);
+    *pp += utf_ptr2len(*pp);
+
     return c;
 }
 
@@ -2305,7 +2045,7 @@ utf_toupper(a)
 
     /* For characters below 128 use locale sensitive toupper(). */
     if (a < 128)
-        return TOUPPER_LOC(a);
+        return toupper(a);
 
     /* For any other characters use the above mapping table. */
     return utf_convert(a, toUpper, (int)sizeof(toUpper));
@@ -2339,7 +2079,7 @@ utf_tolower(a)
 
     /* For characters below 128 use locale sensitive tolower(). */
     if (a < 128)
-        return TOLOWER_LOC(a);
+        return tolower(a);
 
     /* For any other characters use the above mapping table. */
     return utf_convert(a, toLower, (int)sizeof(toLower));
@@ -2437,44 +2177,7 @@ mb_strnicmp(s1, s2, nn)
     char_u      *s1, *s2;
     size_t      nn;
 {
-    int         i, l;
-    int         cdiff;
-    int         n = (int)nn;
-
-    if (enc_utf8)
-    {
-        return utf_strnicmp(s1, s2, nn, nn);
-    }
-    else
-    {
-        for (i = 0; i < n; i += l)
-        {
-            if (s1[i] == NUL && s2[i] == NUL)   /* both strings end */
-                return 0;
-
-            l = (*mb_ptr2len)(s1 + i);
-            if (l <= 1)
-            {
-                /* Single byte: first check normally, then with ignore case. */
-                if (s1[i] != s2[i])
-                {
-                    cdiff = MB_TOLOWER(s1[i]) - MB_TOLOWER(s2[i]);
-                    if (cdiff != 0)
-                        return cdiff;
-                }
-            }
-            else
-            {
-                /* For non-Unicode multi-byte don't ignore case. */
-                if (l > n - i)
-                    l = n - i;
-                cdiff = STRNCMP(s1 + i, s2 + i, l);
-                if (cdiff != 0)
-                    return cdiff;
-            }
-        }
-    }
-    return 0;
+    return utf_strnicmp(s1, s2, nn, nn);
 }
 
 /*
@@ -2521,20 +2224,6 @@ show_utf8()
     }
 
     msg(IObuff);
-}
-
-/*
- * mb_head_off() function pointer.
- * Return offset from "p" to the first byte of the character it points into.
- * If "p" points to the NUL at the end of the string return 0.
- * Returns 0 when already at the first byte of a character.
- */
-    int
-latin_head_off(base, p)
-    char_u      *base UNUSED;
-    char_u      *p UNUSED;
-{
-    return 0;
 }
 
     int
@@ -2586,7 +2275,7 @@ mb_copy_char(fp, tp)
     char_u      **fp;
     char_u      **tp;
 {
-    int     l = (*mb_ptr2len)(*fp);
+    int     l = utfc_ptr2len(*fp);
 
     mch_memmove(*tp, *fp, (size_t)l);
     *tp += l;
@@ -2606,29 +2295,22 @@ mb_off_next(base, p)
     int         i;
     int         j;
 
-    if (enc_utf8)
+    if (*p < 0x80)          /* be quick for ASCII */
+        return 0;
+
+    /* Find the next character that isn't 10xx.xxxx */
+    for (i = 0; (p[i] & 0xc0) == 0x80; ++i)
+        ;
+    if (i > 0)
     {
-        if (*p < 0x80)          /* be quick for ASCII */
+        /* Check for illegal sequence. */
+        for (j = 0; p - j > base; ++j)
+            if ((p[-j] & 0xc0) != 0x80)
+                break;
+        if (utf8len_tab[p[-j]] != i + j)
             return 0;
-
-        /* Find the next character that isn't 10xx.xxxx */
-        for (i = 0; (p[i] & 0xc0) == 0x80; ++i)
-            ;
-        if (i > 0)
-        {
-            /* Check for illegal sequence. */
-            for (j = 0; p - j > base; ++j)
-                if ((p[-j] & 0xc0) != 0x80)
-                    break;
-            if (utf8len_tab[p[-j]] != i + j)
-                return 0;
-        }
-        return i;
     }
-
-    /* Only need to check if we're on a trail byte, it doesn't matter if we
-     * want the offset to the next or current character. */
-    return (*mb_head_off)(base, p);
+    return i;
 }
 
 /*
@@ -2640,29 +2322,24 @@ mb_tail_off(base, p)
     char_u      *base;
     char_u      *p;
 {
-    int         i;
-    int         j;
+    int         i, j;
 
     if (*p == NUL)
         return 0;
 
-    if (enc_utf8)
-    {
-        /* Find the last character that is 10xx.xxxx */
-        for (i = 0; (p[i + 1] & 0xc0) == 0x80; ++i)
-            ;
-        /* Check for illegal sequence. */
-        for (j = 0; p - j > base; ++j)
-            if ((p[-j] & 0xc0) != 0x80)
-                break;
-        if (utf8len_tab[p[-j]] != i + j + 1)
-            return 0;
-        return i;
-    }
+    /* Find the last character that is 10xx.xxxx */
+    for (i = 0; (p[i + 1] & 0xc0) == 0x80; ++i)
+        ;
 
-    /* It can't be the first byte if a double-byte when not using DBCS, at the
-     * end of the string or the byte can't start a double-byte. */
-    return 0;
+    /* Check for illegal sequence. */
+    for (j = 0; p - j > base; ++j)
+        if ((p[-j] & 0xc0) != 0x80)
+            break;
+
+    if (utf8len_tab[p[-j]] != i + j + 1)
+        return 0;
+
+    return i;
 }
 
 /*
@@ -2674,30 +2351,12 @@ utf_find_illegal()
     pos_T       pos = curwin->w_cursor;
     char_u      *p;
     int         len;
-    vimconv_T   vimconv;
     char_u      *tofree = NULL;
-
-    vimconv.vc_type = CONV_NONE;
-    if (enc_utf8 && (enc_canon_props(curbuf->b_p_fenc) & ENC_8BIT))
-    {
-        /* 'encoding' is "utf-8" but we are editing a 8-bit encoded file,
-         * possibly a utf-8 file with illegal bytes.  Setup for conversion
-         * from utf-8 to 'fileencoding'. */
-        convert_setup(&vimconv, p_enc, curbuf->b_p_fenc);
-    }
 
     curwin->w_cursor.coladd = 0;
     for (;;)
     {
         p = ml_get_cursor();
-        if (vimconv.vc_type != CONV_NONE)
-        {
-            vim_free(tofree);
-            tofree = string_convert(&vimconv, p, NULL);
-            if (tofree == NULL)
-                break;
-            p = tofree;
-        }
 
         while (*p != NUL)
         {
@@ -2706,19 +2365,7 @@ utf_find_illegal()
             len = utf_ptr2len(p);
             if (*p >= 0x80 && (len == 1 || utf_char2len(utf_ptr2char(p)) != len))
             {
-                if (vimconv.vc_type == CONV_NONE)
-                    curwin->w_cursor.col += (colnr_T)(p - ml_get_cursor());
-                else
-                {
-                    int     l;
-
-                    len = (int)(p - tofree);
-                    for (p = ml_get_cursor(); *p != NUL && len-- > 0; p += l)
-                    {
-                        l = utf_ptr2len(p);
-                        curwin->w_cursor.col += l;
-                    }
-                }
+                curwin->w_cursor.col += (colnr_T)(p - ml_get_cursor());
                 goto theend;
             }
             p += len;
@@ -2735,7 +2382,6 @@ utf_find_illegal()
 
 theend:
     vim_free(tofree);
-    convert_setup(&vimconv, NULL, NULL);
 }
 
 /*
@@ -2763,12 +2409,12 @@ mb_adjustpos(buf, lp)
     if (lp->col > 0 || lp->coladd > 1)
     {
         p = ml_get_buf(buf, lp->lnum, FALSE);
-        lp->col -= (*mb_head_off)(p, p + lp->col);
+        lp->col -= utf_head_off(p, p + lp->col);
         /* Reset "coladd" when the cursor would be on the right half of a
          * double-wide character. */
         if (lp->coladd == 1
                 && p[lp->col] != TAB
-                && vim_isprintc((*mb_ptr2char)(p + lp->col))
+                && vim_isprintc(utf_ptr2char(p + lp->col))
                 && ptr2cells(p + lp->col) > 1)
             lp->coladd = 0;
     }
@@ -2802,7 +2448,7 @@ mb_charlen(str)
         return 0;
 
     for (count = 0; *p != NUL; count++)
-        p += (*mb_ptr2len)(p);
+        p += utfc_ptr2len(p);
 
     return count;
 }
@@ -2850,7 +2496,7 @@ mb_unescape(pp)
 
         /* Return a multi-byte character if it's found.  An illegal sequence
          * will result in a 1 here. */
-        if ((*mb_ptr2len)(buf) > 1)
+        if (utfc_ptr2len(buf) > 1)
         {
             *pp = str + n + 1;
             return buf;
@@ -2873,7 +2519,7 @@ mb_lefthalve(row, col)
     int     row;
     int     col;
 {
-    return (*mb_off2cells)(LineOffset[row] + col, LineOffset[row] + screen_Columns) > 1;
+    return utf_off2cells(LineOffset[row] + col, LineOffset[row] + screen_Columns) > 1;
 }
 
 /*
@@ -2887,13 +2533,10 @@ mb_fix_col(col, row)
 {
     col = check_col(col);
     row = check_row(row);
-    if (has_mbyte && ScreenLines != NULL && col > 0
-            && (enc_utf8 && ScreenLines[LineOffset[row] + col] == 0))
+    if (ScreenLines != NULL && col > 0 && ScreenLines[LineOffset[row] + col] == 0)
         return col - 1;
     return col;
 }
-
-static int enc_alias_search(char_u *name);
 
 /*
  * Find the canonical name for encoding "enc".
@@ -2907,14 +2550,10 @@ enc_canonize(enc)
 {
     char_u      *r;
     char_u      *p, *s;
-    int         i;
 
     if (STRCMP(enc, "default") == 0)
     {
-        /* Use the default encoding as it's found by set_init_1(). */
-        r = get_encoding_default();
-        if (r == NULL)
-            r = (char_u *)"latin1";
+        r = (char_u *)ENC_DFLT;
         return vim_strsave(r);
     }
 
@@ -2935,431 +2574,28 @@ enc_canonize(enc)
 
         p = r;
 
-        /* "iso8859" -> "iso-8859" */
-        if (STRNCMP(p, "iso8859", 7) == 0)
-        {
-            STRMOVE(p + 4, p + 3);
-            p[3] = '-';
-        }
-
-        /* "iso-8859n" -> "iso-8859-n" */
-        if (STRNCMP(p, "iso-8859", 8) == 0 && p[8] != '-')
-        {
-            STRMOVE(p + 9, p + 8);
-            p[8] = '-';
-        }
-
-        /* "latin-N" -> "latinN" */
-        if (STRNCMP(p, "latin-", 6) == 0)
-            STRMOVE(p + 5, p + 6);
-
         if (enc_canon_search(p) >= 0)
         {
             /* canonical name can be used unmodified */
             if (p != r)
                 STRMOVE(r, p);
         }
-        else if ((i = enc_alias_search(p)) >= 0)
-        {
-            /* alias recognized, get canonical name */
-            vim_free(r);
-            r = vim_strsave((char_u *)enc_canon_table[i].name);
-        }
     }
     return r;
-}
-
-/*
- * Search for an encoding alias of "name".
- * Returns -1 when not found.
- */
-    static int
-enc_alias_search(name)
-    char_u      *name;
-{
-    int         i;
-
-    for (i = 0; enc_alias_table[i].name != NULL; ++i)
-        if (STRCMP(name, enc_alias_table[i].name) == 0)
-            return enc_alias_table[i].canon;
-    return -1;
-}
-
-/*
- * Get the canonicalized encoding of the current locale.
- * Returns an allocated string when successful, NULL when not.
- */
-    char_u *
-enc_locale()
-{
-    char        *s;
-    char        *p;
-    int         i;
-    char        buf[50];
-    if ((s = getenv("LC_ALL")) == NULL || *s == NUL)
-        if ((s = getenv("LC_CTYPE")) == NULL || *s == NUL)
-            s = getenv("LANG");
-
-    if (s == NULL || *s == NUL)
-        return FAIL;
-
-    /* The most generic locale format is:
-     * language[_territory][.codeset][@modifier][+special][,[sponsor][_revision]]
-     * If there is a '.' remove the part before it.
-     * if there is something after the codeset, remove it.
-     * Make the name lowercase and replace '_' with '-'.
-     * Exception: "ja_JP.EUC" == "euc-jp", "zh_CN.EUC" = "euc-cn",
-     * "ko_KR.EUC" == "euc-kr"
-     */
-    if ((p = (char *)vim_strchr((char_u *)s, '.')) != NULL)
-    {
-        if (p > s + 2 && STRNICMP(p + 1, "EUC", 3) == 0 && !isalnum((int)p[4]) && p[4] != '-' && p[-3] == '_')
-        {
-            /* copy "XY.EUC" to "euc-XY" to buf[10] */
-            STRCPY(buf + 10, "euc-");
-            buf[14] = p[-2];
-            buf[15] = p[-1];
-            buf[16] = 0;
-            s = buf + 10;
-        }
-        else
-            s = p + 1;
-    }
-    for (i = 0; s[i] != NUL && i < (int)sizeof(buf) - 1; ++i)
-    {
-        if (s[i] == '_' || s[i] == '-')
-            buf[i] = '-';
-        else if (isalnum((int)s[i]))
-            buf[i] = TOLOWER_ASC(s[i]);
-        else
-            break;
-    }
-    buf[i] = NUL;
-
-    return enc_canonize((char_u *)buf);
-}
-
-#if defined(USE_ICONV)
-
-static char_u *iconv_string(vimconv_T *vcp, char_u *str, int slen, int *unconvlenp, int *resultlenp);
-
-/*
- * Call iconv_open() with a check if iconv() works properly (there are broken versions).
- * Returns (void *)-1 if failed.
- * (should return iconv_t, but that causes problems with prototypes).
- */
-    void *
-my_iconv_open(to, from)
-    char_u      *to;
-    char_u      *from;
-{
-    iconv_t     fd;
-#define ICONV_TESTLEN 400
-    char_u      tobuf[ICONV_TESTLEN];
-    char        *p;
-    size_t      tolen;
-    static int  iconv_ok = -1;
-
-    if (iconv_ok == FALSE)
-        return (void *)-1;      /* detected a broken iconv() previously */
-
-    fd = iconv_open((char *)to, (char *)from);
-
-    if (fd != (iconv_t)-1 && iconv_ok == -1)
-    {
-        /*
-         * Do a dummy iconv() call to check if it actually works.  There is a
-         * version of iconv() on Linux that is broken.  We can't ignore it,
-         * because it's wide-spread.  The symptoms are that after outputting
-         * the initial shift state the "to" pointer is NULL and conversion
-         * stops for no apparent reason after about 8160 characters.
-         */
-        p = (char *)tobuf;
-        tolen = ICONV_TESTLEN;
-        (void)iconv(fd, NULL, NULL, &p, &tolen);
-        if (p == NULL)
-        {
-            iconv_ok = FALSE;
-            iconv_close(fd);
-            fd = (iconv_t)-1;
-        }
-        else
-            iconv_ok = TRUE;
-    }
-
-    return (void *)fd;
-}
-
-/*
- * Convert the string "str[slen]" with iconv().
- * If "unconvlenp" is not NULL handle the string ending in an incomplete
- * sequence and set "*unconvlenp" to the length of it.
- * Returns the converted string in allocated memory.  NULL for an error.
- * If resultlenp is not NULL, sets it to the result length in bytes.
- */
-    static char_u *
-iconv_string(vcp, str, slen, unconvlenp, resultlenp)
-    vimconv_T   *vcp;
-    char_u      *str;
-    int         slen;
-    int         *unconvlenp;
-    int         *resultlenp;
-{
-    const char  *from;
-    size_t      fromlen;
-    char        *to;
-    size_t      tolen;
-    size_t      len = 0;
-    size_t      done = 0;
-    char_u      *result = NULL;
-    char_u      *p;
-    int         l;
-
-    from = (char *)str;
-    fromlen = slen;
-    for (;;)
-    {
-        if (len == 0 || ICONV_ERRNO == ICONV_E2BIG)
-        {
-            /* Allocate enough room for most conversions.  When re-allocating
-             * increase the buffer size. */
-            len = len + fromlen * 2 + 40;
-            p = alloc((unsigned)len);
-            if (p != NULL && done > 0)
-                mch_memmove(p, result, done);
-            vim_free(result);
-            result = p;
-            if (result == NULL) /* out of memory */
-                break;
-        }
-
-        to = (char *)result + done;
-        tolen = len - done - 2;
-        /* Avoid a warning for systems with a wrong iconv() prototype by
-         * casting the second argument to void *. */
-        if (iconv(vcp->vc_fd, (void *)&from, &fromlen, &to, &tolen) != (size_t)-1)
-        {
-            /* Finished, append a NUL. */
-            *to = NUL;
-            break;
-        }
-
-        /* Check both ICONV_EINVAL and EINVAL, because the dynamically loaded
-         * iconv library may use one of them. */
-        if (!vcp->vc_fail && unconvlenp != NULL
-                && (ICONV_ERRNO == ICONV_EINVAL || ICONV_ERRNO == EINVAL))
-        {
-            /* Handle an incomplete sequence at the end. */
-            *to = NUL;
-            *unconvlenp = (int)fromlen;
-            break;
-        }
-
-        /* Check both ICONV_EILSEQ and EILSEQ, because the dynamically loaded
-         * iconv library may use one of them. */
-        else if (!vcp->vc_fail
-                && (ICONV_ERRNO == ICONV_EILSEQ || ICONV_ERRNO == EILSEQ
-                    || ICONV_ERRNO == ICONV_EINVAL || ICONV_ERRNO == EINVAL))
-        {
-            /* Can't convert: insert a '?' and skip a character.  This assumes
-             * conversion from 'encoding' to something else.  In other
-             * situations we don't know what to skip anyway. */
-            *to++ = '?';
-            if ((*mb_ptr2cells)((char_u *)from) > 1)
-                *to++ = '?';
-            if (enc_utf8)
-                l = utfc_ptr2len_len((char_u *)from, (int)fromlen);
-            else
-            {
-                l = (*mb_ptr2len)((char_u *)from);
-                if (l > (int)fromlen)
-                    l = (int)fromlen;
-            }
-            from += l;
-            fromlen -= l;
-        }
-        else if (ICONV_ERRNO != ICONV_E2BIG)
-        {
-            /* conversion failed */
-            vim_free(result);
-            result = NULL;
-            break;
-        }
-        /* Not enough room or skipping illegal sequence. */
-        done = to - (char *)result;
-    }
-
-    if (resultlenp != NULL && result != NULL)
-        *resultlenp = (int)(to - (char *)result);
-    return result;
-}
-
-#endif
-
-/*
- * Setup "vcp" for conversion from "from" to "to".
- * The names must have been made canonical with enc_canonize().
- * vcp->vc_type must have been initialized to CONV_NONE.
- * Note: cannot be used for conversion from/to ucs-2 and ucs-4 (will use utf-8 instead).
- * Afterwards invoke with "from" and "to" equal to NULL to cleanup.
- * Return FAIL when conversion is not supported, OK otherwise.
- */
-    int
-convert_setup(vcp, from, to)
-    vimconv_T   *vcp;
-    char_u      *from;
-    char_u      *to;
-{
-    return convert_setup_ext(vcp, from, TRUE, to, TRUE);
-}
-
-/*
- * As convert_setup(), but only when from_unicode_is_utf8 is TRUE will all
- * "from" unicode charsets be considered utf-8.  Same for "to".
- */
-    int
-convert_setup_ext(vcp, from, from_unicode_is_utf8, to, to_unicode_is_utf8)
-    vimconv_T   *vcp;
-    char_u      *from;
-    int         from_unicode_is_utf8;
-    char_u      *to;
-    int         to_unicode_is_utf8;
-{
-    int         from_prop;
-    int         to_prop;
-    int         from_is_utf8;
-    int         to_is_utf8;
-
-    /* Reset to no conversion. */
-#if defined(USE_ICONV)
-    if (vcp->vc_type == CONV_ICONV && vcp->vc_fd != (iconv_t)-1)
-        iconv_close(vcp->vc_fd);
-#endif
-    vcp->vc_type = CONV_NONE;
-    vcp->vc_factor = 1;
-    vcp->vc_fail = FALSE;
-
-    /* No conversion when one of the names is empty or they are equal. */
-    if (from == NULL || *from == NUL || to == NULL || *to == NUL || STRCMP(from, to) == 0)
-        return OK;
-
-    from_prop = enc_canon_props(from);
-    to_prop = enc_canon_props(to);
-    if (from_unicode_is_utf8)
-        from_is_utf8 = from_prop & ENC_UNICODE;
-    else
-        from_is_utf8 = from_prop == ENC_UNICODE;
-    if (to_unicode_is_utf8)
-        to_is_utf8 = to_prop & ENC_UNICODE;
-    else
-        to_is_utf8 = to_prop == ENC_UNICODE;
-
-    if ((from_prop & ENC_LATIN1) && to_is_utf8)
-    {
-        /* Internal latin1 -> utf-8 conversion. */
-        vcp->vc_type = CONV_TO_UTF8;
-        vcp->vc_factor = 2;     /* up to twice as long */
-    }
-    else if (from_is_utf8 && (to_prop & ENC_LATIN1))
-    {
-        /* Internal utf-8 -> latin1 conversion. */
-        vcp->vc_type = CONV_TO_LATIN1;
-    }
-#if defined(USE_ICONV)
-    else
-    {
-        /* Use iconv() for conversion. */
-        vcp->vc_fd = (iconv_t)my_iconv_open(
-                to_is_utf8 ? (char_u *)"utf-8" : to,
-                from_is_utf8 ? (char_u *)"utf-8" : from);
-        if (vcp->vc_fd != (iconv_t)-1)
-        {
-            vcp->vc_type = CONV_ICONV;
-            vcp->vc_factor = 4; /* could be longer too... */
-        }
-    }
-#endif
-    if (vcp->vc_type == CONV_NONE)
-        return FAIL;
-
-    return OK;
-}
-
-/*
- * Like convert_input(), but when there is an incomplete byte sequence at the
- * end return that as an allocated string in "restp" and set "*restlenp" to
- * the length.  If "restp" is NULL it is not used.
- */
-    int
-convert_input_safe(ptr, len, maxlen, restp, restlenp)
-    char_u      *ptr;
-    int         len;
-    int         maxlen;
-    char_u      **restp;
-    int         *restlenp;
-{
-    char_u      *d;
-    int         dlen = len;
-    int         unconvertlen = 0;
-
-    d = string_convert_ext(&input_conv, ptr, &dlen, restp == NULL ? NULL : &unconvertlen);
-    if (d != NULL)
-    {
-        if (dlen <= maxlen)
-        {
-            if (unconvertlen > 0)
-            {
-                /* Move the unconverted characters to allocated memory. */
-                *restp = alloc(unconvertlen);
-                if (*restp != NULL)
-                    mch_memmove(*restp, ptr + len - unconvertlen, unconvertlen);
-                *restlenp = unconvertlen;
-            }
-            mch_memmove(ptr, d, dlen);
-        }
-        else
-            /* result is too long, keep the unconverted text (the caller must
-             * have done something wrong!) */
-            dlen = len;
-        vim_free(d);
-    }
-    return dlen;
 }
 
 /*
  * Convert text "ptr[*lenp]" according to "vcp".
  * Returns the result in allocated memory and sets "*lenp".
  * When "lenp" is NULL, use NUL terminated strings.
- * Illegal chars are often changed to "?", unless vcp->vc_fail is set.
  * When something goes wrong, NULL is returned and "*lenp" is unchanged.
  */
     char_u *
-string_convert(vcp, ptr, lenp)
-    vimconv_T   *vcp;
+string_convert(ptr, lenp)
     char_u      *ptr;
     int         *lenp;
 {
-    return string_convert_ext(vcp, ptr, lenp, NULL);
-}
-
-/*
- * Like string_convert(), but when "unconvlenp" is not NULL and there are is
- * an incomplete sequence at the end it is not converted and "*unconvlenp" is
- * set to the number of remaining bytes.
- */
-    char_u *
-string_convert_ext(vcp, ptr, lenp, unconvlenp)
-    vimconv_T   *vcp;
-    char_u      *ptr;
-    int         *lenp;
-    int         *unconvlenp;
-{
-    char_u      *retval = NULL;
-    char_u      *d;
     int         len;
-    int         i;
-    int         l;
-    int         c;
 
     if (lenp == NULL)
         len = (int)STRLEN(ptr);
@@ -3368,137 +2604,5 @@ string_convert_ext(vcp, ptr, lenp, unconvlenp)
     if (len == 0)
         return vim_strsave((char_u *)"");
 
-    switch (vcp->vc_type)
-    {
-        case CONV_TO_UTF8:      /* latin1 to utf-8 conversion */
-            retval = alloc(len * 2 + 1);
-            if (retval == NULL)
-                break;
-            d = retval;
-            for (i = 0; i < len; ++i)
-            {
-                c = ptr[i];
-                if (c < 0x80)
-                    *d++ = c;
-                else
-                {
-                    *d++ = 0xc0 + ((unsigned)c >> 6);
-                    *d++ = 0x80 + (c & 0x3f);
-                }
-            }
-            *d = NUL;
-            if (lenp != NULL)
-                *lenp = (int)(d - retval);
-            break;
-
-        case CONV_9_TO_UTF8:    /* latin9 to utf-8 conversion */
-            retval = alloc(len * 3 + 1);
-            if (retval == NULL)
-                break;
-            d = retval;
-            for (i = 0; i < len; ++i)
-            {
-                c = ptr[i];
-                switch (c)
-                {
-                    case 0xa4: c = 0x20ac; break;   /* euro */
-                    case 0xa6: c = 0x0160; break;   /* S hat */
-                    case 0xa8: c = 0x0161; break;   /* S -hat */
-                    case 0xb4: c = 0x017d; break;   /* Z hat */
-                    case 0xb8: c = 0x017e; break;   /* Z -hat */
-                    case 0xbc: c = 0x0152; break;   /* OE */
-                    case 0xbd: c = 0x0153; break;   /* oe */
-                    case 0xbe: c = 0x0178; break;   /* Y */
-                }
-                d += utf_char2bytes(c, d);
-            }
-            *d = NUL;
-            if (lenp != NULL)
-                *lenp = (int)(d - retval);
-            break;
-
-        case CONV_TO_LATIN1:    /* utf-8 to latin1 conversion */
-        case CONV_TO_LATIN9:    /* utf-8 to latin9 conversion */
-            retval = alloc(len + 1);
-            if (retval == NULL)
-                break;
-            d = retval;
-            for (i = 0; i < len; ++i)
-            {
-                l = utf_ptr2len_len(ptr + i, len - i);
-                if (l == 0)
-                    *d++ = NUL;
-                else if (l == 1)
-                {
-                    int l_w = utf8len_tab_zero[ptr[i]];
-
-                    if (l_w == 0)
-                    {
-                        /* Illegal utf-8 byte cannot be converted */
-                        vim_free(retval);
-                        return NULL;
-                    }
-                    if (unconvlenp != NULL && l_w > len - i)
-                    {
-                        /* Incomplete sequence at the end. */
-                        *unconvlenp = len - i;
-                        break;
-                    }
-                    *d++ = ptr[i];
-                }
-                else
-                {
-                    c = utf_ptr2char(ptr + i);
-                    if (vcp->vc_type == CONV_TO_LATIN9)
-                        switch (c)
-                        {
-                            case 0x20ac: c = 0xa4; break;   /* euro */
-                            case 0x0160: c = 0xa6; break;   /* S hat */
-                            case 0x0161: c = 0xa8; break;   /* S -hat */
-                            case 0x017d: c = 0xb4; break;   /* Z hat */
-                            case 0x017e: c = 0xb8; break;   /* Z -hat */
-                            case 0x0152: c = 0xbc; break;   /* OE */
-                            case 0x0153: c = 0xbd; break;   /* oe */
-                            case 0x0178: c = 0xbe; break;   /* Y */
-                            case 0xa4:
-                            case 0xa6:
-                            case 0xa8:
-                            case 0xb4:
-                            case 0xb8:
-                            case 0xbc:
-                            case 0xbd:
-                            case 0xbe: c = 0x100; break; /* not in latin9 */
-                        }
-                    if (!utf_iscomposing(c))    /* skip composing chars */
-                    {
-                        if (c < 0x100)
-                            *d++ = c;
-                        else if (vcp->vc_fail)
-                        {
-                            vim_free(retval);
-                            return NULL;
-                        }
-                        else
-                        {
-                            *d++ = 0xbf;
-                            if (utf_char2cells(c) > 1)
-                                *d++ = '?';
-                        }
-                    }
-                    i += l - 1;
-                }
-            }
-            *d = NUL;
-            if (lenp != NULL)
-                *lenp = (int)(d - retval);
-            break;
-
-#if defined(USE_ICONV)
-        case CONV_ICONV:        /* conversion with output_conv.vc_fd */
-            retval = iconv_string(vcp, ptr, len, unconvlenp, lenp);
-            break;
-#endif
-    }
-
-    return retval;
+    return NULL;
 }

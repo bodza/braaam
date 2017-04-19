@@ -443,6 +443,7 @@ ml_setname(buf)
             EMSG("E301: Oops, lost the swap file!!!");
             return;
         }
+
         {
             int fdflags = fcntl(mfp->mf_fd, F_GETFD);
             if (fdflags >= 0 && (fdflags & FD_CLOEXEC) == 0)
@@ -1570,7 +1571,7 @@ make_percent_swname(dir, name)
         if (s != NULL)
         {
             STRCPY(s, f);
-            for (d = s; *d != NUL; mb_ptr_adv(d))
+            for (d = s; *d != NUL; d += utfc_ptr2len(d))
                 if (vim_ispathsep(*d))
                     *d = '%';
             d = concat_fnames(dir, s, TRUE);
@@ -3658,11 +3659,11 @@ findswapname(buf, dirp, old_fname)
                                 same = TRUE;
                             close(f2);
                             if (created2)
-                                mch_remove(fname2);
+                                unlink((char *)fname2);
                         }
                         close(f1);
                         if (created1)
-                            mch_remove(fname);
+                            unlink((char *)fname);
                     }
                     vim_free(fname2);
                     if (same)
@@ -3853,7 +3854,7 @@ findswapname(buf, dirp, old_fname)
                                 swap_exists_action = SEA_RECOVER;
                                 break;
                             case 4:
-                                mch_remove(fname);
+                                unlink((char *)fname);
                                 break;
                             case 5:
                                 swap_exists_action = SEA_QUIT;
@@ -4169,8 +4170,7 @@ ml_updatechunk(buf, line, len, updtype)
             chunksize_T *t_chunksize = buf->b_ml.ml_chunksize;
 
             buf->b_ml.ml_numchunks = buf->b_ml.ml_numchunks * 3 / 2;
-            buf->b_ml.ml_chunksize = (chunksize_T *)
-                vim_realloc(buf->b_ml.ml_chunksize, sizeof(chunksize_T) * buf->b_ml.ml_numchunks);
+            buf->b_ml.ml_chunksize = (chunksize_T *)realloc(buf->b_ml.ml_chunksize, sizeof(chunksize_T) * buf->b_ml.ml_numchunks);
             if (buf->b_ml.ml_chunksize == NULL)
             {
                 /* Hmmmm, Give up on offset for this buffer */
@@ -4469,6 +4469,5 @@ goto_byte(cnt)
     check_cursor();
 
     /* Make sure the cursor is on the first byte of a multi-byte char. */
-    if (has_mbyte)
-        mb_adjust_cursor();
+    mb_adjust_cursor();
 }

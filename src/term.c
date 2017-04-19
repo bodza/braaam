@@ -700,8 +700,7 @@ set_termname(term)
         if (p != NULL)
         {
             set_option_value((char_u *)"ttym", 0L, p, 0);
-            /* Reset the WAS_SET flag, 'ttymouse' can be set to "sgr" or
-             * "xterm2" in check_termcode(). */
+            /* Reset the WAS_SET flag, 'ttymouse' can be set to "xterm2" in check_termcode(). */
             reset_option_was_set((char_u *)"ttym");
         }
         if (p == NULL)
@@ -776,17 +775,11 @@ set_termname(term)
 }
 
 #define HMT_NORMAL    1
-#define HMT_NETTERM   2
-#define HMT_DEC       4
-#define HMT_JSBTERM   8
-#define HMT_PTERM     16
-#define HMT_URXVT     32
-#define HMT_SGR       64
 static int has_mouse_termcode = 0;
 
     void
 set_mouse_termcode(n, s)
-    int         n;      /* KS_MOUSE, KS_NETTERM_MOUSE or KS_DEC_MOUSE */
+    int         n;      /* KS_MOUSE */
     char_u      *s;
 {
     char_u      name[2];
@@ -794,19 +787,19 @@ set_mouse_termcode(n, s)
     name[0] = n;
     name[1] = KE_FILLER;
     add_termcode(name, s, FALSE);
-        has_mouse_termcode |= HMT_NORMAL;
+    has_mouse_termcode |= HMT_NORMAL;
 }
 
     void
 del_mouse_termcode(n)
-    int         n;      /* KS_MOUSE, KS_NETTERM_MOUSE or KS_DEC_MOUSE */
+    int         n;      /* KS_MOUSE */
 {
     char_u      name[2];
 
     name[0] = n;
     name[1] = KE_FILLER;
     del_termcode(name);
-        has_mouse_termcode &= ~HMT_NORMAL;
+    has_mouse_termcode &= ~HMT_NORMAL;
 }
 
 #if defined(HAVE_TGETENT)
@@ -1867,7 +1860,7 @@ may_req_ambiguous_char_width()
         /* Do this in the second row.  In the first row the returned sequence
          * may be CSI 1;2R, which is the same as <S-F3>. */
         term_windgoto(1, 0);
-        buf[mb_char2bytes(0x25bd, buf)] = 0;
+        buf[utf_char2bytes(0x25bd, buf)] = 0;
         out_str(buf);
         out_str(T_U7);
         u7_status = U7_SENT;
@@ -2667,11 +2660,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                          * by the user already. */
                         if (!option_was_set((char_u *)"ttym"))
                         {
-#if defined(TTYM_SGR)
-                            if (extra >= 277)
-                                set_option_value((char_u *)"ttym", 0L, (char_u *)"sgr", 0);
-                            else
-#endif
                             /* if xterm version >= 95 use mouse dragging */
                             if (extra >= 95)
                                 set_option_value((char_u *)"ttym", 0L, (char_u *)"xterm2", 0);
@@ -2918,10 +2906,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
         if (key_name[0] == KS_KEY)
         {
             /* from ":set <M-b>=xx" */
-            if (has_mbyte)
-                new_slen += (*mb_char2bytes)(key_name[1], string + new_slen);
-            else
-                string[new_slen++] = key_name[1];
+            new_slen += utf_char2bytes(key_name[1], string + new_slen);
         }
         else if (new_slen == 0 && key_name[0] == KS_EXTRA && key_name[1] == KE_IGNORE)
         {
@@ -3160,7 +3145,7 @@ replace_termcodes(from, bufp, from_part, do_lt, special)
         }
 
         /* skip multibyte char correctly */
-        for (i = (*mb_ptr2len)(src); i > 0; --i)
+        for (i = utfc_ptr2len(src); i > 0; --i)
         {
             /*
              * If the character is K_SPECIAL, replace it with K_SPECIAL

@@ -205,17 +205,12 @@ reverse_text(s)
         rev_i = len;
         for (s_i = 0; s_i < len; ++s_i)
         {
-            if (has_mbyte)
-            {
-                int     mb_len;
+            int     mb_len;
 
-                mb_len = (*mb_ptr2len)(s + s_i);
-                rev_i -= mb_len;
-                mch_memmove(rev + rev_i, s + s_i, mb_len);
-                s_i += mb_len - 1;
-            }
-            else
-                rev[--rev_i] = s[s_i];
+            mb_len = utfc_ptr2len(s + s_i);
+            rev_i -= mb_len;
+            mch_memmove(rev + rev_i, s + s_i, mb_len);
+            s_i += mb_len - 1;
         }
         rev[len] = NUL;
     }
@@ -325,9 +320,9 @@ pat_has_uppercase(pat)
     {
         int             l;
 
-        if (has_mbyte && (l = (*mb_ptr2len)(p)) > 1)
+        if ((l = utfc_ptr2len(p)) > 1)
         {
-            if (enc_utf8 && utf_isupper(utf_ptr2char(p)))
+            if (utf_isupper(utf_ptr2char(p)))
                 return TRUE;
             p += l;
         }
@@ -342,7 +337,7 @@ pat_has_uppercase(pat)
             else
                 p += 1;
         }
-        else if (MB_ISUPPER(*p))
+        else if (vim_isupper(*p))
             return TRUE;
         else
             ++p;
@@ -496,7 +491,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
         if ((options & SEARCH_START) || pos->col == MAXCOL)
             extra_col = 0;
         /* Watch out for the "col" being MAXCOL - 2, used in a closed fold. */
-        else if (dir != BACKWARD && has_mbyte
+        else if (dir != BACKWARD
                      && pos->lnum >= 1 && pos->lnum <= buf->b_ml.ml_line_count
                                                      && pos->col < MAXCOL - 2)
         {
@@ -504,7 +499,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
             if (*ptr == NUL)
                 extra_col = 1;
             else
-                extra_col = (*mb_ptr2len)(ptr);
+                extra_col = utfc_ptr2len(ptr);
         }
         else
             extra_col = 1;
@@ -604,32 +599,19 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                                 matchcol = endpos.col;
                                 /* for empty match: advance one char */
                                 if (matchcol == matchpos.col && ptr[matchcol] != NUL)
-                                {
-                                    if (has_mbyte)
-                                        matchcol += (*mb_ptr2len)(ptr + matchcol);
-                                    else
-                                        ++matchcol;
-                                }
+                                    matchcol += utfc_ptr2len(ptr + matchcol);
                             }
                             else
                             {
                                 matchcol = matchpos.col;
                                 if (ptr[matchcol] != NUL)
-                                {
-                                    if (has_mbyte)
-                                        matchcol += (*mb_ptr2len)(ptr + matchcol);
-                                    else
-                                        ++matchcol;
-                                }
+                                    matchcol += utfc_ptr2len(ptr + matchcol);
                             }
                             if (matchcol == 0 && (options & SEARCH_START))
                                 break;
                             if (ptr[matchcol] == NUL
                                     || (nmatched = vim_regexec_multi(&regmatch,
-                                              win, buf, lnum + matchpos.lnum,
-                                              matchcol,
-                                              tm
-                                              )) == 0)
+                                              win, buf, lnum + matchpos.lnum, matchcol, tm)) == 0)
                             {
                                 match_ok = FALSE;
                                 break;
@@ -693,12 +675,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                                 matchcol = endpos.col;
                                 /* for empty match: advance one char */
                                 if (matchcol == matchpos.col && ptr[matchcol] != NUL)
-                                {
-                                    if (has_mbyte)
-                                        matchcol += (*mb_ptr2len)(ptr + matchcol);
-                                    else
-                                        ++matchcol;
-                                }
+                                    matchcol += utfc_ptr2len(ptr + matchcol);
                             }
                             else
                             {
@@ -707,19 +684,11 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                                     break;
                                 matchcol = matchpos.col;
                                 if (ptr[matchcol] != NUL)
-                                {
-                                    if (has_mbyte)
-                                        matchcol += (*mb_ptr2len)(ptr + matchcol);
-                                    else
-                                        ++matchcol;
-                                }
+                                    matchcol += utfc_ptr2len(ptr + matchcol);
                             }
                             if (ptr[matchcol] == NUL
                                     || (nmatched = vim_regexec_multi(&regmatch,
-                                              win, buf, lnum + matchpos.lnum,
-                                              matchcol,
-                                              tm
-                                            )) == 0)
+                                              win, buf, lnum + matchpos.lnum, matchcol, tm)) == 0)
                                 break;
 
                             /* Need to get the line pointer again, a
@@ -756,10 +725,10 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                         else
                         {
                             --pos->col;
-                            if (has_mbyte && pos->lnum <= buf->b_ml.ml_line_count)
+                            if (pos->lnum <= buf->b_ml.ml_line_count)
                             {
                                 ptr = ml_get_buf(buf, pos->lnum, FALSE);
-                                pos->col -= (*mb_head_off)(ptr, ptr + pos->col);
+                                pos->col -= utf_head_off(ptr, ptr + pos->col);
                             }
                         }
                     }
@@ -1071,7 +1040,7 @@ do_search(oap, dirc, pat, count, options, tm)
             if (msgbuf != NULL)
             {
                 msgbuf[0] = dirc;
-                if (enc_utf8 && utf_iscomposing(utf_ptr2char(p)))
+                if (utf_iscomposing(utf_ptr2char(p)))
                 {
                     /* Use a space to draw the composing char on. */
                     msgbuf[1] = ' ';
@@ -1288,12 +1257,12 @@ searchc(cap, t_cmd)
             lastc = c;
             lastcdir = dir;
             last_t_cmd = t_cmd;
-            bytelen = (*mb_char2bytes)(c, bytes);
+            bytelen = utf_char2bytes(c, bytes);
             if (cap->ncharC1 != 0)
             {
-                bytelen += (*mb_char2bytes)(cap->ncharC1, bytes + bytelen);
+                bytelen += utf_char2bytes(cap->ncharC1, bytes + bytelen);
                 if (cap->ncharC2 != 0)
-                    bytelen += (*mb_char2bytes)(cap->ncharC2, bytes + bytelen);
+                    bytelen += utf_char2bytes(cap->ncharC2, bytes + bytelen);
             }
         }
     }
@@ -1326,45 +1295,31 @@ searchc(cap, t_cmd)
 
     while (count--)
     {
-        if (has_mbyte)
+        for (;;)
         {
-            for (;;)
+            if (dir > 0)
             {
-                if (dir > 0)
-                {
-                    col += (*mb_ptr2len)(p + col);
-                    if (col >= len)
-                        return FAIL;
-                }
-                else
-                {
-                    if (col == 0)
-                        return FAIL;
-                    col -= (*mb_head_off)(p, p + col - 1) + 1;
-                }
-                if (bytelen == 1)
-                {
-                    if (p[col] == c && stop)
-                        break;
-                }
-                else
-                {
-                    if (vim_memcmp(p + col, bytes, bytelen) == 0 && stop)
-                        break;
-                }
-                stop = TRUE;
-            }
-        }
-        else
-        {
-            for (;;)
-            {
-                if ((col += dir) < 0 || col >= len)
+                col += utfc_ptr2len(p + col);
+                if (col >= len)
                     return FAIL;
+            }
+            else
+            {
+                if (col == 0)
+                    return FAIL;
+                col -= utf_head_off(p, p + col - 1) + 1;
+            }
+            if (bytelen == 1)
+            {
                 if (p[col] == c && stop)
                     break;
-                stop = TRUE;
             }
+            else
+            {
+                if (vim_memcmp(p + col, bytes, bytelen) == 0 && stop)
+                    break;
+            }
+            stop = TRUE;
         }
     }
 
@@ -1372,15 +1327,13 @@ searchc(cap, t_cmd)
     {
         /* backup to before the character (possibly double-byte) */
         col -= dir;
-        if (has_mbyte)
-        {
-            if (dir < 0)
-                /* Landed on the search char which is bytelen long */
-                col += bytelen - 1;
-            else
-                /* To previous char, which may be multi-byte. */
-                col -= (*mb_head_off)(p, p + col);
-        }
+
+        if (dir < 0)
+            /* Landed on the search char which is bytelen long */
+            col += bytelen - 1;
+        else
+            /* To previous char, which may be multi-byte. */
+            col -= utf_head_off(p, p + col);
     }
     curwin->w_cursor.col = col;
 
@@ -1418,8 +1371,8 @@ check_prevcol(linep, col, ch, prevcol)
     int         *prevcol;
 {
     --col;
-    if (col > 0 && has_mbyte)
-        col -= (*mb_head_off)(linep, linep + col);
+    if (col > 0)
+        col -= utf_head_off(linep, linep + col);
     if (prevcol)
         *prevcol = col;
     return (col >= 0 && linep[col] == ch) ? TRUE : FALSE;
@@ -1581,14 +1534,14 @@ findmatchlimit(oap, initc, flags, maxtravel)
                     --pos.col;
                 for (;;)
                 {
-                    initc = PTR2CHAR(linep + pos.col);
+                    initc = utf_ptr2char(linep + pos.col);
                     if (initc == NUL)
                         break;
 
                     find_mps_values(&initc, &findc, &backwards, FALSE);
                     if (findc)
                         break;
-                    pos.col += MB_PTR2LEN(linep + pos.col);
+                    pos.col += utfc_ptr2len(linep + pos.col);
                 }
                 if (!findc)
                 {
@@ -1730,8 +1683,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
             else
             {
                 --pos.col;
-                if (has_mbyte)
-                    pos.col -= (*mb_head_off)(linep, linep + pos.col);
+                pos.col -= utf_head_off(linep, linep + pos.col);
             }
         }
         else                            /* forward search */
@@ -1739,14 +1691,12 @@ findmatchlimit(oap, initc, flags, maxtravel)
             if (linep[pos.col] == NUL
                     /* at end of line, go to next one */
                     /* don't search for match in comment */
-                    || (lisp && comment_col != MAXCOL && pos.col == (colnr_T)comment_col)
-                    )
+                    || (lisp && comment_col != MAXCOL && pos.col == (colnr_T)comment_col))
             {
                 if (pos.lnum == curbuf->b_ml.ml_line_count  /* end of file */
                         /* line is exhausted and comment with it,
                          * don't search for match in code */
-                         || lispcomm
-                         )
+                         || lispcomm)
                     break;
                 ++pos.lnum;
 
@@ -1761,12 +1711,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
                     comment_col = check_linecomment(linep);
             }
             else
-            {
-                if (has_mbyte)
-                    pos.col += (*mb_ptr2len)(linep + pos.col);
-                else
-                    ++pos.col;
-            }
+                pos.col += utfc_ptr2len(linep + pos.col);
         }
 
         /*
@@ -1902,7 +1847,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
          *   inquote if the number of quotes in a line is even, unless this
          *   line or the previous one ends in a '\'.  Complicated, isn't it?
          */
-        c = PTR2CHAR(linep + pos.col);
+        c = utf_ptr2char(linep + pos.col);
         switch (c)
         {
         case NUL:
@@ -2103,12 +2048,12 @@ showmatch(c)
     /* 'matchpairs' is "x:y,x:y" */
     for (p = curbuf->b_p_mps; *p != NUL; ++p)
     {
-        if (PTR2CHAR(p) == c && (curwin->w_p_rl ^ p_ri))
+        if (utf_ptr2char(p) == c && (curwin->w_p_rl ^ p_ri))
             break;
-        p += MB_PTR2LEN(p) + 1;
-        if (PTR2CHAR(p) == c && !(curwin->w_p_rl ^ p_ri))
+        p += utfc_ptr2len(p) + 1;
+        if (utf_ptr2char(p) == c && !(curwin->w_p_rl ^ p_ri))
             break;
-        p += MB_PTR2LEN(p);
+        p += utfc_ptr2len(p);
         if (*p == NUL)
             return;
     }
@@ -2437,21 +2382,12 @@ cls()
     c = gchar_cursor();
     if (c == ' ' || c == '\t' || c == NUL)
         return 0;
-    if (enc_utf8)
-    {
-        c = utf_class(c);
-        if (c != 0 && cls_bigword)
-            return 1;
-        return c;
-    }
 
-    /* If cls_bigword is TRUE, report all non-blanks as class 1. */
-    if (cls_bigword)
+    c = utf_class(c);
+    if (c != 0 && cls_bigword)
         return 1;
 
-    if (vim_iswordc(c))
-        return 2;
-    return 1;
+    return c;
 }
 
 /*
@@ -3289,7 +3225,7 @@ in_html_tag(end_tag)
     pos.lnum = curwin->w_cursor.lnum;
     pos.col = (colnr_T)(p - line);
 
-    mb_ptr_adv(p);
+    p += utfc_ptr2len(p);
     if (end_tag)
         /* check that there is a '/' after the '<' */
         return *p == '/';
@@ -3403,7 +3339,7 @@ again:
      */
     inc_cursor();
     p = ml_get_cursor();
-    for (cp = p; *cp != NUL && *cp != '>' && !vim_iswhite(*cp); mb_ptr_adv(cp))
+    for (cp = p; *cp != NUL && *cp != '>' && !vim_iswhite(*cp); cp += utfc_ptr2len(cp))
         ;
     len = (int)(cp - p);
     if (len == 0)
@@ -3707,10 +3643,7 @@ find_next_quote(line, col, quotechar, escape)
             ++col;
         else if (c == quotechar)
             break;
-        if (has_mbyte)
-            col += (*mb_ptr2len)(line + col);
-        else
-            ++col;
+        col += utfc_ptr2len(line + col);
     }
     return col;
 }
@@ -3732,7 +3665,7 @@ find_prev_quote(line, col_start, quotechar, escape)
     while (col_start > 0)
     {
         --col_start;
-        col_start -= (*mb_head_off)(line, line + col_start);
+        col_start -= utf_head_off(line, line + col_start);
         n = 0;
         if (escape != NULL)
             while (col_start - n > 0 && vim_strchr(escape, line[col_start - n - 1]) != NULL)
