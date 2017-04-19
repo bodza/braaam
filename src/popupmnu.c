@@ -21,7 +21,7 @@ static int pum_col;                     /* left column of pum */
 
 static int pum_do_redraw = FALSE;       /* do redraw anyway */
 
-static int pum_set_selected __ARGS((int n, int repeat));
+static int pum_set_selected(int n, int repeat);
 
 #define PUM_DEF_HEIGHT 10
 #define PUM_DEF_WIDTH  15
@@ -124,8 +124,7 @@ redo:
         if (curwin->w_cline_row + curwin->w_cline_height - curwin->w_wrow >= 3)
             context_lines = 3;
         else
-            context_lines = curwin->w_cline_row
-                                + curwin->w_cline_height - curwin->w_wrow;
+            context_lines = curwin->w_cline_row + curwin->w_cline_height - curwin->w_wrow;
 
         pum_row = row + context_lines;
         if (size > above_row - pum_row)
@@ -351,8 +350,7 @@ pum_redraw()
                                     {
                                         do
                                         {
-                                            size -= has_mbyte
-                                                    ? (*mb_ptr2cells)(rt) : 1;
+                                            size -= has_mbyte ? (*mb_ptr2cells)(rt) : 1;
                                             mb_ptr_adv(rt);
                                         } while (size > pum_width);
 
@@ -452,13 +450,11 @@ pum_redraw()
 #if defined(FEAT_RIGHTLEFT)
             if (curwin->w_p_rl)
                 screen_putchar(' ', row, pum_col - pum_width,
-                        i >= thumb_pos && i < thumb_pos + thumb_heigth
-                                                  ? attr_thumb : attr_scroll);
+                        i >= thumb_pos && i < thumb_pos + thumb_heigth ? attr_thumb : attr_scroll);
             else
 #endif
                 screen_putchar(' ', row, pum_col + pum_width,
-                        i >= thumb_pos && i < thumb_pos + thumb_heigth
-                                                  ? attr_thumb : attr_scroll);
+                        i >= thumb_pos && i < thumb_pos + thumb_heigth ? attr_thumb : attr_scroll);
         }
 
         ++row;
@@ -535,7 +531,7 @@ pum_set_selected(n, repeat)
             }
         }
 
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
         /*
          * Show extra info in the preview window if there is something and
          * 'completeopt' contains "preview".
@@ -687,9 +683,7 @@ pum_undisplay()
 {
     pum_array = NULL;
     redraw_all_later(SOME_VALID);
-#if defined(FEAT_WINDOWS)
     redraw_tabline = TRUE;
-#endif
     status_redraw_all();
 }
 

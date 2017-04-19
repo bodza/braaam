@@ -76,34 +76,33 @@ struct block_def
 };
 
 #if defined(FEAT_VISUALEXTRA)
-static void shift_block __ARGS((oparg_T *oap, int amount));
-static void block_insert __ARGS((oparg_T *oap, char_u *s, int b_insert, struct block_def*bdp));
+static void shift_block(oparg_T *oap, int amount);
+static void block_insert(oparg_T *oap, char_u *s, int b_insert, struct block_def*bdp);
 #endif
-static int      stuff_yank __ARGS((int, char_u *));
-static void     put_reedit_in_typebuf __ARGS((int silent));
-static int      put_in_typebuf __ARGS((char_u *s, int esc, int colon,
-                                                                 int silent));
-static void     stuffescaped __ARGS((char_u *arg, int literally));
-static void     mb_adjust_opend __ARGS((oparg_T *oap));
-static void     free_yank __ARGS((long));
-static void     free_yank_all __ARGS((void));
-static int      yank_copy_line __ARGS((struct block_def *bd, long y_idx));
+static int      stuff_yank(int, char_u *);
+static void     put_reedit_in_typebuf(int silent);
+static int      put_in_typebuf(char_u *s, int esc, int colon, int silent);
+static void     stuffescaped(char_u *arg, int literally);
+static void     mb_adjust_opend(oparg_T *oap);
+static void     free_yank(long);
+static void     free_yank_all(void);
+static int      yank_copy_line(struct block_def *bd, long y_idx);
 #if defined(FEAT_CLIPBOARD)
-static void     copy_yank_reg __ARGS((struct yankreg *reg));
-static void     may_set_selection __ARGS((void));
+static void     copy_yank_reg(struct yankreg *reg);
+static void     may_set_selection(void);
 #endif
-static void     dis_msg __ARGS((char_u *p, int skip_esc));
+static void     dis_msg(char_u *p, int skip_esc);
 #if defined(FEAT_COMMENTS)
-static char_u   *skip_comment __ARGS((char_u *line, int process, int include_space, int *is_comment));
+static char_u   *skip_comment(char_u *line, int process, int include_space, int *is_comment);
 #endif
-static void     block_prep __ARGS((oparg_T *oap, struct block_def *, linenr_T, int));
-static void     str_to_reg __ARGS((struct yankreg *y_ptr, int yank_type, char_u *str, long len, long blocklen, int str_list));
-static int      ends_in_white __ARGS((linenr_T lnum));
+static void     block_prep(oparg_T *oap, struct block_def *, linenr_T, int);
+static void     str_to_reg(struct yankreg *y_ptr, int yank_type, char_u *str, long len, long blocklen, int str_list);
+static int      ends_in_white(linenr_T lnum);
 #if defined(FEAT_COMMENTS)
-static int      same_leader __ARGS((linenr_T lnum, int, char_u *, int, char_u *));
-static int      fmt_check_par __ARGS((linenr_T, int *, char_u **, int do_comments));
+static int      same_leader(linenr_T lnum, int, char_u *, int, char_u *);
+static int      fmt_check_par(linenr_T, int *, char_u **, int do_comments);
 #else
-static int      fmt_check_par __ARGS((linenr_T));
+static int      fmt_check_par(linenr_T);
 #endif
 
 /*
@@ -466,8 +465,7 @@ shift_block(oap, amount)
         block_space_width = non_white_col - oap->start_vcol;
         /* We will shift by "total" or "block_space_width", whichever is less.
          */
-        shift_amount = (block_space_width < (size_t)total
-                                         ? block_space_width : (size_t)total);
+        shift_amount = (block_space_width < (size_t)total ? block_space_width : (size_t)total);
 
         /* The column to which we will shift the text.  */
         destination_col = (colnr_T)(non_white_col - shift_amount);
@@ -657,7 +655,7 @@ block_insert(oap, s, b_insert, bdp)
     void
 op_reindent(oap, how)
     oparg_T     *oap;
-    int         (*how) __ARGS((void));
+    int         (*how)(void);
 {
     long        i;
     char_u      *l;
@@ -1042,7 +1040,7 @@ do_record(c)
 
     if (Recording == FALSE)         /* start recording */
     {
-                        /* registers 0-9, a-z and " are allowed */
+        /* registers 0-9, a-z and " are allowed */
         if (c < 0 || (!ASCII_ISALNUM(c) && c != '"'))
             retval = FAIL;
         else
@@ -1506,8 +1504,7 @@ get_spec_reg(regname, argp, allocated, errmsg)
         case Ctrl_A:            /* WORD (mnemonic All) under cursor */
             if (!errmsg)
                 return FALSE;
-            cnt = find_ident_under_cursor(argp, regname == Ctrl_W
-                                   ?  (FIND_IDENT|FIND_STRING) : FIND_STRING);
+            cnt = find_ident_under_cursor(argp, regname == Ctrl_W ?  (FIND_IDENT|FIND_STRING) : FIND_STRING);
             *argp = cnt ? vim_strnsave(*argp, cnt) : NULL;
             *allocated = TRUE;
             return TRUE;
@@ -1577,11 +1574,9 @@ adjust_clip_reg(rp)
     if (*rp == 0 && (clip_unnamed != 0 || clip_unnamed_saved != 0))
     {
         if (clip_unnamed != 0)
-            *rp = ((clip_unnamed & CLIP_UNNAMED_PLUS) && clip_plus.available)
-                                                                  ? '+' : '*';
+            *rp = ((clip_unnamed & CLIP_UNNAMED_PLUS) && clip_plus.available) ? '+' : '*';
         else
-            *rp = ((clip_unnamed_saved & CLIP_UNNAMED_PLUS) && clip_plus.available)
-                                                                  ? '+' : '*';
+            *rp = ((clip_unnamed_saved & CLIP_UNNAMED_PLUS) && clip_plus.available) ? '+' : '*';
     }
     if (!clip_star.available && *rp == '*')
         *rp = 0;
@@ -2244,7 +2239,7 @@ op_replace(oap, c)
 }
 #endif
 
-static int swapchars __ARGS((int op_type, pos_T *pos, int length));
+static int swapchars(int op_type, pos_T *pos, int length);
 
 /*
  * Handle the (non-standard vi) tilde operator.  Also for "gu", "gU" and "g?".
@@ -2467,8 +2462,7 @@ op_insert(oap, count1)
             ve_flags = VE_ALL;
             if (u_save_cursor() == FAIL)
                 return;
-            coladvance_force(oap->op_type == OP_APPEND
-                                           ? oap->end_vcol + 1 : getviscol());
+            coladvance_force(oap->op_type == OP_APPEND ? oap->end_vcol + 1 : getviscol());
             if (oap->op_type == OP_APPEND)
                 --curwin->w_cursor.col;
             ve_flags = old_ve_flags;
@@ -2969,8 +2963,7 @@ op_yank(oap, deleting, mess)
                             {
                                 /* Part of a tab selected -- but don't
                                  * double-count it. */
-                                bd.startspaces = (ce - cs + 1)
-                                                          - oap->start.coladd;
+                                bd.startspaces = (ce - cs + 1) - oap->start.coladd;
                                 startcol++;
                             }
                         }
@@ -3002,8 +2995,7 @@ op_yank(oap, deleting, mess)
                                 }
                                 else
                                 {
-                                    bd.endspaces = oap->end.coladd
-                                                             + oap->inclusive;
+                                    bd.endspaces = oap->end.coladd + oap->inclusive;
                                     endcol -= oap->inclusive;
                                 }
                             }
@@ -3401,8 +3393,7 @@ do_put(regname, dir, count, flags)
             /* Don't need to insert spaces when "p" on the last position of a
              * tab or "P" on the first position. */
             if (dir == FORWARD
-                    ? (int)curwin->w_cursor.coladd < curbuf->b_p_ts - 1
-                                                : curwin->w_cursor.coladd > 0)
+                    ? (int)curwin->w_cursor.coladd < curbuf->b_p_ts - 1 : curwin->w_cursor.coladd > 0)
                 coladvance_force(getviscol());
             else
                 curwin->w_cursor.coladd = 0;
@@ -4797,8 +4788,7 @@ format_lines(line_count, avoid_fex)
                 insertchar(NUL, INSCHAR_FORMAT
 #if defined(FEAT_COMMENTS)
                         + (do_comments ? INSCHAR_DO_COM : 0)
-                        + (do_comments && do_comments_list
-                                                       ? INSCHAR_COM_LIST : 0)
+                        + (do_comments && do_comments_list ? INSCHAR_COM_LIST : 0)
 #endif
                         + (avoid_fex ? INSCHAR_NO_FEX : 0), second_indent);
                 State = old_State;
@@ -5091,8 +5081,7 @@ block_prep(oap, bdp, lnum, is_del)
                     /* just putting the sum of those two into
                      * bdp->startspaces doesn't work for Visual replace,
                      * so we have to split the tab in two */
-                    bdp->startspaces = bdp->start_char_vcols
-                                        - (bdp->start_vcol - oap->start_vcol);
+                    bdp->startspaces = bdp->start_char_vcols - (bdp->start_vcol - oap->start_vcol);
                     bdp->endspaces = bdp->end_vcol - oap->end_vcol - 1;
                 }
             }
@@ -5120,8 +5109,7 @@ block_prep(oap, bdp, lnum, is_del)
                  * short where the text is put */
                 /* if (!is_del || oap->op_type == OP_APPEND) */
                 if (oap->op_type == OP_APPEND || virtual_op)
-                    bdp->endspaces = oap->end_vcol - bdp->end_vcol
-                                                             + oap->inclusive;
+                    bdp->endspaces = oap->end_vcol - bdp->end_vcol + oap->inclusive;
                 else
                     bdp->endspaces = 0; /* replace doesn't add characters */
             }
@@ -5148,7 +5136,7 @@ block_prep(oap, bdp, lnum, is_del)
 }
 
 #if defined(FEAT_RIGHTLEFT)
-static void reverse_line __ARGS((char_u *s));
+static void reverse_line(char_u *s);
 
     static void
 reverse_line(s)
@@ -5716,7 +5704,7 @@ get_reg_type(regname, reglen)
     return MAUTO;
 }
 
-static char_u *getreg_wrap_one_line __ARGS((char_u *s, int flags));
+static char_u *getreg_wrap_one_line(char_u *s, int flags);
 
 /*
  * When "flags" has GREG_LIST return a list with text "s".
@@ -6065,9 +6053,7 @@ str_to_reg(y_ptr, yank_type, str, len, blocklen, str_list)
         y_ptr->y_size = 0;
 
     if (yank_type == MAUTO)
-        type = ((str_list || (len > 0 && (str[len - 1] == NL
-                                            || str[len - 1] == CAR)))
-                                                             ? MLINE : MCHAR);
+        type = ((str_list || (len > 0 && (str[len - 1] == NL || str[len - 1] == CAR))) ? MLINE : MCHAR);
     else
         type = yank_type;
 
@@ -6177,7 +6163,7 @@ clear_oparg(oap)
     vim_memset(oap, 0, sizeof(oparg_T));
 }
 
-static long     line_count_info __ARGS((char_u *line, long *wc, long *cc, long limit, int eol_size));
+static long     line_count_info(char_u *line, long *wc, long *cc, long limit, int eol_size);
 
 /*
  *  Count the number of bytes, characters and "words" in a line.
@@ -6356,10 +6342,8 @@ cursor_pos_info()
                         break;
                     case 'v':
                         {
-                            colnr_T start_col = (lnum == min_pos.lnum)
-                                                           ? min_pos.col : 0;
-                            colnr_T end_col = (lnum == max_pos.lnum)
-                                      ? max_pos.col - start_col + 1 : MAXCOL;
+                            colnr_T start_col = (lnum == min_pos.lnum) ? min_pos.col : 0;
+                            colnr_T end_col = (lnum == max_pos.lnum) ? max_pos.col - start_col + 1 : MAXCOL;
 
                             s = ml_get(lnum) + start_col;
                             len = end_col;

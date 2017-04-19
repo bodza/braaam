@@ -1,24 +1,13 @@
-/*
- * NextStep has a problem with configure, undefine a few things:
- */
-
 #include <stdio.h>
 #include <ctype.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#if defined(HAVE_STDLIB_H)
 #include <stdlib.h>
-#endif
-
-#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
-#endif
 
-#if defined(HAVE_SYS_PARAM_H)
-#include <sys/param.h>     /* defines BSD, if it's a BSD system */
-#endif
+#include <sys/param.h>
 
 /*
  * Using getcwd() is preferred, because it checks for a buffer overflow.
@@ -30,53 +19,21 @@
 #define USE_GETCWD
 #endif
 
-#if !defined(__ARGS)
-#define __ARGS(x) x
-#endif
-
 /* always use unlink() to remove files */
 #define vim_mkdir(x, y) mkdir((char *)(x), y)
 #define mch_rmdir(x) rmdir((char *)(x))
 #define mch_remove(x) unlink((char *)(x))
 
-/* The number of arguments to a signal handler is configured here. */
-/* It used to be a long list of almost all systems. Any system that doesn't
- * have an argument??? */
-#define SIGHASARG
-
-#if defined(SIGHASARG)
-#if defined(SIGHAS3ARGS)
-#define SIGPROTOARG   (int, int, struct sigcontext *)
-#define SIGDEFARG(s)  (s, sig2, scont) int s, sig2; struct sigcontext *scont;
-#define SIGDUMMYARG   0, 0, (struct sigcontext *)0
-#else
-#define SIGPROTOARG   (int)
 #define SIGDEFARG(s)  (s) int s UNUSED;
-#define SIGDUMMYARG   0
-#endif
-#else
-#define SIGPROTOARG   (void)
-#define SIGDEFARG(s)  ()
-#define SIGDUMMYARG
-#endif
 
-#if defined(HAVE_DIRENT_H)
 #include <dirent.h>
 #if !defined(NAMLEN)
 #define NAMLEN(dirent) strlen((dirent)->d_name)
 #endif
-#else
-#define dirent direct
-#define NAMLEN(dirent) (dirent)->d_namlen
-#endif
 
-#if !defined(HAVE_SYS_TIME_H) || defined(TIME_WITH_SYS_TIME)
 #include <time.h>          /* on some systems time.h should not be
                                included together with sys/time.h */
-#endif
-#if defined(HAVE_SYS_TIME_H)
 #include <sys/time.h>
-#endif
 
 #include <signal.h>
 
@@ -102,11 +59,9 @@
 
 #define BASENAMELEN     (MAXNAMLEN - 5)
 
-#if defined(HAVE_PWD_H)
 #include <pwd.h>
-#endif
 
-#if (defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)) || (defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)) || defined(HAVE_SYSCONF)
+#if defined(HAVE_GETRLIMIT) || defined(HAVE_SYSINFO) || defined(HAVE_SYSCONF)
 #define HAVE_TOTAL_MEM
 #endif
 
@@ -222,16 +177,12 @@
  * own version */
 /* Some systems have (void *) arguments, some (char *). If we use (char *) it
  * works for all */
-#if defined(USEMEMMOVE)
 #define mch_memmove(to, from, len) memmove((char *)(to), (char *)(from), len)
-#else
-#define VIM_MEMMOVE      /* found in misc2.c */
-#endif
 
 #if defined(HAVE_RENAME)
 #define mch_rename(src, dst) rename(src, dst)
 #else
-int mch_rename __ARGS((const char *src, const char *dest));
+int mch_rename(const char *src, const char *dest);
 #endif
 #define mch_getenv(x) (char_u *)getenv((char *)(x))
 #define mch_setenv(name, val, x) setenv(name, val, x)
@@ -257,19 +208,13 @@ int mch_rename __ARGS((const char *src, const char *dest));
 
 /* Note: Some systems need both string.h and strings.h (Savage).  However,
  * some systems can't handle both, only use string.h in that case. */
-#if defined(HAVE_STRING_H)
 #include <string.h>
-#endif
-#if defined(HAVE_STRINGS_H)
 #include <strings.h>
-#endif
 
-#if defined(HAVE_SETJMP_H)
 #include <setjmp.h>
 #define JMP_BUF jmp_buf
 #define SETJMP(x) setjmp(x)
 #define LONGJMP longjmp
-#endif
 
 #if !defined(HAVE_DUP)
 #define HAVE_DUP               /* have dup() */

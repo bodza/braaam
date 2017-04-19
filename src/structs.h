@@ -127,13 +127,11 @@ typedef struct
     long        wo_nuw;
 #define w_p_nuw w_onebuf_opt.wo_nuw    /* 'numberwidth' */
 #endif
-#if defined(FEAT_WINDOWS)
     int         wo_wfh;
 #define w_p_wfh w_onebuf_opt.wo_wfh    /* 'winfixheight' */
     int         wo_wfw;
 #define w_p_wfw w_onebuf_opt.wo_wfw    /* 'winfixwidth' */
-#endif
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
     int         wo_pvw;
 #define w_p_pvw w_onebuf_opt.wo_pvw    /* 'previewwindow' */
 #endif
@@ -452,10 +450,8 @@ typedef struct expand
 typedef struct
 {
     int         hide;                   /* TRUE when ":hide" was used */
-#if defined(FEAT_WINDOWS)
     int         split;                  /* flags for win_split() */
     int         tab;                    /* > 0 when ":tab" was used */
-#endif
 #if defined(FEAT_CON_DIALOG)
     int         confirm;                /* TRUE to invoke yes/no dialog */
 #endif
@@ -577,11 +573,7 @@ typedef struct argentry
     int         ae_fnum;        /* buffer number with expanded file name */
 } aentry_T;
 
-#if defined(FEAT_WINDOWS)
 #define ALIST(win) (win)->w_alist
-#else
-#define ALIST(win) (&global_alist)
-#endif
 #define GARGLIST        ((aentry_T *)global_alist.al_ga.ga_data)
 #define ARGLIST         ((aentry_T *)ALIST(curwin)->al_ga.ga_data)
 #define WARGLIST(wp)    ((aentry_T *)ALIST(wp)->al_ga.ga_data)
@@ -798,12 +790,7 @@ typedef struct attr_entry
 } attrentry_T;
 
 #if defined(USE_ICONV)
-#if defined(HAVE_ICONV_H)
 #include <iconv.h>
-#else
-#include <errno.h>
-typedef void *iconv_t;
-#endif
 #endif
 
 /*
@@ -1288,13 +1275,6 @@ struct file_buffer
 #define B_IMODE_LAST 2
 #endif
 
-#if defined(FEAT_KEYMAP)
-    short       b_kmap_state;   /* using "lmap" mappings */
-#define KEYMAP_INIT    1       /* 'keymap' was set, call keymap_init() */
-#define KEYMAP_LOADED  2       /* 'keymap' mappings have been loaded */
-    garray_T    b_kmap_ga;      /* the keymap table */
-#endif
-
     /*
      * Options local to a buffer.
      * They are here because their value depends on the type of file
@@ -1398,9 +1378,6 @@ struct file_buffer
     long        b_p_wm;         /* 'wrapmargin' */
     long        b_p_wm_nobin;   /* b_p_wm saved for binary mode */
     long        b_p_wm_nopaste; /* b_p_wm saved for paste mode */
-#if defined(FEAT_KEYMAP)
-    char_u      *b_p_keymap;    /* 'keymap' */
-#endif
 
     /* local values for options which are normally global */
 #if defined(FEAT_QUICKFIX)
@@ -1566,10 +1543,8 @@ typedef struct w_line
 struct frame_S
 {
     char        fr_layout;      /* FR_LEAF, FR_COL or FR_ROW */
-#if defined(FEAT_VERTSPLIT)
     int         fr_width;
     int         fr_newwidth;    /* new width used in win_equal_rec() */
-#endif
     int         fr_height;
     int         fr_newheight;   /* new height used in win_equal_rec() */
     frame_T     *fr_parent;     /* containing frame or NULL */
@@ -1665,10 +1640,8 @@ struct window_S
     synblock_T  *w_s;               /* for :ownsyntax */
 #endif
 
-#if defined(FEAT_WINDOWS)
     win_T       *w_prev;            /* link to previous window */
     win_T       *w_next;            /* link to next window */
-#endif
 #if defined(FEAT_AUTOCMD)
     int         w_closing;          /* window is being closed, don't let
                                        autocommands close it too. */
@@ -1717,22 +1690,16 @@ struct window_S
      * Layout of the window in the screen.
      * May need to add "msg_scrolled" to "w_winrow" in rare situations.
      */
-#if defined(FEAT_WINDOWS)
     int         w_winrow;           /* first row of window in screen */
-#endif
     int         w_height;           /* number of rows in window, excluding
                                        status/command line(s) */
-#if defined(FEAT_WINDOWS)
     int         w_status_height;    /* number of status lines (0 or 1) */
-#endif
-#if defined(FEAT_VERTSPLIT)
     int         w_wincol;           /* Leftmost column of window in screen.
                                        use W_WINCOL() */
     int         w_width;            /* Width of window, excluding separation.
                                        use W_WIDTH() */
     int         w_vsep_width;       /* Number of separator columns (0 or 1).
                                        use W_VSEP_WIDTH() */
-#endif
 
     /*
      * === start of cached values ====
@@ -1801,9 +1768,7 @@ struct window_S
                                        w_redr_type is REDRAW_TOP */
     linenr_T    w_redraw_top;       /* when != 0: first line needing redraw */
     linenr_T    w_redraw_bot;       /* when != 0: last line needing redraw */
-#if defined(FEAT_WINDOWS)
     int         w_redr_status;      /* if TRUE status line must be redrawn */
-#endif
 
 #if defined(FEAT_CMDL_INFO)
     /* remember what is shown in the ruler for this window (if 'ruler' set) */
@@ -1816,9 +1781,7 @@ struct window_S
 
     int         w_alt_fnum;         /* alternate file (for # and CTRL-^) */
 
-#if defined(FEAT_WINDOWS)
     alist_T     *w_alist;           /* pointer to arglist for this window */
-#endif
     int         w_arg_idx;          /* current index in argument list (can be
                                        out of range!) */
     int         w_arg_idx_invalid;  /* editing another file than w_arg_idx */

@@ -5,7 +5,7 @@
 #include "vim.h"
 #include "version.h"
 
-static void     cmd_source __ARGS((char_u *fname, exarg_T *eap));
+static void     cmd_source(char_u *fname, exarg_T *eap);
 
 /* Growarray to store info about already sourced scripts.
  * For Unix also store the dev/ino, so that we don't have to stat() each
@@ -363,8 +363,8 @@ static int last_breakp = 0;     /* nr of last defined breakpoint */
 #define DBG_FUNC        1
 #define DBG_FILE        2
 
-static int dbg_parsearg __ARGS((char_u *arg, garray_T *gap));
-static linenr_T debuggy_find __ARGS((int file,char_u *fname, linenr_T after, garray_T *gap, int *fp));
+static int dbg_parsearg(char_u *arg, garray_T *gap);
+static linenr_T debuggy_find(int file,char_u *fname, linenr_T after, garray_T *gap, int *fp);
 
 /*
  * Parse the arguments of ":profile", ":breakadd" or ":breakdel" and put them
@@ -822,9 +822,7 @@ profile_zero(tm)
 #endif
 
 #if defined(FEAT_SYN_HL) && defined(FEAT_RELTIME)
-#if defined(HAVE_MATH_H)
 #include <math.h>
-#endif
 
 /*
  * Divide the time "tm" by "count" and store in "tm2".
@@ -1041,7 +1039,7 @@ can_abandon(buf, forceit)
                 || forceit);
 }
 
-static void add_bufnum __ARGS((int *bufnrs, int *bufnump, int nr));
+static void add_bufnum(int *bufnrs, int *bufnump, int nr);
 
 /*
  * Add a buffer number to "bufnrs", unless it's already there.
@@ -1076,10 +1074,8 @@ check_changed_any(hidden)
     int         bufnum = 0;
     int         bufcount = 0;
     int         *bufnrs;
-#if defined(FEAT_WINDOWS)
     tabpage_T   *tp;
     win_T       *wp;
-#endif
 
     for (buf = firstbuf; buf != NULL; buf = buf->b_next)
         ++bufcount;
@@ -1093,7 +1089,6 @@ check_changed_any(hidden)
 
     /* curbuf */
     bufnrs[bufnum++] = curbuf->b_fnum;
-#if defined(FEAT_WINDOWS)
     /* buf in curtab */
     FOR_ALL_WINDOWS(wp)
         if (wp->w_buffer != curbuf)
@@ -1104,7 +1099,6 @@ check_changed_any(hidden)
         if (tp != curtab)
             for (wp = tp->tp_firstwin; wp != NULL; wp = wp->w_next)
                 add_bufnum(bufnrs, &bufnum, wp->w_buffer->b_fnum);
-#endif
     /* any other buf */
     for (buf = firstbuf; buf != NULL; buf = buf->b_next)
         add_bufnum(bufnrs, &bufnum, buf->b_fnum);
@@ -1157,7 +1151,6 @@ check_changed_any(hidden)
         }
     }
 
-#if defined(FEAT_WINDOWS)
     /* Try to find a window that contains the buffer. */
     if (buf != curbuf)
         FOR_ALL_TAB_WINDOWS(tp, wp)
@@ -1174,8 +1167,6 @@ check_changed_any(hidden)
                 goto buf_found;
             }
 buf_found:
-#endif
-
     /* Open the changed buffer in the current window. */
     if (buf != curbuf)
         set_curbuf(buf, DOBUF_GOTO);
@@ -1232,12 +1223,12 @@ buf_write_all(buf, forceit)
  * Code to handle the argument list.
  */
 
-static char_u   *do_one_arg __ARGS((char_u *str));
-static int      do_arglist __ARGS((char_u *str, int what, int after));
-static void     alist_check_arg_idx __ARGS((void));
-static int      editing_arg_idx __ARGS((win_T *win));
+static char_u   *do_one_arg(char_u *str);
+static int      do_arglist(char_u *str, int what, int after);
+static void     alist_check_arg_idx(void);
+static int      editing_arg_idx(win_T *win);
 #if defined(FEAT_LISTCMDS)
-static int      alist_add_list __ARGS((int count, char_u **files, int after));
+static int      alist_add_list(int count, char_u **files, int after);
 #endif
 #define AL_SET  1
 #define AL_ADD  2
@@ -1446,16 +1437,12 @@ do_arglist(str, what, after)
     static void
 alist_check_arg_idx()
 {
-#if defined(FEAT_WINDOWS)
     win_T       *win;
     tabpage_T   *tp;
 
     FOR_ALL_TAB_WINDOWS(tp, win)
         if (win->w_alist == curwin->w_alist)
             check_arg_idx(win);
-#else
-    check_arg_idx(curwin);
-#endif
 }
 
 /*
@@ -1489,9 +1476,7 @@ check_arg_idx(win)
         win->w_arg_idx_invalid = TRUE;
         if (win->w_arg_idx != WARGCOUNT(win) - 1
                 && arg_had_last == FALSE
-#if defined(FEAT_WINDOWS)
                 && ALIST(win) == &global_alist
-#endif
                 && GARGCOUNT > 0
                 && win->w_arg_idx < GARGCOUNT
                 && (win->w_buffer->b_fnum == GARGLIST[GARGCOUNT - 1].ae_fnum
@@ -1506,9 +1491,7 @@ check_arg_idx(win)
          * Set "arg_had_last" if it's also the last one */
         win->w_arg_idx_invalid = FALSE;
         if (win->w_arg_idx == WARGCOUNT(win) - 1
-#if defined(FEAT_WINDOWS)
                 && win->w_alist == &global_alist
-#endif
                 )
             arg_had_last = TRUE;
     }
@@ -1525,7 +1508,7 @@ ex_args(eap)
 
     if (eap->cmdidx != CMD_args)
     {
-#if defined(FEAT_WINDOWS) && defined(FEAT_LISTCMDS)
+#if defined(FEAT_LISTCMDS)
         alist_unlink(ALIST(curwin));
         if (eap->cmdidx == CMD_argglobal)
             ALIST(curwin) = &global_alist;
@@ -1546,7 +1529,7 @@ ex_args(eap)
         ex_next(eap);
     }
     else
-#if defined(FEAT_WINDOWS) && defined(FEAT_LISTCMDS)
+#if defined(FEAT_LISTCMDS)
         if (eap->cmdidx == CMD_args)
 #endif
     {
@@ -1569,7 +1552,7 @@ ex_args(eap)
             }
         }
     }
-#if defined(FEAT_WINDOWS) && defined(FEAT_LISTCMDS)
+#if defined(FEAT_LISTCMDS)
     else if (eap->cmdidx == CMD_arglocal)
     {
         garray_T        *gap = &curwin->w_alist->al_ga;
@@ -1666,7 +1649,6 @@ do_argfile(eap, argn)
     {
         setpcmark();
 
-#if defined(FEAT_WINDOWS)
         /* split window or create new tab page first */
         if (*eap->cmd == 's' || cmdmod.tab != 0)
         {
@@ -1675,7 +1657,6 @@ do_argfile(eap, argn)
             RESET_BINDING(curwin);
         }
         else
-#endif
         {
             /*
              * if 'hidden' set, only check for changed file when re-editing
@@ -1698,9 +1679,7 @@ do_argfile(eap, argn)
 
         curwin->w_arg_idx = argn;
         if (argn == ARGCOUNT - 1
-#if defined(FEAT_WINDOWS)
                 && curwin->w_alist == &global_alist
-#endif
            )
             arg_had_last = TRUE;
 
@@ -1849,24 +1828,14 @@ ex_listdo(eap)
     exarg_T     *eap;
 {
     int         i;
-#if defined(FEAT_WINDOWS)
     win_T       *wp;
     tabpage_T   *tp;
-#endif
     buf_T       *buf = curbuf;
     int         next_fnum = 0;
 #if defined(FEAT_AUTOCMD) && defined(FEAT_SYN_HL)
     char_u      *save_ei = NULL;
 #endif
     char_u      *p_shm_save;
-
-#if !defined(FEAT_WINDOWS)
-    if (eap->cmdidx == CMD_windo)
-    {
-        ex_ni(eap);
-        return;
-    }
-#endif
 
 #if defined(FEAT_AUTOCMD) && defined(FEAT_SYN_HL)
     if (eap->cmdidx != CMD_windo && eap->cmdidx != CMD_tabdo)
@@ -1887,13 +1856,10 @@ ex_listdo(eap)
     {
         i = 0;
         /* start at the eap->line1 argument/window/buffer */
-#if defined(FEAT_WINDOWS)
         wp = firstwin;
         tp = first_tabpage;
-#endif
         switch (eap->cmdidx)
         {
-#if defined(FEAT_WINDOWS)
             case CMD_windo:
                 for ( ; wp != NULL && i + 1 < eap->line1; wp = wp->w_next)
                     i++;
@@ -1902,7 +1868,6 @@ ex_listdo(eap)
                 for( ; tp != NULL && i + 1 < eap->line1; tp = tp->tp_next)
                     i++;
                 break;
-#endif
             case CMD_argdo:
                 i = eap->line1 - 1;
                 break;
@@ -1949,7 +1914,6 @@ ex_listdo(eap)
                 if (curwin->w_arg_idx != i)
                     break;
             }
-#if defined(FEAT_WINDOWS)
             else if (eap->cmdidx == CMD_windo)
             {
                 /* go to window "wp" */
@@ -1968,7 +1932,6 @@ ex_listdo(eap)
                 goto_tabpage_tp(tp, TRUE, TRUE);
                 tp = tp->tp_next;
             }
-#endif
             else if (eap->cmdidx == CMD_bufdo)
             {
                 /* Remember the number of the next listed buffer, in case
@@ -2023,11 +1986,9 @@ ex_listdo(eap)
 #endif
             }
 
-#if defined(FEAT_WINDOWS)
             if (eap->cmdidx == CMD_windo || eap->cmdidx == CMD_tabdo)
                 if (i+1 > eap->line2)
                     break;
-#endif
             if (eap->cmdidx == CMD_argdo && i >= eap->line2)
                 break;
         }
@@ -2171,7 +2132,7 @@ ex_runtime(eap)
     source_runtime(eap->arg, eap->forceit);
 }
 
-static void source_callback __ARGS((char_u *fname, void *cookie));
+static void source_callback(char_u *fname, void *cookie);
 
     static void
 source_callback(fname, cookie)
@@ -2210,7 +2171,7 @@ source_runtime(name, all)
 do_in_runtimepath(name, all, callback, cookie)
     char_u      *name;
     int         all;
-    void        (*callback)__ARGS((char_u *fname, void *ck));
+    void        (*callback)(char_u *fname, void *ck);
     void        *cookie;
 {
     char_u      *rtp;
@@ -2401,11 +2362,11 @@ source_level(cookie)
     return ((struct source_cookie *)cookie)->level;
 }
 
-static char_u *get_one_sourceline __ARGS((struct source_cookie *sp));
+static char_u *get_one_sourceline(struct source_cookie *sp);
 
 #if defined(HAVE_FD_CLOEXEC)
 #define USE_FOPEN_NOINH
-static FILE *fopen_noinh_readbin __ARGS((char *filename));
+static FILE *fopen_noinh_readbin(char *filename);
 
 /*
  * Special function to open a file without handle inheritance.
@@ -3136,7 +3097,7 @@ do_finish(eap, reanimate)
  */
     int
 source_finished(fgetline, cookie)
-    char_u      *(*fgetline) __ARGS((int, void *, int));
+    char_u      *(*fgetline)(int, void *, int);
     void        *cookie;
 {
     return (getline_equal(fgetline, cookie, getsourceline)
@@ -3170,7 +3131,7 @@ ex_checktime(eap)
 
 #if defined(HAVE_LOCALE_H)
 #define HAVE_GET_LOCALE_VAL
-static char *get_locale_val __ARGS((int what));
+static char *get_locale_val(int what);
 
     static char *
 get_locale_val(what)
@@ -3188,7 +3149,7 @@ get_locale_val(what)
 
 /* Complicated #if; matches with where get_mess_env() is used below. */
 #if (!(defined(HAVE_LOCALE_H) && defined(LC_MESSAGES))) || (defined(HAVE_LOCALE_H) && !defined(LC_MESSAGES))
-static char_u *get_mess_env __ARGS((void));
+static char_u *get_mess_env(void);
 
 /*
  * Get the language used for messages from the environment.
@@ -3364,8 +3325,8 @@ ex_language(eap)
 static char_u   **locales = NULL;       /* Array of all available locales */
 static int      did_init_locales = FALSE;
 
-static void init_locales __ARGS((void));
-static char_u **find_locales __ARGS((void));
+static void init_locales(void);
+static char_u **find_locales(void);
 
 /*
  * Lazy initialization of all available locales.

@@ -16,26 +16,26 @@ static int      VIsual_mode_orig = NUL;         /* saved Visual mode */
 
 static int      restart_VIsual_select = 0;
 
-static void     set_vcount_ca __ARGS((cmdarg_T *cap, int *set_prevcount));
+static void     set_vcount_ca(cmdarg_T *cap, int *set_prevcount);
 static int
-                nv_compare __ARGS((const void *s1, const void *s2));
-static int      find_command __ARGS((int cmdchar));
-static void     op_colon __ARGS((oparg_T *oap));
-static void     op_function __ARGS((oparg_T *oap));
+                nv_compare(const void *s1, const void *s2);
+static int      find_command(int cmdchar);
+static void     op_colon(oparg_T *oap);
+static void     op_function(oparg_T *oap);
 #if defined(FEAT_MOUSE)
-static void     find_start_of_word __ARGS((pos_T *));
-static void     find_end_of_word __ARGS((pos_T *));
-static int      get_mouse_class __ARGS((char_u *p));
+static void     find_start_of_word(pos_T *);
+static void     find_end_of_word(pos_T *);
+static int      get_mouse_class(char_u *p);
 #endif
-static void     prep_redo_cmd __ARGS((cmdarg_T *cap));
-static void     prep_redo __ARGS((int regname, long, int, int, int, int, int));
-static int      checkclearop __ARGS((oparg_T *oap));
-static int      checkclearopq __ARGS((oparg_T *oap));
-static void     clearop __ARGS((oparg_T *oap));
-static void     clearopbeep __ARGS((oparg_T *oap));
-static void     unshift_special __ARGS((cmdarg_T *cap));
+static void     prep_redo_cmd(cmdarg_T *cap);
+static void     prep_redo(int regname, long, int, int, int, int, int);
+static int      checkclearop(oparg_T *oap);
+static int      checkclearopq(oparg_T *oap);
+static void     clearop(oparg_T *oap);
+static void     clearopbeep(oparg_T *oap);
+static void     unshift_special(cmdarg_T *cap);
 #if defined(FEAT_CMDL_INFO)
-static void     del_from_showcmd __ARGS((int));
+static void     del_from_showcmd(int);
 #endif
 
 /*
@@ -43,120 +43,116 @@ static void     del_from_showcmd __ARGS((int));
  * n_*(): functions called to handle Normal mode commands.
  * v_*(): functions called to handle Visual mode commands.
  */
-static void     nv_ignore __ARGS((cmdarg_T *cap));
-static void     nv_nop __ARGS((cmdarg_T *cap));
-static void     nv_error __ARGS((cmdarg_T *cap));
-static void     nv_help __ARGS((cmdarg_T *cap));
-static void     nv_addsub __ARGS((cmdarg_T *cap));
-static void     nv_page __ARGS((cmdarg_T *cap));
-static void     nv_gd __ARGS((oparg_T *oap, int nchar, int thisblock));
-static int      nv_screengo __ARGS((oparg_T *oap, int dir, long dist));
+static void     nv_ignore(cmdarg_T *cap);
+static void     nv_nop(cmdarg_T *cap);
+static void     nv_error(cmdarg_T *cap);
+static void     nv_help(cmdarg_T *cap);
+static void     nv_addsub(cmdarg_T *cap);
+static void     nv_page(cmdarg_T *cap);
+static void     nv_gd(oparg_T *oap, int nchar, int thisblock);
+static int      nv_screengo(oparg_T *oap, int dir, long dist);
 #if defined(FEAT_MOUSE)
-static void     nv_mousescroll __ARGS((cmdarg_T *cap));
-static void     nv_mouse __ARGS((cmdarg_T *cap));
+static void     nv_mousescroll(cmdarg_T *cap);
+static void     nv_mouse(cmdarg_T *cap);
 #endif
-static void     nv_scroll_line __ARGS((cmdarg_T *cap));
-static void     nv_zet __ARGS((cmdarg_T *cap));
-#if defined(FEAT_GUI_TABLINE)
-static void     nv_tabline __ARGS((cmdarg_T *cap));
-static void     nv_tabmenu __ARGS((cmdarg_T *cap));
-#endif
-static void     nv_exmode __ARGS((cmdarg_T *cap));
-static void     nv_colon __ARGS((cmdarg_T *cap));
-static void     nv_ctrlg __ARGS((cmdarg_T *cap));
-static void     nv_ctrlh __ARGS((cmdarg_T *cap));
-static void     nv_clear __ARGS((cmdarg_T *cap));
-static void     nv_ctrlo __ARGS((cmdarg_T *cap));
-static void     nv_hat __ARGS((cmdarg_T *cap));
-static void     nv_Zet __ARGS((cmdarg_T *cap));
-static void     nv_ident __ARGS((cmdarg_T *cap));
-static void     nv_tagpop __ARGS((cmdarg_T *cap));
-static void     nv_scroll __ARGS((cmdarg_T *cap));
-static void     nv_right __ARGS((cmdarg_T *cap));
-static void     nv_left __ARGS((cmdarg_T *cap));
-static void     nv_up __ARGS((cmdarg_T *cap));
-static void     nv_down __ARGS((cmdarg_T *cap));
+static void     nv_scroll_line(cmdarg_T *cap);
+static void     nv_zet(cmdarg_T *cap);
+static void     nv_exmode(cmdarg_T *cap);
+static void     nv_colon(cmdarg_T *cap);
+static void     nv_ctrlg(cmdarg_T *cap);
+static void     nv_ctrlh(cmdarg_T *cap);
+static void     nv_clear(cmdarg_T *cap);
+static void     nv_ctrlo(cmdarg_T *cap);
+static void     nv_hat(cmdarg_T *cap);
+static void     nv_Zet(cmdarg_T *cap);
+static void     nv_ident(cmdarg_T *cap);
+static void     nv_tagpop(cmdarg_T *cap);
+static void     nv_scroll(cmdarg_T *cap);
+static void     nv_right(cmdarg_T *cap);
+static void     nv_left(cmdarg_T *cap);
+static void     nv_up(cmdarg_T *cap);
+static void     nv_down(cmdarg_T *cap);
 #if defined(FEAT_SEARCHPATH)
-static void     nv_gotofile __ARGS((cmdarg_T *cap));
+static void     nv_gotofile(cmdarg_T *cap);
 #endif
-static void     nv_end __ARGS((cmdarg_T *cap));
-static void     nv_dollar __ARGS((cmdarg_T *cap));
-static void     nv_search __ARGS((cmdarg_T *cap));
-static void     nv_next __ARGS((cmdarg_T *cap));
-static int      normal_search __ARGS((cmdarg_T *cap, int dir, char_u *pat, int opt));
-static void     nv_csearch __ARGS((cmdarg_T *cap));
-static void     nv_brackets __ARGS((cmdarg_T *cap));
-static void     nv_percent __ARGS((cmdarg_T *cap));
-static void     nv_brace __ARGS((cmdarg_T *cap));
-static void     nv_mark __ARGS((cmdarg_T *cap));
-static void     nv_findpar __ARGS((cmdarg_T *cap));
-static void     nv_undo __ARGS((cmdarg_T *cap));
-static void     nv_kundo __ARGS((cmdarg_T *cap));
-static void     nv_Replace __ARGS((cmdarg_T *cap));
+static void     nv_end(cmdarg_T *cap);
+static void     nv_dollar(cmdarg_T *cap);
+static void     nv_search(cmdarg_T *cap);
+static void     nv_next(cmdarg_T *cap);
+static int      normal_search(cmdarg_T *cap, int dir, char_u *pat, int opt);
+static void     nv_csearch(cmdarg_T *cap);
+static void     nv_brackets(cmdarg_T *cap);
+static void     nv_percent(cmdarg_T *cap);
+static void     nv_brace(cmdarg_T *cap);
+static void     nv_mark(cmdarg_T *cap);
+static void     nv_findpar(cmdarg_T *cap);
+static void     nv_undo(cmdarg_T *cap);
+static void     nv_kundo(cmdarg_T *cap);
+static void     nv_Replace(cmdarg_T *cap);
 #if defined(FEAT_VREPLACE)
-static void     nv_vreplace __ARGS((cmdarg_T *cap));
+static void     nv_vreplace(cmdarg_T *cap);
 #endif
-static void     v_swap_corners __ARGS((int cmdchar));
-static void     nv_replace __ARGS((cmdarg_T *cap));
-static void     n_swapchar __ARGS((cmdarg_T *cap));
-static void     nv_cursormark __ARGS((cmdarg_T *cap, int flag, pos_T *pos));
-static void     v_visop __ARGS((cmdarg_T *cap));
-static void     nv_subst __ARGS((cmdarg_T *cap));
-static void     nv_abbrev __ARGS((cmdarg_T *cap));
-static void     nv_optrans __ARGS((cmdarg_T *cap));
-static void     nv_gomark __ARGS((cmdarg_T *cap));
-static void     nv_pcmark __ARGS((cmdarg_T *cap));
-static void     nv_regname __ARGS((cmdarg_T *cap));
-static void     nv_visual __ARGS((cmdarg_T *cap));
-static void     n_start_visual_mode __ARGS((int c));
-static void     nv_window __ARGS((cmdarg_T *cap));
-static void     nv_suspend __ARGS((cmdarg_T *cap));
-static void     nv_g_cmd __ARGS((cmdarg_T *cap));
-static void     n_opencmd __ARGS((cmdarg_T *cap));
-static void     nv_dot __ARGS((cmdarg_T *cap));
-static void     nv_redo __ARGS((cmdarg_T *cap));
-static void     nv_Undo __ARGS((cmdarg_T *cap));
-static void     nv_tilde __ARGS((cmdarg_T *cap));
-static void     nv_operator __ARGS((cmdarg_T *cap));
-static void     set_op_var __ARGS((int optype));
-static void     nv_lineop __ARGS((cmdarg_T *cap));
-static void     nv_home __ARGS((cmdarg_T *cap));
-static void     nv_pipe __ARGS((cmdarg_T *cap));
-static void     nv_bck_word __ARGS((cmdarg_T *cap));
-static void     nv_wordcmd __ARGS((cmdarg_T *cap));
-static void     nv_beginline __ARGS((cmdarg_T *cap));
-static void     adjust_cursor __ARGS((oparg_T *oap));
-static void     adjust_for_sel __ARGS((cmdarg_T *cap));
-static int      unadjust_for_sel __ARGS((void));
-static void     nv_select __ARGS((cmdarg_T *cap));
-static void     nv_goto __ARGS((cmdarg_T *cap));
-static void     nv_normal __ARGS((cmdarg_T *cap));
-static void     nv_esc __ARGS((cmdarg_T *oap));
-static void     nv_edit __ARGS((cmdarg_T *cap));
-static void     invoke_edit __ARGS((cmdarg_T *cap, int repl, int cmd, int startln));
+static void     v_swap_corners(int cmdchar);
+static void     nv_replace(cmdarg_T *cap);
+static void     n_swapchar(cmdarg_T *cap);
+static void     nv_cursormark(cmdarg_T *cap, int flag, pos_T *pos);
+static void     v_visop(cmdarg_T *cap);
+static void     nv_subst(cmdarg_T *cap);
+static void     nv_abbrev(cmdarg_T *cap);
+static void     nv_optrans(cmdarg_T *cap);
+static void     nv_gomark(cmdarg_T *cap);
+static void     nv_pcmark(cmdarg_T *cap);
+static void     nv_regname(cmdarg_T *cap);
+static void     nv_visual(cmdarg_T *cap);
+static void     n_start_visual_mode(int c);
+static void     nv_window(cmdarg_T *cap);
+static void     nv_suspend(cmdarg_T *cap);
+static void     nv_g_cmd(cmdarg_T *cap);
+static void     n_opencmd(cmdarg_T *cap);
+static void     nv_dot(cmdarg_T *cap);
+static void     nv_redo(cmdarg_T *cap);
+static void     nv_Undo(cmdarg_T *cap);
+static void     nv_tilde(cmdarg_T *cap);
+static void     nv_operator(cmdarg_T *cap);
+static void     set_op_var(int optype);
+static void     nv_lineop(cmdarg_T *cap);
+static void     nv_home(cmdarg_T *cap);
+static void     nv_pipe(cmdarg_T *cap);
+static void     nv_bck_word(cmdarg_T *cap);
+static void     nv_wordcmd(cmdarg_T *cap);
+static void     nv_beginline(cmdarg_T *cap);
+static void     adjust_cursor(oparg_T *oap);
+static void     adjust_for_sel(cmdarg_T *cap);
+static int      unadjust_for_sel(void);
+static void     nv_select(cmdarg_T *cap);
+static void     nv_goto(cmdarg_T *cap);
+static void     nv_normal(cmdarg_T *cap);
+static void     nv_esc(cmdarg_T *oap);
+static void     nv_edit(cmdarg_T *cap);
+static void     invoke_edit(cmdarg_T *cap, int repl, int cmd, int startln);
 #if defined(FEAT_TEXTOBJ)
-static void     nv_object __ARGS((cmdarg_T *cap));
+static void     nv_object(cmdarg_T *cap);
 #endif
-static void     nv_record __ARGS((cmdarg_T *cap));
-static void     nv_at __ARGS((cmdarg_T *cap));
-static void     nv_halfpage __ARGS((cmdarg_T *cap));
-static void     nv_join __ARGS((cmdarg_T *cap));
-static void     nv_put __ARGS((cmdarg_T *cap));
-static void     nv_open __ARGS((cmdarg_T *cap));
+static void     nv_record(cmdarg_T *cap);
+static void     nv_at(cmdarg_T *cap);
+static void     nv_halfpage(cmdarg_T *cap);
+static void     nv_join(cmdarg_T *cap);
+static void     nv_put(cmdarg_T *cap);
+static void     nv_open(cmdarg_T *cap);
 #if defined(FEAT_DND)
-static void     nv_drop __ARGS((cmdarg_T *cap));
+static void     nv_drop(cmdarg_T *cap);
 #endif
 #if defined(FEAT_AUTOCMD)
-static void     nv_cursorhold __ARGS((cmdarg_T *cap));
+static void     nv_cursorhold(cmdarg_T *cap);
 #endif
 
-static char *e_noident = N_("E349: No identifier under cursor");
+static char *e_noident = "E349: No identifier under cursor";
 
 /*
  * Function to be called for a Normal or Visual mode command.
  * The argument is a cmdarg_T.
  */
-typedef void (*nv_func_T) __ARGS((cmdarg_T *cap));
+typedef void (*nv_func_T)(cmdarg_T *cap);
 
 /* Values for cmd_flags. */
 #define NV_NCH      0x01          /* may need to get a second char */
@@ -381,10 +377,6 @@ static const struct nv_cmd
     {K_F1,      nv_help,        NV_NCW,                 0},
     {K_XF1,     nv_help,        NV_NCW,                 0},
     {K_SELECT,  nv_select,      0,                      0},
-#if defined(FEAT_GUI_TABLINE)
-    {K_TABLINE, nv_tabline,     0,                      0},
-    {K_TABMENU, nv_tabmenu,     0,                      0},
-#endif
 #if defined(FEAT_DND)
     {K_DROP,    nv_drop,        NV_STS,                 0},
 #endif
@@ -942,7 +934,6 @@ getcount:
 
             if (!lit)
             {
-#if defined(FEAT_DIGRAPHS)
                 /* Typing CTRL-K gets a digraph. */
                 if (*cp == Ctrl_K
                         && ((nv_cmds[idx].cmd_flags & NV_LANG)
@@ -960,7 +951,6 @@ getcount:
 #endif
                     }
                 }
-#endif
 
                 /* adjust chars > 127, except after "tTfFr" commands */
                 LANGMAP_ADJUST(*cp, !lang);
@@ -1625,8 +1615,7 @@ do_pending_operator(cap, old_col, gui_yank)
                     prep_redo(oap->regname, 0L, NUL, 'v',
                                         get_op_char(oap->op_type),
                                         get_extra_op_char(oap->op_type),
-                                        oap->op_type == OP_REPLACE
-                                                          ? cap->nchar : NUL);
+                                        oap->op_type == OP_REPLACE ? cap->nchar : NUL);
                 if (!redo_VIsual_busy)
                 {
                     redo_VIsual_mode = resel_VIsual_mode;
@@ -1744,13 +1733,11 @@ do_pending_operator(cap, old_col, gui_yank)
          * For delete, change and yank, it's an error to operate on an
          * empty region, when 'E' included in 'cpoptions' (Vi compatible).
          */
-        empty_region_error = (oap->empty
-                                && vim_strchr(p_cpo, CPO_EMPTYREGION) != NULL);
+        empty_region_error = (oap->empty && vim_strchr(p_cpo, CPO_EMPTYREGION) != NULL);
 
         /* Force a redraw when operating on an empty Visual region, when
          * 'modifiable is off or creating a fold. */
-        if (oap->is_VIsual && (oap->empty || !curbuf->b_p_ma
-                    ))
+        if (oap->is_VIsual && (oap->empty || !curbuf->b_p_ma))
         {
 #if defined(FEAT_LINEBREAK)
             curwin->w_p_lbr = lbr_saved;
@@ -2201,12 +2188,8 @@ do_mouse(oap, c, dir, count, fixindent)
     pos_T       start_visual;
     int         moved;          /* Has cursor moved? */
     int         in_status_line; /* mouse in status line */
-#if defined(FEAT_WINDOWS)
     static int  in_tab_line = FALSE; /* mouse clicked in tab line */
-#endif
-#if defined(FEAT_VERTSPLIT)
     int         in_sep_line;    /* mouse in vertical separator line */
-#endif
     int         c1, c2;
     win_T       *old_curwin = curwin;
     static pos_T orig_cursor;
@@ -2271,13 +2254,11 @@ do_mouse(oap, c, dir, count, fixindent)
         drag_status_line = FALSE;
         update_mouseshape(SHAPE_IDX_STATUS);
     }
-#if defined(FEAT_VERTSPLIT)
     if (!is_drag && drag_sep_line)
     {
         drag_sep_line = FALSE;
         update_mouseshape(SHAPE_IDX_VSEP);
     }
-#endif
 #endif
 
     /*
@@ -2292,13 +2273,11 @@ do_mouse(oap, c, dir, count, fixindent)
         if (!is_drag)                   /* release, reset got_click */
         {
             got_click = FALSE;
-#if defined(FEAT_WINDOWS)
             if (in_tab_line)
             {
                 in_tab_line = FALSE;
                 return FALSE;
             }
-#endif
         }
     }
 
@@ -2438,7 +2417,6 @@ do_mouse(oap, c, dir, count, fixindent)
 
     start_visual.lnum = 0;
 
-#if defined(FEAT_WINDOWS)
     /* Check for clicking in the tab page line. */
     if (mouse_row == 0 && firstwin->w_winrow > 0)
     {
@@ -2507,8 +2485,6 @@ do_mouse(oap, c, dir, count, fixindent)
         tabpage_move(c1 <= 0 ? 9999 : c1 - 1);
         return FALSE;
     }
-
-#endif
 
     /*
      * When 'mousemodel' is "popup" or "popup_setpos", translate mouse events:
@@ -2596,9 +2572,7 @@ do_mouse(oap, c, dir, count, fixindent)
                         oap == NULL ? NULL : &(oap->inclusive), which_button);
     moved = (jump_flags & CURSOR_MOVED);
     in_status_line = (jump_flags & IN_STATUS_LINE);
-#if defined(FEAT_VERTSPLIT)
     in_sep_line = (jump_flags & IN_SEP_LINE);
-#endif
 
     /* When jumping to another window, clear a pending operator.  That's a bit
      * friendlier than beeping and not jumping to that window. */
@@ -2750,7 +2724,7 @@ do_mouse(oap, c, dir, count, fixindent)
         do_put(regname, dir, count, fixindent | PUT_CURSEND);
     }
 
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
     /*
      * Ctrl-Mouse click or double click in a quickfix window jumps to the
      * error under the mouse pointer.
@@ -2807,7 +2781,6 @@ do_mouse(oap, c, dir, count, fixindent)
         }
 #endif
     }
-#if defined(FEAT_VERTSPLIT)
     else if (in_sep_line)
     {
 #if defined(FEAT_MOUSESHAPE)
@@ -2818,9 +2791,7 @@ do_mouse(oap, c, dir, count, fixindent)
         }
 #endif
     }
-#endif
-    else if ((mod_mask & MOD_MASK_MULTI_CLICK) && (State & (NORMAL | INSERT))
-             && mouse_has(MOUSE_VISUAL))
+    else if ((mod_mask & MOD_MASK_MULTI_CLICK) && (State & (NORMAL | INSERT)) && mouse_has(MOUSE_VISUAL))
     {
         if (is_click || !VIsual_active)
         {
@@ -3399,7 +3370,7 @@ static char_u   old_showcmd_buf[SHOWCMD_BUFLEN];  /* For push_showcmd() */
 static int      showcmd_is_clear = TRUE;
 static int      showcmd_visual = FALSE;
 
-static void display_showcmd __ARGS((void));
+static void display_showcmd(void);
 
     void
 clear_showcmd()
@@ -3752,9 +3723,7 @@ check_scrollbind(topline_diff, leftcol_diff)
 
                 redraw_later(VALID);
                 cursor_correct();
-#if defined(FEAT_WINDOWS)
                 curwin->w_redr_status = TRUE;
-#endif
             }
 
             /*
@@ -3842,7 +3811,6 @@ nv_page(cap)
 {
     if (!checkclearop(cap->oap))
     {
-#if defined(FEAT_WINDOWS)
         if (mod_mask & MOD_MASK_CTRL)
         {
             /* <C-PageUp>: tab page back; <C-PageDown>: tab page forward */
@@ -3852,7 +3820,6 @@ nv_page(cap)
                 goto_tabpage((int)cap->count0);
         }
         else
-#endif
         (void)onepage(cap->arg, cap->count1);
     }
 }
@@ -4038,10 +4005,8 @@ nv_screengo(oap, dir, dist)
     if (width2 == 0)
         width2 = 1; /* avoid divide by zero */
 
-#if defined(FEAT_VERTSPLIT)
     if (curwin->w_width != 0)
     {
-#endif
       /*
        * Instead of sticking at the last character of the buffer line we
        * try to stick in the last column of the screen.
@@ -4089,8 +4054,7 @@ nv_screengo(oap, dir, dist)
                 --curwin->w_cursor.lnum;
                 linelen = linetabsize(ml_get_curline());
                 if (linelen > width1)
-                    curwin->w_curswant += (((linelen - width1 - 1) / width2)
-                                                                + 1) * width2;
+                    curwin->w_curswant += (((linelen - width1 - 1) / width2) + 1) * width2;
             }
         }
         else /* dir == FORWARD */
@@ -4116,9 +4080,7 @@ nv_screengo(oap, dir, dist)
             }
         }
       }
-#if defined(FEAT_VERTSPLIT)
     }
-#endif
 
     if (virtual_active() && atend)
         coladvance(MAXCOL);
@@ -4166,7 +4128,6 @@ nv_screengo(oap, dir, dist)
 nv_mousescroll(cap)
     cmdarg_T    *cap;
 {
-#if defined(FEAT_WINDOWS)
     win_T *old_curwin = curwin;
 
     if (mouse_row >= 0 && mouse_col >= 0)
@@ -4180,7 +4141,6 @@ nv_mousescroll(cap)
         curwin = mouse_find_win(&row, &col);
         curbuf = curwin->w_buffer;
     }
-#endif
 
     if (cap->arg == MSCR_UP || cap->arg == MSCR_DOWN)
     {
@@ -4196,12 +4156,10 @@ nv_mousescroll(cap)
         }
     }
 
-#if defined(FEAT_WINDOWS)
     curwin->w_redr_status = TRUE;
 
     curwin = old_curwin;
     curbuf = curwin->w_buffer;
-#endif
 }
 
 /*
@@ -4253,8 +4211,7 @@ scroll_redraw(up, count)
         /* If moved back to where we were, at least move the cursor, otherwise
          * we get stuck at one position.  Don't move the cursor up if the
          * first line of the buffer is already on the screen */
-        while (curwin->w_topline == prev_topline
-                )
+        while (curwin->w_topline == prev_topline)
         {
             if (up)
             {
@@ -4486,80 +4443,6 @@ dozet:
 
 }
 
-#if defined(FEAT_GUI_TABLINE)
-/*
- * Click in GUI tab.
- */
-    static void
-nv_tabline(cap)
-    cmdarg_T    *cap;
-{
-    if (cap->oap->op_type != OP_NOP)
-        clearopbeep(cap->oap);
-
-    /* Even if an operator was pending, we still want to jump tabs. */
-    goto_tabpage(current_tab);
-}
-
-/*
- * Selected item in tab line menu.
- */
-    static void
-nv_tabmenu(cap)
-    cmdarg_T    *cap;
-{
-    if (cap->oap->op_type != OP_NOP)
-        clearopbeep(cap->oap);
-
-    /* Even if an operator was pending, we still want to jump tabs. */
-    handle_tabmenu();
-}
-
-/*
- * Handle selecting an item of the GUI tab line menu.
- * Used in Normal and Insert mode.
- */
-    void
-handle_tabmenu()
-{
-    switch (current_tabmenu)
-    {
-        case TABLINE_MENU_CLOSE:
-            if (current_tab == 0)
-                do_cmdline_cmd((char_u *)"tabclose");
-            else
-            {
-                vim_snprintf((char *)IObuff, IOSIZE, "tabclose %d",
-                                                                 current_tab);
-                do_cmdline_cmd(IObuff);
-            }
-            break;
-
-        case TABLINE_MENU_NEW:
-            if (current_tab == 0)
-                do_cmdline_cmd((char_u *)"$tabnew");
-            else
-            {
-                vim_snprintf((char *)IObuff, IOSIZE, "%dtabnew",
-                                                             current_tab - 1);
-                do_cmdline_cmd(IObuff);
-            }
-            break;
-
-        case TABLINE_MENU_OPEN:
-            if (current_tab == 0)
-                do_cmdline_cmd((char_u *)"browse $tabnew");
-            else
-            {
-                vim_snprintf((char *)IObuff, IOSIZE, "browse %dtabnew",
-                                                             current_tab - 1);
-                do_cmdline_cmd(IObuff);
-            }
-            break;
-    }
-}
-#endif
-
 /*
  * "Q" command.
  */
@@ -4748,7 +4631,6 @@ nv_Zet(cap)
     }
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * Call nv_ident() as if "c1" was used, with "c2" as next character.
  */
@@ -4767,7 +4649,6 @@ do_nv_ident(c1, c2)
     ca.nchar = c2;
     nv_ident(&ca);
 }
-#endif
 
 /*
  * Handle the commands that use the word under the cursor.
@@ -5076,7 +4957,7 @@ nv_scroll(cap)
             curwin->w_cursor.lnum = 1;
         else
         {
-                curwin->w_cursor.lnum -= cap->count1 - 1;
+            curwin->w_cursor.lnum -= cap->count1 - 1;
         }
     }
     else
@@ -5320,7 +5201,7 @@ nv_down(cap)
         nv_page(cap);
     }
     else
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
     /* In a quickfix window a <CR> jumps to the error under the cursor. */
     if (bt_quickfix(curbuf) && cap->cmdchar == CAR)
         if (curwin->w_llist_ref == NULL)
@@ -5786,8 +5667,7 @@ nv_brackets(cap)
     {
         if (!checkclearop(cap->oap))
         {
-            int     dir = (cap->cmdchar == ']' && cap->nchar == 'p')
-                                                         ? FORWARD : BACKWARD;
+            int     dir = (cap->cmdchar == ']' && cap->nchar == 'p') ? FORWARD : BACKWARD;
             int     regname = cap->oap->regname;
             int     was_visual = VIsual_active;
             int     line_count = curbuf->b_ml.ml_line_count;
@@ -5795,8 +5675,7 @@ nv_brackets(cap)
 
             if (VIsual_active)
             {
-                start = ltoreq(VIsual, curwin->w_cursor)
-                                                  ? VIsual : curwin->w_cursor;
+                start = ltoreq(VIsual, curwin->w_cursor) ? VIsual : curwin->w_cursor;
                 end =  equalpos(start,VIsual) ? curwin->w_cursor : VIsual;
                 curwin->w_cursor = (dir == BACKWARD ? start : end);
             }
@@ -6153,8 +6032,7 @@ nv_replace(cap)
                 State = REPLACE;
                 if (cap->nchar == Ctrl_E || cap->nchar == Ctrl_Y)
                 {
-                    int c = ins_copychar(curwin->w_cursor.lnum
-                                           + (cap->nchar == Ctrl_Y ? -1 : 1));
+                    int c = ins_copychar(curwin->w_cursor.lnum + (cap->nchar == Ctrl_Y ? -1 : 1));
                     if (c != NUL)
                         ins_char(c);
                     else
@@ -6185,8 +6063,7 @@ nv_replace(cap)
                 ptr = ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE);
                 if (cap->nchar == Ctrl_E || cap->nchar == Ctrl_Y)
                 {
-                  int c = ins_copychar(curwin->w_cursor.lnum
-                                           + (cap->nchar == Ctrl_Y ? -1 : 1));
+                  int c = ins_copychar(curwin->w_cursor.lnum + (cap->nchar == Ctrl_Y ? -1 : 1));
                   if (c != NUL)
                     ptr[curwin->w_cursor.col] = c;
                 }
@@ -6689,8 +6566,7 @@ nv_visual(cap)
                 if (resel_VIsual_line_count <= 1)
                 {
                     validate_virtcol();
-                    curwin->w_curswant = curwin->w_virtcol
-                                        + resel_VIsual_vcol * cap->count0 - 1;
+                    curwin->w_curswant = curwin->w_virtcol + resel_VIsual_vcol * cap->count0 - 1;
                 }
                 else
                     curwin->w_curswant = resel_VIsual_vcol;
@@ -6704,8 +6580,7 @@ nv_visual(cap)
             else if (VIsual_mode == Ctrl_V)
             {
                 validate_virtcol();
-                curwin->w_curswant = curwin->w_virtcol
-                                        + resel_VIsual_vcol * cap->count0 - 1;
+                curwin->w_curswant = curwin->w_virtcol + resel_VIsual_vcol * cap->count0 - 1;
                 coladvance(curwin->w_curswant);
             }
             else
@@ -6814,12 +6689,8 @@ n_start_visual_mode(c)
 nv_window(cap)
     cmdarg_T    *cap;
 {
-#if defined(FEAT_WINDOWS)
     if (!checkclearop(cap->oap))
         do_window(cap->nchar, cap->count0, NUL); /* everything is in window.c */
-#else
-    (void)checkclearop(cap->oap);
-#endif
 }
 
 /*
@@ -7026,9 +6897,7 @@ nv_g_cmd(cap)
         oap->motion_type = MCHAR;
         oap->inclusive = FALSE;
         if (curwin->w_p_wrap
-#if defined(FEAT_VERTSPLIT)
                 && curwin->w_width != 0
-#endif
                 )
         {
             int         width1 = W_WIDTH(curwin) - curwin_col_off();
@@ -7093,9 +6962,7 @@ nv_g_cmd(cap)
             oap->motion_type = MCHAR;
             oap->inclusive = TRUE;
             if (curwin->w_p_wrap
-#if defined(FEAT_VERTSPLIT)
                     && curwin->w_width != 0
-#endif
                )
             {
                 curwin->w_curswant = MAXCOL;    /* so we stay at the end */
@@ -7362,7 +7229,6 @@ nv_g_cmd(cap)
         break;
 #endif
 
-#if defined(FEAT_WINDOWS)
     case 't':
         if (!checkclearop(oap))
             goto_tabpage((int)cap->count0);
@@ -7371,7 +7237,6 @@ nv_g_cmd(cap)
         if (!checkclearop(oap))
             goto_tabpage(-(int)cap->count1);
         break;
-#endif
 
     case '+':
     case '-': /* "g+" and "g-": undo or redo along the timeline */

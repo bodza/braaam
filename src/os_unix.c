@@ -16,7 +16,34 @@
 
 #include "vim.h"
 
-#include "os_unixx.h"       /* unix includes for os_unix.c only */
+/*
+ * Stuff for signals
+ */
+#if defined(HAVE_SIGSET) && !defined(signal)
+#define signal sigset
+#endif
+
+#include <sys/ioctl.h>
+#include <sys/wait.h>
+
+#if !defined(WEXITSTATUS)
+#define WEXITSTATUS(stat_val) (((stat_val) >> 8) & 0377)
+#endif
+
+#if !defined(WIFEXITED)
+#define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
+
+#include <string.h>
+
+#include <sys/utsname.h>
+
+/*
+ * We use termios.h if both termios.h and termio.h are available.
+ * Termios is supposed to be a superset of termio.h.  Don't include them both,
+ * it may give problems on some systems.
+ */
+#include <termios.h>
 
 /*
  * Use this prototype for select, some include files have a wrong prototype
@@ -24,7 +51,7 @@
 #undef select
 
 #if defined(HAVE_SELECT)
-extern int   select __ARGS((int, fd_set *, fd_set *, fd_set *, struct timeval *));
+extern int   select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #endif
 
 #if defined(FEAT_MOUSE_GPM)
@@ -44,18 +71,18 @@ extern int   select __ARGS((int, fd_set *, fd_set *, fd_set *, struct timeval *)
 #define KG_CTRLR       7
 #define KG_CAPSSHIFT   8
 
-static void gpm_close __ARGS((void));
-static int gpm_open __ARGS((void));
-static int mch_gpm_process __ARGS((void));
+static void gpm_close(void);
+static int gpm_open(void);
+static int mch_gpm_process(void);
 #endif
 
 #if defined(FEAT_SYSMOUSE)
 #include <sys/consio.h>
 #include <sys/fbio.h>
 
-static int sysmouse_open __ARGS((void));
-static void sysmouse_close __ARGS((void));
-static RETSIGTYPE sig_sysmouse __ARGS(SIGPROTOARG);
+static int sysmouse_open(void);
+static void sysmouse_close(void);
+static void sig_sysmouse(int);
 #endif
 
 /*
@@ -67,8 +94,8 @@ static RETSIGTYPE sig_sysmouse __ARGS(SIGPROTOARG);
 #endif
 
 #if defined(FEAT_TITLE)
-static int get_x11_title __ARGS((int));
-static int get_x11_icon __ARGS((int));
+static int get_x11_title(int);
+static int get_x11_icon(int);
 
 static char_u   *oldtitle = NULL;
 static int      did_set_title = FALSE;
@@ -76,37 +103,37 @@ static char_u   *oldicon = NULL;
 static int      did_set_icon = FALSE;
 #endif
 
-static void may_core_dump __ARGS((void));
+static void may_core_dump(void);
 
 typedef int waitstatus;
-static pid_t wait4pid __ARGS((pid_t, waitstatus *));
+static pid_t wait4pid(pid_t, waitstatus *);
 
-static int  WaitForChar __ARGS((long));
-static int  RealWaitForChar __ARGS((int, long, int *));
+static int  WaitForChar(long);
+static int  RealWaitForChar(int, long, int *);
 
-static void handle_resize __ARGS((void));
+static void handle_resize(void);
 
 #if defined(SIGWINCH)
-static RETSIGTYPE sig_winch __ARGS(SIGPROTOARG);
+static void sig_winch(int);
 #endif
 #if defined(SIGINT)
-static RETSIGTYPE catch_sigint __ARGS(SIGPROTOARG);
+static void catch_sigint(int);
 #endif
 #if defined(SIGPWR)
-static RETSIGTYPE catch_sigpwr __ARGS(SIGPROTOARG);
+static void catch_sigpwr(int);
 #endif
-static RETSIGTYPE deathtrap __ARGS(SIGPROTOARG);
+static void deathtrap(int);
 
-static void catch_int_signal __ARGS((void));
-static void set_signals __ARGS((void));
-static void catch_signals __ARGS((RETSIGTYPE (*func_deadly)(), RETSIGTYPE (*func_other)()));
-static int  have_wildcard __ARGS((int, char_u **));
-static int  have_dollars __ARGS((int, char_u **));
+static void catch_int_signal(void);
+static void set_signals(void);
+static void catch_signals(void (*func_deadly)(), void (*func_other)());
+static int  have_wildcard(int, char_u **);
+static int  have_dollars(int, char_u **);
 
-static int save_patterns __ARGS((int num_pat, char_u **pat, int *num_file, char_u ***file));
+static int save_patterns(int num_pat, char_u **pat, int *num_file, char_u ***file);
 
 #if !defined(SIG_ERR)
-#define SIG_ERR        ((RETSIGTYPE (*)())-1)
+#define SIG_ERR        ((void (*)())-1)
 #endif
 
 /* volatile because it is used in signal handler sig_winch(). */
@@ -342,10 +369,8 @@ mch_char_avail()
 }
 
 #if defined(HAVE_TOTAL_MEM)
-#if defined(HAVE_SYS_RESOURCE_H)
 #include <sys/resource.h>
-#endif
-#if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
+#if defined(HAVE_SYSINFO)
 #include <sys/sysinfo.h>
 #endif
 
@@ -360,7 +385,7 @@ mch_total_mem(special)
     long_u      mem = 0;
     long_u      shiftright = 10;  /* how much to shift "mem" right for Kbyte */
 
-#if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
+#if defined(HAVE_SYSINFO)
     if (mem == 0)
     {
         struct sysinfo sinfo;
@@ -406,7 +431,7 @@ mch_total_mem(special)
 
     /* Return the minimum of the physical memory and the user limit, because
      * using more than the user limit may cause Vim to be terminated. */
-#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
+#if defined(HAVE_GETRLIMIT)
     {
         struct rlimit   rlp;
 
@@ -504,7 +529,7 @@ mch_delay(msec, ignoreinput)
  * Return a pointer to an item on the stack.  Used to find out if the stack
  * grows up or down.
  */
-static void check_stack_growth __ARGS((char *p));
+static void check_stack_growth(char *p);
 static int stack_grows_downwards;
 
 /*
@@ -602,7 +627,7 @@ static stack_t sigstk;                  /* for sigaltstack() */
 static struct sigstack sigstk;          /* for sigstack() */
 #endif
 
-static void init_signal_stack __ARGS((void));
+static void init_signal_stack(void);
 static char *signal_stack;
 
     static void
@@ -630,43 +655,42 @@ init_signal_stack()
 /*
  * We need correct prototypes for a signal function, otherwise mean compilers
  * will barf when the second argument to signal() is ``wrong''.
- * Let me try it with a few tricky defines from my own osdef.h  (jw).
  */
 #if defined(SIGWINCH)
-    static RETSIGTYPE
+    static void
 sig_winch SIGDEFARG(sigarg)
 {
     /* this is not required on all systems, but it doesn't hurt anybody */
-    signal(SIGWINCH, (RETSIGTYPE (*)())sig_winch);
+    signal(SIGWINCH, (void (*)())sig_winch);
     do_resize = TRUE;
-    SIGRETURN;
+    return;
 }
 #endif
 
 #if defined(SIGINT)
-    static RETSIGTYPE
+    static void
 catch_sigint SIGDEFARG(sigarg)
 {
     /* this is not required on all systems, but it doesn't hurt anybody */
-    signal(SIGINT, (RETSIGTYPE (*)())catch_sigint);
+    signal(SIGINT, (void (*)())catch_sigint);
     got_int = TRUE;
-    SIGRETURN;
+    return;
 }
 #endif
 
 #if defined(SIGPWR)
-    static RETSIGTYPE
+    static void
 catch_sigpwr SIGDEFARG(sigarg)
 {
     /* this is not required on all systems, but it doesn't hurt anybody */
-    signal(SIGPWR, (RETSIGTYPE (*)())catch_sigpwr);
+    signal(SIGPWR, (void (*)())catch_sigpwr);
     /*
      * I'm not sure we get the SIGPWR signal when the system is really going
      * down or when the batteries are almost empty.  Just preserve the swap
      * files and don't exit, that can't do any harm.
      */
     ml_sync_all(FALSE, FALSE);
-    SIGRETURN;
+    return;
 }
 #endif
 
@@ -674,12 +698,12 @@ catch_sigpwr SIGDEFARG(sigarg)
 /*
  * signal function for alarm().
  */
-    static RETSIGTYPE
+    static void
 sig_alarm SIGDEFARG(sigarg)
 {
     /* doesn't do anything, just to break a system call */
     sig_alarm_called = TRUE;
-    SIGRETURN;
+    return;
 }
 #endif
 
@@ -690,17 +714,14 @@ sig_alarm SIGDEFARG(sigarg)
  * NOTE: Avoid unsafe functions, such as allocating memory, they can result in
  * a deadlock.
  */
-    static RETSIGTYPE
+    static void
 deathtrap SIGDEFARG(sigarg)
 {
     static int  entered = 0;        /* count the number of times we got here.
                                        Note: when memory has been corrupted
                                        this may get an arbitrary value! */
-#if defined(SIGHASARG)
     int         i;
-#endif
 
-#if defined(HAVE_SETJMP_H)
     /*
      * Catch a crash in protected code.
      * Restores the environment saved in lc_jump_env, which looks like
@@ -712,15 +733,13 @@ deathtrap SIGDEFARG(sigarg)
         LONGJMP(lc_jump_env, 1);
         /* NOTREACHED */
     }
-#endif
 
-#if defined(SIGHASARG)
 #if defined(SIGQUIT)
     /* While in mch_delay() we go to cooked mode to allow a CTRL-C to
      * interrupt us.  But in cooked mode we may also get SIGQUIT, e.g., when
      * pressing CTRL-\, but we don't want Vim to exit then. */
     if (in_mch_delay && sigarg == SIGQUIT)
-        SIGRETURN;
+        return;
 #endif
 
     /* When SIGHUP, SIGQUIT, etc. are blocked: postpone the effect and return
@@ -748,8 +767,7 @@ deathtrap SIGDEFARG(sigarg)
 #endif
                 )
             && !vim_handle_signal(sigarg))
-        SIGRETURN;
-#endif
+        return;
 
     /* Remember how often we have been called. */
     ++entered;
@@ -786,13 +804,11 @@ deathtrap SIGDEFARG(sigarg)
     }
 #endif
 
-#if defined(SIGHASARG)
     /* try to find the name of this signal */
     for (i = 0; signal_info[i].sig != -1; i++)
         if (sigarg == signal_info[i].sig)
             break;
     deadly_signal = sigarg;
-#endif
 
     full_screen = FALSE;        /* don't write message to the GUI, it might be
                                  * part of the problem... */
@@ -822,18 +838,13 @@ deathtrap SIGDEFARG(sigarg)
     }
 
     /* No translation, it may call malloc(). */
-#if defined(SIGHASARG)
-    sprintf((char *)IObuff, "Vim: Caught deadly signal %s\n",
-                                                         signal_info[i].name);
-#else
-    sprintf((char *)IObuff, "Vim: Caught deadly signal\n");
-#endif
+    sprintf((char *)IObuff, "Vim: Caught deadly signal %s\n", signal_info[i].name);
 
     /* Preserve files and exit.  This sets the really_exiting flag to prevent
      * calling free(). */
     preserve_exit();
 
-    SIGRETURN;
+    return;
 }
 
 #if defined(_REENTRANT) && defined(SIGCONT)
@@ -848,16 +859,16 @@ deathtrap SIGDEFARG(sigarg)
  * volatile because it is used in signal handler sigcont_handler().
  */
 static volatile int sigcont_received;
-static RETSIGTYPE sigcont_handler __ARGS(SIGPROTOARG);
+static void sigcont_handler(int);
 
 /*
  * signal handler for SIGCONT
  */
-    static RETSIGTYPE
+    static void
 sigcont_handler SIGDEFARG(sigarg)
 {
     sigcont_received = TRUE;
-    SIGRETURN;
+    return;
 }
 #endif
 
@@ -931,7 +942,7 @@ set_signals()
     /*
      * WINDOW CHANGE signal is handled with sig_winch().
      */
-    signal(SIGWINCH, (RETSIGTYPE (*)())sig_winch);
+    signal(SIGWINCH, (void (*)())sig_winch);
 #endif
 
     /*
@@ -968,7 +979,7 @@ set_signals()
      * work will be lost.
      */
 #if defined(SIGPWR)
-    signal(SIGPWR, (RETSIGTYPE (*)())catch_sigpwr);
+    signal(SIGPWR, (void (*)())catch_sigpwr);
 #endif
 
     /*
@@ -985,7 +996,7 @@ set_signals()
     static void
 catch_int_signal()
 {
-    signal(SIGINT, (RETSIGTYPE (*)())catch_sigint);
+    signal(SIGINT, (void (*)())catch_sigint);
 }
 #endif
 
@@ -1001,8 +1012,8 @@ reset_signals()
 
     static void
 catch_signals(func_deadly, func_other)
-    RETSIGTYPE (*func_deadly)();
-    RETSIGTYPE (*func_other)();
+    void (*func_deadly)();
+    void (*func_other)();
 {
     int     i;
 
@@ -1334,7 +1345,7 @@ mch_get_uname(uid, s, len)
     char_u      *s;
     int         len;
 {
-#if defined(HAVE_PWD_H) && defined(HAVE_GETPWUID)
+#if defined(HAVE_GETPWUID)
     struct passwd   *pw;
 
     if ((pw = getpwuid(uid)) != NULL
@@ -1351,8 +1362,6 @@ mch_get_uname(uid, s, len)
 /*
  * Insert host name is s[len].
  */
-
-#if defined(HAVE_SYS_UTSNAME_H)
     void
 mch_get_host_name(s, len)
     char_u  *s;
@@ -1365,17 +1374,6 @@ mch_get_host_name(s, len)
     else
         vim_strncpy(s, (char_u *)vutsname.nodename, len - 1);
 }
-#else
-
-    void
-mch_get_host_name(s, len)
-    char_u  *s;
-    int     len;
-{
-    gethostname((char *)s, len);
-    s[len - 1] = NUL;   /* make sure it's terminated */
-}
-#endif
 
 /*
  * return process ID
@@ -1387,7 +1385,7 @@ mch_get_pid()
 }
 
 #if !defined(HAVE_STRERROR) && defined(USE_GETCWD)
-static char *strerror __ARGS((int));
+static char *strerror(int);
 
     static char *
 strerror(err)
@@ -1684,7 +1682,7 @@ mch_isdir(name)
 #endif
 }
 
-static int executable_file __ARGS((char_u *name));
+static int executable_file(char_u *name);
 
 /*
  * Return 1 if "name" is an executable file, 0 if not or it doesn't exist.
@@ -1845,7 +1843,7 @@ mch_free_mem()
 }
 #endif
 
-static void exit_scroll __ARGS((void));
+static void exit_scroll(void);
 
 /*
  * Output a newline when exiting.
@@ -1939,26 +1937,17 @@ mch_settmode(tmode)
 {
     static int first = TRUE;
 
-#if defined(ECHOE) && defined(ICANON) && (defined(HAVE_TERMIO_H) || defined(HAVE_TERMIOS_H))
+#if defined(ECHOE) && defined(ICANON)
     /*
      * for "new" tty systems
      */
-#if defined(HAVE_TERMIOS_H)
     static struct termios told;
            struct termios tnew;
-#else
-    static struct termio told;
-           struct termio tnew;
-#endif
 
     if (first)
     {
         first = FALSE;
-#if defined(HAVE_TERMIOS_H)
         tcgetattr(read_cmd_fd, &told);
-#else
-        ioctl(read_cmd_fd, TCGETA, &told);
-#endif
     }
 
     tnew = told;
@@ -1983,7 +1972,6 @@ mch_settmode(tmode)
     else if (tmode == TMODE_SLEEP)
         tnew.c_lflag &= ~(ECHO);
 
-#if defined(HAVE_TERMIOS_H)
     {
         int     n = 10;
 
@@ -1993,9 +1981,6 @@ mch_settmode(tmode)
                                                    && errno == EINTR && n > 0)
             --n;
     }
-#else
-    ioctl(read_cmd_fd, TCSETA, &tnew);
-#endif
 
 #else
 
@@ -2042,19 +2027,11 @@ get_stty()
     char_u  buf[2];
     char_u  *p;
 
-#if defined(ECHOE) && defined(ICANON) && (defined(HAVE_TERMIO_H) || defined(HAVE_TERMIOS_H))
+#if defined(ECHOE) && defined(ICANON)
     /* for "new" tty systems */
-#if defined(HAVE_TERMIOS_H)
     struct termios keys;
-#else
-    struct termio keys;
-#endif
 
-#if defined(HAVE_TERMIOS_H)
     if (tcgetattr(read_cmd_fd, &keys) != -1)
-#else
-    if (ioctl(read_cmd_fd, TCGETA, &keys) != -1)
-#endif
     {
         buf[0] = keys.c_cc[VERASE];
         intr_char = keys.c_cc[VINTR];
@@ -2630,7 +2607,7 @@ mch_call_shell(cmd, options)
                 int         fromshell_fd;
                 garray_T    ga;
                 int         noread_cnt;
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
+#if defined(HAVE_GETTIMEOFDAY)
                 struct timeval  start_tv;
 #endif
 
@@ -2733,7 +2710,7 @@ mch_call_shell(cmd, options)
                     ga_init2(&ga, 1, BUFLEN);
 
                 noread_cnt = 0;
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
+#if defined(HAVE_GETTIMEOFDAY)
                 gettimeofday(&start_tv, NULL);
 #endif
                 for (;;)
@@ -2766,7 +2743,7 @@ mch_call_shell(cmd, options)
                           /* Get extra characters when we don't have any.
                            * Reset the counter and timer. */
                           noread_cnt = 0;
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
+#if defined(HAVE_GETTIMEOFDAY)
                           gettimeofday(&start_tv, NULL);
 #endif
                           len = ui_inchar(ta_buf, BUFLEN, 10L, 0);
@@ -2973,7 +2950,7 @@ mch_call_shell(cmd, options)
                         if (got_int)
                             break;
 
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
+#if defined(HAVE_GETTIMEOFDAY)
                         {
                             struct timeval  now_tv;
                             long            msec;
@@ -3300,8 +3277,7 @@ select_eintr:
 
             /* Compute remaining wait time. */
             gettimeofday(&mtv, NULL);
-            msec -= (mtv.tv_sec - start_tv.tv_sec) * 1000L
-                                   + (mtv.tv_usec - start_tv.tv_usec) / 1000L;
+            msec -= (mtv.tv_sec - start_tv.tv_sec) * 1000L + (mtv.tv_usec - start_tv.tv_usec) / 1000L;
 #else
             /* Guess we got interrupted halfway. */
             msec = msec / 2;
@@ -4072,7 +4048,7 @@ sysmouse_open()
     mouse.u.mode.signal = SIGUSR2;
     if (ioctl(1, CONS_MOUSECTL, &mouse) != -1)
     {
-        signal(SIGUSR2, (RETSIGTYPE (*)())sig_sysmouse);
+        signal(SIGUSR2, (void (*)())sig_sysmouse);
         mouse.operation = MOUSE_SHOW;
         ioctl(1, CONS_MOUSECTL, &mouse);
         return OK;
@@ -4099,7 +4075,7 @@ sysmouse_close()
 /*
  * Gets info from sysmouse and adds special keys to input buf.
  */
-    static RETSIGTYPE
+    static void
 sig_sysmouse SIGDEFARG(sigarg)
 {
     struct mouse_info   mouse;

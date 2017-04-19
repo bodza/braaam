@@ -18,12 +18,12 @@
 #define EXTRA_MARKS 10                                  /* marks 0-9 */
 static xfmark_T namedfm[NMARKS + EXTRA_MARKS];          /* marks with file nr */
 
-static void fname2fnum __ARGS((xfmark_T *fm));
-static void fmarks_check_one __ARGS((xfmark_T *fm, char_u *name, buf_T *buf));
-static char_u *mark_line __ARGS((pos_T *mp, int lead_len));
-static void show_one_mark __ARGS((int, char_u *, pos_T *, char_u *, int current));
+static void fname2fnum(xfmark_T *fm);
+static void fmarks_check_one(xfmark_T *fm, char_u *name, buf_T *buf);
+static char_u *mark_line(pos_T *mp, int lead_len);
+static void show_one_mark(int, char_u *, pos_T *, char_u *, int current);
 #if defined(FEAT_JUMPLIST)
-static void cleanup_jumplist __ARGS((void));
+static void cleanup_jumplist(void);
 #endif
 
 /*
@@ -513,8 +513,7 @@ fname2fnum(fm)
          * First expand "~/" in the file name to the home directory.
          * Don't expand the whole name, it may contain other '~' chars.
          */
-        if (fm->fname[0] == '~' && (fm->fname[1] == '/'
-                    ))
+        if (fm->fname[0] == '~' && (fm->fname[1] == '/'))
         {
             int len;
 
@@ -911,8 +910,7 @@ ex_jumps(eap)
                 curwin->w_jumplist[i].fmark.mark.col);
             msg_outtrans(IObuff);
             msg_outtrans_attr(name,
-                            curwin->w_jumplist[i].fmark.fnum == curbuf->b_fnum
-                                                        ? hl_attr(HLF_D) : 0);
+                            curwin->w_jumplist[i].fmark.fnum == curbuf->b_fnum ? hl_attr(HLF_D) : 0);
             vim_free(name);
             ui_breakcheck();
         }
@@ -1014,9 +1012,7 @@ mark_adjust(line1, line2, amount, amount_after)
     int         fnum = curbuf->b_fnum;
     linenr_T    *lp;
     win_T       *win;
-#if defined(FEAT_WINDOWS)
     tabpage_T   *tab;
-#endif
     static pos_T initpos = INIT_POS_T(1, 0, 0);
 
     if (line2 < line1 && amount_after == 0L)        /* nothing to do */
@@ -1277,7 +1273,6 @@ cleanup_jumplist()
     curwin->w_jumplistlen = to;
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * Copy the jumplist from window "from" to window "to".
  */
@@ -1310,7 +1305,6 @@ free_jumplist(wp)
     for (i = 0; i < wp->w_jumplistlen; ++i)
         vim_free(wp->w_jumplist[i].fname);
 }
-#endif
 #endif
 
     void

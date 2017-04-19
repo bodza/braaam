@@ -32,29 +32,29 @@
 
 static char *ctrl_x_msgs[] =
 {
-    N_(" Keyword completion (^N^P)"), /* ctrl_x_mode == 0, ^P/^N compl. */
-    N_(" ^X mode (^]^D^E^F^I^K^L^N^O^Ps^U^V^Y)"),
+    " Keyword completion (^N^P)", /* ctrl_x_mode == 0, ^P/^N compl. */
+    " ^X mode (^]^D^E^F^I^K^L^N^O^Ps^U^V^Y)",
     NULL,
-    N_(" Whole line completion (^L^N^P)"),
-    N_(" File name completion (^F^N^P)"),
-    N_(" Tag completion (^]^N^P)"),
-    N_(" Path pattern completion (^N^P)"),
-    N_(" Definition completion (^D^N^P)"),
+    " Whole line completion (^L^N^P)",
+    " File name completion (^F^N^P)",
+    " Tag completion (^]^N^P)",
+    " Path pattern completion (^N^P)",
+    " Definition completion (^D^N^P)",
     NULL,
-    N_(" Dictionary completion (^K^N^P)"),
-    N_(" Thesaurus completion (^T^N^P)"),
-    N_(" Command-line completion (^V^N^P)"),
-    N_(" User defined completion (^U^N^P)"),
-    N_(" Omni completion (^O^N^P)"),
-    N_(" Spelling suggestion (s^N^P)"),
-    N_(" Keyword Local completion (^N^P)"),
+    " Dictionary completion (^K^N^P)",
+    " Thesaurus completion (^T^N^P)",
+    " Command-line completion (^V^N^P)",
+    " User defined completion (^U^N^P)",
+    " Omni completion (^O^N^P)",
+    " Spelling suggestion (s^N^P)",
+    " Keyword Local completion (^N^P)",
     NULL,   /* CTRL_X_EVAL doesn't use msg. */
 };
 
-static char e_hitend[] = N_("Hit end of paragraph");
+static char e_hitend[] = "Hit end of paragraph";
 #if defined(FEAT_COMPL_FUNC)
-static char e_complwin[] = N_("E839: Completion function changed window");
-static char e_compldel[] = N_("E840: Completion function deleted text");
+static char e_complwin[] = "E839: Completion function changed window";
+static char e_compldel[] = "E840: Completion function deleted text";
 #endif
 
 /*
@@ -131,46 +131,46 @@ static expand_T   compl_xp;
 
 static int        compl_opt_refresh_always = FALSE;
 
-static void ins_ctrl_x __ARGS((void));
-static int  has_compl_option __ARGS((int dict_opt));
-static int  ins_compl_accept_char __ARGS((int c));
-static int ins_compl_add __ARGS((char_u *str, int len, int icase, char_u *fname, char_u **cptext, int cdir, int flags, int adup));
-static int  ins_compl_equal __ARGS((compl_T *match, char_u *str, int len));
-static void ins_compl_longest_match __ARGS((compl_T *match));
-static void ins_compl_add_matches __ARGS((int num_matches, char_u **matches, int icase));
-static int  ins_compl_make_cyclic __ARGS((void));
-static void ins_compl_upd_pum __ARGS((void));
-static void ins_compl_del_pum __ARGS((void));
-static int  pum_wanted __ARGS((void));
-static int  pum_enough_matches __ARGS((void));
-static void ins_compl_dictionaries __ARGS((char_u *dict, char_u *pat, int flags, int thesaurus));
-static void ins_compl_files __ARGS((int count, char_u **files, int thesaurus, int flags, regmatch_T *regmatch, char_u *buf, int *dir));
-static char_u *find_line_end __ARGS((char_u *ptr));
-static void ins_compl_free __ARGS((void));
-static void ins_compl_clear __ARGS((void));
-static int  ins_compl_bs __ARGS((void));
-static int  ins_compl_need_restart __ARGS((void));
-static void ins_compl_new_leader __ARGS((void));
-static void ins_compl_addleader __ARGS((int c));
-static int  ins_compl_len __ARGS((void));
-static void ins_compl_restart __ARGS((void));
-static void ins_compl_set_original_text __ARGS((char_u *str));
-static void ins_compl_addfrommatch __ARGS((void));
-static int  ins_compl_prep __ARGS((int c));
-static void ins_compl_fixRedoBufForLeader __ARGS((char_u *ptr_arg));
-static buf_T *ins_compl_next_buf __ARGS((buf_T *buf, int flag));
-static void ins_compl_add_list __ARGS((list_T *list));
-static void ins_compl_add_dict __ARGS((dict_T *dict));
-static int  ins_compl_get_exp __ARGS((pos_T *ini));
-static void ins_compl_delete __ARGS((void));
-static void ins_compl_insert __ARGS((void));
-static int  ins_compl_next __ARGS((int allow_get_expansion, int count, int insert_match));
-static int  ins_compl_key2dir __ARGS((int c));
-static int  ins_compl_pum_key __ARGS((int c));
-static int  ins_compl_key2count __ARGS((int c));
-static int  ins_compl_use_match __ARGS((int c));
-static int  ins_complete __ARGS((int c));
-static unsigned  quote_meta __ARGS((char_u *dest, char_u *str, int len));
+static void ins_ctrl_x(void);
+static int  has_compl_option(int dict_opt);
+static int  ins_compl_accept_char(int c);
+static int ins_compl_add(char_u *str, int len, int icase, char_u *fname, char_u **cptext, int cdir, int flags, int adup);
+static int  ins_compl_equal(compl_T *match, char_u *str, int len);
+static void ins_compl_longest_match(compl_T *match);
+static void ins_compl_add_matches(int num_matches, char_u **matches, int icase);
+static int  ins_compl_make_cyclic(void);
+static void ins_compl_upd_pum(void);
+static void ins_compl_del_pum(void);
+static int  pum_wanted(void);
+static int  pum_enough_matches(void);
+static void ins_compl_dictionaries(char_u *dict, char_u *pat, int flags, int thesaurus);
+static void ins_compl_files(int count, char_u **files, int thesaurus, int flags, regmatch_T *regmatch, char_u *buf, int *dir);
+static char_u *find_line_end(char_u *ptr);
+static void ins_compl_free(void);
+static void ins_compl_clear(void);
+static int  ins_compl_bs(void);
+static int  ins_compl_need_restart(void);
+static void ins_compl_new_leader(void);
+static void ins_compl_addleader(int c);
+static int  ins_compl_len(void);
+static void ins_compl_restart(void);
+static void ins_compl_set_original_text(char_u *str);
+static void ins_compl_addfrommatch(void);
+static int  ins_compl_prep(int c);
+static void ins_compl_fixRedoBufForLeader(char_u *ptr_arg);
+static buf_T *ins_compl_next_buf(buf_T *buf, int flag);
+static void ins_compl_add_list(list_T *list);
+static void ins_compl_add_dict(dict_T *dict);
+static int  ins_compl_get_exp(pos_T *ini);
+static void ins_compl_delete(void);
+static void ins_compl_insert(void);
+static int  ins_compl_next(int allow_get_expansion, int count, int insert_match);
+static int  ins_compl_key2dir(int c);
+static int  ins_compl_pum_key(int c);
+static int  ins_compl_key2count(int c);
+static int  ins_compl_use_match(int c);
+static int  ins_complete(int c);
+static unsigned  quote_meta(char_u *dest, char_u *str, int len);
 #endif
 
 #define BACKSPACE_CHAR              1
@@ -178,71 +178,66 @@ static unsigned  quote_meta __ARGS((char_u *dest, char_u *str, int len));
 #define BACKSPACE_WORD_NOT_SPACE    3
 #define BACKSPACE_LINE              4
 
-static void ins_redraw __ARGS((int ready));
-static void ins_ctrl_v __ARGS((void));
-static void undisplay_dollar __ARGS((void));
-static void insert_special __ARGS((int, int, int));
-static void internal_format __ARGS((int textwidth, int second_indent, int flags, int format_only, int c));
-static void check_auto_format __ARGS((int));
-static void redo_literal __ARGS((int c));
-static void start_arrow __ARGS((pos_T *end_insert_pos));
-static void stop_insert __ARGS((pos_T *end_insert_pos, int esc, int nomove));
-static int  echeck_abbr __ARGS((int));
-static int  replace_pop __ARGS((void));
-static void replace_join __ARGS((int off));
-static void replace_pop_ins __ARGS((void));
-static void mb_replace_pop_ins __ARGS((int cc));
-static void replace_flush __ARGS((void));
-static void replace_do_bs __ARGS((int limit_col));
-static int del_char_after_col __ARGS((int limit_col));
+static void ins_redraw(int ready);
+static void ins_ctrl_v(void);
+static void undisplay_dollar(void);
+static void insert_special(int, int, int);
+static void internal_format(int textwidth, int second_indent, int flags, int format_only, int c);
+static void check_auto_format(int);
+static void redo_literal(int c);
+static void start_arrow(pos_T *end_insert_pos);
+static void stop_insert(pos_T *end_insert_pos, int esc, int nomove);
+static int  echeck_abbr(int);
+static int  replace_pop(void);
+static void replace_join(int off);
+static void replace_pop_ins(void);
+static void mb_replace_pop_ins(int cc);
+static void replace_flush(void);
+static void replace_do_bs(int limit_col);
+static int del_char_after_col(int limit_col);
 #if defined(FEAT_CINDENT)
-static int cindent_on __ARGS((void));
+static int cindent_on(void);
 #endif
-static void ins_reg __ARGS((void));
-static void ins_ctrl_g __ARGS((void));
-static void ins_ctrl_hat __ARGS((void));
-static int  ins_esc __ARGS((long *count, int cmdchar, int nomove));
+static void ins_reg(void);
+static void ins_ctrl_g(void);
+static void ins_ctrl_hat(void);
+static int  ins_esc(long *count, int cmdchar, int nomove);
 #if defined(FEAT_RIGHTLEFT)
-static void ins_ctrl_ __ARGS((void));
+static void ins_ctrl_(void);
 #endif
-static int ins_start_select __ARGS((int c));
-static void ins_insert __ARGS((int replaceState));
-static void ins_ctrl_o __ARGS((void));
-static void ins_shift __ARGS((int c, int lastc));
-static void ins_del __ARGS((void));
-static int  ins_bs __ARGS((int c, int mode, int *inserted_space_p));
+static int ins_start_select(int c);
+static void ins_insert(int replaceState);
+static void ins_ctrl_o(void);
+static void ins_shift(int c, int lastc);
+static void ins_del(void);
+static int  ins_bs(int c, int mode, int *inserted_space_p);
 #if defined(FEAT_MOUSE)
-static void ins_mouse __ARGS((int c));
-static void ins_mousescroll __ARGS((int dir));
+static void ins_mouse(int c);
+static void ins_mousescroll(int dir);
 #endif
-#if defined(FEAT_GUI_TABLINE)
-static void ins_tabline __ARGS((int c));
-#endif
-static void ins_left __ARGS((void));
-static void ins_home __ARGS((int c));
-static void ins_end __ARGS((int c));
-static void ins_s_left __ARGS((void));
-static void ins_right __ARGS((void));
-static void ins_s_right __ARGS((void));
-static void ins_up __ARGS((int startcol));
-static void ins_pageup __ARGS((void));
-static void ins_down __ARGS((int startcol));
-static void ins_pagedown __ARGS((void));
+static void ins_left(void);
+static void ins_home(int c);
+static void ins_end(int c);
+static void ins_s_left(void);
+static void ins_right(void);
+static void ins_s_right(void);
+static void ins_up(int startcol);
+static void ins_pageup(void);
+static void ins_down(int startcol);
+static void ins_pagedown(void);
 #if defined(FEAT_DND)
-static void ins_drop __ARGS((void));
+static void ins_drop(void);
 #endif
-static int  ins_tab __ARGS((void));
-static int  ins_eol __ARGS((int c));
-#if defined(FEAT_DIGRAPHS)
-static int  ins_digraph __ARGS((void));
-#endif
-static int  ins_ctrl_ey __ARGS((int tc));
+static int  ins_tab(void);
+static int  ins_eol(int c);
+static int  ins_digraph(void);
+static int  ins_ctrl_ey(int tc);
 #if defined(FEAT_SMARTINDENT)
-static void ins_try_si __ARGS((int c));
+static void ins_try_si(int c);
 #endif
-static colnr_T get_nolist_virtcol __ARGS((void));
+static colnr_T get_nolist_virtcol(void);
 #if defined(FEAT_AUTOCMD)
-static char_u *do_insert_char_pre __ARGS((int c));
+static char_u *do_insert_char_pre(int c);
 #endif
 
 static colnr_T  Insstart_textlen;       /* length of line when insert started */
@@ -561,9 +556,7 @@ edit(cmdchar, startln, count)
 #if defined(CURSOR_SHAPE)
     ui_cursor_shape();          /* may show different cursor shape */
 #endif
-#if defined(FEAT_DIGRAPHS)
     do_digraph(-1);             /* clear digraphs */
-#endif
 
     /*
      * Get the current length of the redo buffer, those characters have to be
@@ -641,12 +634,11 @@ edit(cmdchar, startln, count)
             validate_cursor_col();
 
             if ((int)curwin->w_wcol < mincol - curbuf->b_p_ts
-                    && curwin->w_wrow == W_WINROW(curwin)
-                                                 + curwin->w_height - 1 - p_so
+                    && curwin->w_wrow == W_WINROW(curwin) + curwin->w_height - 1 - p_so
                     && (curwin->w_cursor.lnum != curwin->w_topline
                     ))
             {
-                    set_topline(curwin, curwin->w_topline + 1);
+                set_topline(curwin, curwin->w_topline + 1);
             }
         }
 
@@ -804,9 +796,7 @@ edit(cmdchar, startln, count)
             }
         }
 
-#if defined(FEAT_DIGRAPHS)
         c = do_digraph(c);
-#endif
 
 #if defined(FEAT_INS_EXPAND)
         if ((c == Ctrl_V || c == Ctrl_Q) && ctrl_x_mode == CTRL_X_CMDLINE)
@@ -1079,12 +1069,6 @@ doESCkey:
             ins_mousescroll(MSCR_RIGHT);
             break;
 #endif
-#if defined(FEAT_GUI_TABLINE)
-        case K_TABLINE:
-        case K_TABMENU:
-            ins_tabline(c);
-            break;
-#endif
 
         case K_IGNORE:  /* Something mapped to nothing */
             break;
@@ -1202,7 +1186,7 @@ doESCkey:
             /* FALLTHROUGH */
         case CAR:
         case NL:
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
             /* In a quickfix window a <CR> jumps to the error under the
              * cursor. */
             if (bt_quickfix(curbuf) && c == CAR)
@@ -1228,7 +1212,6 @@ doESCkey:
             inserted_space = FALSE;
             break;
 
-#if defined(FEAT_DIGRAPHS) || defined(FEAT_INS_EXPAND)
         case Ctrl_K:        /* digraph or keyword completion */
 #if defined(FEAT_INS_EXPAND)
             if (ctrl_x_mode == CTRL_X_DICTIONARY)
@@ -1238,13 +1221,10 @@ doESCkey:
                 break;
             }
 #endif
-#if defined(FEAT_DIGRAPHS)
             c = ins_digraph();
             if (c == NUL)
                 break;
-#endif
             goto normalchar;
-#endif
 
 #if defined(FEAT_INS_EXPAND)
         case Ctrl_X:    /* Enter CTRL-X mode */
@@ -2221,8 +2201,7 @@ ins_compl_add_infercase(str, len, icase, fname, dir, flags)
 
         /* "actual_len" may be smaller than "actual_compl_length" when using
          * thesaurus, only use the minimum when comparing. */
-        min_len = actual_len < actual_compl_length
-                                           ? actual_len : actual_compl_length;
+        min_len = actual_len < actual_compl_length ? actual_len : actual_compl_length;
 
         /* Allocate wide character array for the completion and fill it. */
         wca = (int *)alloc((unsigned)(actual_len * sizeof(int)));
@@ -2872,7 +2851,7 @@ ins_compl_dictionaries(dict_start, pat, flags, thesaurus)
 
     if (*dict == NUL)
     {
-            return;
+        return;
     }
 
     buf = alloc(LSIZE);
@@ -3730,22 +3709,16 @@ ins_compl_next_buf(buf, flag)
     buf_T       *buf;
     int         flag;
 {
-#if defined(FEAT_WINDOWS)
     static win_T *wp;
-#endif
 
     if (flag == 'w')            /* just windows */
     {
-#if defined(FEAT_WINDOWS)
         if (buf == curbuf)      /* first call for this flag/expansion */
             wp = curwin;
         while ((wp = (wp->w_next != NULL ? wp->w_next : firstwin)) != curwin
                 && wp->w_buffer->b_scanned)
             ;
         buf = wp->w_buffer;
-#else
-        buf = curbuf;
-#endif
     }
     else
         /* 'b' (just loaded buffers), 'u' (just non-loaded buffers) or 'U'
@@ -3762,7 +3735,7 @@ ins_compl_next_buf(buf, flag)
 }
 
 #if defined(FEAT_COMPL_FUNC)
-static void expand_by_function __ARGS((int type, char_u *base));
+static void expand_by_function(int type, char_u *base);
 
 /*
  * Execute user defined complete function 'completefunc' or 'omnifunc', and
@@ -3973,8 +3946,7 @@ ins_compl_get_exp(ini)
             ins_buf->b_scanned = 0;
         found_all = FALSE;
         ins_buf = curbuf;
-        e_cpt = (compl_cont_status & CONT_LOCAL)
-                                            ? (char_u *)"." : curbuf->b_p_cpt;
+        e_cpt = (compl_cont_status & CONT_LOCAL) ? (char_u *)"." : curbuf->b_p_cpt;
         last_match_pos = first_match_pos = *ini;
     }
 
@@ -4903,8 +4875,7 @@ ins_complete(c)
                     while (--startcol >= 0)
                     {
                         head_off = (*mb_head_off)(line, line + startcol);
-                        if (base_class != mb_get_class(line + startcol
-                                                                  - head_off))
+                        if (base_class != mb_get_class(line + startcol - head_off))
                             break;
                         startcol -= head_off;
                     }
@@ -5008,12 +4979,10 @@ ins_complete(c)
 
             /* Call 'completefunc' or 'omnifunc' and get pattern length as a
              * string */
-            funcname = ctrl_x_mode == CTRL_X_FUNCTION
-                                          ? curbuf->b_p_cfu : curbuf->b_p_ofu;
+            funcname = ctrl_x_mode == CTRL_X_FUNCTION ? curbuf->b_p_cfu : curbuf->b_p_ofu;
             if (*funcname == NUL)
             {
-                EMSG2(_(e_notset), ctrl_x_mode == CTRL_X_FUNCTION
-                                             ? "completefunc" : "omnifunc");
+                EMSG2(_(e_notset), ctrl_x_mode == CTRL_X_FUNCTION ? "completefunc" : "omnifunc");
                 return FAIL;
             }
 
@@ -5073,7 +5042,7 @@ ins_complete(c)
         }
         else if (ctrl_x_mode == CTRL_X_SPELL)
         {
-                return FAIL;
+            return FAIL;
         }
         else
         {
@@ -5170,8 +5139,7 @@ ins_complete(c)
     if (compl_first_match == compl_first_match->cp_next)
     {
         edit_submode_extra = (compl_cont_status & CONT_ADDING)
-                        && compl_length > 1
-                             ? (char_u *)_(e_hitend) : (char_u *)_(e_patnotf);
+                        && compl_length > 1 ? (char_u *)_(e_hitend) : (char_u *)_(e_patnotf);
         edit_submode_highl = HLF_E;
         /* remove N_ADDS flag, so next ^X<> won't try to go to ADDING mode,
          * because we couldn't expand anything at first place, but if we used
@@ -5291,8 +5259,7 @@ ins_complete(c)
         {
             if (!p_smd)
                 msg_attr(edit_submode_extra,
-                        edit_submode_highl < HLF_COUNT
-                        ? hl_attr(edit_submode_highl) : 0);
+                        edit_submode_highl < HLF_COUNT ? hl_attr(edit_submode_highl) : 0);
         }
         else
             msg_clr_cmdline();  /* necessary for "noshowmode" */
@@ -5605,8 +5572,7 @@ insertchar(c, flags, second_indent)
         /* Format with 'formatexpr' when it's set.  Use internal formatting
          * when 'formatexpr' isn't set or it returns non-zero. */
         int     do_internal = TRUE;
-        colnr_T virtcol = get_nolist_virtcol()
-                                  + char2cells(c != NUL ? c : gchar_cursor());
+        colnr_T virtcol = get_nolist_virtcol() + char2cells(c != NUL ? c : gchar_cursor());
 
         if (*curbuf->b_p_fex != NUL && (flags & INSCHAR_NO_FEX) == 0
                 && (force_format || virtcol > (colnr_T)textwidth))
@@ -5748,10 +5714,8 @@ insertchar(c, flags, second_indent)
 #endif
         }
 
-#if defined(FEAT_DIGRAPHS)
         do_digraph(-1);                 /* clear digraphs */
         do_digraph(buf[i-1]);           /* may be the start of a digraph */
-#endif
         buf[i] = NUL;
         ins_str(buf);
         if (flags & INSCHAR_CTRLV)
@@ -5857,8 +5821,7 @@ internal_format(textwidth, second_indent, flags, format_only, c)
         colnr_T col;
         colnr_T end_col;
 
-        virtcol = get_nolist_virtcol()
-                + char2cells(c != NUL ? c : gchar_cursor());
+        virtcol = get_nolist_virtcol() + char2cells(c != NUL ? c : gchar_cursor());
         if (virtcol <= (colnr_T)textwidth)
             break;
 
@@ -6710,14 +6673,10 @@ oneright()
 
         /* Adjust for multi-wide char (excluding TAB) */
         ptr = ml_get_cursor();
-        coladvance(getviscol() + ((*ptr != TAB && vim_isprintc(
-                            (*mb_ptr2char)(ptr)
-                            ))
-                    ? ptr2cells(ptr) : 1));
+        coladvance(getviscol() + ((*ptr != TAB && vim_isprintc((*mb_ptr2char)(ptr))) ? ptr2cells(ptr) : 1));
         curwin->w_set_curswant = TRUE;
         /* Return OK if the cursor moved, FAIL otherwise (at window edge). */
-        return (prevpos.col != curwin->w_cursor.col
-                    || prevpos.coladd != curwin->w_cursor.coladd) ? OK : FAIL;
+        return (prevpos.col != curwin->w_cursor.col || prevpos.coladd != curwin->w_cursor.coladd) ? OK : FAIL;
     }
 #endif
 
@@ -7284,7 +7243,7 @@ cindent_on()
 
     void
 fixthisline(get_the_indent)
-    int (*get_the_indent) __ARGS((void));
+    int (*get_the_indent)(void);
 {
     change_indent(INDENT_SET, get_the_indent(), FALSE, 0, TRUE);
     if (linewhite(curwin->w_cursor.lnum))
@@ -7849,10 +7808,6 @@ ins_ctrl_hat()
 #endif
     set_iminsert_global();
     showmode();
-#if defined(FEAT_WINDOWS) && defined(FEAT_KEYMAP)
-    /* Show/unshow value of 'keymap' in status lines. */
-    status_redraw_curbuf();
-#endif
 }
 
 /*
@@ -8188,7 +8143,7 @@ ins_del()
     AppendCharToRedobuff(K_DEL);
 }
 
-static void ins_bs_one __ARGS((colnr_T *vcolp));
+static void ins_bs_one(colnr_T *vcolp);
 
 /*
  * Delete one character for ins_bs().
@@ -8615,7 +8570,6 @@ ins_mouse(c)
     tpos = curwin->w_cursor;
     if (do_mouse(NULL, c, BACKWARD, 1L, 0))
     {
-#if defined(FEAT_WINDOWS)
         win_T   *new_curwin = curwin;
 
         if (curwin != old_curwin && win_valid(old_curwin))
@@ -8625,24 +8579,19 @@ ins_mouse(c)
             curwin = old_curwin;
             curbuf = curwin->w_buffer;
         }
-#endif
         start_arrow(curwin == old_curwin ? &tpos : NULL);
-#if defined(FEAT_WINDOWS)
         if (curwin != new_curwin && win_valid(new_curwin))
         {
             curwin = new_curwin;
             curbuf = curwin->w_buffer;
         }
-#endif
 #if defined(FEAT_CINDENT)
         can_cindent = TRUE;
 #endif
     }
 
-#if defined(FEAT_WINDOWS)
     /* redraw status lines (in case another window became active) */
     redraw_statuslines();
-#endif
 }
 
     static void
@@ -8650,16 +8599,13 @@ ins_mousescroll(dir)
     int         dir;
 {
     pos_T       tpos;
-#if defined(FEAT_WINDOWS)
     win_T       *old_curwin = curwin;
-#endif
 #if defined(FEAT_INS_EXPAND)
     int         did_scroll = FALSE;
 #endif
 
     tpos = curwin->w_cursor;
 
-#if defined(FEAT_WINDOWS)
     if (mouse_row >= 0 && mouse_col >= 0)
     {
         int row, col;
@@ -8672,15 +8618,12 @@ ins_mousescroll(dir)
         curbuf = curwin->w_buffer;
     }
     if (curwin == old_curwin)
-#endif
         undisplay_dollar();
 
 #if defined(FEAT_INS_EXPAND)
     /* Don't scroll the window in which completion is being done. */
     if (!pum_visible()
-#if defined(FEAT_WINDOWS)
             || curwin != old_curwin
-#endif
             )
 #endif
     {
@@ -8697,12 +8640,10 @@ ins_mousescroll(dir)
 #endif
     }
 
-#if defined(FEAT_WINDOWS)
     curwin->w_redr_status = TRUE;
 
     curwin = old_curwin;
     curbuf = curwin->w_buffer;
-#endif
 
 #if defined(FEAT_INS_EXPAND)
     /* The popup menu may overlay the window, need to redraw it.
@@ -8725,32 +8666,6 @@ ins_mousescroll(dir)
 }
 #endif
 
-#if defined(FEAT_GUI_TABLINE)
-    static void
-ins_tabline(c)
-    int         c;
-{
-    /* We will be leaving the current window, unless closing another tab. */
-    if (c != K_TABMENU || current_tabmenu != TABLINE_MENU_CLOSE
-                || (current_tab != 0 && current_tab != tabpage_index(curtab)))
-    {
-        undisplay_dollar();
-        start_arrow(&curwin->w_cursor);
-#if defined(FEAT_CINDENT)
-        can_cindent = TRUE;
-#endif
-    }
-
-    if (c == K_TABLINE)
-        goto_tabpage(current_tab);
-    else
-    {
-        handle_tabmenu();
-        redraw_statuslines();   /* will redraw the tabline when needed */
-    }
-}
-#endif
-
     static void
 ins_left()
 {
@@ -8760,7 +8675,7 @@ ins_left()
     tpos = curwin->w_cursor;
     if (oneleft() == OK)
     {
-            start_arrow(&tpos);
+        start_arrow(&tpos);
 #if defined(FEAT_RIGHTLEFT)
         /* If exit reversed string, position is fixed */
         if (revins_scol != -1 && (int)curwin->w_cursor.col >= revins_scol)
@@ -8922,7 +8837,6 @@ ins_pageup()
 
     undisplay_dollar();
 
-#if defined(FEAT_WINDOWS)
     if (mod_mask & MOD_MASK_CTRL)
     {
         /* <C-PageUp>: tab page back */
@@ -8933,7 +8847,6 @@ ins_pageup()
         }
         return;
     }
-#endif
 
     tpos = curwin->w_cursor;
     if (onepage(BACKWARD, 1L) == OK)
@@ -8978,7 +8891,6 @@ ins_pagedown()
 
     undisplay_dollar();
 
-#if defined(FEAT_WINDOWS)
     if (mod_mask & MOD_MASK_CTRL)
     {
         /* <C-PageDown>: tab page forward */
@@ -8989,7 +8901,6 @@ ins_pagedown()
         }
         return;
     }
-#endif
 
     tpos = curwin->w_cursor;
     if (onepage(FORWARD, 1L) == OK)
@@ -9293,7 +9204,6 @@ ins_eol(c)
     return (!i);
 }
 
-#if defined(FEAT_DIGRAPHS)
 /*
  * Handle digraph in insert mode.
  * Returns character still to be inserted, or NUL when nothing remaining to be
@@ -9385,7 +9295,6 @@ ins_digraph()
 #endif
     return NUL;
 }
-#endif
 
 /*
  * Handle CTRL-E and CTRL-Y in Insert mode: copy char from other line.

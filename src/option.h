@@ -334,9 +334,7 @@ EXTERN char_u   *p_inc;
 #if defined(FEAT_INS_EXPAND)
 EXTERN char_u   *p_dict;        /* 'dictionary' */
 #endif
-#if defined(FEAT_DIGRAPHS)
 EXTERN int      p_dg;           /* 'digraph' */
-#endif
 EXTERN char_u   *p_dir;         /* 'directory' */
 EXTERN char_u   *p_dy;          /* 'display' */
 EXTERN unsigned dy_flags;
@@ -346,9 +344,7 @@ static char *(p_dy_values[]) = {"lastline", "uhex", NULL};
 #define DY_LASTLINE             0x001
 #define DY_UHEX                 0x002
 EXTERN int      p_ed;           /* 'edcompatible' */
-#if defined(FEAT_VERTSPLIT)
 EXTERN char_u   *p_ead;         /* 'eadirection' */
-#endif
 EXTERN int      p_ea;           /* 'equalalways' */
 EXTERN char_u   *p_ep;          /* 'equalprg' */
 EXTERN int      p_eb;           /* 'errorbells' */
@@ -390,14 +386,8 @@ EXTERN char_u   *p_guicursor;   /* 'guicursor' */
 #if defined(FEAT_MOUSESHAPE)
 EXTERN char_u   *p_mouseshape;  /* 'mouseshape' */
 #endif
-#if defined(FEAT_GUI_TABLINE)
-EXTERN char_u   *p_gtl;         /* 'guitablabel' */
-EXTERN char_u   *p_gtt;         /* 'guitabtooltip' */
-#endif
 EXTERN char_u   *p_hf;          /* 'helpfile' */
-#if defined(FEAT_WINDOWS)
 EXTERN long     p_hh;           /* 'helpheight' */
-#endif
 EXTERN int      p_hid;          /* 'hidden' */
 /* Use P_HID to check if a buffer is to be hidden when it is no longer
  * visible in a window. */
@@ -430,17 +420,11 @@ EXTERN char_u   *p_isp;         /* 'isprint' */
 EXTERN int      p_js;           /* 'joinspaces' */
 EXTERN char_u   *p_kp;          /* 'keywordprg' */
 EXTERN char_u   *p_km;          /* 'keymodel' */
-#if defined(FEAT_LANGMAP)
-EXTERN char_u   *p_langmap;     /* 'langmap'*/
-EXTERN int      p_lnr;          /* 'langnoremap' */
-#endif
 #if defined(FEAT_LISP)
 EXTERN char_u   *p_lispwords;   /* 'lispwords' */
 #endif
-#if defined(FEAT_WINDOWS)
 EXTERN long     p_ls;           /* 'laststatus' */
 EXTERN long     p_stal;         /* 'showtabline' */
-#endif
 EXTERN char_u   *p_lcs;         /* 'listchars' */
 
 EXTERN int      p_lz;           /* 'lazyredraw' */
@@ -487,7 +471,7 @@ EXTERN long     p_re;           /* 'regexpengine' */
 EXTERN char_u   *p_rop;         /* 'renderoptions' */
 #endif
 EXTERN long     p_report;       /* 'report' */
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
 EXTERN long     p_pvh;          /* 'previewheight' */
 #endif
 #if defined(FEAT_RIGHTLEFT)
@@ -538,16 +522,12 @@ EXTERN long     p_ss;           /* 'sidescroll' */
 EXTERN long     p_siso;         /* 'sidescrolloff' */
 EXTERN int      p_scs;          /* 'smartcase' */
 EXTERN int      p_sta;          /* 'smarttab' */
-#if defined(FEAT_WINDOWS)
 EXTERN int      p_sb;           /* 'splitbelow' */
 EXTERN long     p_tpm;          /* 'tabpagemax' */
 #if defined(FEAT_STL_OPT)
 EXTERN char_u   *p_tal;         /* 'tabline' */
 #endif
-#endif
-#if defined(FEAT_VERTSPLIT)
 EXTERN int      p_spr;          /* 'splitright' */
-#endif
 EXTERN int      p_sol;          /* 'startofline' */
 EXTERN char_u   *p_su;          /* 'suffixes' */
 EXTERN char_u   *p_sws;         /* 'swapsync' */
@@ -605,9 +585,7 @@ EXTERN long     p_ul;           /* 'undolevels' */
 EXTERN long     p_ur;           /* 'undoreload' */
 EXTERN long     p_uc;           /* 'updatecount' */
 EXTERN long     p_ut;           /* 'updatetime' */
-#if defined(FEAT_WINDOWS)
 EXTERN char_u   *p_fcs;         /* 'fillchar' */
-#endif
 EXTERN int      p_vb;           /* 'visualbell' */
 #if defined(FEAT_VIRTUALEDIT)
 EXTERN char_u   *p_ve;          /* 'virtualedit' */
@@ -643,14 +621,10 @@ EXTERN char_u   *p_wim;         /* 'wildmode' */
 #if defined(FEAT_WILDMENU)
 EXTERN int      p_wmnu;         /* 'wildmenu' */
 #endif
-#if defined(FEAT_WINDOWS)
 EXTERN long     p_wh;           /* 'winheight' */
 EXTERN long     p_wmh;          /* 'winminheight' */
-#endif
-#if defined(FEAT_VERTSPLIT)
 EXTERN long     p_wmw;          /* 'winminwidth' */
 EXTERN long     p_wiw;          /* 'winwidth' */
-#endif
 EXTERN int      p_ws;           /* 'wrapscan' */
 EXTERN int      p_write;        /* 'write' */
 EXTERN int      p_wa;           /* 'writeany' */
@@ -727,9 +701,6 @@ enum
 #endif
     , BV_INF
     , BV_ISK
-#if defined(FEAT_KEYMAP)
-    , BV_KMAP
-#endif
     , BV_KP
 #if defined(FEAT_LISP)
     , BV_LISP
@@ -802,7 +773,7 @@ enum
 #if defined(FEAT_LINEBREAK)
     , WV_NUW
 #endif
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
     , WV_PVW
 #endif
 #if defined(FEAT_RIGHTLEFT)
@@ -821,12 +792,8 @@ enum
 #if defined(FEAT_STL_OPT)
     , WV_STL
 #endif
-#if defined(FEAT_WINDOWS)
     , WV_WFH
-#endif
-#if defined(FEAT_VERTSPLIT)
     , WV_WFW
-#endif
     , WV_WRAP
     , WV_COUNT      /* must be the last one */
 };

@@ -32,11 +32,11 @@ static garray_T ucmds = {0, 0, sizeof(ucmd_T), 4, NULL};
 #define USER_CMD(i) (&((ucmd_T *)(ucmds.ga_data))[i])
 #define USER_CMD_GA(gap, i) (&((ucmd_T *)((gap)->ga_data))[i])
 
-static void do_ucmd __ARGS((exarg_T *eap));
-static void ex_command __ARGS((exarg_T *eap));
-static void ex_delcommand __ARGS((exarg_T *eap));
+static void do_ucmd(exarg_T *eap);
+static void ex_command(exarg_T *eap);
+static void ex_delcommand(exarg_T *eap);
 #if defined(FEAT_CMDL_COMPL)
-static char_u *get_user_command_name __ARGS((int idx));
+static char_u *get_user_command_name(int idx);
 #endif
 
 /* Wether a command index indicates a user command. */
@@ -50,37 +50,37 @@ static char_u *get_user_command_name __ARGS((int idx));
 #define IS_USER_CMDIDX(idx) (FALSE)
 #endif
 
-static int compute_buffer_local_count __ARGS((int addr_type, int lnum, int local));
-static char_u   *do_one_cmd __ARGS((char_u **, int, struct condstack *, char_u *(*fgetline)(int, void *, int), void *cookie));
-static void     append_command __ARGS((char_u *cmd));
-static char_u   *find_command __ARGS((exarg_T *eap, int *full));
+static int compute_buffer_local_count(int addr_type, int lnum, int local);
+static char_u   *do_one_cmd(char_u **, int, struct condstack *, char_u *(*fgetline)(int, void *, int), void *cookie);
+static void     append_command(char_u *cmd);
+static char_u   *find_command(exarg_T *eap, int *full);
 
-static void     ex_abbreviate __ARGS((exarg_T *eap));
-static void     ex_map __ARGS((exarg_T *eap));
-static void     ex_unmap __ARGS((exarg_T *eap));
-static void     ex_mapclear __ARGS((exarg_T *eap));
-static void     ex_abclear __ARGS((exarg_T *eap));
+static void     ex_abbreviate(exarg_T *eap);
+static void     ex_map(exarg_T *eap);
+static void     ex_unmap(exarg_T *eap);
+static void     ex_mapclear(exarg_T *eap);
+static void     ex_abclear(exarg_T *eap);
 #if !defined(FEAT_MENU)
 #define ex_emenu               ex_ni
 #define ex_menu                ex_ni
 #define ex_menutranslate       ex_ni
 #endif
 #if defined(FEAT_AUTOCMD)
-static void     ex_autocmd __ARGS((exarg_T *eap));
-static void     ex_doautocmd __ARGS((exarg_T *eap));
+static void     ex_autocmd(exarg_T *eap);
+static void     ex_doautocmd(exarg_T *eap);
 #else
 #define ex_autocmd             ex_ni
 #define ex_doautocmd           ex_ni
 #define ex_doautoall           ex_ni
 #endif
 #if defined(FEAT_LISTCMDS)
-static void     ex_bunload __ARGS((exarg_T *eap));
-static void     ex_buffer __ARGS((exarg_T *eap));
-static void     ex_bmodified __ARGS((exarg_T *eap));
-static void     ex_bnext __ARGS((exarg_T *eap));
-static void     ex_bprevious __ARGS((exarg_T *eap));
-static void     ex_brewind __ARGS((exarg_T *eap));
-static void     ex_blast __ARGS((exarg_T *eap));
+static void     ex_bunload(exarg_T *eap);
+static void     ex_buffer(exarg_T *eap);
+static void     ex_bmodified(exarg_T *eap);
+static void     ex_bnext(exarg_T *eap);
+static void     ex_bprevious(exarg_T *eap);
+static void     ex_brewind(exarg_T *eap);
+static void     ex_blast(exarg_T *eap);
 #else
 #define ex_bunload             ex_ni
 #define ex_buffer              ex_ni
@@ -92,12 +92,12 @@ static void     ex_blast __ARGS((exarg_T *eap));
 #define buflist_list           ex_ni
 #define ex_checktime           ex_ni
 #endif
-#if !defined(FEAT_LISTCMDS) || !defined(FEAT_WINDOWS)
+#if !defined(FEAT_LISTCMDS)
 #define ex_buffer_all          ex_ni
 #endif
-static char_u   *getargcmd __ARGS((char_u **));
-static char_u   *skip_cmd_arg __ARGS((char_u *p, int rembs));
-static int      getargopt __ARGS((exarg_T *eap));
+static char_u   *getargcmd(char_u **);
+static char_u   *skip_cmd_arg(char_u *p, int rembs);
+static int      getargopt(exarg_T *eap);
 #if !defined(FEAT_QUICKFIX)
 #define ex_make                ex_ni
 #define ex_cbuffer             ex_ni
@@ -109,7 +109,7 @@ static int      getargopt __ARGS((exarg_T *eap));
 #define ex_helpgrep            ex_ni
 #define ex_vimgrep             ex_ni
 #endif
-#if !defined(FEAT_QUICKFIX) || !defined(FEAT_WINDOWS)
+#if !defined(FEAT_QUICKFIX)
 #define ex_cclose              ex_ni
 #define ex_copen               ex_ni
 #define ex_cwindow             ex_ni
@@ -118,81 +118,67 @@ static int      getargopt __ARGS((exarg_T *eap));
 #define ex_cexpr               ex_ni
 #endif
 
-static int      check_more __ARGS((int, int));
-static linenr_T get_address __ARGS((char_u **, int addr_type, int skip, int to_other_file));
-static void     get_flags __ARGS((exarg_T *eap));
+static int      check_more(int, int);
+static linenr_T get_address(char_u **, int addr_type, int skip, int to_other_file);
+static void     get_flags(exarg_T *eap);
 #define HAVE_EX_SCRIPT_NI
-static void     ex_script_ni __ARGS((exarg_T *eap));
-static char_u   *invalid_range __ARGS((exarg_T *eap));
-static void     correct_range __ARGS((exarg_T *eap));
+static void     ex_script_ni(exarg_T *eap);
+static char_u   *invalid_range(exarg_T *eap);
+static void     correct_range(exarg_T *eap);
 #if defined(FEAT_QUICKFIX)
-static char_u   *replace_makeprg __ARGS((exarg_T *eap, char_u *p, char_u **cmdlinep));
+static char_u   *replace_makeprg(exarg_T *eap, char_u *p, char_u **cmdlinep);
 #endif
-static char_u   *repl_cmdline __ARGS((exarg_T *eap, char_u *src, int srclen, char_u *repl, char_u **cmdlinep));
-static void     ex_highlight __ARGS((exarg_T *eap));
-static void     ex_colorscheme __ARGS((exarg_T *eap));
-static void     ex_quit __ARGS((exarg_T *eap));
-static void     ex_cquit __ARGS((exarg_T *eap));
-static void     ex_quit_all __ARGS((exarg_T *eap));
-#if defined(FEAT_WINDOWS)
-static void     ex_close __ARGS((exarg_T *eap));
-static void     ex_win_close __ARGS((int forceit, win_T *win, tabpage_T *tp));
-static void     ex_only __ARGS((exarg_T *eap));
-static void     ex_resize __ARGS((exarg_T *eap));
-static void     ex_stag __ARGS((exarg_T *eap));
-static void     ex_tabclose __ARGS((exarg_T *eap));
-static void     ex_tabonly __ARGS((exarg_T *eap));
-static void     ex_tabnext __ARGS((exarg_T *eap));
-static void     ex_tabmove __ARGS((exarg_T *eap));
-static void     ex_tabs __ARGS((exarg_T *eap));
-#else
-#define ex_close               ex_ni
-#define ex_only                ex_ni
-#define ex_all                 ex_ni
-#define ex_resize              ex_ni
-#define ex_splitview           ex_ni
-#define ex_stag                ex_ni
-#define ex_tabnext             ex_ni
-#define ex_tabmove             ex_ni
-#define ex_tabs                ex_ni
-#define ex_tabclose            ex_ni
-#define ex_tabonly             ex_ni
-#endif
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
-static void     ex_pclose __ARGS((exarg_T *eap));
-static void     ex_ptag __ARGS((exarg_T *eap));
-static void     ex_pedit __ARGS((exarg_T *eap));
+static char_u   *repl_cmdline(exarg_T *eap, char_u *src, int srclen, char_u *repl, char_u **cmdlinep);
+static void     ex_highlight(exarg_T *eap);
+static void     ex_colorscheme(exarg_T *eap);
+static void     ex_quit(exarg_T *eap);
+static void     ex_cquit(exarg_T *eap);
+static void     ex_quit_all(exarg_T *eap);
+static void     ex_close(exarg_T *eap);
+static void     ex_win_close(int forceit, win_T *win, tabpage_T *tp);
+static void     ex_only(exarg_T *eap);
+static void     ex_resize(exarg_T *eap);
+static void     ex_stag(exarg_T *eap);
+static void     ex_tabclose(exarg_T *eap);
+static void     ex_tabonly(exarg_T *eap);
+static void     ex_tabnext(exarg_T *eap);
+static void     ex_tabmove(exarg_T *eap);
+static void     ex_tabs(exarg_T *eap);
+#if defined(FEAT_QUICKFIX)
+static void     ex_pclose(exarg_T *eap);
+static void     ex_ptag(exarg_T *eap);
+static void     ex_pedit(exarg_T *eap);
 #else
 #define ex_pclose              ex_ni
 #define ex_ptag                ex_ni
 #define ex_pedit               ex_ni
 #endif
-static void     ex_hide __ARGS((exarg_T *eap));
-static void     ex_stop __ARGS((exarg_T *eap));
-static void     ex_exit __ARGS((exarg_T *eap));
-static void     ex_print __ARGS((exarg_T *eap));
+static void     ex_hide(exarg_T *eap);
+static void     ex_stop(exarg_T *eap);
+static void     ex_exit(exarg_T *eap);
+static void     ex_print(exarg_T *eap);
 #if defined(FEAT_BYTEOFF)
-static void     ex_goto __ARGS((exarg_T *eap));
+static void     ex_goto(exarg_T *eap);
 #else
 #define ex_goto                ex_ni
 #endif
-static void     ex_shell __ARGS((exarg_T *eap));
-static void     ex_preserve __ARGS((exarg_T *eap));
-static void     ex_recover __ARGS((exarg_T *eap));
+static void     ex_shell(exarg_T *eap);
+static void     ex_preserve(exarg_T *eap);
+static void     ex_recover(exarg_T *eap);
 #if !defined(FEAT_LISTCMDS)
 #define ex_argedit             ex_ni
 #define ex_argadd              ex_ni
 #define ex_argdelete           ex_ni
 #define ex_listdo              ex_ni
 #endif
-static void     ex_mode __ARGS((exarg_T *eap));
-static void     ex_wrongmodifier __ARGS((exarg_T *eap));
-static void     ex_find __ARGS((exarg_T *eap));
-static void     ex_open __ARGS((exarg_T *eap));
-static void     ex_edit __ARGS((exarg_T *eap));
+static void     ex_mode(exarg_T *eap);
+static void     ex_wrongmodifier(exarg_T *eap);
+static void     ex_find(exarg_T *eap);
+static void     ex_open(exarg_T *eap);
+static void     ex_edit(exarg_T *eap);
 #define ex_drop                ex_ni
 #define ex_gui                 ex_nogui
-static void     ex_nogui __ARGS((exarg_T *eap));
+static void     ex_nogui(exarg_T *eap);
 #define ex_tearoff             ex_ni
 #define ex_popup               ex_ni
 #define ex_simalt              ex_ni
@@ -236,51 +222,45 @@ static void     ex_nogui __ARGS((exarg_T *eap));
 #define ex_rubydo              ex_ni
 #define ex_rubyfile            ex_ni
 #define ex_sniff               ex_ni
-#if !defined(FEAT_KEYMAP)
 #define ex_loadkeymap          ex_ni
-#endif
-static void     ex_swapname __ARGS((exarg_T *eap));
-static void     ex_syncbind __ARGS((exarg_T *eap));
-static void     ex_read __ARGS((exarg_T *eap));
-static void     ex_pwd __ARGS((exarg_T *eap));
-static void     ex_equal __ARGS((exarg_T *eap));
-static void     ex_sleep __ARGS((exarg_T *eap));
-static void     do_exmap __ARGS((exarg_T *eap, int isabbrev));
-static void     ex_winsize __ARGS((exarg_T *eap));
-#if defined(FEAT_WINDOWS)
-static void     ex_wincmd __ARGS((exarg_T *eap));
-#else
-#define ex_wincmd          ex_ni
-#endif
-static void     ex_winpos __ARGS((exarg_T *eap));
-static void     ex_operators __ARGS((exarg_T *eap));
-static void     ex_put __ARGS((exarg_T *eap));
-static void     ex_copymove __ARGS((exarg_T *eap));
-static void     ex_submagic __ARGS((exarg_T *eap));
-static void     ex_join __ARGS((exarg_T *eap));
-static void     ex_at __ARGS((exarg_T *eap));
-static void     ex_bang __ARGS((exarg_T *eap));
-static void     ex_undo __ARGS((exarg_T *eap));
+static void     ex_swapname(exarg_T *eap);
+static void     ex_syncbind(exarg_T *eap);
+static void     ex_read(exarg_T *eap);
+static void     ex_pwd(exarg_T *eap);
+static void     ex_equal(exarg_T *eap);
+static void     ex_sleep(exarg_T *eap);
+static void     do_exmap(exarg_T *eap, int isabbrev);
+static void     ex_winsize(exarg_T *eap);
+static void     ex_wincmd(exarg_T *eap);
+static void     ex_winpos(exarg_T *eap);
+static void     ex_operators(exarg_T *eap);
+static void     ex_put(exarg_T *eap);
+static void     ex_copymove(exarg_T *eap);
+static void     ex_submagic(exarg_T *eap);
+static void     ex_join(exarg_T *eap);
+static void     ex_at(exarg_T *eap);
+static void     ex_bang(exarg_T *eap);
+static void     ex_undo(exarg_T *eap);
 #if defined(FEAT_PERSISTENT_UNDO)
-static void     ex_wundo __ARGS((exarg_T *eap));
-static void     ex_rundo __ARGS((exarg_T *eap));
+static void     ex_wundo(exarg_T *eap);
+static void     ex_rundo(exarg_T *eap);
 #endif
-static void     ex_redo __ARGS((exarg_T *eap));
-static void     ex_later __ARGS((exarg_T *eap));
-static void     ex_redir __ARGS((exarg_T *eap));
-static void     ex_redraw __ARGS((exarg_T *eap));
-static void     ex_redrawstatus __ARGS((exarg_T *eap));
-static void     close_redir __ARGS((void));
-static void     ex_mkrc __ARGS((exarg_T *eap));
-static void     ex_mark __ARGS((exarg_T *eap));
+static void     ex_redo(exarg_T *eap);
+static void     ex_later(exarg_T *eap);
+static void     ex_redir(exarg_T *eap);
+static void     ex_redraw(exarg_T *eap);
+static void     ex_redrawstatus(exarg_T *eap);
+static void     close_redir(void);
+static void     ex_mkrc(exarg_T *eap);
+static void     ex_mark(exarg_T *eap);
 #if defined(FEAT_USR_CMDS)
-static char_u   *uc_fun_cmd __ARGS((void));
-static char_u   *find_ucmd __ARGS((exarg_T *eap, char_u *p, int *full, expand_T *xp, int *compl));
+static char_u   *uc_fun_cmd(void);
+static char_u   *find_ucmd(exarg_T *eap, char_u *p, int *full, expand_T *xp, int *compl);
 #endif
 #if defined(FEAT_EX_EXTRA)
-static void     ex_normal __ARGS((exarg_T *eap));
-static void     ex_startinsert __ARGS((exarg_T *eap));
-static void     ex_stopinsert __ARGS((exarg_T *eap));
+static void     ex_normal(exarg_T *eap);
+static void     ex_startinsert(exarg_T *eap);
+static void     ex_stopinsert(exarg_T *eap);
 #else
 #define ex_normal              ex_ni
 #define ex_align               ex_ni
@@ -291,26 +271,26 @@ static void     ex_stopinsert __ARGS((exarg_T *eap));
 #define ex_sort                ex_ni
 #endif
 #if defined(FEAT_FIND_ID)
-static void     ex_checkpath __ARGS((exarg_T *eap));
-static void     ex_findpat __ARGS((exarg_T *eap));
+static void     ex_checkpath(exarg_T *eap);
+static void     ex_findpat(exarg_T *eap);
 #else
 #define ex_findpat             ex_ni
 #define ex_checkpath           ex_ni
 #endif
-#if defined(FEAT_FIND_ID) && defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
-static void     ex_psearch __ARGS((exarg_T *eap));
+#if defined(FEAT_FIND_ID) && defined(FEAT_QUICKFIX)
+static void     ex_psearch(exarg_T *eap);
 #else
 #define ex_psearch             ex_ni
 #endif
-static void     ex_tag __ARGS((exarg_T *eap));
-static void     ex_tag_cmd __ARGS((exarg_T *eap, char_u *name));
-static char_u   *arg_all __ARGS((void));
+static void     ex_tag(exarg_T *eap);
+static void     ex_tag_cmd(exarg_T *eap, char_u *name);
+static char_u   *arg_all(void);
 #define ex_loadview            ex_ni
 #define ex_viminfo             ex_ni
-static void     ex_behave __ARGS((exarg_T *eap));
+static void     ex_behave(exarg_T *eap);
 #if defined(FEAT_AUTOCMD)
-static void     ex_filetype __ARGS((exarg_T *eap));
-static void     ex_setfiletype  __ARGS((exarg_T *eap));
+static void     ex_filetype(exarg_T *eap);
+static void     ex_setfiletype (exarg_T *eap);
 #else
 #define ex_filetype            ex_ni
 #define ex_setfiletype         ex_ni
@@ -321,14 +301,14 @@ static void     ex_setfiletype  __ARGS((exarg_T *eap));
 #define ex_diffsplit           ex_ni
 #define ex_diffthis            ex_ni
 #define ex_diffupdate          ex_ni
-static void     ex_digraphs __ARGS((exarg_T *eap));
-static void     ex_set __ARGS((exarg_T *eap));
+static void     ex_digraphs(exarg_T *eap);
+static void     ex_set(exarg_T *eap);
 #if !defined(FEAT_AUTOCMD)
 #define ex_options             ex_ni
 #endif
 #if defined(FEAT_SEARCH_EXTRA)
-static void     ex_nohlsearch __ARGS((exarg_T *eap));
-static void     ex_match __ARGS((exarg_T *eap));
+static void     ex_nohlsearch(exarg_T *eap);
+static void     ex_match(exarg_T *eap);
 #else
 #define ex_nohlsearch          ex_ni
 #define ex_match               ex_ni
@@ -416,13 +396,13 @@ struct loop_cookie
     int         current_line;           /* last read line from growarray */
     int         repeating;              /* TRUE when looping a second time */
     /* When "repeating" is FALSE use "getline" and "cookie" to get lines */
-    char_u      *(*getline) __ARGS((int, void *, int));
+    char_u      *(*getline)(int, void *, int);
     void        *cookie;
 };
 
-static char_u   *get_loop_line __ARGS((int c, void *cookie, int indent));
-static int      store_loop_line __ARGS((garray_T *gap, char_u *line));
-static void     free_cmdlines __ARGS((garray_T *gap));
+static char_u   *get_loop_line(int c, void *cookie, int indent);
+static int      store_loop_line(garray_T *gap, char_u *line);
+static void     free_cmdlines(garray_T *gap);
 
 /* Struct to save a few things while debugging.  Used in do_cmdline() only. */
 struct dbg_stuff
@@ -440,8 +420,8 @@ struct dbg_stuff
     except_T    *current_exception;
 };
 
-static void save_dbg_stuff __ARGS((struct dbg_stuff *dsp));
-static void restore_dbg_stuff __ARGS((struct dbg_stuff *dsp));
+static void save_dbg_stuff(struct dbg_stuff *dsp);
+static void restore_dbg_stuff(struct dbg_stuff *dsp);
 
     static void
 save_dbg_stuff(dsp)
@@ -604,7 +584,7 @@ do_cmdline_cmd(cmd)
     int
 do_cmdline(cmdline, fgetline, cookie, flags)
     char_u      *cmdline;
-    char_u      *(*fgetline) __ARGS((int, void *, int));
+    char_u      *(*fgetline)(int, void *, int);
     void        *cookie;                /* argument for fgetline() */
     int         flags;
 {
@@ -628,7 +608,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
     struct msglist      *private_msg_list;
 
     /* "fgetline" and "cookie" passed to do_one_cmd() */
-    char_u      *(*cmd_getline) __ARGS((int, void *, int));
+    char_u      *(*cmd_getline)(int, void *, int);
     void        *cmd_cookie;
     struct loop_cookie cmd_loop_cookie;
     void        *real_cookie;
@@ -1399,11 +1379,11 @@ free_cmdlines(gap)
  */
     int
 getline_equal(fgetline, cookie, func)
-    char_u      *(*fgetline) __ARGS((int, void *, int));
+    char_u      *(*fgetline)(int, void *, int);
     void        *cookie UNUSED;         /* argument for fgetline() */
-    char_u      *(*func) __ARGS((int, void *, int));
+    char_u      *(*func)(int, void *, int);
 {
-    char_u              *(*gp) __ARGS((int, void *, int));
+    char_u              *(*gp)(int, void *, int);
     struct loop_cookie *cp;
 
     /* When "fgetline" is "get_loop_line()" use the "cookie" to find the
@@ -1425,10 +1405,10 @@ getline_equal(fgetline, cookie, func)
  */
     void *
 getline_cookie(fgetline, cookie)
-    char_u      *(*fgetline) __ARGS((int, void *, int)) UNUSED;
+    char_u      *(*fgetline)(int, void *, int) UNUSED;
     void        *cookie;                /* argument for fgetline() */
 {
-    char_u              *(*gp) __ARGS((int, void *, int));
+    char_u              *(*gp)(int, void *, int);
     struct loop_cookie *cp;
 
     /* When "fgetline" is "get_loop_line()" use the "cookie" to find the
@@ -1491,9 +1471,8 @@ compute_buffer_local_count(addr_type, lnum, offset)
     return buf->b_fnum;
 }
 
-#if defined(FEAT_WINDOWS)
-static int current_win_nr __ARGS((win_T *win));
-static int current_tab_nr __ARGS((tabpage_T *tab));
+static int current_win_nr(win_T *win);
+static int current_tab_nr(tabpage_T *tab);
 
     static int
 current_win_nr(win)
@@ -1531,12 +1510,6 @@ current_tab_nr(tab)
 #define LAST_WIN_NR current_win_nr(NULL)
 #define CURRENT_TAB_NR current_tab_nr(curtab)
 #define LAST_TAB_NR current_tab_nr(NULL)
-#else
-#define CURRENT_WIN_NR 1
-#define LAST_WIN_NR 1
-#define CURRENT_TAB_NR 1
-#define LAST_TAB_NR 1
-#endif
 
 /*
  * Execute one Ex command.
@@ -1560,7 +1533,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
     char_u              **cmdlinep;
     int                 sourcing;
     struct condstack    *cstack;
-    char_u              *(*fgetline) __ARGS((int, void *, int));
+    char_u              *(*fgetline)(int, void *, int);
     void                *cookie;                /* argument for fgetline() */
 {
     char_u              *p;
@@ -1648,16 +1621,12 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
             /* When adding an entry, also modify cmd_exists(). */
             case 'a':   if (!checkforcmd(&ea.cmd, "aboveleft", 3))
                             break;
-#if defined(FEAT_WINDOWS)
                         cmdmod.split |= WSP_ABOVE;
-#endif
                         continue;
 
             case 'b':   if (checkforcmd(&ea.cmd, "belowright", 3))
                         {
-#if defined(FEAT_WINDOWS)
                             cmdmod.split |= WSP_BELOW;
-#endif
                             continue;
                         }
                         if (checkforcmd(&ea.cmd, "browse", 3))
@@ -1666,9 +1635,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
                         }
                         if (!checkforcmd(&ea.cmd, "botright", 2))
                             break;
-#if defined(FEAT_WINDOWS)
                         cmdmod.split |= WSP_BOT;
-#endif
                         continue;
 
             case 'c':   if (!checkforcmd(&ea.cmd, "confirm", 4))
@@ -1714,9 +1681,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
 
                         if (!checkforcmd(&ea.cmd, "leftabove", 5))
                             break;
-#if defined(FEAT_WINDOWS)
                         cmdmod.split |= WSP_ABOVE;
-#endif
                         continue;
 
             case 'n':   if (checkforcmd(&ea.cmd, "noautocmd", 3))
@@ -1740,9 +1705,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
 
             case 'r':   if (!checkforcmd(&ea.cmd, "rightbelow", 6))
                             break;
-#if defined(FEAT_WINDOWS)
                         cmdmod.split |= WSP_BELOW;
-#endif
                         continue;
 
             case 's':   if (checkforcmd(&ea.cmd, "sandbox", 3))
@@ -1770,20 +1733,16 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
 
             case 't':   if (checkforcmd(&p, "tab", 3))
                         {
-#if defined(FEAT_WINDOWS)
                             if (vim_isdigit(*ea.cmd))
                                 cmdmod.tab = atoi((char *)ea.cmd) + 1;
                             else
                                 cmdmod.tab = tabpage_index(curtab) + 1;
                             ea.cmd = p;
-#endif
                             continue;
                         }
                         if (!checkforcmd(&ea.cmd, "topleft", 2))
                             break;
-#if defined(FEAT_WINDOWS)
                         cmdmod.split |= WSP_TOP;
-#endif
                         continue;
 
             case 'u':   if (!checkforcmd(&ea.cmd, "unsilent", 3))
@@ -1795,9 +1754,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
 
             case 'v':   if (checkforcmd(&ea.cmd, "vertical", 4))
                         {
-#if defined(FEAT_VERTSPLIT)
                             cmdmod.split |= WSP_VERT;
-#endif
                             continue;
                         }
                         if (!checkforcmd(&p, "verbose", 4))
@@ -1862,11 +1819,9 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
         else
             ea.addr_type = ADDR_LINES;
 
-#if defined(FEAT_WINDOWS)
         /* :wincmd range depends on the argument. */
         if (ea.cmdidx == CMD_wincmd && p != NULL)
             get_wincmd_addr_type(skipwhite(p), &ea);
-#endif
     }
 
     /* repeat for all ',' or ';' separated addresses */
@@ -1937,8 +1892,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
                         if (IS_USER_CMDIDX(ea.cmdidx))
                         {
                             ea.line1 = 1;
-                            ea.line2 = ea.addr_type == ADDR_WINDOWS
-                                                  ? LAST_WIN_NR : LAST_TAB_NR;
+                            ea.line2 = ea.addr_type == ADDR_WINDOWS ? LAST_WIN_NR : LAST_TAB_NR;
                         }
                         else
                         {
@@ -4254,7 +4208,7 @@ ex_ni(eap)
     exarg_T     *eap;
 {
     if (!eap->skip)
-        eap->errmsg = (char_u *)N_("E319: Sorry, the command is not available in this version");
+        eap->errmsg = (char_u *)"E319: Sorry, the command is not available in this version";
 }
 
 #if defined(HAVE_EX_SCRIPT_NI)
@@ -4357,7 +4311,7 @@ correct_range(eap)
 }
 
 #if defined(FEAT_QUICKFIX)
-static char_u   *skip_grep_pat __ARGS((exarg_T *eap));
+static char_u   *skip_grep_pat(exarg_T *eap);
 
 /*
  * For a ":vimgrep" or ":vimgrepadd" command return a pointer past the
@@ -5279,11 +5233,11 @@ get_command_name(xp, idx)
 #endif
 
 #if defined(FEAT_USR_CMDS)
-static int      uc_add_command __ARGS((char_u *name, size_t name_len, char_u *rep, long argt, long def, int flags, int compl, char_u *compl_arg, int addr_type, int force));
-static void     uc_list __ARGS((char_u *name, size_t name_len));
-static int      uc_scan_attr __ARGS((char_u *attr, size_t len, long *argt, long *def, int *flags, int *compl, char_u **compl_arg, int* attr_type_arg));
-static char_u   *uc_split_args __ARGS((char_u *arg, size_t *lenp));
-static size_t   uc_check_code __ARGS((char_u *code, size_t len, char_u *buf, ucmd_T *cmd, exarg_T *eap, char_u **split_buf, size_t *split_len));
+static int      uc_add_command(char_u *name, size_t name_len, char_u *rep, long argt, long def, int flags, int compl, char_u *compl_arg, int addr_type, int force);
+static void     uc_list(char_u *name, size_t name_len);
+static int      uc_scan_attr(char_u *attr, size_t len, long *argt, long *def, int *flags, int *compl, char_u **compl_arg, int* attr_type_arg);
+static char_u   *uc_split_args(char_u *arg, size_t *lenp);
+static size_t   uc_check_code(char_u *code, size_t len, char_u *buf, ucmd_T *cmd, exarg_T *eap, char_u **split_buf, size_t *split_len);
 
     static int
 uc_add_command(name, name_len, rep, argt, def, flags, compl, compl_arg, addr_type, force)
@@ -6592,9 +6546,7 @@ not_exiting()
 ex_quit(eap)
     exarg_T     *eap;
 {
-#if defined(FEAT_WINDOWS) || defined(FEAT_AUTOCMD)
     win_T       *wp;
-#endif
 
 #if defined(FEAT_CMDWIN)
     if (cmdwin_type != 0)
@@ -6609,7 +6561,6 @@ ex_quit(eap)
         text_locked_msg();
         return;
     }
-#if defined(FEAT_WINDOWS)
     if (eap->addr_count > 0)
     {
         int     wnr = eap->line2;
@@ -6619,10 +6570,7 @@ ex_quit(eap)
                 break;
     }
     else
-#endif
-#if defined(FEAT_WINDOWS) || defined(FEAT_AUTOCMD)
         wp = curwin;
-#endif
 
 #if defined(FEAT_AUTOCMD)
     apply_autocmds(EVENT_QUITPRE, NULL, NULL, FALSE, curbuf);
@@ -6649,14 +6597,10 @@ ex_quit(eap)
     }
     else
     {
-#if defined(FEAT_WINDOWS)
         if (only_one_window())      /* quit last window */
-#endif
             getout(0);
-#if defined(FEAT_WINDOWS)
         /* close window; may free buffer */
         win_close(wp, !P_HID(wp->w_buffer) || eap->forceit);
-#endif
     }
 }
 
@@ -6709,7 +6653,6 @@ ex_quit_all(eap)
     not_exiting();
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * ":close": close current window, unless it is the last one
  */
@@ -6971,7 +6914,6 @@ ex_all(eap)
         eap->line2 = 9999;
     do_arg_all((int)eap->line2, eap->forceit, eap->cmdidx == CMD_drop);
 }
-#endif
 
     static void
 ex_hide(eap)
@@ -6983,7 +6925,6 @@ ex_hide(eap)
     {
         /* ":hide" or ":hide | cmd": hide current window */
         eap->nextcmd = check_nextcmd(eap->arg);
-#if defined(FEAT_WINDOWS)
         if (!eap->skip)
         {
             if (eap->addr_count == 0)
@@ -7004,7 +6945,6 @@ ex_hide(eap)
                 win_close(win, FALSE);
             }
         }
-#endif
     }
 }
 
@@ -7085,14 +7025,10 @@ ex_exit(eap)
     }
     else
     {
-#if defined(FEAT_WINDOWS)
         if (only_one_window())      /* quit last window, exit Vim */
-#endif
             getout(0);
-#if defined(FEAT_WINDOWS)
         /* Quit current window, may free the buffer. */
         win_close(curwin, !P_HID(curwin->w_buffer));
-#endif
     }
 }
 
@@ -7145,7 +7081,7 @@ ex_shell(eap)
     do_shell(NULL, 0);
 }
 
-#if (defined(FEAT_WINDOWS) && defined(HAVE_DROP_FILE))
+#if defined(HAVE_DROP_FILE)
 
 /*
  * Handle a file drop. The code is here because a drop is *nearly* like an
@@ -7198,7 +7134,6 @@ handle_drop(filec, filev, split)
     }
     if (split)
     {
-#if defined(FEAT_WINDOWS)
         if (win_split(0, 0) == FAIL)
             return;
         RESET_BINDING(curwin);
@@ -7207,9 +7142,6 @@ handle_drop(filec, filev, split)
          * existing one is overwritten. */
         alist_unlink(curwin->w_alist);
         alist_new();
-#else
-        return;     /* can't split, always fail */
-#endif
     }
 
     /*
@@ -7258,8 +7190,6 @@ alist_init(al)
     ga_init2(&al->al_ga, (int)sizeof(aentry_T), 5);
 }
 
-#if defined(FEAT_WINDOWS)
-
 /*
  * Remove a reference from an argument list.
  * Ignored when the argument list is the global one.
@@ -7296,7 +7226,6 @@ alist_new()
         alist_init(curwin->w_alist);
     }
 }
-#endif
 #endif
 
 /*
@@ -7340,9 +7269,7 @@ alist_set(al, count, files, use_curbuf, fnum_list, fnum_len)
     }
     else
         FreeWild(count, files);
-#if defined(FEAT_WINDOWS)
     if (al == &global_alist)
-#endif
         arg_had_last = FALSE;
 }
 
@@ -7406,7 +7333,6 @@ ex_wrongmodifier(eap)
     eap->errmsg = e_invcmd;
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * :sview [+command] file       split window with new file, read-only
  * :split [[+command] file]     split window with current or new file
@@ -7429,14 +7355,6 @@ ex_splitview(eap)
     char_u      *fname = NULL;
 #endif
 
-#if !defined(FEAT_VERTSPLIT)
-    if (eap->cmdidx == CMD_vsplit || eap->cmdidx == CMD_vnew)
-    {
-        ex_ni(eap);
-        return;
-    }
-#endif
-
 #if defined(FEAT_QUICKFIX)
     /* A ":split" in the quickfix window works like ":new".  Don't want two
      * quickfix windows.  But it's OK when doing ":tab split". */
@@ -7444,10 +7362,8 @@ ex_splitview(eap)
     {
         if (eap->cmdidx == CMD_split)
             eap->cmdidx = CMD_new;
-#if defined(FEAT_VERTSPLIT)
         if (eap->cmdidx == CMD_vsplit)
             eap->cmdidx = CMD_vnew;
-#endif
     }
 #endif
 
@@ -7635,8 +7551,6 @@ ex_tabs(eap)
     }
 }
 
-#endif
-
 /*
  * ":mode": Set screen mode.
  * If no argument given, just get the screen size and redraw.
@@ -7651,7 +7565,6 @@ ex_mode(eap)
         mch_screenmode(eap->arg);
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * ":resize".
  * set, increment or decrement current window height
@@ -7671,7 +7584,6 @@ ex_resize(eap)
     }
 
     n = atol((char *)eap->arg);
-#if defined(FEAT_VERTSPLIT)
     if (cmdmod.split & WSP_VERT)
     {
         if (*eap->arg == '-' || *eap->arg == '+')
@@ -7681,7 +7593,6 @@ ex_resize(eap)
         win_setwidth_win((int)n, wp);
     }
     else
-#endif
     {
         if (*eap->arg == '-' || *eap->arg == '+')
             n += curwin->w_height;
@@ -7690,7 +7601,6 @@ ex_resize(eap)
         win_setheight_win((int)n, wp);
     }
 }
-#endif
 
 /*
  * ":find [+command] <file>" command.
@@ -7786,9 +7696,7 @@ do_exedit(eap, old_curwin)
     win_T       *old_curwin;        /* curwin before doing a split or NULL */
 {
     int         n;
-#if defined(FEAT_WINDOWS)
     int         need_hide;
-#endif
     int         exmode_was = exmode_active;
 
     /*
@@ -7834,9 +7742,7 @@ do_exedit(eap, old_curwin)
     if ((eap->cmdidx == CMD_new
                 || eap->cmdidx == CMD_tabnew
                 || eap->cmdidx == CMD_tabedit
-#if defined(FEAT_VERTSPLIT)
                 || eap->cmdidx == CMD_vnew
-#endif
                 ) && *eap->arg == NUL)
     {
         /* ":new" or ":tabnew" without argument: edit an new empty buffer */
@@ -7846,9 +7752,7 @@ do_exedit(eap, old_curwin)
                       old_curwin == NULL ? curwin : NULL);
     }
     else if ((eap->cmdidx != CMD_split
-#if defined(FEAT_VERTSPLIT)
                 && eap->cmdidx != CMD_vsplit
-#endif
                 )
             || *eap->arg != NUL
             )
@@ -7882,7 +7786,6 @@ do_exedit(eap, old_curwin)
                     , old_curwin == NULL ? curwin : NULL) == FAIL)
         {
             /* Editing the file failed.  If the window was split, close it. */
-#if defined(FEAT_WINDOWS)
             if (old_curwin != NULL)
             {
                 need_hide = (curbufIsChanged() && curbuf->b_nwindows <= 1);
@@ -7905,7 +7808,6 @@ do_exedit(eap, old_curwin)
 #endif
                 }
             }
-#endif
         }
         else if (readonlymode && curbuf->b_nwindows == 1)
         {
@@ -7931,7 +7833,6 @@ do_exedit(eap, old_curwin)
 #endif
     }
 
-#if defined(FEAT_WINDOWS)
     /*
      * if ":split file" worked, set alternate file name in old window to new
      * file
@@ -7943,7 +7844,6 @@ do_exedit(eap, old_curwin)
             && old_curwin->w_buffer != curbuf
             && !cmdmod.keepalt)
         old_curwin->w_alt_fnum = curbuf->b_fnum;
-#endif
 
     ex_no_reprint = TRUE;
 }
@@ -8026,9 +7926,7 @@ ex_syncbind(eap)
             curwin->w_scbind_pos = topline;
             redraw_later(VALID);
             cursor_correct();
-#if defined(FEAT_WINDOWS)
             curwin->w_redr_status = TRUE;
-#endif
         }
     }
     curwin = save_curwin;
@@ -8326,7 +8224,6 @@ ex_winsize(eap)
         EMSG(_("E465: :winsize requires two number arguments"));
 }
 
-#if defined(FEAT_WINDOWS)
     static void
 ex_wincmd(eap)
     exarg_T     *eap;
@@ -8362,7 +8259,6 @@ ex_wincmd(eap)
         postponed_split_tab = 0;
     }
 }
-#endif
 
 /*
  * ":winpos".
@@ -8840,7 +8736,6 @@ ex_redraw(eap)
 ex_redrawstatus(eap)
     exarg_T     *eap UNUSED;
 {
-#if defined(FEAT_WINDOWS)
     int         r = RedrawingDisabled;
     int         p = p_lz;
 
@@ -8854,7 +8749,6 @@ ex_redrawstatus(eap)
     RedrawingDisabled = r;
     p_lz = p;
     out_flush();
-#endif
 }
 
     static void
@@ -9225,7 +9119,7 @@ ex_checkpath(eap)
                                               (linenr_T)1, (linenr_T)MAXLNUM);
 }
 
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
 /*
  * ":psearch"
  */
@@ -9298,8 +9192,6 @@ ex_findpat(eap)
 }
 #endif
 
-#if defined(FEAT_WINDOWS)
-
 #if defined(FEAT_QUICKFIX)
 /*
  * ":ptag", ":ptselect", ":ptjump", ":ptnext", etc.
@@ -9351,7 +9243,6 @@ ex_stag(eap)
     postponed_split_flags = 0;
     postponed_split_tab = 0;
 }
-#endif
 
 /*
  * ":tag", ":tselect", ":tjump", ":tnext", etc.
@@ -10058,14 +9949,10 @@ ex_setfiletype(eap)
 ex_digraphs(eap)
     exarg_T     *eap UNUSED;
 {
-#if defined(FEAT_DIGRAPHS)
     if (*eap->arg != NUL)
         putdigraph(eap->arg);
     else
         listdigraphs();
-#else
-    EMSG(_("E196: No digraphs in this version"));
-#endif
 }
 
     static void

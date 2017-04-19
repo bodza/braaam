@@ -1,10 +1,6 @@
 #define EXTERN
 #include "vim.h"
 
-#if defined(SPAWNO)
-#include <spawno.h>            /* special MS-DOS swapping library */
-#endif
-
 /* Maximum number of commands from + or -c arguments. */
 #define MAX_ARG_CMDS 10
 
@@ -39,10 +35,8 @@ typedef struct
     char_u      *term;                  /* specified terminal name */
     int         no_swap_file;           /* "-n" argument used */
     int         use_debug_break_level;
-#if defined(FEAT_WINDOWS)
     int         window_count;           /* number of windows to use */
     int         window_layout;          /* 0, WIN_HOR, WIN_VER or WIN_TABS */
-#endif
 
 } mparm_T;
 
@@ -53,29 +47,27 @@ typedef struct
 #define EDIT_TAG    3       /* tag name argument given, use tagname */
 #define EDIT_QF     4       /* start in quickfix mode */
 
-static int file_owned __ARGS((char *fname));
-static void mainerr __ARGS((int, char_u *));
-static void main_msg __ARGS((char *s));
-static void usage __ARGS((void));
-static int get_number_arg __ARGS((char_u *p, int *idx, int def));
+static int file_owned(char *fname);
+static void mainerr(int, char_u *);
+static void main_msg(char *s);
+static void usage(void);
+static int get_number_arg(char_u *p, int *idx, int def);
 #if defined(HAVE_LOCALE_H)
-static void init_locale __ARGS((void));
+static void init_locale(void);
 #endif
-static void parse_command_name __ARGS((mparm_T *parmp));
-static void early_arg_scan __ARGS((mparm_T *parmp));
-static void command_line_scan __ARGS((mparm_T *parmp));
-static void check_tty __ARGS((mparm_T *parmp));
-static void read_stdin __ARGS((void));
-static void create_windows __ARGS((mparm_T *parmp));
-#if defined(FEAT_WINDOWS)
-static void edit_buffers __ARGS((mparm_T *parmp, char_u *cwd));
-#endif
-static void exe_pre_commands __ARGS((mparm_T *parmp));
-static void exe_commands __ARGS((mparm_T *parmp));
-static void source_startup_scripts __ARGS((mparm_T *parmp));
-static void main_start_gui __ARGS((void));
+static void parse_command_name(mparm_T *parmp);
+static void early_arg_scan(mparm_T *parmp);
+static void command_line_scan(mparm_T *parmp);
+static void check_tty(mparm_T *parmp);
+static void read_stdin(void);
+static void create_windows(mparm_T *parmp);
+static void edit_buffers(mparm_T *parmp, char_u *cwd);
+static void exe_pre_commands(mparm_T *parmp);
+static void exe_commands(mparm_T *parmp);
+static void source_startup_scripts(mparm_T *parmp);
+static void main_start_gui(void);
 #if defined(HAS_SWAP_EXISTS_ACTION)
-static void check_swap_exists_action __ARGS((void));
+static void check_swap_exists_action(void);
 #endif
 
 /*
@@ -83,17 +75,17 @@ static void check_swap_exists_action __ARGS((void));
  */
 static char *(main_errors[]) =
 {
-    N_("Unknown option argument"),
+    "Unknown option argument",
 #define ME_UNKNOWN_OPTION       0
-    N_("Too many edit arguments"),
+    "Too many edit arguments",
 #define ME_TOO_MANY_ARGS        1
-    N_("Argument missing after"),
+    "Argument missing after",
 #define ME_ARG_MISSING          2
-    N_("Garbage after option argument"),
+    "Garbage after option argument",
 #define ME_GARBAGE              3
-    N_("Too many \"+command\", \"-c command\" or \"--cmd command\" arguments"),
+    "Too many \"+command\", \"-c command\" or \"--cmd command\" arguments",
 #define ME_EXTRA_CMD            4
-    N_("Invalid argument for"),
+    "Invalid argument for",
 #define ME_INVALID_ARG          5
 };
 
@@ -123,21 +115,12 @@ main
     params.argv = argv;
     params.want_full_screen = TRUE;
     params.use_debug_break_level = -1;
-#if defined(FEAT_WINDOWS)
     params.window_count = -1;
-#endif
 
     starttime = time(NULL);
 
     (void)mb_init();    /* init mb_bytelen_tab[] to ones */
     eval_init();        /* init global variables */
-
-#if defined(MAC_OS_CLASSIC)
-    /* Prepare for possibly starting GUI sometime */
-    /* Macintosh needs this before any memory is allocated. */
-    gui_prepare(&params.argc, params.argv);
-    TIME_MSG("GUI prepared");
-#endif
 
     /* Init the table of Normal mode commands. */
     init_normal_cmds();
@@ -347,10 +330,6 @@ main
     if (params.no_swap_file)
         p_uc = 0;
 
-#if defined(SPAWNO) /* special MSDOS swapping library */
-    init_SPAWNO("", SWAP_ANY);
-#endif
-
     /* It's better to make v:oldfiles an empty list than NULL. */
     if (get_vim_var_list(VV_OLDFILES) == NULL)
         set_vim_var_list(VV_OLDFILES, list_alloc());
@@ -363,8 +342,7 @@ main
     if (params.edit_type == EDIT_QF)
     {
         if (params.use_ef != NULL)
-            set_string_option_direct((char_u *)"ef", -1,
-                                           params.use_ef, OPT_FREE, SID_CARG);
+            set_string_option_direct((char_u *)"ef", -1, params.use_ef, OPT_FREE, SID_CARG);
         vim_snprintf((char *)IObuff, IOSIZE, "cfile %s", p_ef);
         if (qf_init(NULL, p_ef, p_efm, TRUE, IObuff) < 0)
         {
@@ -474,13 +452,11 @@ main
     }
 #endif
 
-#if defined(FEAT_WINDOWS)
     /*
      * If opened more than one window, start editing files in the other
      * windows.
      */
     edit_buffers(&params, start_dir);
-#endif
     vim_free(start_dir);
 
     /*
@@ -700,9 +676,7 @@ main_loop(cmdwin, noexmode)
                 update_screen(0);
             else if (redraw_cmdline || clear_cmdline)
                 showmode();
-#if defined(FEAT_WINDOWS)
             redraw_statuslines();
-#endif
 #if defined(FEAT_TITLE)
             if (need_maketitle)
                 maketitle();
@@ -809,12 +783,10 @@ getout(exitval)
     if (get_vim_var_nr(VV_DYING) <= 1)
     {
         /* Trigger BufWinLeave for all windows, but only once per buffer. */
-#if defined(FEAT_WINDOWS)
         for (tp = first_tabpage; tp != NULL; tp = next_tp)
         {
             next_tp = tp->tp_next;
-            for (wp = (tp == curtab)
-                    ? firstwin : tp->tp_firstwin; wp != NULL; wp = wp->w_next)
+            for (wp = (tp == curtab) ? firstwin : tp->tp_firstwin; wp != NULL; wp = wp->w_next)
             {
                 if (wp->w_buffer == NULL)
                     /* Autocmd must have close the buffer already, skip. */
@@ -831,10 +803,6 @@ getout(exitval)
                 }
             }
         }
-#else
-        apply_autocmds(EVENT_BUFWINLEAVE, curbuf, curbuf->b_fname,
-                                                               FALSE, curbuf);
-#endif
 
         /* Trigger BufUnload for buffers that are loaded */
         for (buf = firstbuf; buf != NULL; buf = buf->b_next)
@@ -1188,41 +1156,21 @@ command_line_scan(parmp)
                 break;
 
             case 'p':           /* "-p[N]" open N tab pages */
-#if defined(TARGET_API_MAC_OSX)
-                /* For some reason on MacOS X, an argument like:
-                   -psn_0_10223617 is passed in when invoke from Finder
-                   or with the 'open' command */
-                if (argv[0][argv_idx] == 's')
-                {
-                    argv_idx = -1; /* bypass full -psn */
-                    main_start_gui();
-                    break;
-                }
-#endif
-#if defined(FEAT_WINDOWS)
                 /* default is 0: open window for each file */
-                parmp->window_count = get_number_arg((char_u *)argv[0],
-                                                                &argv_idx, 0);
+                parmp->window_count = get_number_arg((char_u *)argv[0], &argv_idx, 0);
                 parmp->window_layout = WIN_TABS;
-#endif
                 break;
 
             case 'o':           /* "-o[N]" open N horizontal split windows */
-#if defined(FEAT_WINDOWS)
                 /* default is 0: open window for each file */
-                parmp->window_count = get_number_arg((char_u *)argv[0],
-                                                                &argv_idx, 0);
+                parmp->window_count = get_number_arg((char_u *)argv[0], &argv_idx, 0);
                 parmp->window_layout = WIN_HOR;
-#endif
                 break;
 
                 case 'O':       /* "-O[N]" open N vertical split windows */
-#if defined(FEAT_VERTSPLIT) && defined(FEAT_WINDOWS)
                 /* default is 0: open window for each file */
-                parmp->window_count = get_number_arg((char_u *)argv[0],
-                                                                &argv_idx, 0);
+                parmp->window_count = get_number_arg((char_u *)argv[0], &argv_idx, 0);
                 parmp->window_layout = WIN_VER;
-#endif
                 break;
 
 #if defined(FEAT_QUICKFIX)
@@ -1279,8 +1227,7 @@ command_line_scan(parmp)
                 p_verbose = get_number_arg((char_u *)argv[0], &argv_idx, 10);
                 if (argv[0][argv_idx] != NUL)
                 {
-                    set_option_value((char_u *)"verbosefile", 0L,
-                                             (char_u *)argv[0] + argv_idx, 0);
+                    set_option_value((char_u *)"verbosefile", 0L, (char_u *)argv[0] + argv_idx, 0);
                     argv_idx = (int)STRLEN(argv[0]);
                 }
                 break;
@@ -1313,8 +1260,7 @@ command_line_scan(parmp)
                 {
                     if (parmp->n_commands >= MAX_ARG_CMDS)
                         mainerr(ME_EXTRA_CMD, NULL);
-                    parmp->commands[parmp->n_commands++] = (char_u *)argv[0]
-                                                                   + argv_idx;
+                    parmp->commands[parmp->n_commands++] = (char_u *)argv[0] + argv_idx;
                     argv_idx = -1;
                     break;
                 }
@@ -1382,8 +1328,7 @@ command_line_scan(parmp)
                         parmp->commands[parmp->n_commands++] = p;
                     }
                     else
-                        parmp->commands[parmp->n_commands++] =
-                                                            (char_u *)argv[0];
+                        parmp->commands[parmp->n_commands++] = (char_u *)argv[0];
                     break;
 
                 case '-':
@@ -1392,8 +1337,7 @@ command_line_scan(parmp)
                         /* "--cmd {command}" execute command */
                         if (parmp->n_pre_commands >= MAX_ARG_CMDS)
                             mainerr(ME_EXTRA_CMD, NULL);
-                        parmp->pre_commands[parmp->n_pre_commands++] =
-                                                            (char_u *)argv[0];
+                        parmp->pre_commands[parmp->n_pre_commands++] = (char_u *)argv[0];
                     }
                     /* "--startuptime <file>" already handled */
                     break;
@@ -1602,7 +1546,6 @@ read_stdin()
 create_windows(parmp)
     mparm_T     *parmp UNUSED;
 {
-#if defined(FEAT_WINDOWS)
     int         dorewind;
     int         done = 0;
 
@@ -1635,7 +1578,6 @@ create_windows(parmp)
     }
     else
         parmp->window_count = 1;
-#endif
 
     if (recoverymode)                   /* do recover */
     {
@@ -1659,7 +1601,6 @@ create_windows(parmp)
         ++autocmd_no_enter;
         ++autocmd_no_leave;
 #endif
-#if defined(FEAT_WINDOWS)
         dorewind = TRUE;
         while (done++ < 1000)
         {
@@ -1683,7 +1624,6 @@ create_windows(parmp)
                 curwin = curwin->w_next;
             }
             dorewind = FALSE;
-#endif
             curbuf = curwin->w_buffer;
             if (curbuf->b_ml.ml_mfp == NULL)
             {
@@ -1719,7 +1659,6 @@ create_windows(parmp)
                 dorewind = TRUE;                /* start again */
 #endif
             }
-#if defined(FEAT_WINDOWS)
             ui_breakcheck();
             if (got_int)
             {
@@ -1727,14 +1666,11 @@ create_windows(parmp)
                 break;
             }
         }
-#endif
-#if defined(FEAT_WINDOWS)
         if (parmp->window_layout == WIN_TABS)
             goto_tabpage(1);
         else
             curwin = firstwin;
         curbuf = curwin->w_buffer;
-#endif
 #if defined(FEAT_AUTOCMD)
         --autocmd_no_enter;
         --autocmd_no_leave;
@@ -1742,7 +1678,6 @@ create_windows(parmp)
     }
 }
 
-#if defined(FEAT_WINDOWS)
     /*
      * If opened more than one window, start editing files in the other
      * windows.  make_windows() has already opened the windows.
@@ -1850,7 +1785,7 @@ edit_buffers(parmp, cwd)
 
     /* make the first window the current window */
     win = firstwin;
-#if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
+#if defined(FEAT_QUICKFIX)
     /* Avoid making a preview window the current window. */
     while (win->w_p_pvw)
     {
@@ -1871,7 +1806,6 @@ edit_buffers(parmp, cwd)
     if (parmp->window_count > 1 && parmp->window_layout != WIN_TABS)
         win_equal(curwin, FALSE, 'b');  /* adjust heights */
 }
-#endif
 
 /*
  * Execute the commands from --cmd arguments "cmds[cnt]".
@@ -1963,8 +1897,7 @@ source_startup_scripts(parmp)
      */
     if (parmp->use_vimrc != NULL)
     {
-        if (STRCMP(parmp->use_vimrc, "NONE") == 0
-                                     || STRCMP(parmp->use_vimrc, "NORC") == 0)
+        if (STRCMP(parmp->use_vimrc, "NONE") == 0 || STRCMP(parmp->use_vimrc, "NORC") == 0)
         {
             if (parmp->use_vimrc[2] == 'N')
                 p_lpl = FALSE;              /* don't load plugins either */
@@ -1998,16 +1931,13 @@ source_startup_scripts(parmp)
         {
             if (do_source((char_u *)USR_VIMRC_FILE, TRUE, DOSO_VIMRC) == FAIL
 #if defined(USR_VIMRC_FILE2)
-                && do_source((char_u *)USR_VIMRC_FILE2, TRUE,
-                                                           DOSO_VIMRC) == FAIL
+                && do_source((char_u *)USR_VIMRC_FILE2, TRUE, DOSO_VIMRC) == FAIL
 #endif
 #if defined(USR_VIMRC_FILE3)
-                && do_source((char_u *)USR_VIMRC_FILE3, TRUE,
-                                                           DOSO_VIMRC) == FAIL
+                && do_source((char_u *)USR_VIMRC_FILE3, TRUE, DOSO_VIMRC) == FAIL
 #endif
 #if defined(USR_VIMRC_FILE4)
-                && do_source((char_u *)USR_VIMRC_FILE4, TRUE,
-                                                           DOSO_VIMRC) == FAIL
+                && do_source((char_u *)USR_VIMRC_FILE4, TRUE, DOSO_VIMRC) == FAIL
 #endif
                 && process_env((char_u *)"EXINIT", FALSE) == FAIL
                 && do_source((char_u *)USR_EXRC_FILE, FALSE, DOSO_NONE) == FAIL)
@@ -2190,11 +2120,11 @@ usage()
     int         i;
     static char *(use[]) =
     {
-        N_("[file ..]       edit specified file(s)"),
-        N_("-               read text from stdin"),
-        N_("-t tag          edit file where tag is defined"),
+        "[file ..]       edit specified file(s)",
+        "-               read text from stdin",
+        "-t tag          edit file where tag is defined",
 #if defined(FEAT_QUICKFIX)
-        N_("-q [errorfile]  edit file with first error")
+        "-q [errorfile]  edit file with first error"
 #endif
     };
 
@@ -2240,11 +2170,9 @@ usage()
     main_msg(_("-T <terminal>\tSet terminal type to <terminal>"));
     main_msg(_("-u <vimrc>\t\tUse <vimrc> instead of any .vimrc"));
     main_msg(_("--noplugin\t\tDon't load plugin scripts"));
-#if defined(FEAT_WINDOWS)
     main_msg(_("-p[N]\t\tOpen N tab pages (default: one for each file)"));
     main_msg(_("-o[N]\t\tOpen N windows (default: one for each file)"));
     main_msg(_("-O[N]\t\tLike -o but split vertically"));
-#endif
     main_msg(_("+\t\t\tStart at end of file"));
     main_msg(_("+<lnum>\t\tStart at line <lnum>"));
     main_msg(_("--cmd <command>\tExecute <command> before loading any vimrc file"));

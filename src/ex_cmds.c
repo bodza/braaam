@@ -6,17 +6,17 @@
 #include "version.h"
 
 #if defined(FEAT_EX_EXTRA)
-static int linelen __ARGS((int *has_tab));
+static int linelen(int *has_tab);
 #endif
-static void do_filter __ARGS((linenr_T line1, linenr_T line2, exarg_T *eap, char_u *cmd, int do_in, int do_out));
+static void do_filter(linenr_T line1, linenr_T line2, exarg_T *eap, char_u *cmd, int do_in, int do_out);
 
-static int check_readonly __ARGS((int *forceit, buf_T *buf));
+static int check_readonly(int *forceit, buf_T *buf);
 #if defined(FEAT_AUTOCMD)
-static void delbuf_msg __ARGS((char_u *name));
+static void delbuf_msg(char_u *name);
 #endif
 static int
-        help_compare __ARGS((const void *s1, const void *s2));
-static void prepare_help_buffer __ARGS((void));
+        help_compare(const void *s1, const void *s2);
+static void prepare_help_buffer(void);
 
 /*
  * ":ascii" and "ga".
@@ -257,7 +257,7 @@ typedef struct
 } sorti_T;
 
 static int
-sort_compare __ARGS((const void *s1, const void *s2));
+sort_compare(const void *s1, const void *s2);
 
     static int
 sort_compare(s1, s2)
@@ -1853,9 +1853,7 @@ do_write(eap)
             if (retval == OK)
             {
                 curbuf->b_p_ro = FALSE;
-#if defined(FEAT_WINDOWS)
                 redraw_tabline = TRUE;
-#endif
             }
             /* Change directories when the 'acd' option is set. */
             DO_AUTOCHDIR
@@ -2785,10 +2783,8 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
         }
     }
 
-#if defined(FEAT_WINDOWS)
     /* Check if cursors in other windows on the same buffer are still valid */
     check_lnums(FALSE);
-#endif
 
     /*
      * Did not read the file, need to show some info about the file.
@@ -2819,11 +2815,6 @@ do_ecmd(fnum, ffname, sfname, eap, newlnum, flags, oldwin)
 
     if (command != NULL)
         do_cmdline(command, NULL, NULL, DOCMD_VERBOSE);
-
-#if defined(FEAT_KEYMAP)
-    if (curbuf->b_kmap_state & KEYMAP_INIT)
-        (void)keymap_init();
-#endif
 
     --RedrawingDisabled;
     if (!skip_redraw)
@@ -3000,8 +2991,7 @@ ex_append(eap)
         eap->line2 + 1 : curbuf->b_ml.ml_line_count;
     if (eap->cmdidx != CMD_append)
         --curbuf->b_op_start.lnum;
-    curbuf->b_op_end.lnum = (eap->line2 < lnum)
-                                             ? lnum : curbuf->b_op_start.lnum;
+    curbuf->b_op_end.lnum = (eap->line2 < lnum) ? lnum : curbuf->b_op_start.lnum;
     curbuf->b_op_start.col = curbuf->b_op_end.col = 0;
     curwin->w_cursor.lnum = lnum;
     check_cursor_lnum();
@@ -3060,10 +3050,8 @@ ex_z(eap)
      * 'scroll' */
     if (eap->forceit)
         bigness = curwin->w_height;
-#if defined(FEAT_WINDOWS)
     else if (firstwin != lastwin)
         bigness = curwin->w_height - 3;
-#endif
     else
         bigness = curwin->w_p_scr * 2;
     if (bigness < 1)
@@ -3671,7 +3659,7 @@ do_sub(eap)
                         skip_match = TRUE;
                     else
                     {
-                         /* search for a match at next column */
+                        /* search for a match at next column */
                         if (has_mbyte)
                             matchcol += mb_ptr2len(sub_firstline + matchcol);
                         else
@@ -3795,18 +3783,15 @@ do_sub(eap)
                                          * substitute may have inserted or
                                          * deleted characters before the
                                          * cursor. */
-                                        len_change = (int)STRLEN(new_line)
-                                                     - (int)STRLEN(orig_line);
+                                        len_change = (int)STRLEN(new_line) - (int)STRLEN(orig_line);
                                         curwin->w_cursor.col += len_change;
                                         ml_replace(lnum, new_line, FALSE);
                                     }
                                 }
                             }
 
-                            search_match_lines = regmatch.endpos[0].lnum
-                                                  - regmatch.startpos[0].lnum;
-                            search_match_endcol = regmatch.endpos[0].col
-                                                                 + len_change;
+                            search_match_lines = regmatch.endpos[0].lnum - regmatch.startpos[0].lnum;
+                            search_match_endcol = regmatch.endpos[0].col + len_change;
                             highlight_match = TRUE;
 
                             update_topline();
@@ -3954,8 +3939,7 @@ do_sub(eap)
                     nmatch_tl += nmatch - 1;
                 }
                 copy_len = regmatch.startpos[0].col - copycol;
-                needed_len = copy_len + ((unsigned)STRLEN(p1)
-                                       - regmatch.endpos[0].col) + sublen + 1;
+                needed_len = copy_len + ((unsigned)STRLEN(p1) - regmatch.endpos[0].col) + sublen + 1;
                 if (new_start == NULL)
                 {
                     /*
@@ -4126,8 +4110,7 @@ skip:
                          */
                         STRCAT(new_start, sub_firstline + copycol);
                         matchcol = (colnr_T)STRLEN(sub_firstline) - matchcol;
-                        prev_matchcol = (colnr_T)STRLEN(sub_firstline)
-                                                              - prev_matchcol;
+                        prev_matchcol = (colnr_T)STRLEN(sub_firstline) - prev_matchcol;
 
                         if (u_savesub(lnum) != OK)
                             break;
@@ -4171,8 +4154,7 @@ skip:
                         sub_firstline = new_start;
                         new_start = NULL;
                         matchcol = (colnr_T)STRLEN(sub_firstline) - matchcol;
-                        prev_matchcol = (colnr_T)STRLEN(sub_firstline)
-                                                              - prev_matchcol;
+                        prev_matchcol = (colnr_T)STRLEN(sub_firstline) - prev_matchcol;
                         copycol = 0;
                     }
                     if (nmatch == -1 && !lastone)
@@ -4505,7 +4487,7 @@ free_old_sub()
 }
 #endif
 
-#if (defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX))
+#if defined(FEAT_QUICKFIX)
 /*
  * Set up for a tagpreview.
  * Return TRUE when it was created.
@@ -4558,9 +4540,7 @@ ex_help(eap)
     FILE        *helpfd;        /* file descriptor of help file */
     int         n;
     int         i;
-#if defined(FEAT_WINDOWS)
     win_T       *wp;
-#endif
     int         num_matches;
     char_u      **matches;
     char_u      *p;
@@ -4616,7 +4596,7 @@ ex_help(eap)
     i = 0;
     if (i >= num_matches || n == FAIL)
     {
-            EMSG2(_("E149: Sorry, no help for %s"), arg);
+        EMSG2(_("E149: Sorry, no help for %s"), arg);
         if (n != FAIL)
             FreeWild(num_matches, matches);
         return;
@@ -4631,12 +4611,9 @@ ex_help(eap)
      * Always open a new one for ":tab help".
      */
     if (!curwin->w_buffer->b_help
-#if defined(FEAT_WINDOWS)
             || cmdmod.tab != 0
-#endif
             )
     {
-#if defined(FEAT_WINDOWS)
         if (cmdmod.tab != 0)
             wp = NULL;
         else
@@ -4646,7 +4623,6 @@ ex_help(eap)
         if (wp != NULL && wp->w_buffer->b_nwindows > 0)
             win_enter(wp, TRUE);
         else
-#endif
         {
             /*
              * There is no help window yet.
@@ -4659,28 +4635,18 @@ ex_help(eap)
             }
             fclose(helpfd);
 
-#if defined(FEAT_WINDOWS)
             /* Split off help window; put it at far top if no position
              * specified, the current window is vertically split and
              * narrow. */
             n = WSP_HELP;
-#if defined(FEAT_VERTSPLIT)
             if (cmdmod.split == 0 && curwin->w_width != Columns
                                                   && curwin->w_width < 80)
                 n |= WSP_TOP;
-#endif
             if (win_split(0, n) == FAIL)
                 goto erret;
-#else
-            /* use current window */
-            if (!can_abandon(curbuf, FALSE))
-                goto erret;
-#endif
 
-#if defined(FEAT_WINDOWS)
             if (curwin->w_height < p_hh)
                 win_setheight((int)p_hh);
-#endif
 
             /*
              * Open help file (do_ecmd() will set b_help flag, readfile() will
@@ -4690,11 +4656,7 @@ ex_help(eap)
             alt_fnum = curbuf->b_fnum;
             (void)do_ecmd(0, NULL, NULL, NULL, ECMD_LASTL,
                           ECMD_HIDE + ECMD_SET_HELP,
-#if defined(FEAT_WINDOWS)
                           NULL  /* buffer is still open, don't store info */
-#else
-                          curwin
-#endif
                     );
             if (!cmdmod.keepalt)
                 curwin->w_alt_fnum = alt_fnum;
@@ -4733,7 +4695,6 @@ erret:
 ex_helpclose(eap)
     exarg_T     *eap UNUSED;
 {
-#if defined(FEAT_WINDOWS)
     win_T *win;
 
     FOR_ALL_WINDOWS(win)
@@ -4744,7 +4705,6 @@ ex_helpclose(eap)
             return;
         }
     }
-#endif
 }
 
 /*
@@ -5255,7 +5215,7 @@ ex_viusage(eap)
 }
 
 #if defined(FEAT_EX_EXTRA)
-static void helptags_one __ARGS((char_u *dir, char_u *ext, char_u *lang, int add_help_tags));
+static void helptags_one(char_u *dir, char_u *ext, char_u *lang, int add_help_tags);
 
 /*
  * ":helptags"

@@ -72,9 +72,7 @@
 
 #define WINBYTE BYTE
 
-#if defined(HAVE_WCHAR_H)
 #include <wchar.h>
-#endif
 
 #if 0
 /* This has been disabled, because several people reported problems with the
@@ -84,16 +82,16 @@
 #endif
 #endif
 
-static int enc_canon_search __ARGS((char_u *name));
-static int dbcs_char2len __ARGS((int c));
-static int dbcs_char2bytes __ARGS((int c, char_u *buf));
-static int dbcs_ptr2len __ARGS((char_u *p));
-static int dbcs_ptr2len_len __ARGS((char_u *p, int size));
-static int utf_ptr2cells_len __ARGS((char_u *p, int size));
-static int dbcs_char2cells __ARGS((int c));
-static int dbcs_ptr2cells_len __ARGS((char_u *p, int size));
-static int dbcs_ptr2char __ARGS((char_u *p));
-static int utf_safe_read_char_adv __ARGS((char_u **s, size_t *n));
+static int enc_canon_search(char_u *name);
+static int dbcs_char2len(int c);
+static int dbcs_char2bytes(int c, char_u *buf);
+static int dbcs_ptr2len(char_u *p);
+static int dbcs_ptr2len_len(char_u *p, int size);
+static int utf_ptr2cells_len(char_u *p, int size);
+static int dbcs_char2cells(int c);
+static int dbcs_ptr2cells_len(char_u *p, int size);
+static int dbcs_ptr2char(char_u *p);
+static int utf_safe_read_char_adv(char_u **s, size_t *n);
 
 /*
  * Lookup table to quickly get the length in bytes of a UTF-8 character from
@@ -965,7 +963,7 @@ struct interval
     long first;
     long last;
 };
-static int intable __ARGS((struct interval *table, size_t size, int c));
+static int intable(struct interval *table, size_t size, int c);
 
 /*
  * Return TRUE if "c" is in "table[size / sizeof(struct interval)]".
@@ -2514,8 +2512,8 @@ static convertStruct foldCase[] =
         {0x118a0,0x118bf,1,32}
 };
 
-static int utf_convert __ARGS((int a, convertStruct table[], int tableSize));
-static int utf_strnicmp __ARGS((char_u *s1, char_u *s2, size_t n1, size_t n2));
+static int utf_convert(int a, convertStruct table[], int tableSize);
+static int utf_strnicmp(char_u *s1, char_u *s2, size_t n1, size_t n2);
 
 /*
  * Generic conversion function for case operations.
@@ -3573,7 +3571,7 @@ mb_fix_col(col, row)
     return col;
 }
 
-static int enc_alias_search __ARGS((char_u *name));
+static int enc_alias_search(char_u *name);
 
 /*
  * Skip the Vim specific head of a 'encoding' name.
@@ -3684,9 +3682,7 @@ enc_alias_search(name)
     return -1;
 }
 
-#if defined(HAVE_LANGINFO_H)
 #include <langinfo.h>
-#endif
 
 /*
  * Get the canonicalized encoding of the current locale.
@@ -3699,9 +3695,7 @@ enc_locale()
     char        *p;
     int         i;
     char        buf[50];
-#if defined(HAVE_NL_LANGINFO_CODESET)
     if ((s = nl_langinfo(CODESET)) == NULL || *s == NUL)
-#endif
 #if defined(HAVE_LOCALE_H)
         if ((s = setlocale(LC_CTYPE, NULL)) == NULL || *s == NUL)
 #endif
@@ -3751,7 +3745,7 @@ enc_locale()
 
 #if defined(USE_ICONV)
 
-static char_u *iconv_string __ARGS((vimconv_T *vcp, char_u *str, int slen, int *unconvlenp, int *resultlenp));
+static char_u *iconv_string(vimconv_T *vcp, char_u *str, int slen, int *unconvlenp, int *resultlenp);
 
 /*
  * Call iconv_open() with a check if iconv() works properly (there are broken
@@ -3953,8 +3947,7 @@ convert_setup_ext(vcp, from, from_unicode_is_utf8, to, to_unicode_is_utf8)
     vcp->vc_fail = FALSE;
 
     /* No conversion when one of the names is empty or they are equal. */
-    if (from == NULL || *from == NUL || to == NULL || *to == NUL
-                                                     || STRCMP(from, to) == 0)
+    if (from == NULL || *from == NUL || to == NULL || *to == NUL || STRCMP(from, to) == 0)
         return OK;
 
     from_prop = enc_canon_props(from);

@@ -1,15 +1,13 @@
 #include "vim.h"
 
 #if defined(FEAT_LINEBREAK)
-static int win_chartabsize __ARGS((win_T *wp, char_u *p, colnr_T col));
+static int win_chartabsize(win_T *wp, char_u *p, colnr_T col);
 #endif
 
-#if defined(HAVE_WCHAR_H)
 #include <wchar.h>        /* for towupper() and towlower() */
-#endif
-static int win_nolbr_chartabsize __ARGS((win_T *wp, char_u *s, colnr_T col, int *headp));
+static int win_nolbr_chartabsize(win_T *wp, char_u *s, colnr_T col, int *headp);
 
-static unsigned nr2hex __ARGS((unsigned c));
+static unsigned nr2hex(unsigned c);
 
 static int    chartab_initialized = FALSE;
 
@@ -988,9 +986,7 @@ win_lbr_chartabsize(wp, line, s, col, headp)
             && vim_isbreak(c)
             && !vim_isbreak(s[1])
             && wp->w_p_wrap
-#if defined(FEAT_VERTSPLIT)
             && wp->w_width != 0
-#endif
        )
     {
         /*
@@ -1144,10 +1140,8 @@ in_win_border(wp, vcol)
     int         width1;         /* width of first line (after line number) */
     int         width2;         /* width of further lines */
 
-#if defined(FEAT_VERTSPLIT)
     if (wp->w_width == 0)       /* there is no border */
         return FALSE;
-#endif
     width1 = W_WIDTH(wp) - win_col_off(wp);
     if ((int)vcol < width1 - 1)
         return FALSE;

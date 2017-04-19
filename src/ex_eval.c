@@ -4,9 +4,9 @@
 
 #include "vim.h"
 
-static void     free_msglist __ARGS((struct msglist *l));
-static int      throw_exception __ARGS((void *, int, char_u *));
-static char_u   *get_end_emsg __ARGS((struct condstack *cstack));
+static void     free_msglist(struct msglist *l);
+static int      throw_exception(void *, int, char_u *);
+static char_u   *get_end_emsg(struct condstack *cstack);
 
 /*
  * Exception handling terms:
@@ -54,10 +54,10 @@ static char_u   *get_end_emsg __ARGS((struct condstack *cstack));
 #define THROW_ON_INTERRUPT_TRUE
 #endif
 
-static void     catch_exception __ARGS((except_T *excp));
-static void     finish_exception __ARGS((except_T *excp));
-static void     discard_exception __ARGS((except_T *excp, int was_finished));
-static void     report_pending __ARGS((int action, int pending, void *value));
+static void     catch_exception(except_T *excp);
+static void     finish_exception(except_T *excp);
+static void     discard_exception(except_T *excp, int was_finished);
+static void     report_pending(int action, int pending, void *value);
 
 /*
  * When several errors appear in a row, setting "force_abort" is delayed until
@@ -534,8 +534,7 @@ throw_exception(value, type, cmdname)
         goto nomem;
 
     excp->type = type;
-    excp->throw_name = vim_strsave(sourcing_name == NULL
-                                              ? (char_u *)"" : sourcing_name);
+    excp->throw_name = vim_strsave(sourcing_name == NULL ? (char_u *)"" : sourcing_name);
     if (excp->throw_name == NULL)
     {
         if (should_free)
@@ -893,7 +892,7 @@ ex_if(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_idx == CSTACK_LEN - 1)
-        eap->errmsg = (char_u *)N_("E579: :if nesting too deep");
+        eap->errmsg = (char_u *)"E579: :if nesting too deep";
     else
     {
         ++cstack->cs_idx;
@@ -930,7 +929,7 @@ ex_endif(eap)
     if (eap->cstack->cs_idx < 0
             || (eap->cstack->cs_flags[eap->cstack->cs_idx]
                                            & (CSF_WHILE | CSF_FOR | CSF_TRY)))
-        eap->errmsg = (char_u *)N_("E580: :endif without :if");
+        eap->errmsg = (char_u *)"E580: :endif without :if";
     else
     {
         /*
@@ -975,20 +974,20 @@ ex_else(eap)
     {
         if (eap->cmdidx == CMD_else)
         {
-            eap->errmsg = (char_u *)N_("E581: :else without :if");
+            eap->errmsg = (char_u *)"E581: :else without :if";
             return;
         }
-        eap->errmsg = (char_u *)N_("E582: :elseif without :if");
+        eap->errmsg = (char_u *)"E582: :elseif without :if";
         skip = TRUE;
     }
     else if (cstack->cs_flags[cstack->cs_idx] & CSF_ELSE)
     {
         if (eap->cmdidx == CMD_else)
         {
-            eap->errmsg = (char_u *)N_("E583: multiple :else");
+            eap->errmsg = (char_u *)"E583: multiple :else";
             return;
         }
-        eap->errmsg = (char_u *)N_("E584: :elseif after :else");
+        eap->errmsg = (char_u *)"E584: :elseif after :else";
         skip = TRUE;
     }
 
@@ -1055,7 +1054,7 @@ ex_while(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_idx == CSTACK_LEN - 1)
-        eap->errmsg = (char_u *)N_("E585: :while/:for nesting too deep");
+        eap->errmsg = (char_u *)"E585: :while/:for nesting too deep";
     else
     {
         /*
@@ -1153,7 +1152,7 @@ ex_continue(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_looplevel <= 0 || cstack->cs_idx < 0)
-        eap->errmsg = (char_u *)N_("E586: :continue without :while or :for");
+        eap->errmsg = (char_u *)"E586: :continue without :while or :for";
     else
     {
         /* Try to find the matching ":while".  This might stop at a try
@@ -1192,7 +1191,7 @@ ex_break(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_looplevel <= 0 || cstack->cs_idx < 0)
-        eap->errmsg = (char_u *)N_("E587: :break without :while or :for");
+        eap->errmsg = (char_u *)"E587: :break without :while or :for";
     else
     {
         /* Inactivate conditionals until the matching ":while" or a try
@@ -1418,7 +1417,7 @@ ex_try(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_idx == CSTACK_LEN - 1)
-        eap->errmsg = (char_u *)N_("E601: :try nesting too deep");
+        eap->errmsg = (char_u *)"E601: :try nesting too deep";
     else
     {
         ++cstack->cs_idx;
@@ -1497,7 +1496,7 @@ ex_catch(eap)
 
     if (cstack->cs_trylevel <= 0 || cstack->cs_idx < 0)
     {
-        eap->errmsg = (char_u *)N_("E603: :catch without :try");
+        eap->errmsg = (char_u *)"E603: :catch without :try";
         give_up = TRUE;
     }
     else
@@ -1516,7 +1515,7 @@ ex_catch(eap)
         {
             /* Give up for a ":catch" after ":finally" and ignore it.
              * Just parse. */
-            eap->errmsg = (char_u *)N_("E604: :catch after :finally");
+            eap->errmsg = (char_u *)"E604: :catch after :finally";
             give_up = TRUE;
         }
         else
@@ -1650,7 +1649,7 @@ ex_finally(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_trylevel <= 0 || cstack->cs_idx < 0)
-        eap->errmsg = (char_u *)N_("E606: :finally without :try");
+        eap->errmsg = (char_u *)"E606: :finally without :try";
     else
     {
         if (!(cstack->cs_flags[cstack->cs_idx] & CSF_TRY))
@@ -1670,7 +1669,7 @@ ex_finally(eap)
         if (cstack->cs_flags[idx] & CSF_FINALLY)
         {
             /* Give up for a multiple ":finally" and ignore it. */
-            eap->errmsg = (char_u *)N_("E607: multiple :finally");
+            eap->errmsg = (char_u *)"E607: multiple :finally";
             return;
         }
         rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR,
@@ -1780,7 +1779,7 @@ ex_endtry(eap)
     struct condstack    *cstack = eap->cstack;
 
     if (cstack->cs_trylevel <= 0 || cstack->cs_idx < 0)
-        eap->errmsg = (char_u *)N_("E602: :endtry without :try");
+        eap->errmsg = (char_u *)"E602: :endtry without :try";
     else
     {
         /*

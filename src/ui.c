@@ -105,8 +105,7 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
         static int count = 0;
 
 #if !defined(NO_CONSOLE)
-        retval = mch_inchar(buf, maxlen, (wtime >= 0 && wtime < 10)
-                                                ? 10L : wtime, tb_change_cnt);
+        retval = mch_inchar(buf, maxlen, (wtime >= 0 && wtime < 10) ? 10L : wtime, tb_change_cnt);
         if (retval > 0 || typebuf_changed(tb_change_cnt) || wtime >= 0)
             goto theend;
 #endif
@@ -250,7 +249,7 @@ ui_new_shellsize()
 {
     if (full_screen && !exiting)
     {
-            mch_new_shellsize();
+        mch_new_shellsize();
     }
 }
 
@@ -274,7 +273,7 @@ ui_breakcheck()
 
 #if defined(FEAT_CLIPBOARD)
 
-static void clip_copy_selection __ARGS((VimClipboard *clip));
+static void clip_copy_selection(VimClipboard *clip);
 
 /*
  * Selection stuff using Visual mode, for cutting and pasting text to other
@@ -493,13 +492,12 @@ clip_isautosel_plus()
  * Stuff for general mouse selection, without using Visual mode.
  */
 
-static int clip_compare_pos __ARGS((int row1, int col1, int row2, int col2));
-static void clip_invert_area __ARGS((int, int, int, int, int how));
-static void clip_invert_rectangle __ARGS((int row, int col, int height, int width, int invert));
-static void clip_get_word_boundaries __ARGS((VimClipboard *, int, int));
-static int  clip_get_line_end __ARGS((int));
-static void clip_update_modeless_selection __ARGS((VimClipboard *, int, int,
-                                                    int, int));
+static int clip_compare_pos(int row1, int col1, int row2, int col2);
+static void clip_invert_area(int, int, int, int, int how);
+static void clip_invert_rectangle(int row, int col, int height, int width, int invert);
+static void clip_get_word_boundaries(VimClipboard *, int, int);
+static int  clip_get_line_end(int);
+static void clip_update_modeless_selection(VimClipboard *, int, int, int, int);
 
 /* flags for clip_invert_area() */
 #define CLIP_CLEAR      1
@@ -1596,9 +1594,7 @@ jump_to_mouse(flags, inclusive, which_button)
     int         which_button;   /* MOUSE_LEFT, MOUSE_RIGHT, MOUSE_MIDDLE */
 {
     static int  on_status_line = 0;     /* #lines below bottom of window */
-#if defined(FEAT_VERTSPLIT)
     static int  on_sep_line = 0;        /* on separator right of window */
-#endif
     static int  prev_row = -1;
     static int  prev_col = -1;
     static win_T *dragwin = NULL;       /* window being dragged */
@@ -1633,10 +1629,8 @@ retnomove:
          * line, stop Visual mode */
         if (on_status_line)
             return IN_STATUS_LINE;
-#if defined(FEAT_VERTSPLIT)
         if (on_sep_line)
             return IN_SEP_LINE;
-#endif
         if (flags & MOUSE_MAY_STOP_VIS)
         {
             end_visual_mode();
@@ -1664,12 +1658,8 @@ retnomove:
         if (row < 0 || col < 0)                 /* check if it makes sense */
             return IN_UNKNOWN;
 
-#if defined(FEAT_WINDOWS)
         /* find the window where the row is in */
         wp = mouse_find_win(&row, &col);
-#else
-        wp = firstwin;
-#endif
         dragwin = NULL;
         /*
          * winpos and height may change in win_enter()!
@@ -1681,7 +1671,6 @@ retnomove:
         }
         else
             on_status_line = 0;
-#if defined(FEAT_VERTSPLIT)
         if (col >= wp->w_width)         /* In separator line */
         {
             on_sep_line = col - wp->w_width + 1;
@@ -1699,16 +1688,13 @@ retnomove:
             else
                 on_status_line = 0;
         }
-#endif
 
         /* Before jumping to another buffer, or moving the cursor for a left
          * click, stop Visual mode. */
         if (VIsual_active
                 && (wp->w_buffer != curwin->w_buffer
                     || (!on_status_line
-#if defined(FEAT_VERTSPLIT)
                         && !on_sep_line
-#endif
                         && (flags & MOUSE_MAY_STOP_VIS))))
         {
             end_visual_mode();
@@ -1719,9 +1705,7 @@ retnomove:
         {
             /* A click outside the command-line window: Use modeless
              * selection if possible.  Allow dragging the status lines. */
-#if defined(FEAT_VERTSPLIT)
             on_sep_line = 0;
-#endif
 #if defined(FEAT_CLIPBOARD)
             if (on_status_line)
                 return IN_STATUS_LINE;
@@ -1733,7 +1717,6 @@ retnomove:
 #endif
         }
 #endif
-#if defined(FEAT_WINDOWS)
         /* Only change window focus when not clicking on or dragging the
          * status line.  Do change focus when releasing the mouse button
          * (MOUSE_FOCUS was set above if we dragged first). */
@@ -1744,7 +1727,6 @@ retnomove:
         if (curwin != old_curwin)
             set_mouse_topline(curwin);
 #endif
-#endif
         if (on_status_line)                     /* In (or below) status line */
         {
             /* Don't use start_arrow() if we're in the same window */
@@ -1753,7 +1735,6 @@ retnomove:
             else
                 return IN_STATUS_LINE | CURSOR_MOVED;
         }
-#if defined(FEAT_VERTSPLIT)
         if (on_sep_line)                        /* In (or below) status line */
         {
             /* Don't use start_arrow() if we're in the same window */
@@ -1762,38 +1743,31 @@ retnomove:
             else
                 return IN_SEP_LINE | CURSOR_MOVED;
         }
-#endif
 
         curwin->w_cursor.lnum = curwin->w_topline;
     }
     else if (on_status_line && which_button == MOUSE_LEFT)
     {
-#if defined(FEAT_WINDOWS)
         if (dragwin != NULL)
         {
             /* Drag the status line */
-            count = row - dragwin->w_winrow - dragwin->w_height + 1
-                                                             - on_status_line;
+            count = row - dragwin->w_winrow - dragwin->w_height + 1 - on_status_line;
             win_drag_status_line(dragwin, count);
             did_drag |= count;
         }
-#endif
         return IN_STATUS_LINE;                  /* Cursor didn't move */
     }
-#if defined(FEAT_VERTSPLIT)
     else if (on_sep_line && which_button == MOUSE_LEFT)
     {
         if (dragwin != NULL)
         {
             /* Drag the separator column */
-            count = col - dragwin->w_wincol - dragwin->w_width + 1
-                                                                - on_sep_line;
+            count = col - dragwin->w_wincol - dragwin->w_width + 1 - on_sep_line;
             win_drag_vsep_line(dragwin, count);
             did_drag |= count;
         }
         return IN_SEP_LINE;                     /* Cursor didn't move */
     }
-#endif
     else /* keep_window_focus must be TRUE */
     {
         /* before moving the cursor for a left click, stop Visual mode */
@@ -1810,9 +1784,7 @@ retnomove:
 #endif
 
         row -= W_WINROW(curwin);
-#if defined(FEAT_VERTSPLIT)
         col -= W_WINCOL(curwin);
-#endif
 
         /*
          * When clicking beyond the end of the window, scroll the screen.
@@ -1823,7 +1795,7 @@ retnomove:
             count = 0;
             for (first = TRUE; curwin->w_topline > 1; )
             {
-                    count += plines(curwin->w_topline - 1);
+                count += plines(curwin->w_topline - 1);
                 if (!first && count > -row)
                     break;
                 first = FALSE;
@@ -1841,7 +1813,7 @@ retnomove:
             count = 0;
             for (first = TRUE; curwin->w_topline < curbuf->b_ml.ml_line_count; )
             {
-                    count += plines(curwin->w_topline);
+                count += plines(curwin->w_topline);
                 if (!first && count > row - curwin->w_height + 1)
                     break;
                 first = FALSE;
@@ -1932,7 +1904,7 @@ mouse_comp_pos(win, rowp, colp, lnump)
 
     while (row > 0)
     {
-            count = plines_win(win, lnum, TRUE);
+        count = plines_win(win, lnum, TRUE);
         if (count > row)
             break;      /* Position is in this buffer line. */
         if (lnum == win->w_buffer->b_ml.ml_line_count)
@@ -1971,7 +1943,6 @@ mouse_comp_pos(win, rowp, colp, lnump)
     return retval;
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * Find the window at screen position "*rowp" and "*colp".  The positions are
  * updated to become relative to the top-left of the window.
@@ -1989,7 +1960,6 @@ mouse_find_win(rowp, colp)
     {
         if (fp->fr_layout == FR_LEAF)
             break;
-#if defined(FEAT_VERTSPLIT)
         if (fp->fr_layout == FR_ROW)
         {
             for (fp = fp->fr_child; fp->fr_next != NULL; fp = fp->fr_next)
@@ -1999,7 +1969,6 @@ mouse_find_win(rowp, colp)
                 *colp -= fp->fr_width;
             }
         }
-#endif
         else    /* fr_layout == FR_COL */
         {
             for (fp = fp->fr_child; fp->fr_next != NULL; fp = fp->fr_next)
@@ -2012,7 +1981,6 @@ mouse_find_win(rowp, colp)
     }
     return fp->fr_win;
 }
-#endif
 
 #endif
 

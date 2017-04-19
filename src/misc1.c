@@ -5,12 +5,12 @@
 #include "vim.h"
 #include "version.h"
 
-static char_u *vim_version_dir __ARGS((char_u *vimdir));
-static char_u *remove_tail __ARGS((char_u *p, char_u *pend, char_u *name));
+static char_u *vim_version_dir(char_u *vimdir);
+static char_u *remove_tail(char_u *p, char_u *pend, char_u *name);
 #if defined(FEAT_CMDL_COMPL)
-static void init_users __ARGS((void));
+static void init_users(void);
 #endif
-static int copy_indent __ARGS((int size, char_u *src));
+static int copy_indent(int size, char_u *src);
 
 /* All user names (for ~user completion as done by shell). */
 #if defined(FEAT_CMDL_COMPL)
@@ -123,8 +123,7 @@ set_indent(size, flags)
             {
                 if (*p == TAB)
                 {
-                    tab_pad = (int)curbuf->b_p_ts
-                                           - (ind_done % (int)curbuf->b_p_ts);
+                    tab_pad = (int)curbuf->b_p_ts - (ind_done % (int)curbuf->b_p_ts);
                     /* stop if this tab will overshoot the target */
                     if (todo < tab_pad)
                         break;
@@ -241,8 +240,7 @@ set_indent(size, flags)
             {
                 if (*p == TAB)
                 {
-                    tab_pad = (int)curbuf->b_p_ts
-                                           - (ind_done % (int)curbuf->b_p_ts);
+                    tab_pad = (int)curbuf->b_p_ts - (ind_done % (int)curbuf->b_p_ts);
                     /* stop if this tab will overshoot the target */
                     if (todo < tab_pad)
                         break;
@@ -342,8 +340,7 @@ copy_indent(size, src)
         {
             if (*s == TAB)
             {
-                tab_pad = (int)curbuf->b_p_ts
-                                           - (ind_done % (int)curbuf->b_p_ts);
+                tab_pad = (int)curbuf->b_p_ts - (ind_done % (int)curbuf->b_p_ts);
                 /* Stop if this tab will overshoot the target */
                 if (todo < tab_pad)
                     break;
@@ -489,8 +486,7 @@ get_breakindent_win(wp, line)
         prev_line = line;
         prev_ts = wp->w_buffer->b_p_ts;
         prev_tick = wp->w_buffer->b_changedtick;
-        prev_indent = get_indent_str(line,
-                                     (int)wp->w_buffer->b_p_ts, wp->w_p_list);
+        prev_indent = get_indent_str(line, (int)wp->w_buffer->b_p_ts, wp->w_p_list);
     }
     bri = prev_indent + wp->w_p_brishift;
 
@@ -507,8 +503,7 @@ get_breakindent_win(wp, line)
     /* always leave at least bri_min characters on the left,
      * if text width is sufficient */
     else if (bri > eff_wwidth - wp->w_p_brimin)
-        bri = (eff_wwidth - wp->w_p_brimin < 0)
-                            ? 0 : eff_wwidth - wp->w_p_brimin;
+        bri = (eff_wwidth - wp->w_p_brimin < 0) ? 0 : eff_wwidth - wp->w_p_brimin;
 
     return bri;
 }
@@ -516,7 +511,7 @@ get_breakindent_win(wp, line)
 
 #if defined(FEAT_CINDENT) || defined(FEAT_SMARTINDENT)
 
-static int cin_is_cinword __ARGS((char_u *line));
+static int cin_is_cinword(char_u *line);
 
 /*
  * Return TRUE if the string "line" starts with a word from 'cinwords'.
@@ -1355,8 +1350,7 @@ open_line(dir, flags, second_line_indent)
         if (flags & OPENLINE_COM_LIST && second_line_indent > 0)
         {
             int i;
-            int padding = second_line_indent
-                                          - (newindent + (int)STRLEN(leader));
+            int padding = second_line_indent - (newindent + (int)STRLEN(leader));
 
             /* Here whitespace is inserted after the comment char.
              * Below, set_indent(newindent, SIN_INSERT) will insert the
@@ -1921,10 +1915,8 @@ plines_win(wp, lnum, winheight)
     if (!wp->w_p_wrap)
         return 1;
 
-#if defined(FEAT_VERTSPLIT)
     if (wp->w_width == 0)
         return 1;
-#endif
 
     lines = plines_win_nofold(wp, lnum);
     if (winheight > 0 && lines > wp->w_height)
@@ -1989,10 +1981,8 @@ plines_win_col(wp, lnum, column)
     if (!wp->w_p_wrap)
         return lines + 1;
 
-#if defined(FEAT_VERTSPLIT)
     if (wp->w_width == 0)
         return lines + 1;
-#endif
 
     line = s = ml_get_buf(wp->w_buffer, lnum, FALSE);
 
@@ -2035,10 +2025,8 @@ plines_m_win(wp, first, last)
 
     while (first <= last)
     {
-        {
-                count += plines_win(wp, first, TRUE);
-            ++first;
-        }
+        count += plines_win(wp, first, TRUE);
+        ++first;
     }
     return (count);
 }
@@ -2549,8 +2537,7 @@ gchar_cursor()
 pchar_cursor(c)
     int c;
 {
-    *(ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE)
-                                                  + curwin->w_cursor.col) = c;
+    *(ml_get_buf(curbuf, curwin->w_cursor.lnum, TRUE) + curwin->w_cursor.col) = c;
 }
 
 /*
@@ -2643,18 +2630,16 @@ changed_int()
 {
     curbuf->b_changed = TRUE;
     ml_setflags(curbuf);
-#if defined(FEAT_WINDOWS)
     check_status(curbuf);
     redraw_tabline = TRUE;
-#endif
 #if defined(FEAT_TITLE)
     need_maketitle = TRUE;          /* set window title later */
 #endif
 }
 
-static void changedOneline __ARGS((buf_T *buf, linenr_T lnum));
-static void changed_lines_buf __ARGS((buf_T *buf, linenr_T lnum, linenr_T lnume, long xtra));
-static void changed_common __ARGS((linenr_T lnum, colnr_T col, linenr_T lnume, long xtra));
+static void changedOneline(buf_T *buf, linenr_T lnum);
+static void changed_lines_buf(buf_T *buf, linenr_T lnum, linenr_T lnume, long xtra);
+static void changed_common(linenr_T lnum, colnr_T col, linenr_T lnume, long xtra);
 
 /*
  * Changed bytes within a single line for the current buffer.
@@ -2818,9 +2803,7 @@ changed_common(lnum, col, lnume, xtra)
     long        xtra;
 {
     win_T       *wp;
-#if defined(FEAT_WINDOWS)
     tabpage_T   *tp;
-#endif
     int         i;
 #if defined(FEAT_JUMPLIST)
     int         cols;
@@ -2977,10 +2960,8 @@ unchanged(buf, ff)
         ml_setflags(buf);
         if (ff)
             save_file_ff(buf);
-#if defined(FEAT_WINDOWS)
         check_status(buf);
         redraw_tabline = TRUE;
-#endif
 #if defined(FEAT_TITLE)
         need_maketitle = TRUE;      /* set window title later */
 #endif
@@ -2988,7 +2969,6 @@ unchanged(buf, ff)
     ++buf->b_changedtick;
 }
 
-#if defined(FEAT_WINDOWS)
 /*
  * check_status: called when the status bars for the buffer 'buf'
  *               need to be updated
@@ -3007,7 +2987,6 @@ check_status(buf)
                 must_redraw = VALID;
         }
 }
-#endif
 
 /*
  * If the file is readonly, give a warning message with the first change.
@@ -3022,7 +3001,7 @@ change_warning(col)
     int     col;                /* column for message; non-zero when in insert
                                    mode and 'showmode' is on */
 {
-    static char *w_readonly = N_("W10: Warning: Changing a readonly file");
+    static char *w_readonly = "W10: Warning: Changing a readonly file";
 
     if (curbuf->b_did_warn == FALSE
             && curbufIsChanged() == 0
@@ -3661,7 +3640,7 @@ expand_env_esc(srcp, dst, dstlen, esc, one, startstr)
                  * expand ~user.  This is slower and may fail if the shell
                  * does not support ~user (old versions of /bin/sh).
                  */
-#if defined(HAVE_GETPWNAM) && defined(HAVE_PWD_H)
+#if defined(HAVE_GETPWNAM)
                 {
                     struct passwd *pw;
 
@@ -3994,7 +3973,7 @@ init_users()
     lazy_init_done = TRUE;
     ga_init2(&ga_users, sizeof(char_u *), 20);
 
-#if defined(HAVE_GETPWENT) && defined(HAVE_PWD_H)
+#if defined(HAVE_GETPWENT)
     {
         char_u*         user;
         struct passwd*  pw;
@@ -4262,7 +4241,7 @@ gettail(fname)
 }
 
 #if defined(FEAT_SEARCHPATH)
-static char_u *gettail_dir __ARGS((char_u *fname));
+static char_u *gettail_dir(char_u *fname);
 
 /*
  * Return the end of the directory name, on the first path
@@ -4561,8 +4540,8 @@ FullName_save(fname, force)
 
 #if defined(FEAT_CINDENT) || defined(FEAT_SYN_HL)
 
-static char_u   *skip_string __ARGS((char_u *p));
-static pos_T *ind_find_start_comment __ARGS((void));
+static char_u   *skip_string(char_u *p);
+static pos_T *ind_find_start_comment(void);
 
 /*
  * Find the start of a comment, not knowing if we are in a comment right now.
@@ -4682,43 +4661,43 @@ do_c_expr_indent()
  * Below "XXX" means that this function may unlock the current line.
  */
 
-static char_u   *cin_skipcomment __ARGS((char_u *));
-static int      cin_nocode __ARGS((char_u *));
-static pos_T    *find_line_comment __ARGS((void));
-static int      cin_has_js_key __ARGS((char_u *text));
-static int      cin_islabel_skip __ARGS((char_u **));
-static int      cin_isdefault __ARGS((char_u *));
-static char_u   *after_label __ARGS((char_u *l));
-static int      get_indent_nolabel __ARGS((linenr_T lnum));
-static int      skip_label __ARGS((linenr_T, char_u **pp));
-static int      cin_first_id_amount __ARGS((void));
-static int      cin_get_equal_amount __ARGS((linenr_T lnum));
-static int      cin_ispreproc __ARGS((char_u *));
-static int      cin_ispreproc_cont __ARGS((char_u **pp, linenr_T *lnump));
-static int      cin_iscomment __ARGS((char_u *));
-static int      cin_islinecomment __ARGS((char_u *));
-static int      cin_isterminated __ARGS((char_u *, int, int));
-static int      cin_isinit __ARGS((void));
-static int      cin_isfuncdecl __ARGS((char_u **, linenr_T, linenr_T));
-static int      cin_isif __ARGS((char_u *));
-static int      cin_iselse __ARGS((char_u *));
-static int      cin_isdo __ARGS((char_u *));
-static int      cin_iswhileofdo __ARGS((char_u *, linenr_T));
-static int      cin_is_if_for_while_before_offset __ARGS((char_u *line, int *poffset));
-static int      cin_iswhileofdo_end __ARGS((int terminated));
-static int      cin_isbreak __ARGS((char_u *));
-static int      cin_is_cpp_baseclass __ARGS((colnr_T *col));
-static int      get_baseclass_amount __ARGS((int col));
-static int      cin_ends_in __ARGS((char_u *, char_u *, char_u *));
-static int      cin_starts_with __ARGS((char_u *s, char *word));
-static int      cin_skip2pos __ARGS((pos_T *trypos));
-static pos_T    *find_start_brace __ARGS((void));
-static pos_T    *find_match_paren __ARGS((int));
-static pos_T    *find_match_char __ARGS((int c, int ind_maxparen));
-static int      corr_ind_maxparen __ARGS((pos_T *startpos));
-static int      find_last_paren __ARGS((char_u *l, int start, int end));
-static int      find_match __ARGS((int lookfor, linenr_T ourscope));
-static int      cin_is_cpp_namespace __ARGS((char_u *));
+static char_u   *cin_skipcomment(char_u *);
+static int      cin_nocode(char_u *);
+static pos_T    *find_line_comment(void);
+static int      cin_has_js_key(char_u *text);
+static int      cin_islabel_skip(char_u **);
+static int      cin_isdefault(char_u *);
+static char_u   *after_label(char_u *l);
+static int      get_indent_nolabel(linenr_T lnum);
+static int      skip_label(linenr_T, char_u **pp);
+static int      cin_first_id_amount(void);
+static int      cin_get_equal_amount(linenr_T lnum);
+static int      cin_ispreproc(char_u *);
+static int      cin_ispreproc_cont(char_u **pp, linenr_T *lnump);
+static int      cin_iscomment(char_u *);
+static int      cin_islinecomment(char_u *);
+static int      cin_isterminated(char_u *, int, int);
+static int      cin_isinit(void);
+static int      cin_isfuncdecl(char_u **, linenr_T, linenr_T);
+static int      cin_isif(char_u *);
+static int      cin_iselse(char_u *);
+static int      cin_isdo(char_u *);
+static int      cin_iswhileofdo(char_u *, linenr_T);
+static int      cin_is_if_for_while_before_offset(char_u *line, int *poffset);
+static int      cin_iswhileofdo_end(int terminated);
+static int      cin_isbreak(char_u *);
+static int      cin_is_cpp_baseclass(colnr_T *col);
+static int      get_baseclass_amount(int col);
+static int      cin_ends_in(char_u *, char_u *, char_u *);
+static int      cin_starts_with(char_u *s, char *word);
+static int      cin_skip2pos(pos_T *trypos);
+static pos_T    *find_start_brace(void);
+static pos_T    *find_match_paren(int);
+static pos_T    *find_match_char(int c, int ind_maxparen);
+static int      corr_ind_maxparen(pos_T *startpos);
+static int      find_last_paren(char_u *l, int start, int end);
+static int      find_match(int lookfor, linenr_T ourscope);
+static int      cin_is_cpp_namespace(char_u *);
 
 /*
  * Skip over white space and C comments within the line.
@@ -5996,8 +5975,7 @@ retry:
             curwin->w_cursor = *trypos;
             if ((trypos_wk = ind_find_start_comment()) != NULL) /* XXX */
             {
-                ind_maxp_wk = ind_maxparen - (int)(cursor_save.lnum
-                        - trypos_wk->lnum);
+                ind_maxp_wk = ind_maxparen - (int)(cursor_save.lnum - trypos_wk->lnum);
                 if (ind_maxp_wk > 0)
                 {
                     curwin->w_cursor = *trypos_wk;
@@ -6514,8 +6492,7 @@ get_c_indent()
                     if (start_off != 0)
                         amount += start_off;
                     else if (start_align == COM_RIGHT)
-                        amount += vim_strsize(lead_start)
-                                                   - vim_strsize(lead_middle);
+                        amount += vim_strsize(lead_start) - vim_strsize(lead_middle);
                     break;
                 }
 
@@ -6529,8 +6506,7 @@ get_c_indent()
                     if (off != 0)
                         amount += off;
                     else if (align == COM_RIGHT)
-                        amount += vim_strsize(lead_start)
-                                                   - vim_strsize(lead_middle);
+                        amount += vim_strsize(lead_start) - vim_strsize(lead_middle);
                     done = TRUE;
                     break;
                 }
@@ -6646,15 +6622,14 @@ get_c_indent()
                         && trypos->lnum == our_paren_pos.lnum
                         && trypos->col == our_paren_pos.col)
                 {
-                        amount = get_indent_lnum(lnum); /* XXX */
+                    amount = get_indent_lnum(lnum); /* XXX */
 
-                        if (theline[0] == ')')
-                        {
-                            if (our_paren_pos.lnum != lnum
-                                                       && cur_amount > amount)
-                                cur_amount = amount;
-                            amount = -1;
-                        }
+                    if (theline[0] == ')')
+                    {
+                        if (our_paren_pos.lnum != lnum && cur_amount > amount)
+                            cur_amount = amount;
+                        amount = -1;
+                    }
                     break;
                 }
             }
@@ -7206,8 +7181,7 @@ get_c_indent()
                             /* Finally the actual check for "namespace". */
                             if (cin_is_cpp_namespace(l))
                             {
-                                amount += curbuf->b_ind_cpp_namespace
-                                                            - added_to_amount;
+                                amount += curbuf->b_ind_cpp_namespace - added_to_amount;
                                 break;
                             }
 
@@ -7321,8 +7295,7 @@ get_c_indent()
                             if (theline[0] == '{')
                                 amount += curbuf->b_ind_open_extra;
                             else
-                                amount += curbuf->b_ind_level
-                                                     + curbuf->b_ind_no_brace;
+                                amount += curbuf->b_ind_level + curbuf->b_ind_no_brace;
                         }
                         break;
                     }
@@ -7624,8 +7597,7 @@ get_c_indent()
                             amount += curbuf->b_ind_open_extra;
                         if (lookfor != LOOKFOR_TERM)
                         {
-                            amount += curbuf->b_ind_level
-                                                     + curbuf->b_ind_no_brace;
+                            amount += curbuf->b_ind_level + curbuf->b_ind_no_brace;
                             break;
                         }
 
@@ -8443,7 +8415,7 @@ get_expr_indent()
 
 #if defined(FEAT_LISP)
 
-static int lisp_match __ARGS((char_u *p));
+static int lisp_match(char_u *p);
 
     static int
 lisp_match(p)
@@ -8940,15 +8912,15 @@ match_suffix(fname)
 #if !defined(NO_EXPANDPATH)
 
 #if defined(VIM_BACKTICK)
-static int vim_backtick __ARGS((char_u *p));
-static int expand_backtick __ARGS((garray_T *gap, char_u *pat, int flags));
+static int vim_backtick(char_u *p);
+static int expand_backtick(garray_T *gap, char_u *pat, int flags);
 #endif
 
 /*
  * Unix style wildcard expansion code.
  * It's here because it's used both for Unix and Mac.
  */
-static int      pstrcmp __ARGS((const void *, const void *));
+static int      pstrcmp(const void *, const void *);
 
     static int
 pstrcmp(a, b)
@@ -9164,12 +9136,12 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
 }
 
 #if defined(FEAT_SEARCHPATH)
-static int find_previous_pathsep __ARGS((char_u *path, char_u **psep));
-static int is_unique __ARGS((char_u *maybe_unique, garray_T *gap, int i));
-static void expand_path_option __ARGS((char_u *curdir, garray_T *gap));
-static char_u *get_path_cutoff __ARGS((char_u *fname, garray_T *gap));
-static void uniquefy_paths __ARGS((garray_T *gap, char_u *pattern));
-static int expand_in_path __ARGS((garray_T *gap, char_u *pattern, int flags));
+static int find_previous_pathsep(char_u *path, char_u **psep);
+static int is_unique(char_u *maybe_unique, garray_T *gap, int i);
+static void expand_path_option(char_u *curdir, garray_T *gap);
+static char_u *get_path_cutoff(char_u *fname, garray_T *gap);
+static void uniquefy_paths(garray_T *gap, char_u *pattern);
+static int expand_in_path(garray_T *gap, char_u *pattern, int flags);
 
 /*
  * Moves "*psep" back to the previous path separator in "path".
@@ -9244,8 +9216,7 @@ expand_path_option(curdir, gap)
     char_u      *curdir;
     garray_T    *gap;
 {
-    char_u      *path_option = *curbuf->b_p_path == NUL
-                                                  ? p_path : curbuf->b_p_path;
+    char_u      *path_option = *curbuf->b_p_path == NUL ? p_path : curbuf->b_p_path;
     char_u      *buf;
     char_u      *p;
     int         len;
@@ -9566,7 +9537,7 @@ remove_duplicates(gap)
 }
 #endif
 
-static int has_env_var __ARGS((char_u *p));
+static int has_env_var(char_u *p);
 
 /*
  * Return TRUE if "p" contains what looks like an environment variable.
@@ -9587,7 +9558,7 @@ has_env_var(p)
 }
 
 #if defined(SPECIAL_WILDCHAR)
-static int has_special_wildchar __ARGS((char_u *p));
+static int has_special_wildchar(char_u *p);
 
 /*
  * Return TRUE if "p" contains a special wildcard character.
@@ -9857,8 +9828,7 @@ addfile(gap, f, flags)
     struct stat sb;
 
     /* if the file/dir/link doesn't exist, may not add it */
-    if (!(flags & EW_NOTFOUND) && ((flags & EW_ALLLINKS)
-                        ? mch_lstat((char *)f, &sb) < 0 : mch_getperm(f) < 0))
+    if (!(flags & EW_NOTFOUND) && ((flags & EW_ALLLINKS) ? mch_lstat((char *)f, &sb) < 0 : mch_getperm(f) < 0))
         return;
 
 #if defined(FNAME_ILLEGAL)

@@ -209,31 +209,31 @@ typedef enum {
     , UB_CRYPT          /* update crypt key */
 } upd_block0_T;
 
-static int ml_check_b0_id __ARGS((ZERO_BL *b0p));
-static void ml_upd_block0 __ARGS((buf_T *buf, upd_block0_T what));
-static void set_b0_fname __ARGS((ZERO_BL *, buf_T *buf));
-static void set_b0_dir_flag __ARGS((ZERO_BL *b0p, buf_T *buf));
-static void add_b0_fenc __ARGS((ZERO_BL *b0p, buf_T *buf));
-static time_t swapfile_info __ARGS((char_u *));
-static int recov_file_names __ARGS((char_u **, char_u *, int prepend_dot));
-static int ml_append_int __ARGS((buf_T *, linenr_T, char_u *, colnr_T, int, int));
-static int ml_delete_int __ARGS((buf_T *, linenr_T, int));
-static char_u *findswapname __ARGS((buf_T *, char_u **, char_u *));
-static void ml_flush_line __ARGS((buf_T *));
-static bhdr_T *ml_new_data __ARGS((memfile_T *, int, int));
-static bhdr_T *ml_new_ptr __ARGS((memfile_T *));
-static bhdr_T *ml_find_line __ARGS((buf_T *, linenr_T, int));
-static int ml_add_stack __ARGS((buf_T *));
-static void ml_lineadd __ARGS((buf_T *, int));
-static int b0_magic_wrong __ARGS((ZERO_BL *));
+static int ml_check_b0_id(ZERO_BL *b0p);
+static void ml_upd_block0(buf_T *buf, upd_block0_T what);
+static void set_b0_fname(ZERO_BL *, buf_T *buf);
+static void set_b0_dir_flag(ZERO_BL *b0p, buf_T *buf);
+static void add_b0_fenc(ZERO_BL *b0p, buf_T *buf);
+static time_t swapfile_info(char_u *);
+static int recov_file_names(char_u **, char_u *, int prepend_dot);
+static int ml_append_int(buf_T *, linenr_T, char_u *, colnr_T, int, int);
+static int ml_delete_int(buf_T *, linenr_T, int);
+static char_u *findswapname(buf_T *, char_u **, char_u *);
+static void ml_flush_line(buf_T *);
+static bhdr_T *ml_new_data(memfile_T *, int, int);
+static bhdr_T *ml_new_ptr(memfile_T *);
+static bhdr_T *ml_find_line(buf_T *, linenr_T, int);
+static int ml_add_stack(buf_T *);
+static void ml_lineadd(buf_T *, int);
+static int b0_magic_wrong(ZERO_BL *);
 #if defined(CHECK_INODE)
-static int fnamecmp_ino __ARGS((char_u *, char_u *, long));
+static int fnamecmp_ino(char_u *, char_u *, long);
 #endif
-static void long_to_char __ARGS((long, char_u *));
-static long char_to_long __ARGS((char_u *));
-static char_u *make_percent_swname __ARGS((char_u *dir, char_u *name));
+static void long_to_char(long, char_u *);
+static long char_to_long(char_u *);
+static char_u *make_percent_swname(char_u *dir, char_u *name);
 #if defined(FEAT_BYTEOFF)
-static void ml_updatechunk __ARGS((buf_T *buf, long line, long len, int updtype));
+static void ml_updatechunk(buf_T *buf, long line, long len, int updtype);
 #endif
 
 /*
@@ -2326,7 +2326,7 @@ ml_append_int(buf, lnum, line, len, newfile, mark)
         page_count = ((space_needed + HEADER_SIZE) + page_size - 1) / page_size;
         if ((hp_new = ml_new_data(mfp, newfile, page_count)) == NULL)
         {
-                        /* correct line counts in pointer blocks */
+            /* correct line counts in pointer blocks */
             --(buf->b_ml.ml_locked_lineadd);
             --(buf->b_ml.ml_locked_high);
             return FAIL;
@@ -2720,8 +2720,7 @@ ml_delete_int(buf, lnum, message)
 
     dp = (DATA_BL *)(hp->bh_data);
     /* compute line count before the delete */
-    count = (long)(buf->b_ml.ml_locked_high)
-                                        - (long)(buf->b_ml.ml_locked_low) + 2;
+    count = (long)(buf->b_ml.ml_locked_high) - (long)(buf->b_ml.ml_locked_low) + 2;
     idx = lnum - buf->b_ml.ml_locked_low;
 
     --buf->b_ml.ml_line_count;
@@ -3564,7 +3563,7 @@ get_file_in_dir(fname, dname)
     return retval;
 }
 
-static void attention_message __ARGS((buf_T *buf, char_u *fname));
+static void attention_message(buf_T *buf, char_u *fname);
 
 /*
  * Print the ATTENTION message: info about an existing swap file.
@@ -3615,7 +3614,7 @@ attention_message(buf, fname)
 }
 
 #if defined(FEAT_AUTOCMD)
-static int do_swapexists __ARGS((buf_T *buf, char_u *fname));
+static int do_swapexists(buf_T *buf, char_u *fname);
 
 /*
  * Trigger the SwapExists autocommands.
@@ -4452,8 +4451,7 @@ ml_updatechunk(buf, line, len, updtype)
                     rest = dp->db_txt_end - dp->db_txt_start;
                 else
                     rest =
-                        ((dp->db_index[dp->db_line_count - 2]) & DB_INDEX_MASK)
-                        - dp->db_txt_start;
+                        ((dp->db_index[dp->db_line_count - 2]) & DB_INDEX_MASK) - dp->db_txt_start;
                 curchnk->mlcs_totalsize = rest;
                 curchnk->mlcs_numlines = 1;
                 curchnk[-1].mlcs_totalsize -= rest;
@@ -4612,8 +4610,7 @@ ml_find_line_or_offset(buf, lnum, offp)
             else if (idx == start_idx)
                 *offp = offset - size + len;
             else
-                *offp = offset - size + len
-                     - (text_end - ((dp->db_index[idx - 1]) & DB_INDEX_MASK));
+                *offp = offset - size + len - (text_end - ((dp->db_index[idx - 1]) & DB_INDEX_MASK));
             curline += idx - start_idx + extra;
             if (curline > buf->b_ml.ml_line_count)
                 return -1;      /* exactly one byte beyond the end */

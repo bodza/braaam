@@ -17,7 +17,7 @@
 
 #if defined(FEAT_PERSISTENT_UNDO)
 
-static void sha256_process __ARGS((context_sha256_T *ctx, char_u data[64]));
+static void sha256_process(context_sha256_T *ctx, char_u data[64]);
 
 #define GET_UINT32(n, b, i)                 \
 {                                           \

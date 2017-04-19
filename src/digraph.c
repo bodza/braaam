@@ -4,8 +4,6 @@
 
 #include "vim.h"
 
-#if defined(FEAT_DIGRAPHS)
-
 typedef int result_T;
 
 typedef struct digraph
@@ -15,16 +13,12 @@ typedef struct digraph
     result_T    result;
 } digr_T;
 
-static int getexactdigraph __ARGS((int, int, int));
-static void printdigraph __ARGS((digr_T *));
+static int getexactdigraph(int, int, int);
+static void printdigraph(digr_T *);
 
 /* digraphs added by the user */
 static garray_T user_digraphs = {0, 0, (int)sizeof(digr_T), 10, NULL};
 
-/*
- * Note: Characters marked with XX are not included literally, because some
- * compilers cannot handle them (Amiga SAS/C is the most picky one).
- */
 static digr_T digraphdefault[] =
         /*
          * digraphs for Unicode from RFC1345
@@ -205,8 +199,6 @@ static digr_T digraphdefault[] =
         {'y', '\'', 0xfd},
         {'t', 'h', 0xfe},
         {'y', ':', 0xff},
-
-#define USE_UNICODE_DIGRAPHS
 
         {'A', '-', 0x0100},
         {'a', '-', 0x0101},
@@ -1342,58 +1334,58 @@ static digr_T digraphdefault[] =
         {'s', 't', 0xfb06},
 
         /* Vim 5.x compatible digraphs that don't conflict with the above */
-        {'~', '!', 161},        /* ¡ */
-        {'c', '|', 162},        /* ¢ */
-        {'$', '$', 163},        /* £ */
-        {'o', 'x', 164},        /* ¤ - currency symbol in ISO 8859-1 */
-        {'Y', '-', 165},        /* ¥ */
-        {'|', '|', 166},        /* ¦ */
-        {'c', 'O', 169},        /* © */
-        {'-', ',', 172},        /* ¬ */
-        {'-', '=', 175},        /* ¯ */
-        {'~', 'o', 176},        /* ° */
-        {'2', '2', 178},        /* ² */
-        {'3', '3', 179},        /* ³ */
-        {'p', 'p', 182},        /* ¶ */
-        {'~', '.', 183},        /* · */
-        {'1', '1', 185},        /* ¹ */
-        {'~', '?', 191},        /* ¿ */
-        {'A', '`', 192},        /* À */
-        {'A', '^', 194},        /* Â */
-        {'A', '~', 195},        /* Ã */
-        {'A', '"', 196},        /* Ä */
-        {'A', '@', 197},        /* Å */
-        {'E', '`', 200},        /* È */
-        {'E', '^', 202},        /* Ê */
-        {'E', '"', 203},        /* Ë */
-        {'I', '`', 204},        /* Ì */
-        {'I', '^', 206},        /* Î */
-        {'I', '"', 207},        /* Ï */
-        {'N', '~', 209},        /* Ñ */
-        {'O', '`', 210},        /* Ò */
-        {'O', '^', 212},        /* Ô */
-        {'O', '~', 213},        /* Õ */
-        {'/', '\\', 215},       /* × - multiplication symbol in ISO 8859-1 */
-        {'U', '`', 217},        /* Ù */
-        {'U', '^', 219},        /* Û */
-        {'I', 'p', 222},        /* Þ */
-        {'a', '`', 224},        /* à */
-        {'a', '^', 226},        /* â */
-        {'a', '~', 227},        /* ã */
-        {'a', '"', 228},        /* ä */
-        {'a', '@', 229},        /* å */
-        {'e', '`', 232},        /* è */
-        {'e', '^', 234},        /* ê */
-        {'e', '"', 235},        /* ë */
-        {'i', '`', 236},        /* ì */
-        {'i', '^', 238},        /* î */
-        {'n', '~', 241},        /* ñ */
-        {'o', '`', 242},        /* ò */
-        {'o', '^', 244},        /* ô */
-        {'o', '~', 245},        /* õ */
-        {'u', '`', 249},        /* ù */
-        {'u', '^', 251},        /* û */
-        {'y', '"', 255},        /* x XX */
+        {'~', '!', 161},
+        {'c', '|', 162},
+        {'$', '$', 163},
+        {'o', 'x', 164},
+        {'Y', '-', 165},
+        {'|', '|', 166},
+        {'c', 'O', 169},
+        {'-', ',', 172},
+        {'-', '=', 175},
+        {'~', 'o', 176},
+        {'2', '2', 178},
+        {'3', '3', 179},
+        {'p', 'p', 182},
+        {'~', '.', 183},
+        {'1', '1', 185},
+        {'~', '?', 191},
+        {'A', '`', 192},
+        {'A', '^', 194},
+        {'A', '~', 195},
+        {'A', '"', 196},
+        {'A', '@', 197},
+        {'E', '`', 200},
+        {'E', '^', 202},
+        {'E', '"', 203},
+        {'I', '`', 204},
+        {'I', '^', 206},
+        {'I', '"', 207},
+        {'N', '~', 209},
+        {'O', '`', 210},
+        {'O', '^', 212},
+        {'O', '~', 213},
+        {'/', '\\', 215},
+        {'U', '`', 217},
+        {'U', '^', 219},
+        {'I', 'p', 222},
+        {'a', '`', 224},
+        {'a', '^', 226},
+        {'a', '~', 227},
+        {'a', '"', 228},
+        {'a', '@', 229},
+        {'e', '`', 232},
+        {'e', '^', 234},
+        {'e', '"', 235},
+        {'i', '`', 236},
+        {'i', '^', 238},
+        {'n', '~', 241},
+        {'o', '`', 242},
+        {'o', '^', 244},
+        {'o', '~', 245},
+        {'u', '`', 249},
+        {'u', '^', 251},
+        {'y', '"', 255},
 
         {NUL, NUL, NUL}
        };
@@ -1514,7 +1506,7 @@ getexactdigraph(char1, char2, meta_char)
             ++dp;
         }
     }
-#if defined(USE_UNICODE_DIGRAPHS)
+
     if (retval != 0 && !enc_utf8)
     {
         char_u      buf[6], *to;
@@ -1538,7 +1530,6 @@ getexactdigraph(char1, char2, meta_char)
             (void)convert_setup(&vc, NULL, NULL);
         }
     }
-#endif
 
     /* Ignore multi-byte characters when not in multi-byte mode. */
     if (!has_mbyte && retval > 0xff)
@@ -1647,23 +1638,14 @@ listdigraphs()
     dp = digraphdefault;
     for (i = 0; dp->char1 != NUL && !got_int; ++i)
     {
-#if defined(USE_UNICODE_DIGRAPHS)
         digr_T tmp;
 
         /* May need to convert the result to 'encoding'. */
         tmp.char1 = dp->char1;
         tmp.char2 = dp->char2;
         tmp.result = getexactdigraph(tmp.char1, tmp.char2, FALSE);
-        if (tmp.result != 0 && tmp.result != tmp.char2
-                                          && (has_mbyte || tmp.result <= 255))
+        if (tmp.result != 0 && tmp.result != tmp.char2 && (has_mbyte || tmp.result <= 255))
             printdigraph(&tmp);
-#else
-
-        if (getexactdigraph(dp->char1, dp->char2, FALSE) == dp->result
-                && (has_mbyte || dp->result <= 255)
-                )
-            printdigraph(dp);
-#endif
         ++dp;
         ui_breakcheck();
     }
@@ -1722,194 +1704,3 @@ printdigraph(dp)
         msg_outtrans(buf);
     }
 }
-
-#endif
-
-#if defined(FEAT_KEYMAP)
-
-/* structure used for b_kmap_ga.ga_data */
-typedef struct
-{
-    char_u      *from;
-    char_u      *to;
-} kmap_T;
-
-#define KMAP_MAXLEN 20      /* maximum length of "from" or "to" */
-
-static void keymap_unload __ARGS((void));
-
-/*
- * Set up key mapping tables for the 'keymap' option.
- * Returns NULL if OK, an error message for failure.  This only needs to be
- * used when setting the option, not later when the value has already been
- * checked.
- */
-    char_u *
-keymap_init()
-{
-    curbuf->b_kmap_state &= ~KEYMAP_INIT;
-
-    if (*curbuf->b_p_keymap == NUL)
-    {
-        /* Stop any active keymap and clear the table.  Also remove
-         * b:keymap_name, as no keymap is active now. */
-        keymap_unload();
-        do_cmdline_cmd((char_u *)"unlet! b:keymap_name");
-    }
-    else
-    {
-        char_u  *buf;
-        size_t  buflen;
-
-        /* Source the keymap file.  It will contain a ":loadkeymap" command
-         * which will call ex_loadkeymap() below. */
-        buflen = STRLEN(curbuf->b_p_keymap)
-                                           + STRLEN(p_enc)
-                                                       + 14;
-        buf = alloc((unsigned)buflen);
-        if (buf == NULL)
-            return e_outofmem;
-
-        /* try finding "keymap/'keymap'_'encoding'.vim"  in 'runtimepath' */
-        vim_snprintf((char *)buf, buflen, "keymap/%s_%s.vim",
-                                                   curbuf->b_p_keymap, p_enc);
-        if (source_runtime(buf, FALSE) == FAIL)
-        {
-            /* try finding "keymap/'keymap'.vim" in 'runtimepath'  */
-            vim_snprintf((char *)buf, buflen, "keymap/%s.vim",
-                                                          curbuf->b_p_keymap);
-            if (source_runtime(buf, FALSE) == FAIL)
-            {
-                vim_free(buf);
-                return (char_u *)N_("E544: Keymap file not found");
-            }
-        }
-        vim_free(buf);
-    }
-
-    return NULL;
-}
-
-/*
- * ":loadkeymap" command: load the following lines as the keymap.
- */
-    void
-ex_loadkeymap(eap)
-    exarg_T     *eap;
-{
-    char_u      *line;
-    char_u      *p;
-    char_u      *s;
-    kmap_T      *kp;
-#define KMAP_LLEN   200     /* max length of "to" and "from" together */
-    char_u      buf[KMAP_LLEN + 11];
-    int         i;
-    char_u      *save_cpo = p_cpo;
-
-    if (!getline_equal(eap->getline, eap->cookie, getsourceline))
-    {
-        EMSG(_("E105: Using :loadkeymap not in a sourced file"));
-        return;
-    }
-
-    /*
-     * Stop any active keymap and clear the table.
-     */
-    keymap_unload();
-
-    curbuf->b_kmap_state = 0;
-    ga_init2(&curbuf->b_kmap_ga, (int)sizeof(kmap_T), 20);
-
-    /* Set 'cpoptions' to "C" to avoid line continuation. */
-    p_cpo = (char_u *)"C";
-
-    /*
-     * Get each line of the sourced file, break at the end.
-     */
-    for (;;)
-    {
-        line = eap->getline(0, eap->cookie, 0);
-        if (line == NULL)
-            break;
-
-        p = skipwhite(line);
-        if (*p != '"' && *p != NUL && ga_grow(&curbuf->b_kmap_ga, 1) == OK)
-        {
-            kp = (kmap_T *)curbuf->b_kmap_ga.ga_data + curbuf->b_kmap_ga.ga_len;
-            s = skiptowhite(p);
-            kp->from = vim_strnsave(p, (int)(s - p));
-            p = skipwhite(s);
-            s = skiptowhite(p);
-            kp->to = vim_strnsave(p, (int)(s - p));
-
-            if (kp->from == NULL || kp->to == NULL
-                    || STRLEN(kp->from) + STRLEN(kp->to) >= KMAP_LLEN
-                    || *kp->from == NUL || *kp->to == NUL)
-            {
-                if (kp->to != NULL && *kp->to == NUL)
-                    EMSG(_("E791: Empty keymap entry"));
-                vim_free(kp->from);
-                vim_free(kp->to);
-            }
-            else
-                ++curbuf->b_kmap_ga.ga_len;
-        }
-        vim_free(line);
-    }
-
-    /*
-     * setup ":lnoremap" to map the keys
-     */
-    for (i = 0; i < curbuf->b_kmap_ga.ga_len; ++i)
-    {
-        vim_snprintf((char *)buf, sizeof(buf), "<buffer> %s %s",
-                                ((kmap_T *)curbuf->b_kmap_ga.ga_data)[i].from,
-                                 ((kmap_T *)curbuf->b_kmap_ga.ga_data)[i].to);
-        (void)do_map(2, buf, LANGMAP, FALSE);
-    }
-
-    p_cpo = save_cpo;
-
-    curbuf->b_kmap_state |= KEYMAP_LOADED;
-#if defined(FEAT_WINDOWS)
-    status_redraw_curbuf();
-#endif
-}
-
-/*
- * Stop using 'keymap'.
- */
-    static void
-keymap_unload()
-{
-    char_u      buf[KMAP_MAXLEN + 10];
-    int         i;
-    char_u      *save_cpo = p_cpo;
-    kmap_T      *kp;
-
-    if (!(curbuf->b_kmap_state & KEYMAP_LOADED))
-        return;
-
-    /* Set 'cpoptions' to "C" to avoid line continuation. */
-    p_cpo = (char_u *)"C";
-
-    /* clear the ":lmap"s */
-    kp = (kmap_T *)curbuf->b_kmap_ga.ga_data;
-    for (i = 0; i < curbuf->b_kmap_ga.ga_len; ++i)
-    {
-        vim_snprintf((char *)buf, sizeof(buf), "<buffer> %s", kp[i].from);
-        (void)do_map(1, buf, LANGMAP, FALSE);
-        vim_free(kp[i].from);
-        vim_free(kp[i].to);
-    }
-
-    p_cpo = save_cpo;
-
-    ga_clear(&curbuf->b_kmap_ga);
-    curbuf->b_kmap_state &= ~KEYMAP_LOADED;
-#if defined(FEAT_WINDOWS)
-    status_redraw_curbuf();
-#endif
-}
-
-#endif

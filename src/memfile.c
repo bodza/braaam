@@ -28,44 +28,36 @@
 /*
  * Some systems have the page size in statfs.f_bsize, some in stat.st_blksize
  */
-#if defined(HAVE_ST_BLKSIZE)
 #define STATFS stat
 #define F_BSIZE st_blksize
 #define fstatfs(fd, buf, len, nul) mch_fstat((fd), (buf))
-#else
-#if defined(HAVE_SYS_STATFS_H)
-#include <sys/statfs.h>
-#define STATFS statfs
-#define F_BSIZE f_bsize
-#endif
-#endif
 
 #define MEMFILE_PAGE_SIZE 4096          /* default page size */
 
 static long_u   total_mem_used = 0;     /* total memory used for memfiles */
 
-static void mf_ins_hash __ARGS((memfile_T *, bhdr_T *));
-static void mf_rem_hash __ARGS((memfile_T *, bhdr_T *));
-static bhdr_T *mf_find_hash __ARGS((memfile_T *, blocknr_T));
-static void mf_ins_used __ARGS((memfile_T *, bhdr_T *));
-static void mf_rem_used __ARGS((memfile_T *, bhdr_T *));
-static bhdr_T *mf_release __ARGS((memfile_T *, int));
-static bhdr_T *mf_alloc_bhdr __ARGS((memfile_T *, int));
-static void mf_free_bhdr __ARGS((bhdr_T *));
-static void mf_ins_free __ARGS((memfile_T *, bhdr_T *));
-static bhdr_T *mf_rem_free __ARGS((memfile_T *));
-static int  mf_read __ARGS((memfile_T *, bhdr_T *));
-static int  mf_write __ARGS((memfile_T *, bhdr_T *));
-static int  mf_write_block __ARGS((memfile_T *mfp, bhdr_T *hp, off_t offset, unsigned size));
-static int  mf_trans_add __ARGS((memfile_T *, bhdr_T *));
-static void mf_do_open __ARGS((memfile_T *, char_u *, int));
-static void mf_hash_init __ARGS((mf_hashtab_T *));
-static void mf_hash_free __ARGS((mf_hashtab_T *));
-static void mf_hash_free_all __ARGS((mf_hashtab_T *));
-static mf_hashitem_T *mf_hash_find __ARGS((mf_hashtab_T *, blocknr_T));
-static void mf_hash_add_item __ARGS((mf_hashtab_T *, mf_hashitem_T *));
-static void mf_hash_rem_item __ARGS((mf_hashtab_T *, mf_hashitem_T *));
-static int mf_hash_grow __ARGS((mf_hashtab_T *));
+static void mf_ins_hash(memfile_T *, bhdr_T *);
+static void mf_rem_hash(memfile_T *, bhdr_T *);
+static bhdr_T *mf_find_hash(memfile_T *, blocknr_T);
+static void mf_ins_used(memfile_T *, bhdr_T *);
+static void mf_rem_used(memfile_T *, bhdr_T *);
+static bhdr_T *mf_release(memfile_T *, int);
+static bhdr_T *mf_alloc_bhdr(memfile_T *, int);
+static void mf_free_bhdr(bhdr_T *);
+static void mf_ins_free(memfile_T *, bhdr_T *);
+static bhdr_T *mf_rem_free(memfile_T *);
+static int  mf_read(memfile_T *, bhdr_T *);
+static int  mf_write(memfile_T *, bhdr_T *);
+static int  mf_write_block(memfile_T *mfp, bhdr_T *hp, off_t offset, unsigned size);
+static int  mf_trans_add(memfile_T *, bhdr_T *);
+static void mf_do_open(memfile_T *, char_u *, int);
+static void mf_hash_init(mf_hashtab_T *);
+static void mf_hash_free(mf_hashtab_T *);
+static void mf_hash_free_all(mf_hashtab_T *);
+static mf_hashitem_T *mf_hash_find(mf_hashtab_T *, blocknr_T);
+static void mf_hash_add_item(mf_hashtab_T *, mf_hashitem_T *);
+static void mf_hash_rem_item(mf_hashtab_T *, mf_hashitem_T *);
+static int mf_hash_grow(mf_hashtab_T *);
 
 /*
  * The functions for using a memfile:
@@ -156,8 +148,7 @@ mf_open(fname, flags)
                       || (size = lseek(mfp->mf_fd, (off_t)0L, SEEK_END)) <= 0)
         mfp->mf_blocknr_max = 0;        /* no file or empty file */
     else
-        mfp->mf_blocknr_max = (blocknr_T)((size + mfp->mf_page_size - 1)
-                                                         / mfp->mf_page_size);
+        mfp->mf_blocknr_max = (blocknr_T)((size + mfp->mf_page_size - 1) / mfp->mf_page_size);
     mfp->mf_blocknr_min = -1;
     mfp->mf_neg_count = 0;
     mfp->mf_infile_count = mfp->mf_blocknr_max;
@@ -384,8 +375,7 @@ mf_new(mfp, negative, page_count)
      * Init the data to all zero, to avoid reading uninitialized data.
      * This also avoids that the passwd file ends up in the swap file!
      */
-    (void)vim_memset((char *)(hp->bh_data), 0,
-                                      (size_t)mfp->mf_page_size * page_count);
+    (void)vim_memset((char *)(hp->bh_data), 0, (size_t)mfp->mf_page_size * page_count);
 
     return hp;
 }

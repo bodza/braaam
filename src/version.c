@@ -5,14 +5,10 @@
 char            *Version = VIM_VERSION_SHORT;
 static char     *mediumVersion = VIM_VERSION_MEDIUM;
 
-#if defined(HAVE_DATE_TIME)
 char    *longVersion = VIM_VERSION_LONG_DATE __DATE__ " " __TIME__ ")";
-#else
-char    *longVersion = VIM_VERSION_LONG;
-#endif
 
-static void list_features __ARGS((void));
-static void version_msg __ARGS((char *s));
+static void list_features(void);
+static void version_msg(char *s);
 
 static char *(features[]) =
 {
@@ -85,11 +81,7 @@ static char *(features[]) =
 #else
         "-dialog",
 #endif
-#if defined(FEAT_DIGRAPHS)
         "+digraphs",
-#else
-        "-digraphs",
-#endif
 #if defined(FEAT_DND)
         "+dnd",
 #else
@@ -123,7 +115,7 @@ static char *(features[]) =
         "-footer",
 #endif
         "+fork()",
-#if (defined(HAVE_ICONV_H) && defined(USE_ICONV))
+#if defined(USE_ICONV)
         "+iconv",
 #else
         "-iconv",
@@ -138,16 +130,8 @@ static char *(features[]) =
 #else
         "-jumplist",
 #endif
-#if defined(FEAT_KEYMAP)
-        "+keymap",
-#else
         "-keymap",
-#endif
-#if defined(FEAT_LANGMAP)
-        "+langmap",
-#else
         "-langmap",
-#endif
 #if defined(FEAT_LINEBREAK)
         "+linebreak",
 #else
@@ -264,11 +248,7 @@ static char *(features[]) =
 #else
         "-tag_binary",
 #endif
-#if defined(TERMINFO)
         "+terminfo",
-#else
-        "-terminfo",
-#endif
 #if defined(FEAT_TERMRESPONSE)
         "+termresponse",
 #else
@@ -289,11 +269,7 @@ static char *(features[]) =
 #else
         "-user_commands",
 #endif
-#if defined(FEAT_VERTSPLIT)
         "+vertsplit",
-#else
-        "-vertsplit",
-#endif
 #if defined(FEAT_VIRTUALEDIT)
         "+virtualedit",
 #else
@@ -320,11 +296,7 @@ static char *(features[]) =
 #else
         "-wildmenu",
 #endif
-#if defined(FEAT_WINDOWS)
         "+windows",
-#else
-        "-windows",
-#endif
 #if defined(FEAT_WRITEBACKUP)
         "+writebackup",
 #else
@@ -649,7 +621,7 @@ version_msg(s)
         MSG_PUTS(s);
 }
 
-static void do_intro_line __ARGS((int row, char_u *mesg, int add_version, int attr));
+static void do_intro_line(int row, char_u *mesg, int add_version, int attr);
 
 /*
  * Show the intro message when not editing a file.
@@ -659,9 +631,7 @@ maybe_intro_message()
 {
     if (bufempty()
             && curbuf->b_fname == NULL
-#if defined(FEAT_WINDOWS)
             && firstwin->w_next == NULL
-#endif
             && vim_strchr(p_shm, SHM_INTRO) == NULL)
         intro_message(FALSE);
 }
@@ -682,23 +652,23 @@ intro_message(colon)
     char        *p;
     static char *(lines[]) =
     {
-        N_("VIM - Vi IMproved"),
+        "VIM - Vi IMproved",
         "",
-        N_("version "),
-        N_("by Bram Moolenaar et al."),
-        N_("Vim is open source and freely distributable"),
+        "version ",
+        "by Bram Moolenaar et al.",
+        "Vim is open source and freely distributable",
         "",
-        N_("Help poor children in Uganda!"),
-        N_("type  :help iccf<Enter>       for information "),
+        "Help poor children in Uganda!",
+        "type  :help iccf<Enter>       for information ",
         "",
-        N_("type  :q<Enter>               to exit         "),
-        N_("type  :help<Enter>  or  <F1>  for on-line help"),
-        N_("type  :help version7<Enter>   for version info"),
+        "type  :q<Enter>               to exit         ",
+        "type  :help<Enter>  or  <F1>  for on-line help",
+        "type  :help version7<Enter>   for version info",
         NULL,
         "",
-        N_("Running in Vi compatible mode"),
-        N_("type  :set nocp<Enter>        for Vim defaults"),
-        N_("type  :help cp-default<Enter> for info on this"),
+        "Running in Vi compatible mode",
+        "type  :set nocp<Enter>        for Vim defaults",
+        "type  :help cp-default<Enter> for info on this",
     };
 
     /* blanklines = screen height - # message lines */
@@ -706,11 +676,9 @@ intro_message(colon)
     if (!p_cp)
         blanklines += 4;  /* add 4 for not showing "Vi compatible" message */
 
-#if defined(FEAT_WINDOWS)
     /* Don't overwrite a statusline.  Depends on 'cmdheight'. */
     if (p_ls > 1)
         blanklines -= Rows - topframe->fr_height;
-#endif
     if (blanklines < 0)
         blanklines = 0;
 
@@ -736,14 +704,14 @@ intro_message(colon)
             {
                 if (strstr(p, "children") != NULL)
                     p = sponsor < 0
-                        ? N_("Sponsor Vim development!")
-                        : N_("Become a registered Vim user!");
+                        ? "Sponsor Vim development!"
+                        : "Become a registered Vim user!";
                 else if (strstr(p, "iccf") != NULL)
                     p = sponsor < 0
-                        ? N_("type  :help sponsor<Enter>    for information ")
-                        : N_("type  :help register<Enter>   for information ");
+                        ? "type  :help sponsor<Enter>    for information "
+                        : "type  :help register<Enter>   for information ";
                 else if (strstr(p, "Orphans") != NULL)
-                    p = N_("menu  Help->Sponsor/Register  for information    ");
+                    p = "menu  Help->Sponsor/Register  for information    ";
             }
             if (*p != NUL)
                 do_intro_line(row, (char_u *)_(p), i == 2, 0);
@@ -780,8 +748,7 @@ do_intro_line(row, mesg, add_version, attr)
             if (isalpha((int)vers[3]))
             {
                 int len = (isalpha((int)vers[4])) ? 5 : 4;
-                sprintf((char *)vers + len, ".%d%s", highest_patch(),
-                                                         mediumVersion + len);
+                sprintf((char *)vers + len, ".%d%s", highest_patch(), mediumVersion + len);
             }
             else
                 sprintf((char *)vers + 3, ".%d", highest_patch());
@@ -796,8 +763,7 @@ do_intro_line(row, mesg, add_version, attr)
     for (p = mesg; *p != NUL; p += l)
     {
         clen = 0;
-        for (l = 0; p[l] != NUL
-                         && (l == 0 || (p[l] != '<' && p[l - 1] != '>')); ++l)
+        for (l = 0; p[l] != NUL && (l == 0 || (p[l] != '<' && p[l - 1] != '>')); ++l)
         {
             if (has_mbyte)
             {

@@ -101,24 +101,24 @@ static char_u   noremapbuf_init[TYPELEN_INIT];  /* initial typebuf.tb_noremap */
 
 static int      last_recorded_len = 0;  /* number of last recorded chars */
 
-static char_u   *get_buffcont __ARGS((buffheader_T *, int));
-static void     add_buff __ARGS((buffheader_T *, char_u *, long n));
-static void     add_num_buff __ARGS((buffheader_T *, long));
-static void     add_char_buff __ARGS((buffheader_T *, int));
-static int      read_readbuffers __ARGS((int advance));
-static int      read_readbuf __ARGS((buffheader_T *buf, int advance));
-static void     start_stuff __ARGS((void));
-static int      read_redo __ARGS((int, int));
-static void     copy_redo __ARGS((int));
-static void     init_typebuf __ARGS((void));
-static void     gotchars __ARGS((char_u *, int));
-static void     may_sync_undo __ARGS((void));
-static void     closescript __ARGS((void));
-static int      vgetorpeek __ARGS((int));
-static void     map_free __ARGS((mapblock_T **));
-static void     validate_maphash __ARGS((void));
-static void     showmap __ARGS((mapblock_T *mp, int local));
-static char_u   *eval_map_expr __ARGS((char_u *str, int c));
+static char_u   *get_buffcont(buffheader_T *, int);
+static void     add_buff(buffheader_T *, char_u *, long n);
+static void     add_num_buff(buffheader_T *, long);
+static void     add_char_buff(buffheader_T *, int);
+static int      read_readbuffers(int advance);
+static int      read_readbuf(buffheader_T *buf, int advance);
+static void     start_stuff(void);
+static int      read_redo(int, int);
+static void     copy_redo(int);
+static void     init_typebuf(void);
+static void     gotchars(char_u *, int);
+static void     may_sync_undo(void);
+static void     closescript(void);
+static int      vgetorpeek(int);
+static void     map_free(mapblock_T **);
+static void     validate_maphash(void);
+static void     showmap(mapblock_T *mp, int local);
+static char_u   *eval_map_expr(char_u *str, int c);
 
 /*
  * Free and clear a buffer.
@@ -1829,9 +1829,6 @@ vgetorpeek(advance)
     int         new_wcol, new_wrow;
 #endif
     int         n;
-#if defined(FEAT_LANGMAP)
-    int         nolmaplen;
-#endif
     int         old_wcol, old_wrow;
     int         wait_tb_len;
 
@@ -1976,15 +1973,6 @@ vgetorpeek(advance)
 #endif
                             )
                     {
-#if defined(FEAT_LANGMAP)
-                        if (c1 == K_SPECIAL)
-                            nolmaplen = 2;
-                        else
-                        {
-                            LANGMAP_ADJUST(c1, (State & INSERT) == 0);
-                            nolmaplen = 0;
-                        }
-#endif
 #if defined(FEAT_LOCALMAP)
                         /* First try buffer-local mappings. */
                         mp = curbuf->b_maphash[MAP_HASH(local_State, c1)];
@@ -2023,26 +2011,11 @@ vgetorpeek(advance)
                                     && ((mp->m_mode & LANGMAP) == 0
                                         || typebuf.tb_maplen == 0))
                             {
-#if defined(FEAT_LANGMAP)
-                                int     nomap = nolmaplen;
-                                int     c2;
-#endif
                                 /* find the match length of this mapping */
                                 for (mlen = 1; mlen < typebuf.tb_len; ++mlen)
                                 {
-#if defined(FEAT_LANGMAP)
-                                    c2 = typebuf.tb_buf[typebuf.tb_off + mlen];
-                                    if (nomap > 0)
-                                        --nomap;
-                                    else if (c2 == K_SPECIAL)
-                                        nomap = 2;
-                                    else
-                                        LANGMAP_ADJUST(c2, TRUE);
-                                    if (mp->m_keys[mlen] != c2)
-#else
                                     if (mp->m_keys[mlen] !=
                                         typebuf.tb_buf[typebuf.tb_off + mlen])
-#endif
                                         break;
                                 }
 
@@ -2127,10 +2100,8 @@ vgetorpeek(advance)
                     /* Check for match with 'pastetoggle' */
                     if (*p_pt != NUL && mp == NULL && (State & (INSERT|NORMAL)))
                     {
-                        for (mlen = 0; mlen < typebuf.tb_len && p_pt[mlen];
-                                                                       ++mlen)
-                            if (p_pt[mlen] != typebuf.tb_buf[typebuf.tb_off
-                                                                      + mlen])
+                        for (mlen = 0; mlen < typebuf.tb_len && p_pt[mlen]; ++mlen)
+                            if (p_pt[mlen] != typebuf.tb_buf[typebuf.tb_off + mlen])
                                     break;
                         if (p_pt[mlen] == NUL)  /* match */
                         {
@@ -2149,10 +2120,8 @@ vgetorpeek(advance)
                                 msg_row = Rows - 1;
                                 msg_clr_eos();          /* clear ruler */
                             }
-#if defined(FEAT_WINDOWS)
                             status_redraw_all();
                             redraw_statuslines();
-#endif
                             showmode();
                             setcursor();
                             continue;
@@ -2232,11 +2201,9 @@ vgetorpeek(advance)
                                     {
                                         KeyTyped = TRUE;
                                         /* write char to script file(s) */
-                                        gotchars(typebuf.tb_buf
-                                                         + typebuf.tb_off, 1);
+                                        gotchars(typebuf.tb_buf + typebuf.tb_off, 1);
                                     }
-                                    KeyNoremap = typebuf.tb_noremap[
-                                                              typebuf.tb_off];
+                                    KeyNoremap = typebuf.tb_noremap[typebuf.tb_off];
                                     del_typebuf(1, 0);
                                 }
                                 break;      /* got character, break for loop */
@@ -2439,8 +2406,7 @@ vgetorpeek(advance)
                                     else
                                         ++col;
                                 }
-                                curwin->w_wrow = curwin->w_cline_row
-                                           + curwin->w_wcol / W_WIDTH(curwin);
+                                curwin->w_wrow = curwin->w_cline_row + curwin->w_wcol / W_WIDTH(curwin);
                                 curwin->w_wcol %= W_WIDTH(curwin);
                                 curwin->w_wcol += curwin_col_off();
                                 col = 0;        /* no correction needed */
@@ -2563,11 +2529,9 @@ vgetorpeek(advance)
                     {
                         /* this looks nice when typing a dead character map */
                         if (State & INSERT
-                            && ptr2cells(typebuf.tb_buf + typebuf.tb_off
-                                                   + typebuf.tb_len - 1) == 1)
+                            && ptr2cells(typebuf.tb_buf + typebuf.tb_off + typebuf.tb_len - 1) == 1)
                         {
-                            edit_putchar(typebuf.tb_buf[typebuf.tb_off
-                                                + typebuf.tb_len - 1], FALSE);
+                            edit_putchar(typebuf.tb_buf[typebuf.tb_off + typebuf.tb_len - 1], FALSE);
                             setcursor(); /* put cursor back where it belongs */
                             c1 = 1;
                         }
@@ -2581,8 +2545,7 @@ vgetorpeek(advance)
                         if (typebuf.tb_len > SHOWCMD_COLS)
                             i = typebuf.tb_len - SHOWCMD_COLS;
                         while (i < typebuf.tb_len)
-                            (void)add_to_showcmd(typebuf.tb_buf[typebuf.tb_off
-                                                                      + i++]);
+                            (void)add_to_showcmd(typebuf.tb_buf[typebuf.tb_off + i++]);
                         curwin->w_wcol = old_wcol;
                         curwin->w_wrow = old_wrow;
 #endif
@@ -2591,11 +2554,9 @@ vgetorpeek(advance)
                     /* this looks nice when typing a dead character map */
                     if ((State & CMDLINE)
                             && cmdline_star == 0
-                            && ptr2cells(typebuf.tb_buf + typebuf.tb_off
-                                                   + typebuf.tb_len - 1) == 1)
+                            && ptr2cells(typebuf.tb_buf + typebuf.tb_off + typebuf.tb_len - 1) == 1)
                     {
-                        putcmdline(typebuf.tb_buf[typebuf.tb_off
-                                                + typebuf.tb_len - 1], FALSE);
+                        putcmdline(typebuf.tb_buf[typebuf.tb_off + typebuf.tb_len - 1], FALSE);
                         c1 = 1;
                     }
                 }
@@ -2644,10 +2605,8 @@ vgetorpeek(advance)
                 }
                 else
                 {           /* allow mapping for just typed characters */
-                    while (typebuf.tb_buf[typebuf.tb_off
-                                                     + typebuf.tb_len] != NUL)
-                        typebuf.tb_noremap[typebuf.tb_off
-                                                 + typebuf.tb_len++] = RM_YES;
+                    while (typebuf.tb_buf[typebuf.tb_off + typebuf.tb_len] != NUL)
+                        typebuf.tb_noremap[typebuf.tb_off + typebuf.tb_len++] = RM_YES;
 #if defined(USE_IM_CONTROL)
                     /* Get IM status right after getting keys, not after the
                      * timeout for a mapping (focus may be lost by then). */

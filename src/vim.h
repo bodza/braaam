@@ -3,19 +3,13 @@
 
 /* ============ the header file puzzle (ca. 50-100 pieces) ========= */
 
-#if defined(HAVE_CONFIG_H) /* GNU autoconf (or something else) was here */
+#if defined(HAVE_CONFIG_H)
 
 /* Define when terminfo support found */
 #define TERMINFO 1
 
 /* Define when termcap.h contains ospeed */
 #define HAVE_OSPEED 1
-
-/* Define when termcap.h contains UP, BC and PC */
-#define HAVE_UP_BC_PC 1
-
-/* Define when __DATE__ " " __TIME__ can be used */
-#define HAVE_DATE_TIME 1
 
 /* Define when __attribute__((unused)) can be used */
 #define HAVE_ATTRIBUTE_UNUSED 1
@@ -31,12 +25,6 @@
 
 /* Defined to the size of time_t */
 #define SIZEOF_TIME_T 8
-
-/*
- * If we cannot trust one of the following from the libraries, we use our
- * own safe but probably slower vim_memmove().
- */
-#define USEMEMMOVE 1
 
 /* Define to empty if the keyword does not work.  */
 /* #undef const */
@@ -77,21 +65,6 @@
 /* Define to `struct sigaltstack' if <signal.h> doesn't define.  */
 /* #undef stack_t */
 
-/* Define if you can safely include both <sys/time.h> and <time.h>.  */
-#define TIME_WITH_SYS_TIME 1
-
-/* Define if you can safely include both <sys/time.h> and <sys/select.h>.  */
-#define SYS_SELECT_WITH_SYS_TIME 1
-
-/* Define as the return type of signal handlers (int or void).  */
-#define RETSIGTYPE void
-
-/* Define as the command at the end of signal handlers ("" or "return 0;").  */
-#define SIGRETURN return
-
-/* Define if struct sigcontext is present */
-#define HAVE_SIGCONTEXT 1
-
 /* Define if tgetent() returns zero for an error */
 #define TGETENT_ZERO_ERR 0
 
@@ -109,7 +82,6 @@
 #define HAVE_GETTIMEOFDAY 1
 #define HAVE_GETWD 1
 #define HAVE_ICONV 1
-#define HAVE_NL_LANGINFO_CODESET 1
 #define HAVE_LSTAT 1
 #define HAVE_MEMCMP 1
 #define HAVE_MEMSET 1
@@ -135,7 +107,6 @@
 #define HAVE_STRNCASECMP 1
 #define HAVE_STRPBRK 1
 #define HAVE_STRTOL 1
-#define HAVE_ST_BLKSIZE 1
 #define HAVE_SYSCONF 1
 #define HAVE_SYSINFO 1
 #define HAVE_SYSINFO_MEM_UNIT 1
@@ -150,48 +121,7 @@
 #define HAVE_UTIMES 1
 
 /* Define if you have the header file: */
-#define HAVE_DIRENT_H 1
-#define HAVE_ERRNO_H 1
-#define HAVE_FCNTL_H 1
-#define HAVE_ICONV_H 1
-#define HAVE_INTTYPES_H 1
-#define HAVE_LANGINFO_H 1
-#define HAVE_LIBGEN_H 1
-#define HAVE_LIBINTL_H 1
 #define HAVE_LOCALE_H 1
-#define HAVE_MATH_H 1
-#define HAVE_POLL_H 1
-#define HAVE_PWD_H 1
-#define HAVE_SETJMP_H 1
-#define HAVE_SGTTY_H 1
-#define HAVE_STDINT_H 1
-#define HAVE_STRINGS_H 1
-#define HAVE_SYS_IOCTL_H 1
-#define HAVE_SYS_PARAM_H 1
-#define HAVE_SYS_POLL_H 1
-#define HAVE_SYS_RESOURCE_H 1
-#define HAVE_SYS_SELECT_H 1
-#define HAVE_SYS_STATFS_H 1
-#define HAVE_SYS_SYSCTL_H 1
-#define HAVE_SYS_SYSINFO_H 1
-#define HAVE_SYS_TIME_H 1
-#define HAVE_SYS_TYPES_H 1
-#define HAVE_SYS_UTSNAME_H 1
-#define HAVE_TERMCAP_H 1
-#define HAVE_TERMIOS_H 1
-#define HAVE_TERMIO_H 1
-#define HAVE_WCHAR_H 1
-#define HAVE_WCTYPE_H 1
-#define HAVE_UNISTD_H 1
-#define HAVE_UTIME_H 1
-
-/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
-#define HAVE_SYS_WAIT_H 1
-
-/* instead, we check a few STDC things ourselves */
-#define HAVE_STDARG_H 1
-#define HAVE_STDLIB_H 1
-#define HAVE_STRING_H 1
 
 /* Define if you want to add support of GPM (Linux console mouse daemon) */
 /* #undef HAVE_GPM */
@@ -236,25 +166,11 @@
  */
 
 /*
- * +windows             Multiple windows.  Without this there is no help
- *                      window and no status lines.
- */
-#define FEAT_WINDOWS
-
-/*
  * +listcmds            Vim commands for the buffer list and the argument
  *                      list.  Without this there is no ":buffer" ":bnext",
  *                      ":bdel", ":argdelete", etc.
  */
 #define FEAT_LISTCMDS
-
-/*
- * +vertsplit           Vertically split windows.
- */
-#define FEAT_VERTSPLIT
-#if defined(FEAT_VERTSPLIT) && !defined(FEAT_WINDOWS)
-#define FEAT_WINDOWS
-#endif
 
 /*
  * +cmdhist             Command line history.
@@ -271,31 +187,10 @@
  */
 #define FEAT_JUMPLIST
 
-/* the cmdline-window requires FEAT_VERTSPLIT and FEAT_CMDHIST */
-#if defined(FEAT_VERTSPLIT) && defined(FEAT_CMDHIST)
+/* the cmdline-window requires FEAT_CMDHIST */
+#if defined(FEAT_CMDHIST)
 #define FEAT_CMDWIN
 #endif
-
-/*
- * +digraphs            Digraphs.
- *                      In insert mode and on the command line you will be
- *                      able to use digraphs. The CTRL-K command will work.
- *                      RFC 1345.
- */
-#define FEAT_DIGRAPHS
-
-/*
- * +langmap             'langmap' option.  Only useful when you put your
- *                      keyboard in a special language mode, e.g. for typing
- *                      greek.
- */
-#undef FEAT_LANGMAP
-
-/*
- * +keymap              'keymap' option.  Allows you to map typed keys in
- *                      Insert mode for a special language.
- */
-#undef FEAT_KEYMAP
 
 /*
  * +localmap            Mappings and abbreviations local to a buffer.
@@ -393,7 +288,7 @@
 /*
  * +reltime             reltime() function
  */
-#if ((defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)))
+#if defined(HAVE_GETTIMEOFDAY)
 #define FEAT_RELTIME
 #endif
 
@@ -459,9 +354,7 @@
 /*
  * +wildmenu            'wildmenu' option
  */
-#if defined(FEAT_WINDOWS)
 #define FEAT_WILDMENU
-#endif
 
 /*
  * +viminfo             reading/writing the viminfo file. Takes about 8Kbyte
@@ -535,23 +428,19 @@
 /* #define UNICODE16 */
 
 /* Use iconv() when it's available. */
-#if ((defined(HAVE_ICONV_H) && defined(HAVE_ICONV)))
+#if defined(HAVE_ICONV)
 #define USE_ICONV
 #endif
 
 /*
  * +scrollbind          synchronization of split windows
  */
-#if defined(FEAT_WINDOWS)
 #define FEAT_SCROLLBIND
-#endif
 
 /*
  * +cursorbind          synchronization of split windows
  */
-#if defined(FEAT_WINDOWS)
 #define FEAT_CURSORBIND
-#endif
 
 /*
  * +menu                ":menu" command
@@ -712,10 +601,6 @@
 #define FEAT_SYSMOUSE
 #endif
 
-/* urxvt is a small variation of mouse_xterm, and shares its code */
-
-/* sgr is a small variation of mouse_xterm, and shares its code */
-
 /* Define FEAT_MOUSE when any of the above is defined or FEAT_GUI. */
 #if !defined(FEAT_MOUSE_TTY) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE))
 #define FEAT_MOUSE_TTY         /* include non-GUI mouse support */
@@ -723,17 +608,6 @@
 #if !defined(FEAT_MOUSE) && defined(FEAT_MOUSE_TTY)
 #define FEAT_MOUSE             /* include generic mouse support */
 #endif
-
-/*
- * +clipboard           Clipboard support.  Always used for the GUI.
- * +xterm_clipboard     Unix only: Include code for handling the clipboard
- *                      in an xterm like in the GUI.
- */
-
-/*
- * +clientserver        Remote control via the remote_send() function
- *                      and the --remote argument
- */
 
 /*
  * +termresponse        send t_RV to obtain terminal response.  Used for xterm
@@ -754,21 +628,6 @@
 #define CURSOR_SHAPE
 
 /*
- * These features are automatically detected:
- * +terminfo
- * +tgetent
- */
-
-/*
- * +signs               Allow signs to be displayed to the left of text lines.
- *                      Adds the ":sign" command.
- */
-
-/*
- * +autochdir           'autochdir' option.
- */
-
-/*
  * +persistent_undo     'undofile', 'undodir' options, :wundo and :rundo, and
  * implementation.
  */
@@ -779,16 +638,7 @@
  */
 #define FEAT_FILTERPIPE
 
-/* Can't use "PACKAGE" here, conflicts with a Perl include file. */
-#if !defined(VIMPACKAGE)
-#define VIMPACKAGE     "vim"
-#endif
-
 #include "os_unix.h"       /* bring lots of system header files */
-
-#if !defined(__ARGS)
-#define __ARGS(x) x
-#endif
 
 /* Mark unused function arguments with UNUSED, so that gcc -Wunused-parameter
  * can be used to check for mistakes. */
@@ -798,15 +648,13 @@
 #define UNUSED
 #endif
 
-/* if we're compiling in C++ (currently only KVim), the system
- * headers must have the correct prototypes or nothing will build.
- * conversely, our prototypes might clash due to throw() specifiers and
- * cause compilation failures even though the headers are correct.  For
- * a concrete example, gcc-3.2 enforces exception specifications, and
- * glibc-2.2.5 has them in their system headers.
- */
-#if !defined(__cplusplus) /* MACOS_X doesn't yet support osdef.h */
-#include "osdef.h"     /* bring missing declarations in */
+#if !defined(HAVE_SELECT)
+struct pollfd;                  /* for poll __ARGS */
+extern int      poll(struct pollfd *, long, int);
+#endif
+
+#if defined(HAVE_SIGSET)
+extern void (*sigset(int, void (*func)(int)))(int);
 #endif
 
 #if defined(HAVE_LOCALE_H)
@@ -893,65 +741,27 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #include "term.h"
 #include "macros.h"
 
-#if defined(HAVE_ERRNO_H)
 #include <errno.h>
-#endif
-
 #include <assert.h>
-
-#if defined(HAVE_STDINT_H)
 #include <stdint.h>
-#endif
-#if defined(HAVE_INTTYPES_H)
 #include <inttypes.h>
-#endif
-#if defined(HAVE_WCTYPE_H)
 #include <wctype.h>
-#endif
-#if defined(HAVE_STDARG_H)
 #include <stdarg.h>
-#endif
 
-#if defined(HAVE_SYS_SELECT_H) && (!defined(HAVE_SYS_TIME_H) || defined(SYS_SELECT_WITH_SYS_TIME))
 #include <sys/select.h>
-#endif
 
 #if !defined(HAVE_SELECT)
-#if defined(HAVE_SYS_POLL_H)
 #include <sys/poll.h>
 #define HAVE_POLL
-#else
-#if defined(HAVE_POLL_H)
-#include <poll.h>
-#define HAVE_POLL
-#endif
-#endif
 #endif
 
 /* ================ end of the header file puzzle =============== */
-
-/*
- * Check input method control.
- */
 
 /*
  * The _() stuff is for using gettext().  It is a no-op when libintl.h is not
  * found or the +multilang feature is disabled.
  */
 #define _(x) ((char *)(x))
-#define N_(x) x
-#if defined(bindtextdomain)
-#undef bindtextdomain
-#endif
-#define bindtextdomain(x, y) /* empty */
-#if defined(bind_textdomain_codeset)
-#undef bind_textdomain_codeset
-#endif
-#define bind_textdomain_codeset(x, y) /* empty */
-#if defined(textdomain)
-#undef textdomain
-#endif
-#define textdomain(x) /* empty */
 
 /*
  * flags for update_screen()
@@ -1181,24 +991,12 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define FINDFILE_DIR    1       /* only directories */
 #define FINDFILE_BOTH   2       /* files and directories */
 
-#if defined(FEAT_VERTSPLIT)
 #define W_WINCOL(wp)   (wp->w_wincol)
 #define W_WIDTH(wp)    (wp->w_width)
 #define W_ENDCOL(wp)   (wp->w_wincol + wp->w_width)
 #define W_VSEP_WIDTH(wp) (wp->w_vsep_width)
-#else
-#define W_WINCOL(wp)   0
-#define W_WIDTH(wp)    Columns
-#define W_ENDCOL(wp)   Columns
-#define W_VSEP_WIDTH(wp) 0
-#endif
-#if defined(FEAT_WINDOWS)
 #define W_STATUS_HEIGHT(wp) (wp->w_status_height)
 #define W_WINROW(wp)   (wp->w_winrow)
-#else
-#define W_STATUS_HEIGHT(wp) 0
-#define W_WINROW(wp)   0
-#endif
 
 #if defined(NO_EXPANDPATH)
 #define gen_expand_wildcards mch_expand_wildcards
@@ -1822,9 +1620,7 @@ typedef UINT32_TYPEDEF UINT32_T;
 /* Size in bytes of the hash used in the undo file. */
 #define UNDO_HASH_SIZE 32
 
-#if defined(HAVE_FCNTL_H)
 #include <fcntl.h>
-#endif
 
 #if defined(BINARY_FILE_IO)
 #define WRITEBIN   "wb"        /* no CR-LF translation */
@@ -1941,12 +1737,8 @@ typedef void        *vim_acl_T;         /* dummy to pass an ACL to a function */
 /*
  * Include a prototype for mch_memmove(), it may not be in alloc.pro.
  */
-#if defined(VIM_MEMMOVE)
-void mch_memmove __ARGS((void *, void *, size_t));
-#else
 #if !defined(mch_memmove)
 #define mch_memmove(to, from, len) memmove(to, from, len)
-#endif
 #endif
 
 /*
@@ -1961,7 +1753,7 @@ void mch_memmove __ARGS((void *, void *, size_t));
 #if defined(HAVE_MEMSET)
 #define vim_memset(ptr, c, size)   memset((ptr), (c), (size))
 #else
-void *vim_memset __ARGS((void *, int, size_t));
+void *vim_memset(void *, int, size_t);
 #endif
 
 #if defined(HAVE_MEMCMP)
@@ -1970,7 +1762,7 @@ void *vim_memset __ARGS((void *, int, size_t));
 #if defined(HAVE_BCMP)
 #define vim_memcmp(p1, p2, len)   bcmp((p1), (p2), (len))
 #else
-int vim_memcmp __ARGS((void *, void *, size_t));
+int vim_memcmp(void *, void *, size_t);
 #define VIM_MEMCMP
 #endif
 #endif
@@ -2103,7 +1895,7 @@ typedef int proftime_T;     /* dummy for function prototypes */
 #define MOUSE_MAY_STOP_VIS     0x10    /* may stop Visual mode */
 #define MOUSE_RELEASED         0x20    /* button was released */
 
-#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)
+#if defined(HAVE_GETTIMEOFDAY)
 #define CHECK_DOUBLE_CLICK 1  /* Checking for double clicks ourselves. */
 #endif
 

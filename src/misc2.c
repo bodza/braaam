@@ -8,7 +8,7 @@ static char_u   *username = NULL; /* cached result of mch_get_user_name() */
 static char_u   *ff_expand_buffer = NULL; /* used for expanding filenames */
 
 #if defined(FEAT_VIRTUALEDIT)
-static int coladvance2 __ARGS((pos_T *pos, int addspaces, int finetune, colnr_T wcol));
+static int coladvance2(pos_T *pos, int addspaces, int finetune, colnr_T wcol);
 
 /*
  * Return TRUE if in the current mode we need to use virtual.
@@ -147,16 +147,16 @@ coladvance2(pos, addspaces, finetune, wcol)
 
     if (wcol >= MAXCOL)
     {
-            idx = (int)STRLEN(line) - 1 + one_more;
-            col = wcol;
+        idx = (int)STRLEN(line) - 1 + one_more;
+        col = wcol;
 
 #if defined(FEAT_VIRTUALEDIT)
-            if ((addspaces || finetune) && !VIsual_active)
-            {
-                curwin->w_curswant = linetabsize(line) + one_more;
-                if (curwin->w_curswant > 0)
-                    --curwin->w_curswant;
-            }
+        if ((addspaces || finetune) && !VIsual_active)
+        {
+            curwin->w_curswant = linetabsize(line) + one_more;
+            if (curwin->w_curswant > 0)
+                --curwin->w_curswant;
+        }
 #endif
     }
     else
@@ -166,9 +166,7 @@ coladvance2(pos, addspaces, finetune, wcol)
 
         if (finetune
                 && curwin->w_p_wrap
-#if defined(FEAT_VERTSPLIT)
                 && curwin->w_width != 0
-#endif
                 && wcol >= (colnr_T)width)
         {
             csize = linetabsize(line);
@@ -472,7 +470,7 @@ check_cursor_lnum()
 {
     if (curwin->w_cursor.lnum > curbuf->b_ml.ml_line_count)
     {
-            curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
+        curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
     }
     if (curwin->w_cursor.lnum <= 0)
         curwin->w_cursor.lnum = 1;
@@ -799,7 +797,7 @@ do_outofmem_msg(size)
 #if defined(EXITFREE)
 
 #if defined(FEAT_SEARCHPATH)
-static void free_findfile __ARGS((void));
+static void free_findfile(void);
 #endif
 
 /*
@@ -826,14 +824,12 @@ free_all_mem()
     block_autocmds();
 #endif
 
-#if defined(FEAT_WINDOWS)
     /* Close all tabs and windows.  Reset 'equalalways' to avoid redraws. */
     p_ea = FALSE;
     if (first_tabpage->tp_next != NULL)
         do_cmdline_cmd((char_u *)"tabonly!");
     if (firstwin != lastwin)
         do_cmdline_cmd((char_u *)"only!");
-#endif
 
 #if defined(FEAT_USR_CMDS)
     /* Clear user commands (before deleting buffers). */
@@ -852,9 +848,6 @@ free_all_mem()
     do_cmdline_cmd((char_u *)"mapclear!");
     do_cmdline_cmd((char_u *)"abclear");
     do_cmdline_cmd((char_u *)"breakdel *");
-#if defined(FEAT_KEYMAP)
-    do_cmdline_cmd((char_u *)"set keymap=");
-#endif
 
 #if defined(FEAT_TITLE)
     free_titles();
@@ -918,10 +911,8 @@ free_all_mem()
     /* Close all script inputs. */
     close_all_scripts();
 
-#if defined(FEAT_WINDOWS)
     /* Destroy all windows.  Must come before freeing buffers. */
     win_free_all();
-#endif
 
     /* Free all buffers.  Reset 'autochdir' to avoid accessing things that
      * were freed already. */
@@ -948,10 +939,8 @@ free_all_mem()
 
     reset_last_sourcing();
 
-#if defined(FEAT_WINDOWS)
     free_tabpage(first_tabpage);
     first_tabpage = NULL;
-#endif
 
     /* Machine-specific free. */
     mch_free_mem();
@@ -1507,35 +1496,6 @@ vim_memcmp(b1, b2, len)
 }
 #endif
 
-#if defined(VIM_MEMMOVE)
-/*
- * Version of memmove() that handles overlapping source and destination.
- * For systems that don't have a function that is guaranteed to do that (SYSV).
- */
-    void
-mch_memmove(dst_arg, src_arg, len)
-    void    *src_arg, *dst_arg;
-    size_t  len;
-{
-    /*
-     * A void doesn't have a size, we use char pointers.
-     */
-    char *dst = dst_arg, *src = src_arg;
-
-                                        /* overlap, copy backwards */
-    if (dst > src && dst < src + len)
-    {
-        src += len;
-        dst += len;
-        while (len-- > 0)
-            *--dst = *--src;
-    }
-    else                                /* copy forwards */
-        while (len-- > 0)
-            *dst++ = *src++;
-}
-#endif
-
 #if !defined(HAVE_STRCASECMP)
 /*
  * Compare two strings, ignoring case, using current locale.
@@ -1796,8 +1756,7 @@ ga_grow(gap, n)
         if (n < gap->ga_growsize)
             n = gap->ga_growsize;
         new_len = gap->ga_itemsize * (gap->ga_len + n);
-        pp = (gap->ga_data == NULL)
-              ? alloc((unsigned)new_len) : vim_realloc(gap->ga_data, new_len);
+        pp = (gap->ga_data == NULL) ? alloc((unsigned)new_len) : vim_realloc(gap->ga_data, new_len);
         if (pp == NULL)
             return FAIL;
         old_len = gap->ga_itemsize * gap->ga_maxlen;
@@ -2760,8 +2719,7 @@ get_fileformat_force(buf, eap)
         c = eap->cmd[eap->force_ff];
     else
     {
-        if ((eap != NULL && eap->force_bin != 0)
-                               ? (eap->force_bin == FORCE_BIN) : buf->b_p_bin)
+        if ((eap != NULL && eap->force_bin != 0) ? (eap->force_bin == FORCE_BIN) : buf->b_p_bin)
             return EOL_UNIX;
         c = *buf->b_p_ff;
     }
@@ -2803,11 +2761,9 @@ set_fileformat(t, opt_flags)
         set_string_option_direct((char_u *)"ff", -1, (char_u *)p,
                                                      OPT_FREE | opt_flags, 0);
 
-#if defined(FEAT_WINDOWS)
     /* This may cause the buffer to become (un)modified. */
     check_status(curbuf);
     redraw_tabline = TRUE;
-#endif
 #if defined(FEAT_TITLE)
     need_maketitle = TRUE;          /* set window title later */
 #endif
@@ -3056,9 +3012,9 @@ parse_shape_opt(what)
         {
             colonp = vim_strchr(modep, ':');
             if (colonp == NULL)
-                return (char_u *)N_("E545: Missing colon");
+                return (char_u *)"E545: Missing colon";
             if (colonp == modep)
-                return (char_u *)N_("E546: Illegal mode");
+                return (char_u *)"E546: Illegal mode";
             commap = vim_strchr(modep, ',');
 
             /*
@@ -3085,7 +3041,7 @@ parse_shape_opt(what)
                                 break;
                         if (idx == SHAPE_IDX_COUNT
                                    || (shape_table[idx].used_for & what) == 0)
-                            return (char_u *)N_("E546: Illegal mode");
+                            return (char_u *)"E546: Illegal mode";
                         if (len == 2 && modep[0] == 'v' && modep[1] == 'e')
                             found_ve = TRUE;
                     }
@@ -3124,7 +3080,7 @@ parse_shape_opt(what)
                             if (mshape_names[i] == NULL)
                             {
                                 if (!VIM_ISDIGIT(*p))
-                                    return (char_u *)N_("E547: Illegal mouseshape");
+                                    return (char_u *)"E547: Illegal mouseshape";
                                 if (round == 2)
                                     shape_table[idx].mshape =
                                               getdigits(&p) + MSHAPE_NUMBERED;
@@ -3164,12 +3120,12 @@ parse_shape_opt(what)
                         {
                             p += len;
                             if (!VIM_ISDIGIT(*p))
-                                return (char_u *)N_("E548: digit expected");
+                                return (char_u *)"E548: digit expected";
                             n = getdigits(&p);
                             if (len == 3)   /* "ver" or "hor" */
                             {
                                 if (n == 0)
-                                    return (char_u *)N_("E549: Illegal percentage");
+                                    return (char_u *)"E549: Illegal percentage";
                                 if (round == 2)
                                 {
                                     if (TOLOWER_ASC(i) == 'v')
@@ -3278,10 +3234,8 @@ get_shape_idx(mouse)
     }
     if (mouse && drag_status_line)
         return SHAPE_IDX_SDRAG;
-#if defined(FEAT_VERTSPLIT)
     if (mouse && drag_sep_line)
         return SHAPE_IDX_VDRAG;
-#endif
 #endif
     if (!mouse && State == SHOWMATCH)
         return SHAPE_IDX_SM;
@@ -3544,31 +3498,31 @@ typedef struct ff_search_ctx_T
 
 /* locally needed functions */
 #if defined(FEAT_PATH_EXTRA)
-static int ff_check_visited __ARGS((ff_visited_T **, char_u *, char_u *));
+static int ff_check_visited(ff_visited_T **, char_u *, char_u *);
 #else
-static int ff_check_visited __ARGS((ff_visited_T **, char_u *));
+static int ff_check_visited(ff_visited_T **, char_u *);
 #endif
-static void vim_findfile_free_visited_list __ARGS((ff_visited_list_hdr_T **list_headp));
-static void ff_free_visited_list __ARGS((ff_visited_T *vl));
-static ff_visited_list_hdr_T* ff_get_visited_list __ARGS((char_u *, ff_visited_list_hdr_T **list_headp));
+static void vim_findfile_free_visited_list(ff_visited_list_hdr_T **list_headp);
+static void ff_free_visited_list(ff_visited_T *vl);
+static ff_visited_list_hdr_T* ff_get_visited_list(char_u *, ff_visited_list_hdr_T **list_headp);
 #if defined(FEAT_PATH_EXTRA)
-static int ff_wc_equal __ARGS((char_u *s1, char_u *s2));
+static int ff_wc_equal(char_u *s1, char_u *s2);
 #endif
 
-static void ff_push __ARGS((ff_search_ctx_T *search_ctx, ff_stack_T *stack_ptr));
-static ff_stack_T *ff_pop __ARGS((ff_search_ctx_T *search_ctx));
-static void ff_clear __ARGS((ff_search_ctx_T *search_ctx));
-static void ff_free_stack_element __ARGS((ff_stack_T *stack_ptr));
+static void ff_push(ff_search_ctx_T *search_ctx, ff_stack_T *stack_ptr);
+static ff_stack_T *ff_pop(ff_search_ctx_T *search_ctx);
+static void ff_clear(ff_search_ctx_T *search_ctx);
+static void ff_free_stack_element(ff_stack_T *stack_ptr);
 #if defined(FEAT_PATH_EXTRA)
-static ff_stack_T *ff_create_stack_element __ARGS((char_u *, char_u *, int, int));
+static ff_stack_T *ff_create_stack_element(char_u *, char_u *, int, int);
 #else
-static ff_stack_T *ff_create_stack_element __ARGS((char_u *, int, int));
+static ff_stack_T *ff_create_stack_element(char_u *, int, int);
 #endif
 #if defined(FEAT_PATH_EXTRA)
-static int ff_path_in_stoplist __ARGS((char_u *, int, char_u **));
+static int ff_path_in_stoplist(char_u *, int, char_u **);
 #endif
 
-static char_u e_pathtoolong[] = N_("E854: path too long for completion");
+static char_u e_pathtoolong[] = "E854: path too long for completion";
 
 #if 0
 /*
@@ -3890,8 +3844,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
     }
 
     /* create an absolute path */
-    if (STRLEN(search_ctx->ffsc_start_dir)
-                          + STRLEN(search_ctx->ffsc_fix_path) + 3 >= MAXPATHL)
+    if (STRLEN(search_ctx->ffsc_start_dir) + STRLEN(search_ctx->ffsc_fix_path) + 3 >= MAXPATHL)
     {
         EMSG(_(e_pathtoolong));
         goto error_return;
@@ -3900,8 +3853,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
     add_pathsep(ff_expand_buffer);
     {
         int    eb_len = (int)STRLEN(ff_expand_buffer);
-        char_u *buf = alloc(eb_len
-                                + (int)STRLEN(search_ctx->ffsc_fix_path) + 1);
+        char_u *buf = alloc(eb_len + (int)STRLEN(search_ctx->ffsc_fix_path) + 1);
 
         STRCPY(buf, ff_expand_buffer);
         STRCPY(buf + eb_len, search_ctx->ffsc_fix_path);
@@ -4710,8 +4662,7 @@ ff_check_visited(visited_list, fname
     /*
      * New file/dir.  Add it to the list of visited files/dirs.
      */
-    vp = (ff_visited_T *)alloc((unsigned)(sizeof(ff_visited_T)
-                                                 + STRLEN(ff_expand_buffer)));
+    vp = (ff_visited_T *)alloc((unsigned)(sizeof(ff_visited_T) + STRLEN(ff_expand_buffer)));
 
     if (vp != NULL)
     {
@@ -5264,7 +5215,7 @@ qsort(base, elm_count, elm_size, cmp)
     void        *base;
     size_t      elm_count;
     size_t      elm_size;
-    int (*cmp) __ARGS((const void *, const void *));
+    int (*cmp)(const void *, const void *);
 {
     char_u      *buf;
     char_u      *p1;
@@ -5299,7 +5250,7 @@ qsort(base, elm_count, elm_size, cmp)
  * Sort an array of strings.
  */
 static int
-sort_compare __ARGS((const void *s1, const void *s2));
+sort_compare(const void *s1, const void *s2);
 
     static int
 sort_compare(s1, s2)
@@ -5415,9 +5366,9 @@ static int  envsize = -1;       /* current size of environment */
 extern
        char **environ;          /* the global which is your env. */
 
-static int  findenv __ARGS((char *name)); /* look for a name in the env. */
-static int  newenv __ARGS((void));      /* copy env. from stack to heap */
-static int  moreenv __ARGS((void));     /* incr. size of env. */
+static int  findenv(char *name); /* look for a name in the env. */
+static int  newenv(void);      /* copy env. from stack to heap */
+static int  moreenv(void);     /* incr. size of env. */
 
     int
 putenv(string)
@@ -5581,11 +5532,7 @@ emsg3(s, a1, a2)
 {
     if (emsg_not_now())
         return TRUE;            /* no error messages at the moment */
-#if defined(HAVE_STDARG_H)
     vim_snprintf((char *)IObuff, IOSIZE, (char *)s, a1, a2);
-#else
-    vim_snprintf((char *)IObuff, IOSIZE, (char *)s, (long_u)a1, (long_u)a2);
-#endif
     return emsg(IObuff);
 }
 

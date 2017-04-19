@@ -49,7 +49,6 @@ EXTERN int      Screen_mco INIT(= 0);           /* value of p_mco used when
  * These are single-width. */
 EXTERN schar_T  *ScreenLines2 INIT(= NULL);
 
-#if defined(FEAT_WINDOWS)
 /*
  * Indexes for tab page line:
  *      N > 0 for label of tab page N
@@ -58,7 +57,6 @@ EXTERN schar_T  *ScreenLines2 INIT(= NULL);
  *      N == -999 for closing current tab page
  */
 EXTERN short    *TabPageIdxs INIT(= NULL);
-#endif
 
 EXTERN int      screen_Rows INIT(= 0);      /* actual size of ScreenLines[] */
 EXTERN int      screen_Columns INIT(= 0);   /* actual size of ScreenLines[] */
@@ -364,9 +362,7 @@ EXTERN int      mouse_dragging INIT(= 0);       /* extending Visual area with
 EXTERN int      drag_status_line INIT(= FALSE); /* dragging the status line */
 EXTERN int      postponed_mouseshape INIT(= FALSE); /* postponed updating the
                                                        mouse pointer shape */
-#if defined(FEAT_VERTSPLIT)
 EXTERN int      drag_sep_line INIT(= FALSE);    /* dragging vert separator */
-#endif
 #endif
 
 #endif
@@ -407,9 +403,7 @@ EXTERN int      clip_unnamed_saved INIT(= 0);
  * All windows are linked in a list. firstwin points to the first entry,
  * lastwin to the last entry (can be the same as firstwin) and curwin to the
  * currently active window.
- * Without the FEAT_WINDOWS they are all equal.
  */
-#if defined(FEAT_WINDOWS)
 EXTERN win_T    *firstwin;              /* first window */
 EXTERN win_T    *lastwin;               /* last window */
 EXTERN win_T    *prevwin INIT(= NULL);  /* previous window */
@@ -423,13 +417,6 @@ EXTERN win_T    *prevwin INIT(= NULL);  /* previous window */
     for ((tp) = first_tabpage; (tp) != NULL; (tp) = (tp)->tp_next) \
         for ((wp) = ((tp) == curtab) \
                 ? firstwin : (tp)->tp_firstwin; (wp); (wp) = (wp)->w_next)
-#else
-#define firstwin curwin
-#define lastwin curwin
-#define W_NEXT(wp) NULL
-#define FOR_ALL_WINDOWS(wp) wp = curwin;
-#define FOR_ALL_TAB_WINDOWS(tp, wp) wp = curwin;
-#endif
 
 EXTERN win_T    *curwin;        /* currently active window */
 
@@ -444,7 +431,6 @@ EXTERN int      aucmd_win_used INIT(= FALSE);   /* aucmd_win is being used */
  */
 EXTERN frame_T  *topframe;      /* top of the window frame tree */
 
-#if defined(FEAT_WINDOWS)
 /*
  * Tab pages are alternative topframes.  "first_tabpage" points to the first
  * one in the list, "curtab" is the current one.
@@ -452,7 +438,6 @@ EXTERN frame_T  *topframe;      /* top of the window frame tree */
 EXTERN tabpage_T    *first_tabpage;
 EXTERN tabpage_T    *curtab;
 EXTERN int          redraw_tabline INIT(= FALSE);  /* need to redraw tabline */
-#endif
 
 /*
  * All buffers are linked in a list. 'firstbuf' points to the first entry,
@@ -638,7 +623,6 @@ EXTERN int      orig_line_count INIT(= 0);  /* Line count when "gR" started */
 EXTERN int      vr_lines_changed INIT(= 0); /* #Lines changed by "gR" so far */
 #endif
 
-#if defined(HAVE_SETJMP_H)
 /*
  * Stuff for setjmp() and longjmp().
  * Used to protect areas where we could crash.
@@ -646,7 +630,6 @@ EXTERN int      vr_lines_changed INIT(= 0); /* #Lines changed by "gR" so far */
 EXTERN JMP_BUF lc_jump_env;     /* argument to SETJMP() */
 /* volatile because it is used in signal handler deathtrap(). */
 EXTERN volatile int lc_active INIT(= FALSE); /* TRUE when lc_jump_env is valid. */
-#endif
 
 /*
  * These flags are set based upon 'fileencoding'.
@@ -689,19 +672,19 @@ EXTERN vimconv_T output_conv;                   /* type of output conversion */
  * The value is set in mb_init();
  */
 /* length of char in bytes, including following composing chars */
-EXTERN int (*mb_ptr2len) __ARGS((char_u *p)) INIT(= latin_ptr2len);
+EXTERN int (*mb_ptr2len)(char_u *p) INIT(= latin_ptr2len);
 /* idem, with limit on string length */
-EXTERN int (*mb_ptr2len_len) __ARGS((char_u *p, int size)) INIT(= latin_ptr2len_len);
+EXTERN int (*mb_ptr2len_len)(char_u *p, int size) INIT(= latin_ptr2len_len);
 /* byte length of char */
-EXTERN int (*mb_char2len) __ARGS((int c)) INIT(= latin_char2len);
+EXTERN int (*mb_char2len)(int c) INIT(= latin_char2len);
 /* convert char to bytes, return the length */
-EXTERN int (*mb_char2bytes) __ARGS((int c, char_u *buf)) INIT(= latin_char2bytes);
-EXTERN int (*mb_ptr2cells) __ARGS((char_u *p)) INIT(= latin_ptr2cells);
-EXTERN int (*mb_ptr2cells_len) __ARGS((char_u *p, int size)) INIT(= latin_ptr2cells_len);
-EXTERN int (*mb_char2cells) __ARGS((int c)) INIT(= latin_char2cells);
-EXTERN int (*mb_off2cells) __ARGS((unsigned off, unsigned max_off)) INIT(= latin_off2cells);
-EXTERN int (*mb_ptr2char) __ARGS((char_u *p)) INIT(= latin_ptr2char);
-EXTERN int (*mb_head_off) __ARGS((char_u *base, char_u *p)) INIT(= latin_head_off);
+EXTERN int (*mb_char2bytes)(int c, char_u *buf) INIT(= latin_char2bytes);
+EXTERN int (*mb_ptr2cells)(char_u *p) INIT(= latin_ptr2cells);
+EXTERN int (*mb_ptr2cells_len)(char_u *p, int size) INIT(= latin_ptr2cells_len);
+EXTERN int (*mb_char2cells)(int c) INIT(= latin_char2cells);
+EXTERN int (*mb_off2cells)(unsigned off, unsigned max_off) INIT(= latin_off2cells);
+EXTERN int (*mb_ptr2char)(char_u *p) INIT(= latin_ptr2char);
+EXTERN int (*mb_head_off)(char_u *base, char_u *p) INIT(= latin_head_off);
 
 /*
  * "State" is the main state of Vim.
@@ -873,14 +856,12 @@ EXTERN int      last_changedtick INIT(= 0);   /* for TextChanged event */
 EXTERN buf_T    *last_changedtick_buf INIT(= NULL);
 #endif
 
-#if defined(FEAT_WINDOWS)
 EXTERN int      postponed_split INIT(= 0);  /* for CTRL-W CTRL-] command */
 EXTERN int      postponed_split_flags INIT(= 0);  /* args for win_split() */
 EXTERN int      postponed_split_tab INIT(= 0);  /* cmdmod.tab */
 #if defined(FEAT_QUICKFIX)
 EXTERN int      g_do_tagpreview INIT(= 0);  /* for tag preview commands:
                                                height of preview window */
-#endif
 #endif
 EXTERN int      replace_offset INIT(= 0);   /* offset for replace_push() */
 
@@ -900,10 +881,6 @@ EXTERN int  redir_off INIT(= FALSE);    /* no redirection for a moment */
 EXTERN FILE *redir_fd INIT(= NULL);     /* message redirection file */
 EXTERN int  redir_reg INIT(= 0);        /* message redirection register */
 EXTERN int  redir_vname INIT(= 0);      /* message redirection variable */
-
-#if defined(FEAT_LANGMAP)
-EXTERN char_u   langmap_mapchar[256];   /* mapping for language keys */
-#endif
 
 #if defined(FEAT_WILDMENU)
 EXTERN int  save_p_ls INIT(= -1);       /* Save 'laststatus' setting */
@@ -938,16 +915,12 @@ EXTERN int      lcs_trail INIT(= NUL);
 EXTERN int      lcs_conceal INIT(= ' ');
 #endif
 
-#if defined(FEAT_WINDOWS) || defined(FEAT_WILDMENU) || defined(FEAT_STL_OPT)
 /* Characters from 'fillchars' option */
 EXTERN int      fill_stl INIT(= ' ');
 EXTERN int      fill_stlnc INIT(= ' ');
-#endif
-#if defined(FEAT_WINDOWS)
 EXTERN int      fill_vert INIT(= ' ');
 EXTERN int      fill_fold INIT(= '-');
 EXTERN int      fill_diff INIT(= '-');
-#endif
 
 /* Whether 'keymodel' contains "stopsel" and "startsel". */
 EXTERN int      km_stopsel INIT(= FALSE);
@@ -959,7 +932,7 @@ EXTERN int      cmdwin_type INIT(= 0);  /* type of cmdline window or 0 */
 EXTERN int      cmdwin_result INIT(= 0); /* result of cmdline window or 0 */
 #endif
 
-EXTERN char_u no_lines_msg[]    INIT(= N_("--No lines in buffer--"));
+EXTERN char_u no_lines_msg[]    INIT(= "--No lines in buffer--");
 
 /*
  * When ":global" is used to number of substitutions and changed lines is
@@ -1041,7 +1014,7 @@ EXTERN option_table_T printer_opts[OPT_PRINT_NUM_OPTIONS]
 #define PRT_UNIT_NAMES {"pc", "in", "mm", "pt"}
 #endif
 
-#if (defined(FEAT_PRINTER) && defined(FEAT_STL_OPT)) || defined(FEAT_GUI_TABLINE)
+#if defined(FEAT_PRINTER) && defined(FEAT_STL_OPT)
 /* Page number used for %N in 'pageheader' and 'guitablabel'. */
 EXTERN linenr_T printer_page_num;
 #endif
@@ -1088,138 +1061,127 @@ EXTERN garray_T error_ga
  * The error messages that can be shared are included here.
  * Excluded are errors that are only used once and debugging messages.
  */
-EXTERN char_u e_abort[]         INIT(= N_("E470: Command aborted"));
-EXTERN char_u e_argreq[]        INIT(= N_("E471: Argument required"));
-EXTERN char_u e_backslash[]     INIT(= N_("E10: \\ should be followed by /, ? or &"));
+EXTERN char_u e_abort[]         INIT(= "E470: Command aborted");
+EXTERN char_u e_argreq[]        INIT(= "E471: Argument required");
+EXTERN char_u e_backslash[]     INIT(= "E10: \\ should be followed by /, ? or &");
 #if defined(FEAT_CMDWIN)
-EXTERN char_u e_cmdwin[]        INIT(= N_("E11: Invalid in command-line window; <CR> executes, CTRL-C quits"));
+EXTERN char_u e_cmdwin[]        INIT(= "E11: Invalid in command-line window; <CR> executes, CTRL-C quits");
 #endif
-EXTERN char_u e_curdir[]        INIT(= N_("E12: Command not allowed from exrc/vimrc in current dir or tag search"));
-EXTERN char_u e_endif[]         INIT(= N_("E171: Missing :endif"));
-EXTERN char_u e_endtry[]        INIT(= N_("E600: Missing :endtry"));
-EXTERN char_u e_endwhile[]      INIT(= N_("E170: Missing :endwhile"));
-EXTERN char_u e_endfor[]        INIT(= N_("E170: Missing :endfor"));
-EXTERN char_u e_while[]         INIT(= N_("E588: :endwhile without :while"));
-EXTERN char_u e_for[]           INIT(= N_("E588: :endfor without :for"));
-EXTERN char_u e_exists[]        INIT(= N_("E13: File exists (add ! to override)"));
-EXTERN char_u e_failed[]        INIT(= N_("E472: Command failed"));
-EXTERN char_u e_internal[]      INIT(= N_("E473: Internal error"));
-EXTERN char_u e_interr[]        INIT(= N_("Interrupted"));
-EXTERN char_u e_invaddr[]       INIT(= N_("E14: Invalid address"));
-EXTERN char_u e_invarg[]        INIT(= N_("E474: Invalid argument"));
-EXTERN char_u e_invarg2[]       INIT(= N_("E475: Invalid argument: %s"));
-EXTERN char_u e_invexpr2[]      INIT(= N_("E15: Invalid expression: %s"));
-EXTERN char_u e_invrange[]      INIT(= N_("E16: Invalid range"));
-EXTERN char_u e_invcmd[]        INIT(= N_("E476: Invalid command"));
-EXTERN char_u e_isadir2[]       INIT(= N_("E17: \"%s\" is a directory"));
-EXTERN char_u e_markinval[]     INIT(= N_("E19: Mark has invalid line number"));
-EXTERN char_u e_marknotset[]    INIT(= N_("E20: Mark not set"));
-EXTERN char_u e_modifiable[]    INIT(= N_("E21: Cannot make changes, 'modifiable' is off"));
-EXTERN char_u e_nesting[]       INIT(= N_("E22: Scripts nested too deep"));
-EXTERN char_u e_noalt[]         INIT(= N_("E23: No alternate file"));
-EXTERN char_u e_noabbr[]        INIT(= N_("E24: No such abbreviation"));
-EXTERN char_u e_nobang[]        INIT(= N_("E477: No ! allowed"));
-EXTERN char_u e_nogvim[]        INIT(= N_("E25: GUI cannot be used: Not enabled at compile time"));
+EXTERN char_u e_curdir[]        INIT(= "E12: Command not allowed from exrc/vimrc in current dir or tag search");
+EXTERN char_u e_endif[]         INIT(= "E171: Missing :endif");
+EXTERN char_u e_endtry[]        INIT(= "E600: Missing :endtry");
+EXTERN char_u e_endwhile[]      INIT(= "E170: Missing :endwhile");
+EXTERN char_u e_endfor[]        INIT(= "E170: Missing :endfor");
+EXTERN char_u e_while[]         INIT(= "E588: :endwhile without :while");
+EXTERN char_u e_for[]           INIT(= "E588: :endfor without :for");
+EXTERN char_u e_exists[]        INIT(= "E13: File exists (add ! to override)");
+EXTERN char_u e_failed[]        INIT(= "E472: Command failed");
+EXTERN char_u e_internal[]      INIT(= "E473: Internal error");
+EXTERN char_u e_interr[]        INIT(= "Interrupted");
+EXTERN char_u e_invaddr[]       INIT(= "E14: Invalid address");
+EXTERN char_u e_invarg[]        INIT(= "E474: Invalid argument");
+EXTERN char_u e_invarg2[]       INIT(= "E475: Invalid argument: %s");
+EXTERN char_u e_invexpr2[]      INIT(= "E15: Invalid expression: %s");
+EXTERN char_u e_invrange[]      INIT(= "E16: Invalid range");
+EXTERN char_u e_invcmd[]        INIT(= "E476: Invalid command");
+EXTERN char_u e_isadir2[]       INIT(= "E17: \"%s\" is a directory");
+EXTERN char_u e_markinval[]     INIT(= "E19: Mark has invalid line number");
+EXTERN char_u e_marknotset[]    INIT(= "E20: Mark not set");
+EXTERN char_u e_modifiable[]    INIT(= "E21: Cannot make changes, 'modifiable' is off");
+EXTERN char_u e_nesting[]       INIT(= "E22: Scripts nested too deep");
+EXTERN char_u e_noalt[]         INIT(= "E23: No alternate file");
+EXTERN char_u e_noabbr[]        INIT(= "E24: No such abbreviation");
+EXTERN char_u e_nobang[]        INIT(= "E477: No ! allowed");
+EXTERN char_u e_nogvim[]        INIT(= "E25: GUI cannot be used: Not enabled at compile time");
 #if !defined(FEAT_RIGHTLEFT)
-EXTERN char_u e_nohebrew[]      INIT(= N_("E26: Hebrew cannot be used: Not enabled at compile time\n"));
+EXTERN char_u e_nohebrew[]      INIT(= "E26: Hebrew cannot be used: Not enabled at compile time\n");
 #endif
-EXTERN char_u e_nofarsi[]       INIT(= N_("E27: Farsi cannot be used: Not enabled at compile time\n"));
-EXTERN char_u e_noarabic[]      INIT(= N_("E800: Arabic cannot be used: Not enabled at compile time\n"));
+EXTERN char_u e_nofarsi[]       INIT(= "E27: Farsi cannot be used: Not enabled at compile time\n");
+EXTERN char_u e_noarabic[]      INIT(= "E800: Arabic cannot be used: Not enabled at compile time\n");
 #if defined(FEAT_SEARCH_EXTRA) || defined(FEAT_SYN_HL)
-EXTERN char_u e_nogroup[]       INIT(= N_("E28: No such highlight group name: %s"));
+EXTERN char_u e_nogroup[]       INIT(= "E28: No such highlight group name: %s");
 #endif
-EXTERN char_u e_noinstext[]     INIT(= N_("E29: No inserted text yet"));
-EXTERN char_u e_nolastcmd[]     INIT(= N_("E30: No previous command line"));
-EXTERN char_u e_nomap[]         INIT(= N_("E31: No such mapping"));
-EXTERN char_u e_nomatch[]       INIT(= N_("E479: No match"));
-EXTERN char_u e_nomatch2[]      INIT(= N_("E480: No match: %s"));
-EXTERN char_u e_noname[]        INIT(= N_("E32: No file name"));
-EXTERN char_u e_nopresub[]      INIT(= N_("E33: No previous substitute regular expression"));
-EXTERN char_u e_noprev[]        INIT(= N_("E34: No previous command"));
-EXTERN char_u e_noprevre[]      INIT(= N_("E35: No previous regular expression"));
-EXTERN char_u e_norange[]       INIT(= N_("E481: No range allowed"));
-#if defined(FEAT_WINDOWS)
-EXTERN char_u e_noroom[]        INIT(= N_("E36: Not enough room"));
-#endif
-EXTERN char_u e_notcreate[]     INIT(= N_("E482: Can't create file %s"));
-EXTERN char_u e_notmp[]         INIT(= N_("E483: Can't get temp file name"));
-EXTERN char_u e_notopen[]       INIT(= N_("E484: Can't open file %s"));
-EXTERN char_u e_notread[]       INIT(= N_("E485: Can't read file %s"));
-EXTERN char_u e_nowrtmsg[]      INIT(= N_("E37: No write since last change (add ! to override)"));
-EXTERN char_u e_nowrtmsg_nobang[]   INIT(= N_("E37: No write since last change"));
-EXTERN char_u e_null[]          INIT(= N_("E38: Null argument"));
-#if defined(FEAT_DIGRAPHS)
-EXTERN char_u e_number_exp[]    INIT(= N_("E39: Number expected"));
-#endif
+EXTERN char_u e_noinstext[]     INIT(= "E29: No inserted text yet");
+EXTERN char_u e_nolastcmd[]     INIT(= "E30: No previous command line");
+EXTERN char_u e_nomap[]         INIT(= "E31: No such mapping");
+EXTERN char_u e_nomatch[]       INIT(= "E479: No match");
+EXTERN char_u e_nomatch2[]      INIT(= "E480: No match: %s");
+EXTERN char_u e_noname[]        INIT(= "E32: No file name");
+EXTERN char_u e_nopresub[]      INIT(= "E33: No previous substitute regular expression");
+EXTERN char_u e_noprev[]        INIT(= "E34: No previous command");
+EXTERN char_u e_noprevre[]      INIT(= "E35: No previous regular expression");
+EXTERN char_u e_norange[]       INIT(= "E481: No range allowed");
+EXTERN char_u e_noroom[]        INIT(= "E36: Not enough room");
+EXTERN char_u e_notcreate[]     INIT(= "E482: Can't create file %s");
+EXTERN char_u e_notmp[]         INIT(= "E483: Can't get temp file name");
+EXTERN char_u e_notopen[]       INIT(= "E484: Can't open file %s");
+EXTERN char_u e_notread[]       INIT(= "E485: Can't read file %s");
+EXTERN char_u e_nowrtmsg[]      INIT(= "E37: No write since last change (add ! to override)");
+EXTERN char_u e_nowrtmsg_nobang[]   INIT(= "E37: No write since last change");
+EXTERN char_u e_null[]          INIT(= "E38: Null argument");
+EXTERN char_u e_number_exp[]    INIT(= "E39: Number expected");
 #if defined(FEAT_QUICKFIX)
-EXTERN char_u e_openerrf[]      INIT(= N_("E40: Can't open errorfile %s"));
+EXTERN char_u e_openerrf[]      INIT(= "E40: Can't open errorfile %s");
 #endif
-EXTERN char_u e_outofmem[]      INIT(= N_("E41: Out of memory!"));
+EXTERN char_u e_outofmem[]      INIT(= "E41: Out of memory!");
 #if defined(FEAT_INS_EXPAND)
-EXTERN char_u e_patnotf[]       INIT(= N_("Pattern not found"));
+EXTERN char_u e_patnotf[]       INIT(= "Pattern not found");
 #endif
-EXTERN char_u e_patnotf2[]      INIT(= N_("E486: Pattern not found: %s"));
-EXTERN char_u e_positive[]      INIT(= N_("E487: Argument must be positive"));
-EXTERN char_u e_prev_dir[]      INIT(= N_("E459: Cannot go back to previous directory"));
+EXTERN char_u e_patnotf2[]      INIT(= "E486: Pattern not found: %s");
+EXTERN char_u e_positive[]      INIT(= "E487: Argument must be positive");
+EXTERN char_u e_prev_dir[]      INIT(= "E459: Cannot go back to previous directory");
 
 #if defined(FEAT_QUICKFIX)
-EXTERN char_u e_quickfix[]      INIT(= N_("E42: No Errors"));
-EXTERN char_u e_loclist[]       INIT(= N_("E776: No location list"));
+EXTERN char_u e_quickfix[]      INIT(= "E42: No Errors");
+EXTERN char_u e_loclist[]       INIT(= "E776: No location list");
 #endif
-EXTERN char_u e_re_damg[]       INIT(= N_("E43: Damaged match string"));
-EXTERN char_u e_re_corr[]       INIT(= N_("E44: Corrupted regexp program"));
-EXTERN char_u e_readonly[]      INIT(= N_("E45: 'readonly' option is set (add ! to override)"));
-EXTERN char_u e_readonlyvar[]   INIT(= N_("E46: Cannot change read-only variable \"%s\""));
-EXTERN char_u e_readonlysbx[]   INIT(= N_("E794: Cannot set variable in the sandbox: \"%s\""));
+EXTERN char_u e_re_damg[]       INIT(= "E43: Damaged match string");
+EXTERN char_u e_re_corr[]       INIT(= "E44: Corrupted regexp program");
+EXTERN char_u e_readonly[]      INIT(= "E45: 'readonly' option is set (add ! to override)");
+EXTERN char_u e_readonlyvar[]   INIT(= "E46: Cannot change read-only variable \"%s\"");
+EXTERN char_u e_readonlysbx[]   INIT(= "E794: Cannot set variable in the sandbox: \"%s\"");
 #if defined(FEAT_QUICKFIX)
-EXTERN char_u e_readerrf[]      INIT(= N_("E47: Error while reading errorfile"));
+EXTERN char_u e_readerrf[]      INIT(= "E47: Error while reading errorfile");
 #endif
 #if defined(HAVE_SANDBOX)
-EXTERN char_u e_sandbox[]       INIT(= N_("E48: Not allowed in sandbox"));
+EXTERN char_u e_sandbox[]       INIT(= "E48: Not allowed in sandbox");
 #endif
-EXTERN char_u e_secure[]        INIT(= N_("E523: Not allowed here"));
-EXTERN char_u e_screenmode[]    INIT(= N_("E359: Screen mode setting not supported"));
-EXTERN char_u e_scroll[]        INIT(= N_("E49: Invalid scroll size"));
-EXTERN char_u e_shellempty[]    INIT(= N_("E91: 'shell' option is empty"));
-#if defined(FEAT_SIGN_ICONS)
-EXTERN char_u e_signdata[]      INIT(= N_("E255: Couldn't read in sign data!"));
-#endif
-EXTERN char_u e_swapclose[]     INIT(= N_("E72: Close error on swap file"));
-EXTERN char_u e_tagstack[]      INIT(= N_("E73: tag stack empty"));
-EXTERN char_u e_toocompl[]      INIT(= N_("E74: Command too complex"));
-EXTERN char_u e_longname[]      INIT(= N_("E75: Name too long"));
-EXTERN char_u e_toomsbra[]      INIT(= N_("E76: Too many ["));
-EXTERN char_u e_toomany[]       INIT(= N_("E77: Too many file names"));
-EXTERN char_u e_trailing[]      INIT(= N_("E488: Trailing characters"));
-EXTERN char_u e_umark[]         INIT(= N_("E78: Unknown mark"));
-EXTERN char_u e_wildexpand[]    INIT(= N_("E79: Cannot expand wildcards"));
-#if defined(FEAT_WINDOWS)
-EXTERN char_u e_winheight[]     INIT(= N_("E591: 'winheight' cannot be smaller than 'winminheight'"));
-#if defined(FEAT_VERTSPLIT)
-EXTERN char_u e_winwidth[]      INIT(= N_("E592: 'winwidth' cannot be smaller than 'winminwidth'"));
-#endif
-#endif
-EXTERN char_u e_write[]         INIT(= N_("E80: Error while writing"));
-EXTERN char_u e_zerocount[]     INIT(= N_("Zero count"));
-EXTERN char_u e_usingsid[]      INIT(= N_("E81: Using <SID> not in a script context"));
-EXTERN char_u e_intern2[]       INIT(= N_("E685: Internal error: %s"));
-EXTERN char_u e_maxmempat[]     INIT(= N_("E363: pattern uses more memory than 'maxmempattern'"));
-EXTERN char_u e_emptybuf[]      INIT(= N_("E749: empty buffer"));
-EXTERN char_u e_nobufnr[]       INIT(= N_("E86: Buffer %ld does not exist"));
+EXTERN char_u e_secure[]        INIT(= "E523: Not allowed here");
+EXTERN char_u e_screenmode[]    INIT(= "E359: Screen mode setting not supported");
+EXTERN char_u e_scroll[]        INIT(= "E49: Invalid scroll size");
+EXTERN char_u e_shellempty[]    INIT(= "E91: 'shell' option is empty");
+EXTERN char_u e_swapclose[]     INIT(= "E72: Close error on swap file");
+EXTERN char_u e_tagstack[]      INIT(= "E73: tag stack empty");
+EXTERN char_u e_toocompl[]      INIT(= "E74: Command too complex");
+EXTERN char_u e_longname[]      INIT(= "E75: Name too long");
+EXTERN char_u e_toomsbra[]      INIT(= "E76: Too many [");
+EXTERN char_u e_toomany[]       INIT(= "E77: Too many file names");
+EXTERN char_u e_trailing[]      INIT(= "E488: Trailing characters");
+EXTERN char_u e_umark[]         INIT(= "E78: Unknown mark");
+EXTERN char_u e_wildexpand[]    INIT(= "E79: Cannot expand wildcards");
+EXTERN char_u e_winheight[]     INIT(= "E591: 'winheight' cannot be smaller than 'winminheight'");
+EXTERN char_u e_winwidth[]      INIT(= "E592: 'winwidth' cannot be smaller than 'winminwidth'");
+EXTERN char_u e_write[]         INIT(= "E80: Error while writing");
+EXTERN char_u e_zerocount[]     INIT(= "Zero count");
+EXTERN char_u e_usingsid[]      INIT(= "E81: Using <SID> not in a script context");
+EXTERN char_u e_intern2[]       INIT(= "E685: Internal error: %s");
+EXTERN char_u e_maxmempat[]     INIT(= "E363: pattern uses more memory than 'maxmempattern'");
+EXTERN char_u e_emptybuf[]      INIT(= "E749: empty buffer");
+EXTERN char_u e_nobufnr[]       INIT(= "E86: Buffer %ld does not exist");
 
 #if defined(FEAT_EX_EXTRA)
-EXTERN char_u e_invalpat[]      INIT(= N_("E682: Invalid search pattern or delimiter"));
+EXTERN char_u e_invalpat[]      INIT(= "E682: Invalid search pattern or delimiter");
 #endif
-EXTERN char_u e_bufloaded[]     INIT(= N_("E139: File is loaded in another buffer"));
+EXTERN char_u e_bufloaded[]     INIT(= "E139: File is loaded in another buffer");
 #if defined(FEAT_SYN_HL) || (defined(FEAT_INS_EXPAND) && defined(FEAT_COMPL_FUNC))
-EXTERN char_u e_notset[]        INIT(= N_("E764: Option '%s' is not set"));
+EXTERN char_u e_notset[]        INIT(= "E764: Option '%s' is not set");
 #endif
 #if !defined(FEAT_CLIPBOARD)
-EXTERN char_u e_invalidreg[]    INIT(= N_("E850: Invalid register name"));
+EXTERN char_u e_invalidreg[]    INIT(= "E850: Invalid register name");
 #endif
 
-EXTERN char top_bot_msg[] INIT(= N_("search hit TOP, continuing at BOTTOM"));
-EXTERN char bot_top_msg[] INIT(= N_("search hit BOTTOM, continuing at TOP"));
+EXTERN char top_bot_msg[] INIT(= "search hit TOP, continuing at BOTTOM");
+EXTERN char bot_top_msg[] INIT(= "search hit BOTTOM, continuing at TOP");
 
 /* For undo we need to know the lowest time possible. */
 EXTERN time_t starttime;

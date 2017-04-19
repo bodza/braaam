@@ -53,60 +53,60 @@ static int      hisnum[HIST_COUNT] = {0, 0, 0, 0, 0};
                     /* identifying (unique) number of newest history entry */
 static int      hislen = 0;             /* actual length of history tables */
 
-static int      hist_char2type __ARGS((int c));
+static int      hist_char2type(int c);
 
-static int      in_history __ARGS((int, char_u *, int, int, int));
-static int      calc_hist_idx __ARGS((int histype, int num));
+static int      in_history(int, char_u *, int, int, int);
+static int      calc_hist_idx(int histype, int num);
 #endif
 
 #if defined(FEAT_RIGHTLEFT)
 static int      cmd_hkmap = 0;  /* Hebrew mapping during command line */
 #endif
 
-static int      cmdline_charsize __ARGS((int idx));
-static void     set_cmdspos __ARGS((void));
-static void     set_cmdspos_cursor __ARGS((void));
-static void     correct_cmdspos __ARGS((int idx, int cells));
-static void     alloc_cmdbuff __ARGS((int len));
-static int      realloc_cmdbuff __ARGS((int len));
-static void     draw_cmdline __ARGS((int start, int len));
-static void     save_cmdline __ARGS((struct cmdline_info *ccp));
-static void     restore_cmdline __ARGS((struct cmdline_info *ccp));
-static int      cmdline_paste __ARGS((int regname, int literally, int remcr));
+static int      cmdline_charsize(int idx);
+static void     set_cmdspos(void);
+static void     set_cmdspos_cursor(void);
+static void     correct_cmdspos(int idx, int cells);
+static void     alloc_cmdbuff(int len);
+static int      realloc_cmdbuff(int len);
+static void     draw_cmdline(int start, int len);
+static void     save_cmdline(struct cmdline_info *ccp);
+static void     restore_cmdline(struct cmdline_info *ccp);
+static int      cmdline_paste(int regname, int literally, int remcr);
 #if defined(FEAT_WILDMENU)
-static void     cmdline_del __ARGS((int from));
+static void     cmdline_del(int from);
 #endif
-static void     redrawcmdprompt __ARGS((void));
-static void     cursorcmd __ARGS((void));
-static int      ccheck_abbr __ARGS((int));
-static int      nextwild __ARGS((expand_T *xp, int type, int options, int escape));
-static void     escape_fname __ARGS((char_u **pp));
-static int      showmatches __ARGS((expand_T *xp, int wildmenu));
-static void     set_expand_context __ARGS((expand_T *xp));
-static int      ExpandFromContext __ARGS((expand_T *xp, char_u *, int *, char_u ***, int));
-static int      expand_showtail __ARGS((expand_T *xp));
+static void     redrawcmdprompt(void);
+static void     cursorcmd(void);
+static int      ccheck_abbr(int);
+static int      nextwild(expand_T *xp, int type, int options, int escape);
+static void     escape_fname(char_u **pp);
+static int      showmatches(expand_T *xp, int wildmenu);
+static void     set_expand_context(expand_T *xp);
+static int      ExpandFromContext(expand_T *xp, char_u *, int *, char_u ***, int);
+static int      expand_showtail(expand_T *xp);
 #if defined(FEAT_CMDL_COMPL)
-static int      expand_shellcmd __ARGS((char_u *filepat, int *num_file, char_u ***file, int flagsarg));
-static int      ExpandRTDir __ARGS((char_u *pat, int *num_file, char_u ***file, char *dirname[]));
+static int      expand_shellcmd(char_u *filepat, int *num_file, char_u ***file, int flagsarg);
+static int      ExpandRTDir(char_u *pat, int *num_file, char_u ***file, char *dirname[]);
 #if defined(FEAT_CMDHIST)
-static char_u   *get_history_arg __ARGS((expand_T *xp, int idx));
+static char_u   *get_history_arg(expand_T *xp, int idx);
 #endif
 #if defined(FEAT_USR_CMDS)
-static int      ExpandUserDefined __ARGS((expand_T *xp, regmatch_T *regmatch, int *num_file, char_u ***file));
-static int      ExpandUserList __ARGS((expand_T *xp, int *num_file, char_u ***file));
+static int      ExpandUserDefined(expand_T *xp, regmatch_T *regmatch, int *num_file, char_u ***file);
+static int      ExpandUserList(expand_T *xp, int *num_file, char_u ***file);
 #endif
 #endif
 #if defined(FEAT_CMDHIST)
-static void     clear_hist_entry __ARGS((histentry_T *hisptr));
+static void     clear_hist_entry(histentry_T *hisptr);
 #endif
 
 #if defined(FEAT_CMDWIN)
-static int      ex_window __ARGS((void));
+static int      ex_window(void);
 #endif
 
 #if defined(FEAT_CMDL_COMPL)
 static int
-sort_func_compare __ARGS((const void *s1, const void *s2));
+sort_func_compare(const void *s1, const void *s2);
 #endif
 
 /*
@@ -292,9 +292,7 @@ getcmdline(firstc, count, indent)
     histype = hist_char2type(firstc);
 #endif
 
-#if defined(FEAT_DIGRAPHS)
     do_digraph(-1);             /* init digraph typeahead */
-#endif
 
     /* If something above caused an error, reset the flags, we do want to type
      * and execute commands. Display may be messed up a bit. */
@@ -446,11 +444,7 @@ getcmdline(firstc, count, indent)
                 }
                 else
                 {
-#if defined(FEAT_VERTSPLIT)
                     win_redraw_last_status(topframe);
-#else
-                    lastwin->w_redr_status = TRUE;
-#endif
                     redraw_statuslines();
                 }
                 KeyTyped = skt;
@@ -701,13 +695,9 @@ getcmdline(firstc, count, indent)
                 some_key_typed = TRUE;
             }
         }
-#if defined(FEAT_DIGRAPHS)
         else
 #endif
-#endif
-#if defined(FEAT_DIGRAPHS)
             c = do_digraph(c);
-#endif
 
         if (c == '\n' || c == '\r' || c == K_KENTER || (c == ESC
                         && (!KeyTyped || vim_strchr(p_cpo, CPO_ESC) != NULL)))
@@ -1009,10 +999,6 @@ getcmdline(firstc, count, indent)
 #if defined(CURSOR_SHAPE)
                 ui_cursor_shape();      /* may show different cursor shape */
 #endif
-#if defined(FEAT_WINDOWS) && defined(FEAT_KEYMAP)
-                /* Show/unshow value of 'keymap' in status lines later. */
-                status_redraw_curbuf();
-#endif
                 goto cmdline_not_changed;
 
 /*      case '@':   only in very old vi */
@@ -1131,8 +1117,7 @@ getcmdline(firstc, count, indent)
                         break;
                     ccline.cmdspos += i;
                     if (has_mbyte)
-                        ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff
-                                                             + ccline.cmdpos);
+                        ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos);
                     else
                         ++ccline.cmdpos;
                 }
@@ -1243,8 +1228,7 @@ getcmdline(firstc, count, indent)
                     {
                         /* Count ">" for double-wide char that doesn't fit. */
                         correct_cmdspos(ccline.cmdpos, i);
-                        ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff
-                                                         + ccline.cmdpos) - 1;
+                        ccline.cmdpos += (*mb_ptr2len)(ccline.cmdbuff + ccline.cmdpos) - 1;
                     }
                     ccline.cmdspos += i;
                 }
@@ -1264,16 +1248,6 @@ getcmdline(firstc, count, indent)
         case K_X2RELEASE:
                 goto cmdline_not_changed;
 
-#endif
-
-#if defined(FEAT_GUI_TABLINE)
-        case K_TABLINE:
-        case K_TABMENU:
-                /* Don't want to change any tabs here.  Make sure the same tab
-                 * is still selected. */
-                if (gui_use_tabline())
-                    gui_mch_set_curtab(tabpage_index(curtab));
-                goto cmdline_not_changed;
 #endif
 
         case K_SELECT:      /* end of Select mode mapping - ignore */
@@ -1510,7 +1484,6 @@ getcmdline(firstc, count, indent)
                 }
                 break;
 
-#if defined(FEAT_DIGRAPHS)
         case Ctrl_K:
 #if defined(FEAT_MOUSE)
                 ignore_drag_release = TRUE;
@@ -1525,7 +1498,6 @@ getcmdline(firstc, count, indent)
 
                 redrawcmd();
                 goto cmdline_not_changed;
-#endif
 
 #if defined(FEAT_RIGHTLEFT)
         case Ctrl__:        /* CTRL-_: switch language mode */
@@ -1687,11 +1659,9 @@ cmdline_changed:
                 end_pos = curwin->w_cursor; /* shutup gcc 4 */
 
             validate_cursor();
-#if defined(FEAT_WINDOWS)
             /* May redraw the status line to show the cursor position. */
             if (p_ru && curwin->w_status_height > 0)
                 curwin->w_redr_status = TRUE;
-#endif
 
             save_cmdline(&save_ccline);
             update_screen(SOME_VALID);
@@ -2852,8 +2822,7 @@ compute_cmdrow()
     if (exmode_active || msg_scrolled != 0)
         cmdline_row = Rows - 1;
     else
-        cmdline_row = W_WINROW(lastwin) + lastwin->w_height
-                                                   + W_STATUS_HEIGHT(lastwin);
+        cmdline_row = W_WINROW(lastwin) + lastwin->w_height + W_STATUS_HEIGHT(lastwin);
 }
 
     static void
@@ -4170,7 +4139,7 @@ ExpandFromContext(xp, pat, num_file, file, options)
         static struct expgen
         {
             int         context;
-            char_u      *((*func)__ARGS((expand_T *, int)));
+            char_u      *((*func)(expand_T *, int));
             int         ic;
             int         escaped;
         } tab[] =
@@ -4250,7 +4219,7 @@ ExpandGeneric(xp, regmatch, num_file, file, func, escaped)
     regmatch_T  *regmatch;
     int         *num_file;
     char_u      ***file;
-    char_u      *((*func)__ARGS((expand_T *, int)));
+    char_u      *((*func)(expand_T *, int));
                                           /* returns a string from the list */
     int         escaped;
 {
@@ -4450,7 +4419,7 @@ expand_shellcmd(filepat, num_file, file, flagsarg)
 }
 
 #if defined(FEAT_USR_CMDS)
-static void * call_user_expand_func __ARGS((void *(*user_expand_func) __ARGS((char_u *, int, char_u **, int)), expand_T *xp, int *num_file, char_u ***file));
+static void * call_user_expand_func(void *(*user_expand_func)(char_u *, int, char_u **, int), expand_T *xp, int *num_file, char_u ***file);
 
 /*
  * Call "user_expand_func()" to invoke a user defined VimL function and return
@@ -4458,7 +4427,7 @@ static void * call_user_expand_func __ARGS((void *(*user_expand_func) __ARGS((ch
  */
     static void *
 call_user_expand_func(user_expand_func, xp, num_file, file)
-    void        *(*user_expand_func) __ARGS((char_u *, int, char_u **, int));
+    void        *(*user_expand_func)(char_u *, int, char_u **, int);
     expand_T    *xp;
     int         *num_file;
     char_u      ***file;
@@ -5038,7 +5007,7 @@ get_history_idx(histype)
     return history[histype][hisidx[histype]].hisnum;
 }
 
-static struct cmdline_info *get_ccline_ptr __ARGS((void));
+static struct cmdline_info *get_ccline_ptr(void);
 
 /*
  * Get pointer to the command line info to use. cmdline_paste() may clear

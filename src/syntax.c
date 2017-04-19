@@ -62,15 +62,15 @@ static char *(hl_name_table[]) =
 static int hl_attr_table[] =
     {HL_BOLD, HL_STANDOUT, HL_UNDERLINE, HL_UNDERCURL, HL_ITALIC, HL_INVERSE, HL_INVERSE, 0};
 
-static int get_attr_entry  __ARGS((garray_T *table, attrentry_T *aep));
-static void syn_unadd_group __ARGS((void));
-static void set_hl_attr __ARGS((int idx));
-static void highlight_list_one __ARGS((int id));
-static int highlight_list_arg __ARGS((int id, int didh, int type, int iarg, char_u *sarg, char *name));
-static int syn_add_group __ARGS((char_u *name));
-static int syn_list_header __ARGS((int did_header, int outlen, int id));
-static int hl_has_settings __ARGS((int idx, int check_link));
-static void highlight_clear __ARGS((int idx));
+static int get_attr_entry (garray_T *table, attrentry_T *aep);
+static void syn_unadd_group(void);
+static void set_hl_attr(int idx);
+static void highlight_list_one(int id);
+static int highlight_list_arg(int id, int didh, int type, int iarg, char_u *sarg, char *name);
+static int syn_add_group(char_u *name);
+static int syn_list_header(int did_header, int outlen, int id);
+static int hl_has_settings(int idx, int check_link);
+static void highlight_clear(int idx);
 
 /*
  * An attribute number is the index in attr_table plus ATTR_OFF.
@@ -91,8 +91,7 @@ static void highlight_clear __ARGS((int idx));
 #define SPO_LC_OFF      6       /* leading context offset */
 #define SPO_COUNT       7
 
-static char *(spo_name_tab[SPO_COUNT]) =
-            {"ms=", "me=", "hs=", "he=", "rs=", "re=", "lc="};
+static char *(spo_name_tab[SPO_COUNT]) = {"ms=", "me=", "hs=", "he=", "rs=", "re=", "lc="};
 
 /*
  * The patterns that are being searched for are stored in a syn_pattern.
@@ -230,7 +229,7 @@ static keyentry_T dumkey;
  */
 static int keepend_level = -1;
 
-static char msg_no_items[] = N_("No Syntax items defined for this buffer");
+static char msg_no_items[] = "No Syntax items defined for this buffer";
 
 /*
  * For the current state we need to remember more than just the idx.
@@ -333,91 +332,91 @@ static int      current_line_id = 0;    /* unique number for current line */
 
 #define CUR_STATE(idx)  ((stateitem_T *)(current_state.ga_data))[idx]
 
-static void syn_sync __ARGS((win_T *wp, linenr_T lnum, synstate_T *last_valid));
-static int syn_match_linecont __ARGS((linenr_T lnum));
-static void syn_start_line __ARGS((void));
-static void syn_update_ends __ARGS((int startofline));
-static void syn_stack_alloc __ARGS((void));
-static int syn_stack_cleanup __ARGS((void));
-static void syn_stack_free_entry __ARGS((synblock_T *block, synstate_T *p));
-static synstate_T *syn_stack_find_entry __ARGS((linenr_T lnum));
-static synstate_T *store_current_state __ARGS((void));
-static void load_current_state __ARGS((synstate_T *from));
-static void invalidate_current_state __ARGS((void));
-static int syn_stack_equal __ARGS((synstate_T *sp));
-static void validate_current_state __ARGS((void));
-static int syn_finish_line __ARGS((int syncing));
-static int syn_current_attr __ARGS((int syncing, int displaying, int *can_spell, int keep_state));
-static int did_match_already __ARGS((int idx, garray_T *gap));
-static stateitem_T *push_next_match __ARGS((stateitem_T *cur_si));
-static void check_state_ends __ARGS((void));
-static void update_si_attr __ARGS((int idx));
-static void check_keepend __ARGS((void));
-static void update_si_end __ARGS((stateitem_T *sip, int startcol, int force));
-static short *copy_id_list __ARGS((short *list));
-static int in_id_list __ARGS((stateitem_T *item, short *cont_list, struct sp_syn *ssp, int contained));
-static int push_current_state __ARGS((int idx));
-static void pop_current_state __ARGS((void));
+static void syn_sync(win_T *wp, linenr_T lnum, synstate_T *last_valid);
+static int syn_match_linecont(linenr_T lnum);
+static void syn_start_line(void);
+static void syn_update_ends(int startofline);
+static void syn_stack_alloc(void);
+static int syn_stack_cleanup(void);
+static void syn_stack_free_entry(synblock_T *block, synstate_T *p);
+static synstate_T *syn_stack_find_entry(linenr_T lnum);
+static synstate_T *store_current_state(void);
+static void load_current_state(synstate_T *from);
+static void invalidate_current_state(void);
+static int syn_stack_equal(synstate_T *sp);
+static void validate_current_state(void);
+static int syn_finish_line(int syncing);
+static int syn_current_attr(int syncing, int displaying, int *can_spell, int keep_state);
+static int did_match_already(int idx, garray_T *gap);
+static stateitem_T *push_next_match(stateitem_T *cur_si);
+static void check_state_ends(void);
+static void update_si_attr(int idx);
+static void check_keepend(void);
+static void update_si_end(stateitem_T *sip, int startcol, int force);
+static short *copy_id_list(short *list);
+static int in_id_list(stateitem_T *item, short *cont_list, struct sp_syn *ssp, int contained);
+static int push_current_state(int idx);
+static void pop_current_state(void);
 #define IF_SYN_TIME(p) NULL
 typedef int syn_time_T;
 
-static void syn_stack_apply_changes_block __ARGS((synblock_T *block, buf_T *buf));
-static void find_endpos __ARGS((int idx, lpos_T *startpos, lpos_T *m_endpos, lpos_T *hl_endpos, long *flagsp, lpos_T *end_endpos, int *end_idx, reg_extmatch_T *start_ext));
-static void clear_syn_state __ARGS((synstate_T *p));
-static void clear_current_state __ARGS((void));
+static void syn_stack_apply_changes_block(synblock_T *block, buf_T *buf);
+static void find_endpos(int idx, lpos_T *startpos, lpos_T *m_endpos, lpos_T *hl_endpos, long *flagsp, lpos_T *end_endpos, int *end_idx, reg_extmatch_T *start_ext);
+static void clear_syn_state(synstate_T *p);
+static void clear_current_state(void);
 
-static void limit_pos __ARGS((lpos_T *pos, lpos_T *limit));
-static void limit_pos_zero __ARGS((lpos_T *pos, lpos_T *limit));
-static void syn_add_end_off __ARGS((lpos_T *result, regmmatch_T *regmatch, synpat_T *spp, int idx, int extra));
-static void syn_add_start_off __ARGS((lpos_T *result, regmmatch_T *regmatch, synpat_T *spp, int idx, int extra));
-static char_u *syn_getcurline __ARGS((void));
-static int syn_regexec __ARGS((regmmatch_T *rmp, linenr_T lnum, colnr_T col, syn_time_T *st));
-static int check_keyword_id __ARGS((char_u *line, int startcol, int *endcol, long *flags, short **next_list, stateitem_T *cur_si, int *ccharp));
-static void syn_cmd_case __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_spell __ARGS((exarg_T *eap, int syncing));
-static void syntax_sync_clear __ARGS((void));
-static void syn_remove_pattern __ARGS((synblock_T *block, int idx));
-static void syn_clear_pattern __ARGS((synblock_T *block, int i));
-static void syn_clear_cluster __ARGS((synblock_T *block, int i));
-static void syn_cmd_clear __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_conceal __ARGS((exarg_T *eap, int syncing));
-static void syn_clear_one __ARGS((int id, int syncing));
-static void syn_cmd_on __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_enable __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_reset __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_manual __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_off __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_onoff __ARGS((exarg_T *eap, char *name));
-static void syn_cmd_list __ARGS((exarg_T *eap, int syncing));
-static void syn_lines_msg __ARGS((void));
-static void syn_match_msg __ARGS((void));
-static void syn_stack_free_block __ARGS((synblock_T *block));
-static void syn_list_one __ARGS((int id, int syncing, int link_only));
-static void syn_list_cluster __ARGS((int id));
-static void put_id_list __ARGS((char_u *name, short *list, int attr));
-static void put_pattern __ARGS((char *s, int c, synpat_T *spp, int attr));
-static int syn_list_keywords __ARGS((int id, hashtab_T *ht, int did_header, int attr));
-static void syn_clear_keyword __ARGS((int id, hashtab_T *ht));
-static void clear_keywtab __ARGS((hashtab_T *ht));
-static void add_keyword __ARGS((char_u *name, int id, int flags, short *cont_in_list, short *next_list, int conceal_char));
-static char_u *get_group_name __ARGS((char_u *arg, char_u **name_end));
-static char_u *get_syn_options __ARGS((char_u *arg, syn_opt_arg_T *opt, int *conceal_char));
-static void syn_cmd_include __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_keyword __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_match __ARGS((exarg_T *eap, int syncing));
-static void syn_cmd_region __ARGS((exarg_T *eap, int syncing));
-static int syn_compare_stub __ARGS((const void *v1, const void *v2));
-static void syn_cmd_cluster __ARGS((exarg_T *eap, int syncing));
-static int syn_scl_name2id __ARGS((char_u *name));
-static int syn_scl_namen2id __ARGS((char_u *linep, int len));
-static int syn_check_cluster __ARGS((char_u *pp, int len));
-static int syn_add_cluster __ARGS((char_u *name));
-static void init_syn_patterns __ARGS((void));
-static char_u *get_syn_pattern __ARGS((char_u *arg, synpat_T *ci));
-static void syn_cmd_sync __ARGS((exarg_T *eap, int syncing));
-static int get_id_list __ARGS((char_u **arg, int keylen, short **list));
-static void syn_combine_list __ARGS((short **clstr1, short **clstr2, int list_op));
-static void syn_incl_toplevel __ARGS((int id, int *flagsp));
+static void limit_pos(lpos_T *pos, lpos_T *limit);
+static void limit_pos_zero(lpos_T *pos, lpos_T *limit);
+static void syn_add_end_off(lpos_T *result, regmmatch_T *regmatch, synpat_T *spp, int idx, int extra);
+static void syn_add_start_off(lpos_T *result, regmmatch_T *regmatch, synpat_T *spp, int idx, int extra);
+static char_u *syn_getcurline(void);
+static int syn_regexec(regmmatch_T *rmp, linenr_T lnum, colnr_T col, syn_time_T *st);
+static int check_keyword_id(char_u *line, int startcol, int *endcol, long *flags, short **next_list, stateitem_T *cur_si, int *ccharp);
+static void syn_cmd_case(exarg_T *eap, int syncing);
+static void syn_cmd_spell(exarg_T *eap, int syncing);
+static void syntax_sync_clear(void);
+static void syn_remove_pattern(synblock_T *block, int idx);
+static void syn_clear_pattern(synblock_T *block, int i);
+static void syn_clear_cluster(synblock_T *block, int i);
+static void syn_cmd_clear(exarg_T *eap, int syncing);
+static void syn_cmd_conceal(exarg_T *eap, int syncing);
+static void syn_clear_one(int id, int syncing);
+static void syn_cmd_on(exarg_T *eap, int syncing);
+static void syn_cmd_enable(exarg_T *eap, int syncing);
+static void syn_cmd_reset(exarg_T *eap, int syncing);
+static void syn_cmd_manual(exarg_T *eap, int syncing);
+static void syn_cmd_off(exarg_T *eap, int syncing);
+static void syn_cmd_onoff(exarg_T *eap, char *name);
+static void syn_cmd_list(exarg_T *eap, int syncing);
+static void syn_lines_msg(void);
+static void syn_match_msg(void);
+static void syn_stack_free_block(synblock_T *block);
+static void syn_list_one(int id, int syncing, int link_only);
+static void syn_list_cluster(int id);
+static void put_id_list(char_u *name, short *list, int attr);
+static void put_pattern(char *s, int c, synpat_T *spp, int attr);
+static int syn_list_keywords(int id, hashtab_T *ht, int did_header, int attr);
+static void syn_clear_keyword(int id, hashtab_T *ht);
+static void clear_keywtab(hashtab_T *ht);
+static void add_keyword(char_u *name, int id, int flags, short *cont_in_list, short *next_list, int conceal_char);
+static char_u *get_group_name(char_u *arg, char_u **name_end);
+static char_u *get_syn_options(char_u *arg, syn_opt_arg_T *opt, int *conceal_char);
+static void syn_cmd_include(exarg_T *eap, int syncing);
+static void syn_cmd_keyword(exarg_T *eap, int syncing);
+static void syn_cmd_match(exarg_T *eap, int syncing);
+static void syn_cmd_region(exarg_T *eap, int syncing);
+static int syn_compare_stub(const void *v1, const void *v2);
+static void syn_cmd_cluster(exarg_T *eap, int syncing);
+static int syn_scl_name2id(char_u *name);
+static int syn_scl_namen2id(char_u *linep, int len);
+static int syn_check_cluster(char_u *pp, int len);
+static int syn_add_cluster(char_u *name);
+static void init_syn_patterns(void);
+static char_u *get_syn_pattern(char_u *arg, synpat_T *ci);
+static void syn_cmd_sync(exarg_T *eap, int syncing);
+static int get_id_list(char_u **arg, int keylen, short **list);
+static void syn_combine_list(short **clstr1, short **clstr2, int list_op);
+static void syn_incl_toplevel(int id, int *flagsp);
 
 /*
  * Start the syntax recognition for a line.  This function is normally called
@@ -1575,8 +1574,7 @@ syn_stack_equal(sp)
                                 || six->matches[j] == NULL)
                             break;
                         if ((SYN_ITEMS(syn_block)[CUR_STATE(i).si_idx]).sp_ic
-                                ? MB_STRICMP(bsx->matches[j],
-                                                         six->matches[j]) != 0
+                                ? MB_STRICMP(bsx->matches[j], six->matches[j]) != 0
                                 : STRCMP(bsx->matches[j], six->matches[j]) != 0)
                             break;
                     }
@@ -1996,8 +1994,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                                 && (spp->sp_type == SPTYPE_MATCH
                                     || spp->sp_type == SPTYPE_START)
                                 && (current_next_list != NULL
-                                    ? in_id_list(NULL, current_next_list,
-                                                              &spp->sp_syn, 0)
+                                    ? in_id_list(NULL, current_next_list, &spp->sp_syn, 0)
                                     : (cur_si == NULL
                                         ? !(spp->sp_flags & HL_CONTAINED)
                                         : in_id_list(cur_si,
@@ -3838,7 +3835,7 @@ struct name_list
     char        *name;
 };
 
-static void syn_list_flags __ARGS((struct name_list *nl, int flags, int attr));
+static void syn_list_flags(struct name_list *nl, int flags, int attr);
 
 /*
  * List one syntax item, for ":syntax" or "syntax list syntax_name".
@@ -6084,7 +6081,7 @@ in_id_list(cur_si, list, ssp, contained)
 struct subcommand
 {
     char    *name;                              /* subcommand name */
-    void    (*func)__ARGS((exarg_T *, int));    /* function to call */
+    void    (*func)(exarg_T *, int);    /* function to call */
 };
 
 static struct subcommand subcommands[] =
@@ -6386,10 +6383,8 @@ static char *(highlight_init_both[]) =
              "StatusLine term=reverse,bold cterm=reverse,bold gui=reverse,bold"),
         CENT("StatusLineNC term=reverse cterm=reverse",
              "StatusLineNC term=reverse cterm=reverse gui=reverse"),
-#if defined(FEAT_VERTSPLIT)
         CENT("VertSplit term=reverse cterm=reverse",
              "VertSplit term=reverse cterm=reverse gui=reverse"),
-#endif
 #if defined(FEAT_CLIPBOARD)
         CENT("VisualNOS term=underline,bold cterm=underline,bold",
              "VisualNOS term=underline,bold cterm=underline,bold gui=underline,bold"),
@@ -6398,12 +6393,10 @@ static char *(highlight_init_both[]) =
         CENT("PmenuSbar ctermbg=Grey",
              "PmenuSbar ctermbg=Grey guibg=Grey"),
 #endif
-#if defined(FEAT_WINDOWS)
         CENT("TabLineSel term=bold cterm=bold",
              "TabLineSel term=bold cterm=bold gui=bold"),
         CENT("TabLineFill term=reverse cterm=reverse",
              "TabLineFill term=reverse cterm=reverse gui=reverse"),
-#endif
         NULL
     };
 
@@ -6441,10 +6434,8 @@ static char *(highlight_init_light[]) =
 #endif
         CENT("Visual term=reverse",
              "Visual term=reverse guibg=LightGrey"),
-#if defined(FEAT_WINDOWS)
         CENT("TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey",
              "TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey gui=underline guibg=LightGrey"),
-#endif
 #if defined(FEAT_SYN_HL)
         CENT("CursorColumn term=reverse ctermbg=LightGrey",
              "CursorColumn term=reverse ctermbg=LightGrey guibg=Grey90"),
@@ -6498,10 +6489,8 @@ static char *(highlight_init_dark[]) =
 #endif
         CENT("Visual term=reverse",
              "Visual term=reverse guibg=DarkGrey"),
-#if defined(FEAT_WINDOWS)
         CENT("TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey",
              "TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey gui=underline guibg=DarkGrey"),
-#endif
 #if defined(FEAT_SYN_HL)
         CENT("CursorColumn term=reverse ctermbg=DarkGrey",
              "CursorColumn term=reverse ctermbg=DarkGrey guibg=Grey40"),
@@ -6586,8 +6575,7 @@ init_highlight(both, reset)
                     : "Visual cterm=NONE ctermbg=DarkGrey"), FALSE, TRUE);
     else
     {
-        do_highlight((char_u *)"Visual cterm=reverse ctermbg=NONE",
-                                                                 FALSE, TRUE);
+        do_highlight((char_u *)"Visual cterm=reverse ctermbg=NONE", FALSE, TRUE);
         if (*p_bg == 'l')
             do_highlight((char_u *)"Search ctermfg=black", FALSE, TRUE);
     }
@@ -8369,8 +8357,8 @@ highlight_changed()
 
 #if defined(FEAT_CMDL_COMPL)
 
-static void highlight_list __ARGS((void));
-static void highlight_list_two __ARGS((int cnt, int attr));
+static void highlight_list(void);
+static void highlight_list_two(int cnt, int attr);
 
 /*
  * Handle command line completion for :highlight command.
