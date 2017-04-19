@@ -3096,37 +3096,6 @@ read_string(fd, cnt)
 }
 
 /*
- * Write a number to file "fd", MSB first, in "len" bytes.
- */
-    int
-put_bytes(fd, nr, len)
-    FILE    *fd;
-    long_u  nr;
-    int     len;
-{
-    int     i;
-
-    for (i = len - 1; i >= 0; --i)
-        if (putc((int)(nr >> (i * 8)), fd) == EOF)
-            return FAIL;
-    return OK;
-}
-
-/*
- * Write time_t to file "fd" in 8 bytes.
- */
-    void
-put_time(fd, the_time)
-    FILE        *fd;
-    time_t      the_time;
-{
-    char_u      buf[8];
-
-    time_to_bytes(the_time, buf);
-    (void)fwrite(buf, (size_t)8, (size_t)1, fd);
-}
-
-/*
  * Write time_t to "buf[8]".
  */
     void

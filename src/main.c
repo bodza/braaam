@@ -55,7 +55,6 @@ static void edit_buffers(mparm_T *parmp, char_u *cwd);
 static void exe_pre_commands(mparm_T *parmp);
 static void exe_commands(mparm_T *parmp);
 static void source_startup_scripts(mparm_T *parmp);
-static void main_start_gui(void);
 static void check_swap_exists_action(void);
 
 /*
@@ -695,12 +694,10 @@ get_number_arg(p, idx, def)
 }
 
 /*
- * Check for: [r][e][g][vi|vim|view][diff][ex[im]]
+ * Check for: [r][e][vi|vim|view][ex[im]]
  * If the executable name starts with "r" we disable shell commands.
  * If the next character is "e" we run in Easy mode.
- * If the next character is "g" we run the GUI version.
  * If the next characters are "view" we start in readonly mode.
- * If the next characters are "diff" or "vimdiff" we start in diff mode.
  * If the next characters are "ex" we start in Ex mode.  If it's followed
  * by "im" use improved Ex mode.
  */
@@ -721,19 +718,11 @@ parse_command_name(parmp)
         ++initstr;
     }
 
-    /* Use evim mode for "evim" and "egvim", not for "editor". */
-    if (TOLOWER_ASC(initstr[0]) == 'e'
-            && (TOLOWER_ASC(initstr[1]) == 'v'
-                || TOLOWER_ASC(initstr[1]) == 'g'))
+    /* Use evim mode for "evim", not for "editor". */
+    if (STRNICMP(initstr, "ev", 2) == 0)
     {
         parmp->evim_mode = TRUE;
         ++initstr;
-    }
-
-    /* "gvim" starts the GUI.  Also accept "Gvim" for MS-Windows. */
-    if (TOLOWER_ASC(initstr[0]) == 'g')
-    {
-        main_start_gui();
     }
 
     if (STRNICMP(initstr, "view", 4) == 0)
@@ -746,21 +735,12 @@ parse_command_name(parmp)
     else if (STRNICMP(initstr, "vim", 3) == 0)
         initstr += 3;
 
-    /* Catch "[r][g]vimdiff" and "[r][g]viewdiff". */
-    if (STRICMP(initstr, "diff") == 0)
-    {
-        mch_errmsg("This Vim was not compiled with the diff feature.");
-        mch_errmsg("\n");
-        mch_exit(2);
-    }
-
     if (STRNICMP(initstr, "ex", 2) == 0)
     {
         if (STRNICMP(initstr + 2, "im", 2) == 0)
             exmode_active = EXMODE_VIM;
         else
             exmode_active = EXMODE_NORMAL;
-        change_compatible(TRUE);        /* set 'compatible' */
     }
 }
 
@@ -877,11 +857,6 @@ command_line_scan(parmp)
                     argv_idx = -1;      /* skip to next argument */
                 break;
 
-            case 'A':           /* "-A" start in Arabic mode */
-                mch_errmsg((char *)e_noarabic);
-                mch_exit(2);
-                break;
-
             case 'b':           /* "-b" binary mode */
                 /* Needs to be effective before expanding file names, because
                  * for Win32 this makes us edit a shortcut file itself,
@@ -890,29 +865,12 @@ command_line_scan(parmp)
                 curbuf->b_p_bin = 1;        /* binary file I/O */
                 break;
 
-            case 'C':           /* "-C"  Compatible */
-                change_compatible(TRUE);
-                break;
-
             case 'e':           /* "-e" Ex mode */
                 exmode_active = EXMODE_NORMAL;
                 break;
 
             case 'E':           /* "-E" Improved Ex mode */
                 exmode_active = EXMODE_VIM;
-                break;
-
-            case 'f':           /* "-f"  GUI: run in foreground.  Amiga: open
-                                window directly, not with newcli */
-                break;
-
-            case 'g':           /* "-g" start GUI */
-                main_start_gui();
-                break;
-
-            case 'F':           /* "-F" start in Farsi mode: rl + fkmap set */
-                mch_errmsg((char *)e_nofarsi);
-                mch_exit(2);
                 break;
 
             case 'h':           /* "-h" give help message */
@@ -941,10 +899,6 @@ command_line_scan(parmp)
                 parmp->evim_mode = TRUE;
                 break;
 
-            case 'N':           /* "-N"  Nocompatible */
-                change_compatible(FALSE);
-                break;
-
             case 'n':           /* "-n" no swap file */
                 parmp->no_swap_file = TRUE;
                 break;
@@ -961,7 +915,7 @@ command_line_scan(parmp)
                 parmp->window_layout = WIN_HOR;
                 break;
 
-                case 'O':       /* "-O[N]" open N vertical split windows */
+            case 'O':           /* "-O[N]" open N vertical split windows */
                 /* default is 0: open window for each file */
                 parmp->window_count = get_number_arg((char_u *)argv[0], &argv_idx, 0);
                 parmp->window_layout = WIN_VER;
@@ -974,7 +928,6 @@ command_line_scan(parmp)
                 break;
 
             case 'r':           /* "-r" recovery mode */
-            case 'L':           /* "-L" recovery mode */
                 recoverymode = 1;
                 break;
 
@@ -1013,15 +966,11 @@ command_line_scan(parmp)
                 want_argument = TRUE;
                 break;
 
-            case 'X':           /* "-X"  don't connect to X server */
-                break;
-
             case 'Z':           /* "-Z"  restricted mode */
                 restricted = TRUE;
                 break;
 
-            case 'c':           /* "-c{command}" or "-c {command}" execute
-                                   command */
+            case 'c':           /* "-c{command}" or "-c {command}" execute command */
                 if (argv[0][argv_idx] != NUL)
                 {
                     if (parmp->n_commands >= MAX_ARG_CMDS)
@@ -1032,10 +981,8 @@ command_line_scan(parmp)
                 }
                 /*FALLTHROUGH*/
             case 'i':           /* "-i {viminfo}" use for viminfo */
-            case 'd':           /* "-d {device}" device (for Amiga) */
             case 'T':           /* "-T {terminal}" terminal name */
             case 'u':           /* "-u {vimrc}" vim inits file */
-            case 'U':           /* "-U {gvimrc}" gvim inits file */
             case 'W':           /* "-W {scriptout}" overwrite */
                 want_argument = TRUE;
                 break;
@@ -1080,9 +1027,6 @@ command_line_scan(parmp)
                     /* "--startuptime <file>" already handled */
                     break;
 
-            /*  case 'd':   -d {device} is handled in mch_check_win() for the
-             *              Amiga */
-
                 case 'i':       /* "-i {viminfo}" use for viminfo */
                     use_viminfo = (char_u *)argv[0];
                     break;
@@ -1119,9 +1063,6 @@ scripterror:
 
                 case 'u':       /* "-u {vimrc}" vim inits file */
                     parmp->use_vimrc = (char_u *)argv[0];
-                    break;
-
-                case 'U':       /* "-U {gvimrc}" gvim inits file */
                     break;
 
                 case 'w':       /* "-w {nr}" 'window' value */
@@ -1634,17 +1575,6 @@ source_startup_scripts(parmp)
 }
 
 /*
- * Setup to start using the GUI.  Exit with an error when not available.
- */
-    static void
-main_start_gui()
-{
-    mch_errmsg((char *)e_nogvim);
-    mch_errmsg("\n");
-    mch_exit(2);
-}
-
-/*
  * Get an environment variable, and execute it as Ex commands.
  * Returns FAIL if the environment variable was not executed, OK otherwise.
  */
@@ -1776,14 +1706,11 @@ usage()
     main_msg("-M\t\t\tModifications in text not allowed");
     main_msg("-b\t\t\tBinary mode");
     main_msg("-l\t\t\tLisp mode");
-    main_msg("-C\t\t\tCompatible with Vi: 'compatible'");
-    main_msg("-N\t\t\tNot fully Vi compatible: 'nocompatible'");
     main_msg("-V[N][fname]\t\tBe verbose [level N] [log messages to fname]");
     main_msg("-D\t\t\tDebugging mode");
     main_msg("-n\t\t\tNo swap file, use memory only");
     main_msg("-r\t\t\tList swap files and exit");
     main_msg("-r (with file name)\tRecover crashed session");
-    main_msg("-L\t\t\tSame as -r");
     main_msg("-H\t\t\tStart in Hebrew mode");
     main_msg("-T <terminal>\tSet terminal type to <terminal>");
     main_msg("-u <vimrc>\t\tUse <vimrc> instead of any .vimrc");

@@ -2308,7 +2308,6 @@ EXTERN long     p_cwh;          /* 'cmdwinheight' */
 EXTERN char_u   *p_cb;          /* 'clipboard' */
 EXTERN long     p_ch;           /* 'cmdheight' */
 EXTERN int      p_confirm;      /* 'confirm' */
-EXTERN int      p_cp;           /* 'compatible' */
 EXTERN char_u   *p_cpo;         /* 'cpoptions' */
 EXTERN char_u   *p_debug;       /* 'debug' */
 EXTERN int      p_dg;           /* 'digraph' */
@@ -3019,7 +3018,7 @@ typedef struct mf_hashtab_S
                                      * in array is "mht_mask" + 1) */
     long_u          mht_count;      /* nr of items inserted into hashtable */
     mf_hashitem_T   **mht_buckets;  /* points to mht_small_buckets or
-                                     *dynamically allocated array */
+                                     * dynamically allocated array */
     mf_hashitem_T   *mht_small_buckets[MHT_INIT_SIZE];   /* initial buckets */
     char            mht_fixed;      /* non-zero value forbids growth */
 } mf_hashtab_T;
@@ -3742,8 +3741,7 @@ typedef struct {
 
 struct file_buffer
 {
-    memline_T   b_ml;           /* associated memline (also contains line
-                                   count) */
+    memline_T   b_ml;           /* associated memline (also contains line count) */
 
     buf_T       *b_next;        /* links in list of buffers */
     buf_T       *b_prev;
@@ -5461,9 +5459,6 @@ EXTERN char_u e_nesting[]       INIT(= "E22: Scripts nested too deep");
 EXTERN char_u e_noalt[]         INIT(= "E23: No alternate file");
 EXTERN char_u e_noabbr[]        INIT(= "E24: No such abbreviation");
 EXTERN char_u e_nobang[]        INIT(= "E477: No ! allowed");
-EXTERN char_u e_nogvim[]        INIT(= "E25: GUI cannot be used: Not enabled at compile time");
-EXTERN char_u e_nofarsi[]       INIT(= "E27: Farsi cannot be used: Not enabled at compile time\n");
-EXTERN char_u e_noarabic[]      INIT(= "E800: Arabic cannot be used: Not enabled at compile time\n");
 EXTERN char_u e_nogroup[]       INIT(= "E28: No such highlight group name: %s");
 EXTERN char_u e_noinstext[]     INIT(= "E29: No inserted text yet");
 EXTERN char_u e_nolastcmd[]     INIT(= "E30: No previous command line");

@@ -117,7 +117,6 @@ static void     ex_redir(exarg_T *eap);
 static void     ex_redraw(exarg_T *eap);
 static void     ex_redrawstatus(exarg_T *eap);
 static void     close_redir(void);
-static void     ex_mkrc(exarg_T *eap);
 static void     ex_mark(exarg_T *eap);
 static char_u   *uc_fun_cmd(void);
 static char_u   *find_ucmd(exarg_T *eap, char_u *p, int *full, expand_T *xp, int *compl);
@@ -6854,8 +6853,7 @@ do_exedit(eap, old_curwin)
         if (eap->cmdidx == CMD_view || eap->cmdidx == CMD_sview)
             readonlymode = TRUE;
         else if (eap->cmdidx == CMD_enew)
-            readonlymode = FALSE;   /* 'readonly' doesn't make sense in an
-                                       empty buffer */
+            readonlymode = FALSE;   /* 'readonly' doesn't make sense in an empty buffer */
         setpcmark();
         if (do_ecmd(0, (eap->cmdidx == CMD_enew ? NULL : eap->arg),
                     NULL, eap,
@@ -7801,50 +7799,6 @@ close_redir()
 }
 
 /*
- * ":mkexrc" and ":mkvimrc"
- */
-    static void
-ex_mkrc(eap)
-    exarg_T     *eap;
-{
-    FILE        *fd;
-    int         failed = FALSE;
-    char_u      *fname;
-
-    if (*eap->arg != NUL)
-        fname = eap->arg;
-    else if (eap->cmdidx == CMD_mkvimrc)
-        fname = (char_u *)VIMRC_FILE;
-    else
-        fname = (char_u *)EXRC_FILE;
-
-    fd = open_exfile(fname, eap->forceit, WRITEBIN);
-    if (fd != NULL)
-    {
-        /* Write the version command for :mkvimrc */
-        if (eap->cmdidx == CMD_mkvimrc)
-            (void)put_line(fd, "version 6.0");
-
-        /* Write setting 'compatible' first, because it has side effects.
-         * For that same reason only do it when needed. */
-        if (p_cp)
-            (void)put_line(fd, "if !&cp | set cp | endif");
-        else
-            (void)put_line(fd, "if &cp | set nocp | endif");
-
-        failed |= (makemap(fd, NULL) == FAIL || makeset(fd, OPT_GLOBAL, FALSE) == FAIL);
-
-        if (put_line(fd, "\" vim: set ft=vim :") == FAIL)
-            failed = TRUE;
-
-        failed |= fclose(fd);
-
-        if (failed)
-            EMSG((char *)e_write);
-    }
-}
-
-/*
  * Open a file for writing for an Ex command, with some checks.
  * Return file descriptor, or NULL on failure.
  */
@@ -8522,33 +8476,6 @@ expand_sfile(arg)
     }
 
     return result;
-}
-
-/*
- * Write end-of-line character(s) for ":mkexrc" and ":mkvimrc".
- * Return FAIL for a write error.
- */
-    int
-put_eol(fd)
-    FILE        *fd;
-{
-    if (putc('\n', fd) < 0)
-        return FAIL;
-    return OK;
-}
-
-/*
- * Write a line to "fd".
- * Return FAIL for a write error.
- */
-    int
-put_line(fd, s)
-    FILE        *fd;
-    char        *s;
-{
-    if (fputs(s, fd) < 0 || put_eol(fd) == FAIL)
-        return FAIL;
-    return OK;
 }
 
 /*

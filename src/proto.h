@@ -483,8 +483,6 @@ void exec_normal_cmd(char_u *cmd, int remap, int silent);
 int find_cmdline_var(char_u *src, int *usedlen);
 char_u *eval_vars(char_u *src, char_u *srcstart, int *usedlen, linenr_T *lnump, char_u **errormsg, int *escaped);
 char_u *expand_sfile(char_u *arg);
-int put_eol(FILE *fd);
-int put_line(FILE *fd, char *s);
 void dialog_msg(char_u *buff, char *format, char_u *fname);
 char_u *get_behave_arg(expand_T *xp, int idx);
 
@@ -697,8 +695,6 @@ int ExpandMappings(regmatch_T *regmatch, int *num_file, char_u ***file);
 int check_abbr(int c, char_u *ptr, int col, int mincol);
 char_u *vim_strsave_escape_csi(char_u *p);
 void vim_unescape_csi(char_u *p);
-int makemap(FILE *fd, buf_T *buf);
-int put_escstr(FILE *fd, char_u *strstart, int what);
 void check_map_keycodes(void);
 char_u *check_map(char_u *keys, int mode, int exact, int ign_mod, int abbr, mapblock_T **mp_ptr, int *local_ptr);
 void init_mappings(void);
@@ -1087,8 +1083,6 @@ int get3c(FILE *fd);
 int get4c(FILE *fd);
 time_t get8ctime(FILE *fd);
 char_u *read_string(FILE *fd, int cnt);
-int put_bytes(FILE *fd, long_u nr, int len);
-void put_time(FILE *fd, time_t the_time);
 void time_to_bytes(time_t the_time, char_u *buf);
 
 /* #include "move.pro" */
@@ -1290,7 +1284,6 @@ int get_option_value_strict(char_u *name, long *numval, char_u **stringval, int 
 char_u *set_option_value(char_u *name, long number, char_u *string, int opt_flags);
 char_u *get_term_code(char_u *tname);
 char_u *get_highlight_default(void);
-int makeset(FILE *fd, int opt_flags, int local_only);
 void clear_termoptions(void);
 void free_termoptions(void);
 void free_one_termoption(char_u *var);
@@ -1312,7 +1305,6 @@ int ExpandOldSetting(int *num_file, char_u ***file);
 int has_format_option(int x);
 int shortmess(int x);
 void vimrc_found(char_u *fname, char_u *envname);
-void change_compatible(int on);
 int option_was_set(char_u *name);
 void reset_option_was_set(char_u *name);
 int can_bs(int what);

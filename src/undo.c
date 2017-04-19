@@ -65,12 +65,6 @@
  * All data is allocated and will all be freed when the buffer is unloaded.
  */
 
-#define UH_MAGIC 0x18dade       /* value for uh_magic when in use */
-#define UE_MAGIC 0xabc123       /* value for ue_magic when in use */
-
-/* Size of buffer used for encryption. */
-#define CRYPT_BUF_SIZE 8192
-
 #include "vim.h"
 
 /* Structure passed around between functions.
