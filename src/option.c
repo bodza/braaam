@@ -302,7 +302,7 @@ static struct vimoption
                             (char_u *)"auto", 0},
     {"backupdir",   "bdir", P_STRING|P_EXPAND|P_COMMA|P_NODUP|P_SECURE,
                             (char_u *)&p_bdir, PV_NONE,
-                            (char_u *)DFLT_BDIR, 0},
+                            (char_u *)".", 0},
     {"backupext",   "bex",  P_STRING|P_NFNAME,
                             (char_u *)&p_bex, PV_NONE,
                             (char_u *)"~", 0},
@@ -363,9 +363,6 @@ static struct vimoption
     {"comments",    "com",  P_STRING|P_ALLOCED|P_COMMA|P_NODUP|P_CURSWANT,
                             (char_u *)&p_com, PV_COM,
                             (char_u *)"s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-", 0},
-    {"complete",    "cpt",  P_STRING|P_ALLOCED|P_COMMA|P_NODUP,
-                            (char_u *)NULL, PV_NONE,
-                            (char_u *)0L, 0},
     {"concealcursor", "cocu", P_STRING|P_ALLOCED|P_RWIN,
                             (char_u *)VAR_WIN, PV_COCU,
                             (char_u *)"", 0},
@@ -396,15 +393,12 @@ static struct vimoption
     {"delcombine",  "deco", P_BOOL,
                             (char_u *)&p_deco, PV_NONE,
                             (char_u *)FALSE, 0},
-    {"diff",        NULL,   P_BOOL|P_RWIN|P_NOGLOB,
-                            (char_u *)NULL, PV_NONE,
-                            (char_u *)FALSE, 0},
     {"digraph",     "dg",   P_BOOL,
                             (char_u *)&p_dg, PV_NONE,
                             (char_u *)FALSE, 0},
     {"directory",   "dir",  P_STRING|P_EXPAND|P_COMMA|P_NODUP|P_SECURE,
                             (char_u *)&p_dir, PV_NONE,
-                            (char_u *)DFLT_DIR, 0},
+                            (char_u *)".", 0},
     {"display",     "dy",   P_STRING|P_COMMA|P_RALL|P_NODUP,
                             (char_u *)&p_dy, PV_NONE,
                             (char_u *)"", 0},
@@ -546,9 +540,6 @@ static struct vimoption
     {"joinspaces",  "js",   P_BOOL,
                             (char_u *)&p_js, PV_NONE,
                             (char_u *)TRUE, 0},
-    {"key",         NULL,   P_STRING|P_ALLOCED,
-                            (char_u *)NULL, PV_NONE,
-                            (char_u *)0L, 0},
     {"keymodel",    "km",   P_STRING|P_COMMA|P_NODUP,
                             (char_u *)&p_km, PV_NONE,
                             (char_u *)"", 0},
@@ -669,9 +660,6 @@ static struct vimoption
     {"preserveindent", "pi", P_BOOL,
                             (char_u *)&p_pi, PV_PI,
                             (char_u *)FALSE, 0},
-    {"printmbcharset", "pmbcs", P_STRING,
-                            (char_u *)NULL, PV_NONE,
-                            (char_u *)NULL, 0},
     {"prompt",      NULL,   P_BOOL,
                             (char_u *)&p_prompt, PV_NONE,
                             (char_u *)TRUE, 0},
@@ -809,12 +797,6 @@ static struct vimoption
                             (char_u *)FALSE, 0},
     {"softtabstop", "sts",  P_NUM,
                             (char_u *)&p_sts, PV_STS,
-                            (char_u *)0L, 0},
-    {"spell",       NULL,   P_BOOL|P_RWIN,
-                            (char_u *)NULL, PV_NONE,
-                            (char_u *)FALSE, 0},
-    {"spellsuggest", "sps", P_STRING|P_EXPAND|P_SECURE|P_COMMA,
-                            (char_u *)NULL, PV_NONE,
                             (char_u *)0L, 0},
     {"splitbelow",  "sb",   P_BOOL,
                             (char_u *)&p_sb, PV_NONE,
@@ -1362,32 +1344,6 @@ set_number_default(name, val)
         options[opt_idx].def_val = (char_u *)(long_i)val;
 }
 
-#if defined(EXITFREE)
-/*
- * Free all options.
- */
-    void
-free_all_options()
-{
-    int         i;
-
-    for (i = 0; !istermoption(&options[i]); i++)
-    {
-        if (options[i].indir == PV_NONE)
-        {
-            /* global option: free value and default value. */
-            if (options[i].flags & P_ALLOCED && options[i].var != NULL)
-                free_string_option(*(char_u **)options[i].var);
-            if (options[i].flags & P_DEF_ALLOCED)
-                free_string_option(options[i].def_val);
-        }
-        else if (options[i].var != VAR_WIN && (options[i].flags & P_STRING))
-            /* buffer-local option: free global value */
-            free_string_option(*(char_u **)options[i].var);
-    }
-}
-#endif
-
 /*
  * Initialize the options, part two: After getting Rows and Columns and setting 'term'.
  */
@@ -1453,6 +1409,7 @@ term_bg_default()
                 && ((p[1] >= '0' && p[1] <= '6') || p[1] == '8')
                 && p[2] == NUL))
         return (char_u *)"dark";
+
     return (char_u *)"light";
 }
 
@@ -2380,6 +2337,7 @@ string_to_key(arg)
         return find_key_option(arg + 1);
     if (*arg == '^')
         return Ctrl_chr(arg[1]);
+
     return *arg;
 }
 
@@ -3738,6 +3696,7 @@ check_stl_option(s)
         return (char_u *)"E541: too many items";
     if (groupdepth != 0)
         return (char_u *)"E542: unbalanced groups";
+
     return NULL;
 }
 
@@ -4007,7 +3966,8 @@ set_bool_option(opt_idx, varp, value, opt_flags)
     /* when 'hlsearch' is set or reset: reset no_hlsearch */
     else if ((int *)varp == &p_hls)
     {
-        SET_NO_HLSEARCH(FALSE);
+        no_hlsearch = FALSE;
+        set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls);
     }
 
     /* when 'scrollbind' is set: snapshot the current position to avoid a jump
@@ -4749,6 +4709,7 @@ get_highlight_default()
     i = findoption((char_u *)"hl");
     if (i >= 0)
         return options[i].def_val;
+
     return (char_u *)NULL;
 }
 
@@ -5137,6 +5098,7 @@ get_varp_scope(p, opt_flags)
     {
         if (p->var == VAR_WIN)
             return (char_u *)GLOBAL_WO(get_varp(p));
+
         return p->var;
     }
     if ((opt_flags & OPT_LOCAL) && ((int)p->indir & PV_BOTH))
@@ -5270,6 +5232,7 @@ get_equalprg()
 {
     if (*curbuf->b_p_ep == NUL)
         return p_ep;
+
     return curbuf->b_p_ep;
 }
 
@@ -6011,6 +5974,7 @@ has_format_option(x)
 {
     if (p_paste)
         return FALSE;
+
     return (vim_strchr(curbuf->b_p_fo, x) != NULL);
 }
 
@@ -6128,37 +6092,6 @@ paste_option_changed()
 }
 
 /*
- * vimrc_found() - Called when a ".vimrc" or "VIMINIT" has been found.
- *
- * When "fname" is not NULL, use it to set $"envname" when it wasn't set yet.
- */
-    void
-vimrc_found(fname, envname)
-    char_u      *fname;
-    char_u      *envname;
-{
-    int         dofree = FALSE;
-    char_u      *p;
-
-    if (fname != NULL)
-    {
-        p = vim_getenv(envname, &dofree);
-        if (p == NULL)
-        {
-            /* Set $MYVIMRC to the first vimrc file found. */
-            p = FullName_save(fname, FALSE);
-            if (p != NULL)
-            {
-                vim_setenv(envname, p);
-                vim_free(p);
-            }
-        }
-        else if (dofree)
-            vim_free(p);
-    }
-}
-
-/*
  * Return TRUE when option "name" has been set.
  * Only works correctly for global options.
  */
@@ -6173,6 +6106,7 @@ option_was_set(name)
         return FALSE;
     if (options[idx].flags & P_WAS_SET)
         return TRUE;
+
     return FALSE;
 }
 
@@ -6196,9 +6130,8 @@ reset_option_was_set(name)
 fill_breakat_flags()
 {
     char_u      *p;
-    int         i;
 
-    for (i = 0; i < 256; i++)
+    for (int i = 0; i < 256; i++)
         breakat_flags[i] = FALSE;
 
     if (p_breakat != NULL)
@@ -6377,6 +6310,7 @@ file_ff_differs(buf, ignore_empty)
         return TRUE;
     if (buf->b_start_fenc == NULL)
         return (*buf->b_p_fenc != NUL);
+
     return (STRCMP(buf->b_start_fenc, buf->b_p_fenc) != 0);
 }
 

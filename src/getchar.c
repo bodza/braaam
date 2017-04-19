@@ -1421,15 +1421,6 @@ closescript()
         --curscript;
 }
 
-#if defined(EXITFREE)
-    void
-close_all_scripts()
-{
-    while (scriptin[0] != NULL)
-        closescript();
-}
-#endif
-
 /*
  * This function is called just before doing a blocking wait.  Thus after
  * waiting 'updatetime' for a character to arrive.
@@ -1671,10 +1662,10 @@ vpeekc()
 {
     if (old_char != -1)
         return old_char;
+
     return vgetorpeek(FALSE);
 }
 
-#if defined(FEAT_TERMRESPONSE)
 /*
  * Like vpeekc(), but don't allow mapping.  Do allow checking for terminal codes.
  */
@@ -1690,7 +1681,6 @@ vpeekc_nomap()
     --allow_keys;
     return c;
 }
-#endif
 
 /*
  * Check if any character is available, also half an escape sequence.
@@ -1924,8 +1914,7 @@ vgetorpeek(advance)
                         mp_match = NULL;
                         mp_match_len = 0;
                         for ( ; mp != NULL;
-                                mp->m_next == NULL ? (mp = mp2, mp2 = NULL) :
-                                (mp = mp->m_next))
+                                (mp->m_next == NULL) ? (mp = mp2, mp2 = NULL) : (mp = mp->m_next))
                         {
                             /*
                              * Only consider an entry if the first character
@@ -1934,8 +1923,7 @@ vgetorpeek(advance)
                              */
                             if (mp->m_keys[0] == c1
                                     && (mp->m_mode & local_State)
-                                    && ((mp->m_mode & LANGMAP) == 0
-                                        || typebuf.tb_maplen == 0))
+                                    && ((mp->m_mode & LANGMAP) == 0 || typebuf.tb_maplen == 0))
                             {
                                 /* find the match length of this mapping */
                                 for (mlen = 1; mlen < typebuf.tb_len; ++mlen)
@@ -2222,7 +2210,7 @@ vgetorpeek(advance)
                             if (save_m_noremap != REMAP_YES)
                                 noremap = save_m_noremap;
                             else if (
-                                STRNCMP(s, save_m_keys != NULL
+                                STRNCMP(s, (save_m_keys != NULL)
                                                    ? save_m_keys : mp->m_keys, (size_t)keylen) != 0)
                                 noremap = REMAP_YES;
                             else

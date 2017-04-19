@@ -94,7 +94,6 @@ static void     ex_edit(exarg_T *eap);
 static void     ex_swapname(exarg_T *eap);
 static void     ex_syncbind(exarg_T *eap);
 static void     ex_read(exarg_T *eap);
-static void     ex_pwd(exarg_T *eap);
 static void     ex_equal(exarg_T *eap);
 static void     ex_sleep(exarg_T *eap);
 static void     do_exmap(exarg_T *eap, int isabbrev);
@@ -2618,6 +2617,7 @@ find_ucmd(eap, p, full, xp, compl)
      * back to point to it. */
     if (found || possible)
         return p + (matchlen - len);
+
     return p;
 }
 
@@ -2711,6 +2711,7 @@ cmd_exists(name)
         return 0;
     if (*skipwhite(p) != NUL)
         return 0;       /* trailing garbage */
+
     return (ea.cmdidx == CMD_SIZE ? 0 : (full ? 2 : 1));
 }
 
@@ -2930,6 +2931,7 @@ set_one_cmd_context(xp, buff)
                 {
                     if (*p == '|' || *p == '\n')
                         return p + 1;
+
                     return NULL;    /* It's a comment */
                 }
             }
@@ -3068,13 +3070,6 @@ set_one_cmd_context(xp, buff)
         case CMD_tabfind:
             if (xp->xp_context == EXPAND_FILES)
                 xp->xp_context = EXPAND_FILES_IN_PATH;
-            break;
-        case CMD_cd:
-        case CMD_chdir:
-        case CMD_lcd:
-        case CMD_lchdir:
-            if (xp->xp_context == EXPAND_FILES)
-                xp->xp_context = EXPAND_DIRECTORIES;
             break;
 
         /* Command modifiers: return the argument.
@@ -4573,6 +4568,7 @@ check_more(message, forceit)
                               "%d more files to edit.  Quit anyway?", n);
                 if (vim_dialog_yesno(VIM_QUESTION, NULL, buff, 1) == VIM_YES)
                     return OK;
+
                 return FAIL;
             }
             if (n == 1)
@@ -4596,6 +4592,7 @@ get_command_name(xp, idx)
 {
     if (idx >= (int)CMD_SIZE)
         return get_user_command_name(idx);
+
     return cmdnames[idx].cmd_name;
 }
 
@@ -5635,6 +5632,7 @@ get_user_commands(xp, idx)
     idx -= curbuf->b_ucmds.ga_len;
     if (idx < ucmds.ga_len)
         return USER_CMD(idx)->uc_name;
+
     return NULL;
 }
 
@@ -5662,6 +5660,7 @@ get_user_cmd_flags(xp, idx)
 
     if (idx >= (int)(sizeof(user_cmd_flags) / sizeof(user_cmd_flags[0])))
         return NULL;
+
     return (char_u *)user_cmd_flags[idx];
 }
 
@@ -5677,6 +5676,7 @@ get_user_cmd_nargs(xp, idx)
 
     if (idx >= (int)(sizeof(user_cmd_nargs) / sizeof(user_cmd_nargs[0])))
         return NULL;
+
     return (char_u *)user_cmd_nargs[idx];
 }
 
@@ -7065,124 +7065,6 @@ ex_read(eap)
     }
 }
 
-static char_u   *prev_dir = NULL;
-
-#if defined(EXITFREE)
-    void
-free_cd_dir()
-{
-    vim_free(prev_dir);
-    prev_dir = NULL;
-
-    vim_free(globaldir);
-    globaldir = NULL;
-}
-#endif
-
-/*
- * Deal with the side effects of changing the current directory.
- * When "local" is TRUE then this was after an ":lcd" command.
- */
-    void
-post_chdir(local)
-    int         local;
-{
-    vim_free(curwin->w_localdir);
-    curwin->w_localdir = NULL;
-    if (local)
-    {
-        /* If still in global directory, need to remember current
-         * directory as global directory. */
-        if (globaldir == NULL && prev_dir != NULL)
-            globaldir = vim_strsave(prev_dir);
-        /* Remember this local directory for the window. */
-        if (mch_dirname(NameBuff, MAXPATHL) == OK)
-            curwin->w_localdir = vim_strsave(NameBuff);
-    }
-    else
-    {
-        /* We are now in the global directory, no need to remember its name. */
-        vim_free(globaldir);
-        globaldir = NULL;
-    }
-
-    shorten_fnames(TRUE);
-}
-
-/*
- * ":cd", ":lcd", ":chdir" and ":lchdir".
- */
-    void
-ex_cd(eap)
-    exarg_T     *eap;
-{
-    char_u              *new_dir;
-    char_u              *tofree;
-
-    new_dir = eap->arg;
-
-    if (allbuf_locked())
-        return;
-
-    if (vim_strchr(p_cpo, CPO_CHDIR) != NULL && curbufIsChanged() && !eap->forceit)
-    {
-        EMSG("E747: Cannot change directory, buffer is modified (add ! to override)");
-        return;
-    }
-
-    /* ":cd -": Change to previous directory */
-    if (STRCMP(new_dir, "-") == 0)
-    {
-        if (prev_dir == NULL)
-        {
-            EMSG("E186: No previous directory");
-            return;
-        }
-        new_dir = prev_dir;
-    }
-
-    /* Save current directory for next ":cd -" */
-    tofree = prev_dir;
-    if (mch_dirname(NameBuff, MAXPATHL) == OK)
-        prev_dir = vim_strsave(NameBuff);
-    else
-        prev_dir = NULL;
-
-    /* for UNIX ":cd" means: go to home directory */
-    if (*new_dir == NUL)
-    {
-        /* use NameBuff for home directory name */
-        expand_env((char_u *)"$HOME", NameBuff, MAXPATHL);
-        new_dir = NameBuff;
-    }
-    if (new_dir == NULL || vim_chdir(new_dir))
-        EMSG((char *)e_failed);
-    else
-    {
-        post_chdir(eap->cmdidx == CMD_lcd || eap->cmdidx == CMD_lchdir);
-
-        /* Echo the new current directory if the command was typed. */
-        if (KeyTyped || p_verbose >= 5)
-            ex_pwd(eap);
-    }
-    vim_free(tofree);
-}
-
-/*
- * ":pwd".
- */
-    static void
-ex_pwd(eap)
-    exarg_T     *eap UNUSED;
-{
-    if (mch_dirname(NameBuff, MAXPATHL) == OK)
-    {
-        msg(NameBuff);
-    }
-    else
-        EMSG("E187: Unknown");
-}
-
 /*
  * ":=".
  */
@@ -7339,10 +7221,8 @@ ex_winpos(eap)
             EMSG("E466: :winpos requires two number arguments");
             return;
         }
-#if defined(HAVE_TGETENT)
         if (*T_CWP)
             term_set_winpos(x, y);
-#endif
     }
 }
 
@@ -7959,8 +7839,7 @@ ex_normal(eap)
             }
 
             exec_normal_cmd(
-                    arg != NULL ? arg :
-                    eap->arg, eap->forceit ? REMAP_NONE : REMAP_YES, FALSE);
+                    (arg != NULL) ? arg : eap->arg, eap->forceit ? REMAP_NONE : REMAP_YES, FALSE);
         }
         while (eap->addr_count > 0 && eap->line1 <= eap->line2 && !got_int);
     }
@@ -8531,6 +8410,7 @@ get_behave_arg(xp, idx)
         return (char_u *)"mswin";
     if (idx == 1)
         return (char_u *)"xterm";
+
     return NULL;
 }
 
@@ -8671,7 +8551,8 @@ ex_set(eap)
 ex_nohlsearch(eap)
     exarg_T     *eap UNUSED;
 {
-    SET_NO_HLSEARCH(TRUE);
+    no_hlsearch = TRUE;
+    set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls);
     redraw_all_later(SOME_VALID);
 }
 

@@ -1,30 +1,13 @@
 /*
  * term.c: functions for controlling the terminal
  *
- * NOTE: padding and variable substitution is not performed,
- * when compiling without HAVE_TGETENT, we use tputs() and tgoto() dummies.
+ * NOTE: padding and variable substitution is not performed.
  */
 
-/*
- * Some systems have a prototype for tgetstr() with (char *) instead of
- * (char **). This define removes that prototype. We include our own prototype below.
- */
-
-#define tgetstr tgetstr_defined_wrong
 #include "vim.h"
 
-#if defined(HAVE_TGETENT)
 #include <termios.h>      /* seems to be required for some Linux */
 #include <termcap.h>
-
-/*
- * A few linux systems define outfuntype in termcap.h to be used as the third
- * argument for tputs().
- */
-#define TPUTSFUNCAST (int (*)())
-#endif
-
-#undef tgetstr
 
 /*
  * Here are the builtin termcap entries.  They are not stored as complete
@@ -32,7 +15,7 @@
  *
  * The entries are compact, therefore they normally are included even when
  * HAVE_TGETENT is defined. When HAVE_TGETENT is defined, the builtin entries
- * can be accessed with "builtin_amiga", "builtin_ansi", "builtin_debug", etc.
+ * can be accessed with "builtin_ansi", etc.
  *
  * Each termcap is a list of builtin_term structures. It always starts with
  * KS_NAME, which separates the entries.  See parse_builtin_tcap() for all details.
@@ -53,56 +36,31 @@ static struct builtin_term *find_builtin_term(char_u *name);
 static void parse_builtin_tcap(char_u *s);
 static void term_color(char_u *s, int n);
 static void gather_termleader(void);
-#if defined(FEAT_TERMRESPONSE)
 static void req_codes_from_term(void);
 static void req_more_codes_from_term(void);
 static void got_code_from_term(char_u *code, int len);
 static void check_for_codes_from_term(void);
-#endif
 static int get_bytes_from_buf(char_u *, char_u *, int);
 static void del_termcode_idx(int idx);
 static int term_is_builtin(char_u *name);
 static int term_7to8bit(char_u *p);
-#if defined(FEAT_TERMRESPONSE)
 static void switch_to_8bit(void);
-#endif
 
-#if defined(HAVE_TGETENT)
 static char_u *tgetent_error(char_u *, char_u *);
 
-/*
- * Here is our own prototype for tgetstr(), any prototypes from the include
- * files have been disabled by the define at the start of this file.
- */
-char            *tgetstr(char *, char **);
-
-#if defined(FEAT_TERMRESPONSE)
-    /* Change this to "if 1" to debug what happens with termresponse. */
-#define LOG_TR(msg)
 /* Request Terminal Version status: */
 #define CRV_GET       1       /* send T_CRV when switched to RAW mode */
 #define CRV_SENT      2       /* did send T_CRV, waiting for answer */
 #define CRV_GOT       3       /* received T_CRV response */
 static int crv_status = CRV_GET;
+
 /* Request Cursor position report: */
 #define U7_GET        1       /* send T_U7 when switched to RAW mode */
 #define U7_SENT       2       /* did send T_U7, waiting for answer */
 #define U7_GOT        3       /* received T_U7 response */
 static int u7_status = U7_GET;
-#endif
 
-/*
- * Don't declare these variables if termcap.h contains them.
- * Autoconf checks if these variables should be declared extern (not all
- * systems have them).
- * Some versions define ospeed to be speed_t, but that is incompatible with
- * BSD, where ospeed is short and speed_t is long.
- */
-
-#define TGETSTR(s, p)  vim_tgetstr((s), (p))
-#define TGETENT(b, t)  tgetent((char *)(b), (char *)(t))
 static char_u *vim_tgetstr(char *s, char_u **pp);
-#endif
 
 static int  detected_8bit = FALSE;      /* detected 8-bit terminal */
 
@@ -260,12 +218,7 @@ static struct builtin_term builtin_termcaps[] =
 /*
  * DEFAULT_TERM is used, when no terminal is specified with -T option or $TERM.
  */
-
 #define DEFAULT_TERM   (char_u *)"ansi"
-
-#if !defined(DEFAULT_TERM)
-#define DEFAULT_TERM   (char_u *)"dumb"
-#endif
 
 /*
  * Term_strings contains currently used terminal output strings.
@@ -276,9 +229,7 @@ char_u *(term_strings[(int)KS_LAST + 1]);
 
 static int      need_gather = FALSE;        /* need to fill termleader[] */
 static char_u   termleader[256 + 1];        /* for check_termcode() */
-#if defined(FEAT_TERMRESPONSE)
 static int      check_for_codes = FALSE;    /* check for key code response */
-#endif
 
     static struct builtin_term *
 find_builtin_term(term)
@@ -361,7 +312,6 @@ parse_builtin_tcap(term)
         }
     }
 }
-#if defined(HAVE_TGETENT) || defined(FEAT_TERMRESPONSE)
 static void set_color_count(int nr);
 
 /*
@@ -382,15 +332,11 @@ set_color_count(nr)
         *nr_colors = NUL;
     set_string_option_direct((char_u *)"t_Co", -1, nr_colors, OPT_FREE, 0);
 }
-#endif
 
-#if defined(HAVE_TGETENT)
 static char *(key_names[]) =
 {
-#if defined(FEAT_TERMRESPONSE)
     /* Do this one first, it may cause a screen redraw. */
     "Co",
-#endif
     "ku", "kd", "kr", "kl",
     "#2", "#4", "%i", "*7",
     "k1", "k2", "k3", "k4", "k5", "k6",
@@ -399,7 +345,6 @@ static char *(key_names[]) =
     "@7", "kP", "kN", "K1", "K3", "K4", "K5", "kB",
     NULL
 };
-#endif
 
 /*
  * Set terminal options for terminal "term".
@@ -412,11 +357,9 @@ set_termname(term)
     char_u *term;
 {
     struct builtin_term *termp;
-#if defined(HAVE_TGETENT)
     int         builtin_first = p_tbi;
     int         try;
     int         termcap_cleared = FALSE;
-#endif
     int         width = 0, height = 0;
     char_u      *error_msg = NULL;
     char_u      *bs_p, *del_p;
@@ -430,9 +373,7 @@ set_termname(term)
     if (term_is_builtin(term))
     {
         term += 8;
-#if defined(HAVE_TGETENT)
         builtin_first = 1;
-#endif
     }
 
 /*
@@ -445,7 +386,6 @@ set_termname(term)
  *     1. try external termcap
  *     2. try builtin termcap, if both fail default to a builtin terminal
  */
-#if defined(HAVE_TGETENT)
     for (try = builtin_first ? 0 : 1; try < 3; ++try)
     {
         /*
@@ -501,7 +441,7 @@ set_termname(term)
                 {
                     if (term_str(string_names[i].dest) == NULL
                             || term_str(string_names[i].dest) == empty_option)
-                        term_str(string_names[i].dest) = TGETSTR(string_names[i].name, &tp);
+                        term_str(string_names[i].dest) = vim_tgetstr(string_names[i].name, &tp);
                 }
 
                 /* tgetflag() returns 1 if the flag is present, 0 if not and
@@ -526,7 +466,7 @@ set_termname(term)
                 {
                     if (find_termcode((char_u *)key_names[i]) == NULL)
                     {
-                        p = TGETSTR(key_names[i], &tp);
+                        p = vim_tgetstr(key_names[i], &tp);
                         /* if cursor-left == backspace, ignore it (televideo 925) */
                         if (p != NULL
                                 && (*p != Ctrl_H
@@ -547,34 +487,30 @@ set_termname(term)
                 if (term_str(KS_CCO) == NULL || term_str(KS_CCO) == empty_option)
                     set_color_count(tgetnum("Co"));
 
-                BC = (char *)TGETSTR("bc", &tp);
-                UP = (char *)TGETSTR("up", &tp);
-                p = TGETSTR("pc", &tp);
+                BC = (char *)vim_tgetstr("bc", &tp);
+                UP = (char *)vim_tgetstr("up", &tp);
+                p = vim_tgetstr("pc", &tp);
                 if (p)
                     PC = *p;
             }
         }
         else        /* try == 0 || try == 2 */
-#endif
         /*
          * Use builtin termcap
          */
         {
-#if defined(HAVE_TGETENT)
             /*
              * If builtin termcap was already used, there is no need to search
              * for the builtin termcap again, quit now.
              */
             if (try == 2 && builtin_first && termcap_cleared)
                 break;
-#endif
             /*
              * search for 'term' in builtin_termcaps[]
              */
             termp = find_builtin_term(term);
             if (termp->bt_string == NULL)       /* did not find it */
             {
-#if defined(HAVE_TGETENT)
                 /*
                  * If try == 0, first try the external termcap. If that is not
                  * found we'll get back here with try == 2.
@@ -585,7 +521,6 @@ set_termname(term)
                     continue;
                 if (termcap_cleared)            /* found in external termcap */
                     break;
-#endif
 
                 mch_errmsg("\r\n");
                 if (error_msg != NULL)
@@ -601,11 +536,7 @@ set_termname(term)
                 {
                     if (termp->bt_entry == (int)KS_NAME)
                     {
-#if defined(HAVE_TGETENT)
                         mch_errmsg("    builtin_");
-#else
-                        mch_errmsg("    ");
-#endif
                         mch_errmsg(termp->bt_string);
                         mch_errmsg("\r\n");
                     }
@@ -631,20 +562,14 @@ set_termname(term)
                 display_errors();
             }
             out_flush();
-#if defined(HAVE_TGETENT)
             if (!termcap_cleared)
             {
-#endif
                 clear_termoptions();        /* clear old options */
-#if defined(HAVE_TGETENT)
                 termcap_cleared = TRUE;
             }
-#endif
             parse_builtin_tcap(term);
         }
-#if defined(HAVE_TGETENT)
     }
-#endif
 
 /*
  * special: There is no info in the termcap about whether the cursor
@@ -717,10 +642,7 @@ set_termname(term)
 
     full_screen = TRUE;         /* we can use termcap codes from now on */
     set_term_defaults();        /* use current values as defaults */
-#if defined(FEAT_TERMRESPONSE)
-    LOG_TR("setting crv_status to CRV_GET");
     crv_status = CRV_GET;       /* Get terminal version later */
-#endif
 
     /*
      * Initialize the terminal with the appropriate termcap codes.
@@ -767,9 +689,7 @@ set_termname(term)
         }
     }
 
-#if defined(FEAT_TERMRESPONSE)
     may_req_termresponse();
-#endif
 
     return OK;
 }
@@ -802,7 +722,6 @@ del_mouse_termcode(n)
     has_mouse_termcode &= ~HMT_NORMAL;
 }
 
-#if defined(HAVE_TGETENT)
 /*
  * Call tgetent()
  * Return error message if it fails, NULL if it's OK.
@@ -812,26 +731,21 @@ tgetent_error(tbuf, term)
     char_u  *tbuf;
     char_u  *term;
 {
-    int     i;
+    int i = tgetent((char *)tbuf, (char *)term);
 
-    i = TGETENT(tbuf, term);
-    if (i < 0               /* -1 is always an error */
-#if defined(TGETENT_ZERO_ERR)
-            || i == 0       /* sometimes zero is also an error */
-#endif
-       )
+    /* -1 is always an error, sometimes zero is also an error */
+    if (i < 0 || i == 0)
     {
         /* On FreeBSD tputs() gets a SEGV after a tgetent() which fails.  Call
          * tgetent() with the always existing "dumb" entry to avoid a crash or hang. */
-        (void)TGETENT(tbuf, "dumb");
+        (void)tgetent((char *)tbuf, (char *)"dumb");
 
         if (i < 0)
-#if defined(TGETENT_ZERO_ERR)
             return (char_u *)"E557: Cannot open termcap file";
         if (i == 0)
-#endif
             return (char_u *)"E558: Terminal entry not found in terminfo";
     }
+
     return NULL;
 }
 
@@ -851,9 +765,7 @@ vim_tgetstr(s, pp)
         p = NULL;
     return (char_u *)p;
 }
-#endif
 
-#if defined(HAVE_TGETENT)
 /*
  * Get Columns and Rows from the termcap. Used after a window signal if the
  * ioctl() fails. It doesn't make sense to call tgetent each time if the "co"
@@ -875,7 +787,6 @@ getlinecol(cp, rp)
             *rp = tgetnum("li");
     }
 }
-#endif
 
 /*
  * Get a string entry from the termcap and add it to the list of termcodes.
@@ -892,7 +803,6 @@ add_termcap_entry(name, force)
     char_u  *term;
     int     key;
     struct builtin_term *termp;
-#if defined(HAVE_TGETENT)
     char_u  *string;
     int     i;
     int     builtin_first;
@@ -900,7 +810,6 @@ add_termcap_entry(name, force)
     char_u  tstrbuf[TBUFSZ];
     char_u  *tp = tstrbuf;
     char_u  *error_msg = NULL;
-#endif
 
 /*
  * If the GUI is running or will start in a moment, we only support the keys
@@ -917,16 +826,11 @@ add_termcap_entry(name, force)
     if (term_is_builtin(term))              /* name starts with "builtin_" */
     {
         term += 8;
-#if defined(HAVE_TGETENT)
         builtin_first = TRUE;
-#endif
     }
-#if defined(HAVE_TGETENT)
     else
         builtin_first = p_tbi;
-#endif
 
-#if defined(HAVE_TGETENT)
 /*
  * We can get the entry from the builtin termcap and from the external one.
  * If 'ttybuiltin' is on or the terminal name starts with "builtin_", try
@@ -936,7 +840,6 @@ add_termcap_entry(name, force)
     for (i = 0; i < 2; ++i)
     {
         if (!builtin_first == i)
-#endif
         /*
          * Search in builtin termcap
          */
@@ -956,7 +859,6 @@ add_termcap_entry(name, force)
                 }
             }
         }
-#if defined(HAVE_TGETENT)
         else
         /*
          * Search in external termcap
@@ -965,7 +867,7 @@ add_termcap_entry(name, force)
             error_msg = tgetent_error(tbuf, term);
             if (error_msg == NULL)
             {
-                string = TGETSTR((char *)name, &tp);
+                string = vim_tgetstr((char *)name, &tp);
                 if (string != NULL && *string != NUL)
                 {
                     add_termcode(name, string, FALSE);
@@ -974,15 +876,12 @@ add_termcap_entry(name, force)
             }
         }
     }
-#endif
 
     if (sourcing_name == NULL)
     {
-#if defined(HAVE_TGETENT)
         if (error_msg != NULL)
             EMSG(error_msg);
         else
-#endif
             EMSG2("E436: No \"%s\" entry in termcap", name);
     }
     return FAIL;
@@ -1028,83 +927,6 @@ term_7to8bit(p)
     }
     return 0;
 }
-
-#if !defined(HAVE_TGETENT)
-
-    char_u *
-tltoa(i)
-    unsigned long i;
-{
-    static char_u buf[16];
-    char_u      *p;
-
-    p = buf + 15;
-    *p = '\0';
-    do
-    {
-        --p;
-        *p = (char_u) (i % 10 + '0');
-        i /= 10;
-    }
-    while (i > 0 && p > buf);
-    return p;
-}
-#endif
-
-#if !defined(HAVE_TGETENT)
-
-/*
- * minimal tgoto() implementation.
- * no padding and we only parse for %i %d and %+char
- */
-static char *tgoto(char *, int, int);
-
-    static char *
-tgoto(cm, x, y)
-    char *cm;
-    int x, y;
-{
-    static char buf[30];
-    char *p, *s, *e;
-
-    if (!cm)
-        return "OOPS";
-    e = buf + 29;
-    for (s = buf; s < e && *cm; cm++)
-    {
-        if (*cm != '%')
-        {
-            *s++ = *cm;
-            continue;
-        }
-        switch (*++cm)
-        {
-        case 'd':
-            p = (char *)tltoa((unsigned long)y);
-            y = x;
-            while (*p)
-                *s++ = *p++;
-            break;
-        case 'i':
-            x++;
-            y++;
-            break;
-        case '+':
-            *s++ = (char)(*++cm + y);
-            y = x;
-            break;
-        case '%':
-            *s++ = *cm;
-            break;
-        default:
-            return "OOPS";
-        }
-    }
-    *s = '\0';
-    return buf;
-}
-
-#endif
 
 /*
  * Set the terminal name and initialize the terminal options.
@@ -1234,7 +1056,6 @@ out_str_nf(s)
 
 /*
  * out_str(s): Put a character string a byte at a time into the output buffer.
- * If HAVE_TGETENT is defined use the termcap parser. (jw)
  * This should only be used for writing terminal codes, not for outputting
  * normal text (use functions like msg_puts() and screen_putchar() for that).
  */
@@ -1247,12 +1068,7 @@ out_str(s)
         /* avoid terminal strings being split up */
         if (out_pos > OUT_SIZE - 20)
             out_flush();
-#if defined(HAVE_TGETENT)
-        tputs((char *)s, 1, TPUTSFUNCAST out_char_nf);
-#else
-        while (*s)
-            out_char_nf(*s++);
-#endif
+        tputs((char *)s, 1, (int (*)())out_char_nf);
 
         /* For testing we write one string at a time. */
         if (p_wd)
@@ -1292,7 +1108,6 @@ term_delete_lines(line_count)
     OUT_STR(tgoto((char *)T_CDL, 0, line_count));
 }
 
-#if defined(HAVE_TGETENT)
     void
 term_set_winpos(x, y)
     int     x;
@@ -1313,7 +1128,6 @@ term_set_winsize(width, height)
 {
     OUT_STR(tgoto((char *)T_CWS, height, width));
 }
-#endif
 
     void
 term_fg_color(n)
@@ -1490,11 +1304,11 @@ get_bytes_from_buf(buf, bytes, num_bytes)
     int     num_bytes;
 {
     int     len = 0;
-    int     i;
-    char_u  c;
 
-    for (i = 0; i < num_bytes; i++)
+    for (int i = 0; i < num_bytes; i++)
     {
+        char_u  c;
+
         if ((c = buf[len++]) == NUL)
             return -1;
         if (c == K_SPECIAL)
@@ -1719,15 +1533,12 @@ settmode(tmode)
          */
         if (tmode != TMODE_COOK || cur_tmode != TMODE_COOK)
         {
-#if defined(FEAT_TERMRESPONSE)
-            {
-                /* May need to check for T_CRV response and termcodes, it
-                 * doesn't work in Cooked mode, an external program may get them. */
-                if (tmode != TMODE_RAW && (crv_status == CRV_SENT || u7_status == U7_SENT))
-                    (void)vpeekc_nomap();
-                check_for_codes_from_term();
-            }
-#endif
+            /* May need to check for T_CRV response and termcodes, it
+             * doesn't work in Cooked mode, an external program may get them. */
+            if (tmode != TMODE_RAW && (crv_status == CRV_SENT || u7_status == U7_SENT))
+                (void)vpeekc_nomap();
+            check_for_codes_from_term();
+
             if (tmode != TMODE_RAW)
                 mch_setmouse(FALSE);            /* switch mouse off */
             out_flush();
@@ -1737,9 +1548,7 @@ settmode(tmode)
                 setmouse();                     /* may switch mouse on */
             out_flush();
         }
-#if defined(FEAT_TERMRESPONSE)
         may_req_termresponse();
-#endif
     }
 }
 
@@ -1753,7 +1562,6 @@ starttermcap()
         out_flush();
         termcap_active = TRUE;
         screen_start();                 /* don't know where cursor is now */
-#if defined(FEAT_TERMRESPONSE)
         {
             may_req_termresponse();
             /* Immediately check for a response.  If t_Co changes, we don't
@@ -1761,7 +1569,6 @@ starttermcap()
             if (crv_status == CRV_SENT)
                 check_for_codes_from_term();
         }
-#endif
     }
 }
 
@@ -1772,23 +1579,20 @@ stoptermcap()
     reset_cterm_colors();
     if (termcap_active)
     {
-#if defined(FEAT_TERMRESPONSE)
+        /* May need to discard T_CRV or T_U7 response. */
+        if (crv_status == CRV_SENT || u7_status == U7_SENT)
         {
-            /* May need to discard T_CRV or T_U7 response. */
-            if (crv_status == CRV_SENT || u7_status == U7_SENT)
-            {
-                /* Give the terminal a chance to respond. */
-                mch_delay(100L, FALSE);
+            /* Give the terminal a chance to respond. */
+            mch_delay(100L, FALSE);
 #if defined(TCIFLUSH)
-                /* Discard data received but not read. */
-                if (exiting)
-                    tcflush(fileno(stdin), TCIFLUSH);
+            /* Discard data received but not read. */
+            if (exiting)
+                tcflush(fileno(stdin), TCIFLUSH);
 #endif
-            }
-            /* Check for termcodes first, otherwise an external program may get them. */
-            check_for_codes_from_term();
         }
-#endif
+        /* Check for termcodes first, otherwise an external program may get them. */
+        check_for_codes_from_term();
+
         out_str(T_KE);                  /* stop "keypad transmit" mode */
         out_flush();
         termcap_active = FALSE;
@@ -1799,7 +1603,6 @@ stoptermcap()
     }
 }
 
-#if defined(FEAT_TERMRESPONSE)
 /*
  * Request version string (for xterm) when needed.
  * Only do this after switching to raw mode, otherwise the result will be echoed.
@@ -1824,7 +1627,6 @@ may_req_termresponse()
             && isatty(read_cmd_fd)
             && *T_CRV != NUL)
     {
-        LOG_TR("Sending CRV");
         out_str(T_CRV);
         crv_status = CRV_SENT;
         /* check for the characters now, otherwise they might be eaten by get_keystroke() */
@@ -1856,7 +1658,6 @@ may_req_ambiguous_char_width()
     {
         char_u buf[16];
 
-        LOG_TR("Sending U7 request");
         /* Do this in the second row.  In the first row the returned sequence
          * may be CSI 1;2R, which is the same as <S-F3>. */
         term_windgoto(1, 0);
@@ -1873,8 +1674,6 @@ may_req_ambiguous_char_width()
         (void)vpeekc_nomap();
     }
 }
-
-#endif
 
 /*
  * Return TRUE when saving and restoring the screen.
@@ -2100,12 +1899,10 @@ clear_termcodes()
     termcodes = NULL;
     tc_max_len = 0;
 
-#if defined(HAVE_TGETENT)
     BC = (char *)empty_option;
     UP = (char *)empty_option;
     PC = NUL;                   /* set pad character to NUL */
     ospeed = 0;
-#endif
 
     need_gather = TRUE;         /* need to fill termleader[] */
 }
@@ -2156,8 +1953,7 @@ add_termcode(name, string, flags)
     if (tc_len == tc_max_len)
     {
         tc_max_len += 20;
-        new_tc = (struct termcode *)alloc(
-                            (unsigned)(tc_max_len * sizeof(struct termcode)));
+        new_tc = (struct termcode *)alloc((unsigned)(tc_max_len * sizeof(struct termcode)));
         if (new_tc == NULL)
         {
             tc_max_len -= 20;
@@ -2256,11 +2052,10 @@ termcode_star(code, len)
 find_termcode(name)
     char_u  *name;
 {
-    int     i;
-
-    for (i = 0; i < tc_len; ++i)
+    for (int i = 0; i < tc_len; ++i)
         if (termcodes[i].name[0] == name[0] && termcodes[i].name[1] == name[1])
             return termcodes[i].code;
+
     return NULL;
 }
 
@@ -2270,6 +2065,7 @@ get_termcode(i)
 {
     if (i >= tc_len)
         return NULL;
+
     return &termcodes[i].name[0];
 }
 
@@ -2277,14 +2073,12 @@ get_termcode(i)
 del_termcode(name)
     char_u  *name;
 {
-    int     i;
-
     if (termcodes == NULL)      /* nothing there yet */
         return;
 
     need_gather = TRUE;         /* need to fill termleader[] */
 
-    for (i = 0; i < tc_len; ++i)
+    for (int i = 0; i < tc_len; ++i)
         if (termcodes[i].name[0] == name[0] && termcodes[i].name[1] == name[1])
         {
             del_termcode_idx(i);
@@ -2297,15 +2091,12 @@ del_termcode(name)
 del_termcode_idx(idx)
     int         idx;
 {
-    int         i;
-
     vim_free(termcodes[idx].code);
     --tc_len;
-    for (i = idx; i < tc_len; ++i)
+    for (int i = idx; i < tc_len; ++i)
         termcodes[i] = termcodes[i + 1];
 }
 
-#if defined(FEAT_TERMRESPONSE)
 /*
  * Called when detected that the terminal sends 8-bit codes.
  * Convert all 7-bit codes to their 8-bit equivalent.
@@ -2313,14 +2104,13 @@ del_termcode_idx(idx)
     static void
 switch_to_8bit()
 {
-    int         i;
-    int         c;
-
     /* Only need to do something when not already using 8-bit codes. */
     if (!term_is_8bit(T_NAME))
     {
-        for (i = 0; i < tc_len; ++i)
+        for (int i = 0; i < tc_len; ++i)
         {
+            int         c;
+
             c = term_7to8bit(termcodes[i].code);
             if (c != 0)
             {
@@ -2330,10 +2120,9 @@ switch_to_8bit()
         }
         need_gather = TRUE;             /* need to fill termleader[] */
     }
+
     detected_8bit = TRUE;
-    LOG_TR("Switching to 8 bit");
 }
-#endif
 
 static linenr_T orig_topline = 0;
 /*
@@ -2558,7 +2347,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
             }
         }
 
-#if defined(FEAT_TERMRESPONSE)
         /* Mouse codes of DEC, pterm, and URXVT start with <ESC>[.  When
          * detecting the start of these mouse codes they might as well be
          * another key code or terminal response. */
@@ -2595,10 +2383,8 @@ check_termcode(max_offset, buf, bufsize, buflen)
                         row_char = tp[i - 1];
                     }
                 if (i == len)
-                {
-                    LOG_TR("Not enough characters for CRV");
                     return -1;
-                }
+
                 if (extra > 0)
                     col = atoi((char *)tp + extra);
                 else
@@ -2614,7 +2400,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     {
                         char *aw = NULL;
 
-                        LOG_TR("Received U7 status");
                         u7_status = U7_GOT;
                         did_cursorhold = TRUE;
                         if (col == 2)
@@ -2637,7 +2422,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 /* eat it when at least one digit and ending in 'c' */
                 if (*T_CRV != NUL && i > 2 + (tp[0] != CSI) && tp[i] == 'c')
                 {
-                    LOG_TR("Received CRV");
                     crv_status = CRV_GOT;
                     did_cursorhold = TRUE;
 
@@ -2668,7 +2452,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                         /* if xterm version >= 141 try to get termcap codes */
                         if (extra >= 141)
                         {
-                            LOG_TR("Enable checking for XT codes");
                             check_for_codes = TRUE;
                             need_gather = TRUE;
                             req_codes_from_term();
@@ -2699,13 +2482,9 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     }
 
                 if (i == len)
-                {
-                    LOG_TR("not enough characters for XT");
                     return -1;          /* not enough characters */
-                }
             }
         }
-#endif
 
         if (key_name[0] == NUL)
             continue;       /* No match at this position, try next one */
@@ -2955,10 +2734,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
         return retval == 0 ? (len + extra + offset) : retval;
     }
 
-#if defined(FEAT_TERMRESPONSE)
-    LOG_TR("normal character");
-#endif
-
     return 0;                       /* no match found */
 }
 
@@ -3183,10 +2958,9 @@ replace_termcodes(from, bufp, from_part, do_lt, special)
 find_term_bykeys(src)
     char_u      *src;
 {
-    int         i;
     int         slen = (int)STRLEN(src);
 
-    for (i = 0; i < tc_len; ++i)
+    for (int i = 0; i < tc_len; ++i)
     {
         if (slen == termcodes[i].len && STRNCMP(termcodes[i].code, src, (size_t)slen) == 0)
             return i;
@@ -3201,17 +2975,13 @@ find_term_bykeys(src)
     static void
 gather_termleader()
 {
-    int     i;
     int     len = 0;
 
-#if defined(FEAT_TERMRESPONSE)
     if (check_for_codes)
-        termleader[len++] = DCS;    /* the termcode response starts with DCS
-                                       in 8-bit mode */
-#endif
+        termleader[len++] = DCS;    /* the termcode response starts with DCS in 8-bit mode */
     termleader[len] = NUL;
 
-    for (i = 0; i < tc_len; ++i)
+    for (int i = 0; i < tc_len; ++i)
         if (vim_strchr(termleader, termcodes[i].code[0]) == NULL)
         {
             termleader[len++] = termcodes[i].code[0];
@@ -3358,7 +3128,6 @@ show_one_termcode(name, code, printit)
     return len;
 }
 
-#if defined(FEAT_TERMRESPONSE)
 /*
  * For Xterm >= 140 compiled with OPT_TCAP_QUERY: Obtain the actually used
  * termcap codes from the terminal itself.
@@ -3511,7 +3280,6 @@ check_for_codes_from_term()
     --no_mapping;
     --allow_keys;
 }
-#endif
 
 /*
  * Translate an internal mapping/abbreviation representation into the

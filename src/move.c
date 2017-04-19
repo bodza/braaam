@@ -277,6 +277,7 @@ scrolljump_value()
 {
     if (p_sj >= 0)
         return (int)p_sj;
+
     return (curwin->w_height * -p_sj) / 100;
 }
 
@@ -644,6 +645,7 @@ win_col_off2(wp)
 {
     if ((wp->w_p_nu || wp->w_p_rnu) && vim_strchr(p_cpo, CPO_NUMCOL) != NULL)
         return number_width(wp) + 1;
+
     return 0;
 }
 
@@ -1655,10 +1657,8 @@ halfpage(flag, Prenum)
     int         room;
 
     if (Prenum)
-        curwin->w_p_scr = (Prenum > curwin->w_height) ?
-                                                curwin->w_height : Prenum;
-    n = (curwin->w_p_scr <= curwin->w_height) ?
-                                    curwin->w_p_scr : curwin->w_height;
+        curwin->w_p_scr = (Prenum > curwin->w_height) ? curwin->w_height : Prenum;
+    n = (curwin->w_p_scr <= curwin->w_height) ? curwin->w_p_scr : curwin->w_height;
 
     validate_botline();
     room = curwin->w_empty_rows;

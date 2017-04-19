@@ -171,6 +171,7 @@ search_regcomp(pat, pat_save, pat_use, options, regmatch)
     regmatch->regprog = vim_regcomp(pat, magic ? RE_MAGIC : 0);
     if (regmatch->regprog == NULL)
         return FAIL;
+
     return OK;
 }
 
@@ -233,7 +234,8 @@ save_re_pat(idx, pat, magic)
         /* If 'hlsearch' set and search pat changed: need redraw. */
         if (p_hls)
             redraw_all_later(SOME_VALID);
-        SET_NO_HLSEARCH(FALSE);
+        no_hlsearch = FALSE;
+        set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls);
     }
 }
 
@@ -270,25 +272,10 @@ restore_search_patterns()
         vim_free(spats[1].pat);
         spats[1] = saved_spats[1];
         last_idx = saved_last_idx;
-        SET_NO_HLSEARCH(saved_no_hlsearch);
+        no_hlsearch = saved_no_hlsearch;
+        set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls);
     }
 }
-
-#if defined(EXITFREE)
-    void
-free_search_patterns()
-{
-    vim_free(spats[0].pat);
-    vim_free(spats[1].pat);
-
-    if (mr_pattern_alloced)
-    {
-        vim_free(mr_pattern);
-        mr_pattern_alloced = FALSE;
-        mr_pattern = NULL;
-    }
-}
-#endif
 
 /*
  * Return TRUE when case should be ignored for search pattern "pat".
@@ -492,8 +479,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
             extra_col = 0;
         /* Watch out for the "col" being MAXCOL - 2, used in a closed fold. */
         else if (dir != BACKWARD
-                     && pos->lnum >= 1 && pos->lnum <= buf->b_ml.ml_line_count
-                                                     && pos->col < MAXCOL - 2)
+                && pos->lnum >= 1 && pos->lnum <= buf->b_ml.ml_line_count && pos->col < MAXCOL - 2)
         {
             ptr = ml_get_buf(buf, pos->lnum, FALSE) + pos->col;
             if (*ptr == NUL)
@@ -542,10 +528,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                 /*
                  * Look for a match somewhere in line "lnum".
                  */
-                nmatched = vim_regexec_multi(&regmatch, win, buf,
-                                                      lnum, (colnr_T)0,
-                                                      tm
-                                                      );
+                nmatched = vim_regexec_multi(&regmatch, win, buf, lnum, (colnr_T)0, tm);
                 /* Abort searching on an error (e.g., out of stack). */
                 if (called_emsg)
                     break;
@@ -939,7 +922,8 @@ do_search(oap, dirc, pat, count, options, tm)
     if (no_hlsearch && !(options & SEARCH_KEEP))
     {
         redraw_all_later(SOME_VALID);
-        SET_NO_HLSEARCH(FALSE);
+        no_hlsearch = FALSE;
+        set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls);
     }
 
     /*
@@ -1762,6 +1746,7 @@ findmatchlimit(oap, initc, flags, maxtravel)
                         continue;
                     else
                         return NULL;
+
                     return &pos;
                 }
             }
@@ -2020,6 +2005,7 @@ check_linecomment(line)
 
     if (p == NULL)
         return MAXCOL;
+
     return (int)(p - line);
 }
 
@@ -2346,6 +2332,7 @@ startPS(lnum, para, both)
         return TRUE;
     if (*s == '.' && (inmacro(p_sections, s + 1) || (!para && inmacro(p_para, s + 1))))
         return TRUE;
+
     return FALSE;
 }
 
@@ -2634,6 +2621,7 @@ skip_chars(cclass, dir)
     while (cls() == cclass)
         if ((dir == FORWARD ? inc_cursor() : dec_cursor()) == -1)
             return TRUE;
+
     return FALSE;
 }
 
@@ -4007,8 +3995,7 @@ current_search(count, forward)
             {
                 /* searching backwards, so set pos to last line and col */
                 pos.lnum = curwin->w_buffer->b_ml.ml_line_count;
-                pos.col  = (colnr_T)STRLEN(
-                                ml_get(curwin->w_buffer->b_ml.ml_line_count));
+                pos.col  = (colnr_T)STRLEN(ml_get(curwin->w_buffer->b_ml.ml_line_count));
             }
         }
         p_ws = old_p_ws;

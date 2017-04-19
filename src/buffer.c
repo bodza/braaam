@@ -215,6 +215,7 @@ buf_valid(buf)
     for (bp = firstbuf; bp != NULL; bp = bp->b_next)
         if (bp == buf)
             return TRUE;
+
     return FALSE;
 }
 
@@ -1289,7 +1290,6 @@ buflist_new(ffname, sfname, lnum, flags)
      * buffer.  Otherwise: Need to allocate a new buffer structure.
      *
      * This is the ONLY place where a new buffer structure is allocated!
-     * (A spell file buffer is allocated in spell.c, but that's not a normal buffer.)
      */
     buf = NULL;
     if ((flags & BLN_CURBUF)
@@ -1651,6 +1651,7 @@ buflist_findname_stat(ffname, stp)
     for (buf = firstbuf; buf != NULL; buf = buf->b_next)
         if ((buf->b_flags & BF_DUMMY) == 0 && !otherfile_buf(buf, ffname, stp))
             return buf;
+
     return NULL;
 }
 
@@ -1936,6 +1937,7 @@ buflist_findnr(nr)
     for (buf = firstbuf; buf != NULL; buf = buf->b_next)
         if (buf->b_fnum == nr)
             return (buf);
+
     return NULL;
 }
 
@@ -1955,6 +1957,7 @@ buflist_nr2name(n, fullname)
     buf = buflist_findnr(n);
     if (buf == NULL)
         return NULL;
+
     return home_replace_save(fullname ? buf->b_ffname : buf->b_fname);
 }
 
@@ -2351,6 +2354,7 @@ buflist_add(fname, flags)
     buf = buflist_new(fname, NULL, (linenr_T)0, flags);
     if (buf != NULL)
         return buf->b_fnum;
+
     return 0;
 }
 
@@ -2775,15 +2779,6 @@ resettitle()
     mch_settitle(lasttitle, lasticon);
 }
 
-#if defined(EXITFREE)
-    void
-free_titles()
-{
-    vim_free(lasttitle);
-    vim_free(lasticon);
-}
-#endif
-
 /*
  * Build a string from the status line items in "fmt".
  * Return length of string in screen cells.
@@ -3045,7 +3040,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
         {
             item[curitem].type = Highlight;
             item[curitem].start = p;
-            item[curitem].minwid = minwid > 9 ? 1 : minwid;
+            item[curitem].minwid = (minwid > 9) ? 1 : minwid;
             s++;
             curitem++;
             continue;
@@ -3380,7 +3375,7 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
             if (zeropad)
                 *t++ = '0';
             *t++ = '*';
-            *t++ = nbase == 16 ? base : (char_u)(nbase == 8 ? 'o' : 'd');
+            *t++ = (nbase == 16) ? base : (char_u)(nbase == 8 ? 'o' : 'd');
             *t = 0;
 
             for (n = num, l = 1; n >= nbase; n /= nbase)
@@ -3660,6 +3655,7 @@ alist_name(aep)
     bp = buflist_findnr(aep->ae_fnum);
     if (bp == NULL || bp->b_fname == NULL)
         return aep->ae_fname;
+
     return bp->b_fname;
 }
 
@@ -4275,6 +4271,7 @@ buf_spname(buf)
 {
     if (buf->b_fname == NULL)
         return (char_u *)"[No Name]";
+
     return NULL;
 }
 

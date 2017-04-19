@@ -438,6 +438,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
 
                     if (aborting())   /* autocmds may abort script processing */
                         return FAIL;
+
                     return OK;      /* a new file is not an error */
                 }
                 else
@@ -1792,6 +1793,7 @@ failed:
 
     if (recoverymode && error)
         return FAIL;
+
     return OK;
 }
 
@@ -2285,6 +2287,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                         && (overwriting || vim_strchr(p_cpo, CPO_PLUS) != NULL))
                     /* Buffer still changed, the autocommands didn't work properly. */
                     return FAIL;
+
                 return OK;
             }
             if (!aborting())
@@ -3424,7 +3427,7 @@ nofail:
 
     if (errmsg != NULL)
     {
-        int numlen = errnum != NULL ? (int)STRLEN(errnum) : 0;
+        int numlen = (errnum != NULL) ? (int)STRLEN(errnum) : 0;
 
         attr = hl_attr(HLF_E);  /* set highlight for error messages */
         msg_add_fname(fname);         /* put file name in IObuff with quotes */
@@ -5011,9 +5014,11 @@ vim_tempname(extra_char, keep)
     int     extra_char UNUSED;  /* char to use in the name instead of '?' */
     int     keep UNUSED;
 {
+#define TEMPNAMELEN    256
     char_u      itmp[TEMPNAMELEN];
 
-    static char *(tempdirs[]) = {TEMPDIRNAMES};
+    static char *(tempdirs[]) = {"$TMPDIR", "/tmp", ".", "$HOME"};
+
     int         i;
 #if !defined(EEXIST)
     struct stat st;
@@ -5153,13 +5158,10 @@ static struct event_name
     {"CmdwinLeave",     EVENT_CMDWINLEAVE},
     {"CmdUndefined",    EVENT_CMDUNDEFINED},
     {"ColorScheme",     EVENT_COLORSCHEME},
-    {"CompleteDone",    EVENT_COMPLETEDONE},
     {"CursorHold",      EVENT_CURSORHOLD},
     {"CursorHoldI",     EVENT_CURSORHOLDI},
     {"CursorMoved",     EVENT_CURSORMOVED},
     {"CursorMovedI",    EVENT_CURSORMOVEDI},
-    {"EncodingChanged", EVENT_ENCODINGCHANGED},
-    {"FileEncoding",    EVENT_ENCODINGCHANGED},
     {"FileAppendPost",  EVENT_FILEAPPENDPOST},
     {"FileAppendPre",   EVENT_FILEAPPENDPRE},
     {"FileAppendCmd",   EVENT_FILEAPPENDCMD},
@@ -5180,23 +5182,16 @@ static struct event_name
     {"FocusGained",     EVENT_FOCUSGAINED},
     {"FocusLost",       EVENT_FOCUSLOST},
     {"FuncUndefined",   EVENT_FUNCUNDEFINED},
-    {"GUIEnter",        EVENT_GUIENTER},
-    {"GUIFailed",       EVENT_GUIFAILED},
     {"InsertChange",    EVENT_INSERTCHANGE},
     {"InsertEnter",     EVENT_INSERTENTER},
     {"InsertLeave",     EVENT_INSERTLEAVE},
     {"InsertCharPre",   EVENT_INSERTCHARPRE},
-    {"MenuPopup",       EVENT_MENUPOPUP},
-    {"QuickFixCmdPost", EVENT_QUICKFIXCMDPOST},
-    {"QuickFixCmdPre",  EVENT_QUICKFIXCMDPRE},
     {"QuitPre",         EVENT_QUITPRE},
     {"RemoteReply",     EVENT_REMOTEREPLY},
-    {"SessionLoadPost", EVENT_SESSIONLOADPOST},
     {"ShellCmdPost",    EVENT_SHELLCMDPOST},
     {"ShellFilterPost", EVENT_SHELLFILTERPOST},
     {"SourcePre",       EVENT_SOURCEPRE},
     {"SourceCmd",       EVENT_SOURCECMD},
-    {"SpellFileMissing",EVENT_SPELLFILEMISSING},
     {"StdinReadPost",   EVENT_STDINREADPOST},
     {"StdinReadPre",    EVENT_STDINREADPRE},
     {"SwapExists",      EVENT_SWAPEXISTS},
@@ -5239,8 +5234,7 @@ typedef struct AutoPatCmd
     char_u      *sfname;        /* sfname to match with */
     char_u      *tail;          /* tail of fname */
     event_T     event;          /* current event */
-    int         arg_bufnr;      /* initially equal to <abuf>, set to zero when
-                                   buf is deleted */
+    int         arg_bufnr;      /* initially equal to <abuf>, set to zero when buf is deleted */
     struct AutoPatCmd   *next;  /* chain of active apc-s for auto-invalidation */
 } AutoPatCmd;
 
@@ -5513,11 +5507,10 @@ au_del_group(name)
 au_find_group(name)
     char_u      *name;
 {
-    int     i;
-
-    for (i = 0; i < augroups.ga_len; ++i)
+    for (int i = 0; i < augroups.ga_len; ++i)
         if (AUGROUP_NAME(i) != NULL && STRCMP(AUGROUP_NAME(i), name) == 0)
             return i;
+
     return AUGROUP_ERROR;
 }
 
@@ -5572,16 +5565,6 @@ do_augroup(arg, del_group)
     }
 }
 
-#if defined(EXITFREE)
-    void
-free_all_autocmds()
-{
-    for (current_augroup = -1; current_augroup < augroups.ga_len; ++current_augroup)
-        do_autocmd((char_u *)"", TRUE);
-    ga_clear_strings(&augroups);
-}
-#endif
-
 /*
  * Return the event number for event name "start".
  * Return NUM_EVENTS if the event name was not found.
@@ -5610,6 +5593,7 @@ event_name2nr(start, end)
     *end = p;
     if (event_names[i].name == NULL)
         return NUM_EVENTS;
+
     return event_names[i].event;
 }
 
@@ -5620,11 +5604,10 @@ event_name2nr(start, end)
 event_nr2name(event)
     event_T     event;
 {
-    int     i;
-
-    for (i = 0; event_names[i].name != NULL; ++i)
+    for (int i = 0; event_names[i].name != NULL; ++i)
         if (event_names[i].event == event)
             return (char_u *)event_names[i].name;
+
     return (char_u *)"Unknown";
 }
 
@@ -6753,16 +6736,12 @@ apply_autocmds_group(event, fname, fname_io, force, group, buf, eap)
     else
     {
         sfname = vim_strsave(fname);
-        /* Don't try expanding FileType, Syntax, FuncUndefined, WindowID,
-         * ColorScheme or QuickFixCmd* */
+        /* Don't try expanding FileType, Syntax, FuncUndefined, WindowID or ColorScheme */
         if (event == EVENT_FILETYPE
                 || event == EVENT_SYNTAX
                 || event == EVENT_FUNCUNDEFINED
                 || event == EVENT_REMOTEREPLY
-                || event == EVENT_SPELLFILEMISSING
-                || event == EVENT_QUICKFIXCMDPRE
-                || event == EVENT_COLORSCHEME
-                || event == EVENT_QUICKFIXCMDPOST)
+                || event == EVENT_COLORSCHEME)
             fname = vim_strsave(fname);
         else
             fname = FullName_save(fname, FALSE);
@@ -7136,6 +7115,7 @@ get_augroup_name(xp, idx)
         return NULL;
     if (AUGROUP_NAME(idx) == NULL)      /* skip deleted entries */
         return (char_u *)"";
+
     return AUGROUP_NAME(idx);           /* return a name */
 }
 
@@ -7202,6 +7182,7 @@ get_event_name(xp, idx)
     {
         if (!include_groups || AUGROUP_NAME(idx) == NULL)
             return (char_u *)"";        /* skip deleted entries */
+
         return AUGROUP_NAME(idx);       /* return a name */
     }
     return (char_u *)event_names[idx - augroups.ga_len].name;

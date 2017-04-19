@@ -210,6 +210,7 @@ no_Magic(x)
 {
     if (is_Magic(x))
         return un_Magic(x);
+
     return x;
 }
 
@@ -219,6 +220,7 @@ toggle_Magic(x)
 {
     if (is_Magic(x))
         return un_Magic(x);
+
     return Magic(x);
 }
 
@@ -278,18 +280,12 @@ toggle_Magic(x)
 /* Obtain a second single-byte operand stored after a four bytes operand. */
 #define OPERAND_CMP(p)  (p)[7]
 
-/*
- * Utility definitions.
- */
-#define UCHARAT(p)      ((int)*(char_u *)(p))
-
-/* Used for an error (down from) vim_regcomp(): give the error message, set
- * rc_did_emsg and return NULL */
+/* Used for an error (down from) vim_regcomp():
+ * give the error message, set rc_did_emsg and return NULL */
 #define EMSG_RET_NULL(m) return (EMSG(m), rc_did_emsg = TRUE, (void *)NULL)
 #define EMSG_RET_FAIL(m) return (EMSG(m), rc_did_emsg = TRUE, FAIL)
 #define EMSG2_RET_NULL(m, c) return (EMSG2((m), (c) ? "" : "\\"), rc_did_emsg = TRUE, (void *)NULL)
 #define EMSG2_RET_FAIL(m, c) return (EMSG2((m), (c) ? "" : "\\"), rc_did_emsg = TRUE, FAIL)
-#define EMSG_ONE_RET_NULL EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL)
 
 #define MAX_LIMIT       (32767L << 16L)
 
@@ -323,6 +319,7 @@ re_multi_type(c)
         return MULTI_ONE;
     if (c == Magic('*') || c == Magic('+') || c == Magic('{'))
         return MULTI_MULT;
+
     return NOT_MULTI;
 }
 
@@ -1396,9 +1393,9 @@ reg(paren, flagp)
 
     /* Make a closing node, and hook it on the end. */
     ender = regnode(
-            paren == REG_ZPAREN ? ZCLOSE + parno :
-            paren == REG_PAREN ? MCLOSE + parno :
-            paren == REG_NPAREN ? NCLOSE : END);
+            (paren == REG_ZPAREN) ? ZCLOSE + parno :
+            (paren == REG_PAREN) ? MCLOSE + parno :
+            (paren == REG_NPAREN) ? NCLOSE : END);
     regtail(ret, ender);
 
     /* Hook the tails of the branches to the closing node. */
@@ -1837,7 +1834,7 @@ regatom(flagp)
 
       case Magic('('):
         if (one_exactly)
-            EMSG_ONE_RET_NULL;
+            EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL);
         ret = reg(REG_PAREN, &flags);
         if (ret == NULL)
             return NULL;
@@ -1849,7 +1846,7 @@ regatom(flagp)
       case Magic('&'):
       case Magic(')'):
         if (one_exactly)
-            EMSG_ONE_RET_NULL;
+            EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL);
         EMSG_RET_NULL((char *)e_internal);   /* Supposed to be caught earlier. */
         /* NOTREACHED */
 
@@ -1927,7 +1924,7 @@ regatom(flagp)
                 case '(': if (reg_do_extmatch != REX_SET)
                               EMSG_RET_NULL((char *)e_z_not_allowed);
                           if (one_exactly)
-                              EMSG_ONE_RET_NULL;
+                              EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL);
                           ret = reg(REG_ZPAREN, &flags);
                           if (ret == NULL)
                               return NULL;
@@ -1972,7 +1969,7 @@ regatom(flagp)
                 /* () without a back reference */
                 case '(':
                     if (one_exactly)
-                        EMSG_ONE_RET_NULL;
+                        EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL);
                     ret = reg(REG_NPAREN, &flags);
                     if (ret == NULL)
                         return NULL;
@@ -2005,7 +2002,7 @@ regatom(flagp)
                  * branch which matches nothing. */
                 case '[':
                           if (one_exactly)      /* doesn't nest */
-                              EMSG_ONE_RET_NULL;
+                              EMSG2_RET_NULL("E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL);
                           {
                               char_u    *lastbranch;
                               char_u    *lastnode = NULL;
@@ -2991,12 +2988,11 @@ gethexchrs(maxinputlen)
     int         maxinputlen;
 {
     int         nr = 0;
-    int         c;
     int         i;
 
     for (i = 0; i < maxinputlen; ++i)
     {
-        c = regparse[0];
+        int c = regparse[0];
         if (!vim_isxdigit(c))
             break;
         nr <<= 4;
@@ -3006,6 +3002,7 @@ gethexchrs(maxinputlen)
 
     if (i == 0)
         return -1;
+
     return nr;
 }
 
@@ -3017,12 +3014,11 @@ gethexchrs(maxinputlen)
 getdecchrs()
 {
     int         nr = 0;
-    int         c;
     int         i;
 
     for (i = 0; ; ++i)
     {
-        c = regparse[0];
+        int c = regparse[0];
         if (c < '0' || c > '9')
             break;
         nr *= 10;
@@ -3033,6 +3029,7 @@ getdecchrs()
 
     if (i == 0)
         return -1;
+
     return nr;
 }
 
@@ -3048,12 +3045,11 @@ getdecchrs()
 getoctchrs()
 {
     int         nr = 0;
-    int         c;
     int         i;
 
     for (i = 0; i < 3 && nr < 040; ++i)
     {
-        c = regparse[0];
+        int c = regparse[0];
         if (c < '0' || c > '7')
             break;
         nr <<= 3;
@@ -3063,6 +3059,7 @@ getoctchrs()
 
     if (i == 0)
         return -1;
+
     return nr;
 }
 
@@ -3366,17 +3363,6 @@ static garray_T backpos = {0, 0, 0, 0, NULL};
 #define REGSTACK_INITIAL        2048
 #define BACKPOS_INITIAL         64
 
-#if defined(EXITFREE)
-    void
-free_regexp_stuff()
-{
-    ga_clear(&regstack);
-    ga_clear(&backpos);
-    vim_free(reg_tofree);
-    vim_free(reg_prev_sub);
-}
-#endif
-
 /*
  * Get pointer to the line "lnum", which is relative to "reg_firstlnum".
  */
@@ -3391,6 +3377,7 @@ reg_getline(lnum)
     if (lnum > reg_maxline)
         /* Must have matched the "\n" in the last line. */
         return (char_u *)"";
+
     return ml_get_buf(reg_buf, reg_firstlnum + lnum, FALSE);
 }
 
@@ -3784,6 +3771,7 @@ reg_prev_class()
 {
     if (reginput > regline)
         return mb_get_class_buf(reginput - 1 - utf_head_off(regline, reginput - 1), reg_buf);
+
     return -1;
 }
 
@@ -3798,7 +3786,7 @@ reg_match_visual()
     pos_T       top, bot;
     linenr_T    lnum;
     colnr_T     col;
-    win_T       *wp = reg_win == NULL ? curwin : reg_win;
+    win_T       *wp = (reg_win == NULL) ? curwin : reg_win;
     int         mode;
     colnr_T     start, end;
     colnr_T     start2, end2;
@@ -4018,7 +4006,7 @@ regmatch(scan)
 
             case RE_VCOL:
                 if (!re_num_cmp((long_u)win_linetabsize(
-                                reg_win == NULL ? curwin : reg_win,
+                                (reg_win == NULL) ? curwin : reg_win,
                                 regline, (colnr_T)(reginput - regline)) + 1, scan))
                     status = RA_NOMATCH;
                 break;
@@ -5683,7 +5671,7 @@ prog_magic_wrong()
         /* For NFA matcher we don't check the magic */
         return FALSE;
 
-    if (UCHARAT(((bt_regprog_T *)prog)->program) != REGMAGIC)
+    if (((int)*(char_u *)(((bt_regprog_T *)prog)->program)) != REGMAGIC)
     {
         EMSG((char *)e_re_corr);
         return TRUE;
@@ -5857,7 +5845,8 @@ reg_save_equal(save)
 {
     if (REG_MULTI)
         return reglnum == save->rs_u.pos.lnum && reginput == regline + save->rs_u.pos.col;
-    return reginput == save->rs_u.ptr;
+
+    return (reginput == save->rs_u.ptr);
 }
 
 /*
@@ -5900,6 +5889,7 @@ re_num_cmp(val, scan)
         return val > n;
     if (OPERAND_CMP(scan) == '<')
         return val < n;
+
     return val == n;
 }
 
@@ -7368,12 +7358,14 @@ nfa_get_regstart(start, depth)
 
                 if (c1 == c2)
                     return c1; /* yes! */
+
                 return 0;
             }
 
             default:
                 if (p->c > 0)
                     return p->c; /* yes! */
+
                 return 0;
         }
     }
@@ -9294,6 +9286,7 @@ st_pop(p, stack)
     stackp = *p;
     if (stackp < stack)
         return empty;
+
     return **p;
 }
 
@@ -9329,6 +9322,7 @@ nfa_max_width(startstate, depth)
                 r = nfa_max_width(state->out1, depth + 1);
                 if (l < 0 || r < 0)
                     return -1;
+
                 return len + (l > r ? l : r);
 
             case NFA_ANY:
@@ -10366,9 +10360,8 @@ has_state_with_pos(l, state, subs, pim)
     nfa_pim_T           *pim;   /* postponed match or NULL */
 {
     nfa_thread_T        *thread;
-    int                 i;
 
-    for (i = 0; i < l->n; ++i)
+    for (int i = 0; i < l->n; ++i)
     {
         thread = &l->t[i];
         if (thread->state->id == state->id
@@ -10377,6 +10370,7 @@ has_state_with_pos(l, state, subs, pim)
                 && pim_equal(&thread->pim, pim))
             return TRUE;
     }
+
     return FALSE;
 }
 
@@ -10403,7 +10397,8 @@ pim_equal(one, two)
     /* compare the position */
     if (REG_MULTI)
         return one->end.pos.lnum == two->end.pos.lnum && one->end.pos.col == two->end.pos.col;
-    return one->end.ptr == two->end.ptr;
+
+    return (one->end.ptr == two->end.ptr);
 }
 
 /*
@@ -11658,10 +11653,10 @@ nfa_regmatch(prog, start, submatch, m)
     else
         addstate(thislist, start, m, NULL, 0);
 
-#define ADD_STATE_IF_MATCH(state)                       \
-    if (result) {                                       \
-        add_state = state->out;                         \
-        add_off = clen;                                 \
+#define ADD_STATE_IF_MATCH(state)   \
+    if (result) {                   \
+        add_state = state->out;     \
+        add_off = clen;             \
     }
 
     /*
@@ -12450,7 +12445,7 @@ nfa_regmatch(prog, start, submatch, m)
                 {
                     int     op = t->state->c - NFA_VCOL;
                     colnr_T col = (colnr_T)(reginput - regline);
-                    win_T   *wp = reg_win == NULL ? curwin : reg_win;
+                    win_T   *wp = (reg_win == NULL) ? curwin : reg_win;
 
                     /* Bail out quickly when there can't be a match, avoid the
                      * overhead of win_linetabsize() on long lines. */
@@ -13367,8 +13362,7 @@ vim_regexec_multi(rmp, win, buf, lnum, col, tm)
             report_re_switch(pat);
             rmp->regprog = vim_regcomp(pat, re_flags);
             if (rmp->regprog != NULL)
-                result = rmp->regprog->engine->regexec_multi(
-                                                rmp, win, buf, lnum, col, tm);
+                result = rmp->regprog->engine->regexec_multi(rmp, win, buf, lnum, col, tm);
             vim_free(pat);
         }
         p_re = save_p_re;

@@ -86,11 +86,10 @@ static int included_patches[] =
 has_patch(n)
     int         n;
 {
-    int         i;
-
-    for (i = 0; included_patches[i] != 0; ++i)
+    for (int i = 0; included_patches[i] != 0; ++i)
         if (included_patches[i] == n)
             return TRUE;
+
     return FALSE;
 }
 

@@ -1,13 +1,4 @@
 /*
- * os_unix.c -- code for all flavors of Unix (BSD, SYSV, SVR4, POSIX, ...)
- *           Also for OS/2, using the excellent EMX package!!!
- *           Also for BeOS and Atari MiNT.
- *
- * A lot of this file was originally written by Juergen Weigert and later
- * changed beyond recognition.
- */
-
-/*
  * Some systems have a prototype for select() that has (int *) instead of
  * (fd_set *), which is wrong. This define removes that prototype. We define
  * our own prototype below.
@@ -15,6 +6,8 @@
 #define select select_declared_wrong
 
 #include "vim.h"
+
+#include <setjmp.h>
 
 /*
  * Stuff for signals
@@ -156,14 +149,13 @@ static struct signalinfo
     {SIGBUS,        "BUS",      TRUE},
 #endif
 #if defined(SIGSEGV)
-    /* MzScheme uses SEGV in its garbage collector */
     {SIGSEGV,       "SEGV",     TRUE},
 #endif
 #if defined(SIGSYS)
     {SIGSYS,        "SYS",      TRUE},
 #endif
 #if defined(SIGALRM)
-    {SIGALRM,       "ALRM",     FALSE}, /* Perl's alarm() can trigger it */
+    {SIGALRM,       "ALRM",     FALSE},
 #endif
 #if defined(SIGTERM)
     {SIGTERM,       "TERM",     TRUE},
@@ -171,9 +163,7 @@ static struct signalinfo
 #if defined(SIGVTALRM)
     {SIGVTALRM,     "VTALRM",   TRUE},
 #endif
-#if defined(SIGPROF) && !defined(WE_ARE_PROFILING)
-    /* MzScheme uses SIGPROF for its own needs; On Linux with profiling
-     * this makes Vim exit.  WE_ARE_PROFILING is defined in Makefile. */
+#if defined(SIGPROF)
     {SIGPROF,       "PROF",     TRUE},
 #endif
 #if defined(SIGXCPU)
@@ -186,7 +176,6 @@ static struct signalinfo
     {SIGUSR1,       "USR1",     TRUE},
 #endif
 #if defined(SIGUSR2)
-    /* Used for sysmouse handling */
     {SIGUSR2,       "USR2",     TRUE},
 #endif
 #if defined(SIGINT)
@@ -399,6 +388,7 @@ mch_total_mem(special)
 
     if (mem > 0)
         return mem >> shiftright;
+
     return (long_u)0x1fffff;
 }
 
@@ -522,6 +512,14 @@ sig_alarm SIGDEFARG(sigarg)
 #endif
 
 /*
+ * Stuff for setjmp() and longjmp().
+ * Used to protect areas where we could crash.
+ */
+static jmp_buf lc_jump_env;
+/* volatile because it is used in signal handler deathtrap(). */
+static volatile int lc_active = FALSE; /* TRUE when lc_jump_env is valid. */
+
+/*
  * This function handles deadly signals.
  * It tries to preserve any swap files and exit properly.
  * NOTE: Avoid unsafe functions, such as allocating memory, they can result in a deadlock.
@@ -532,17 +530,14 @@ deathtrap SIGDEFARG(sigarg)
     static int  entered = 0;        /* count the number of times we got here.
                                        Note: when memory has been corrupted
                                        this may get an arbitrary value! */
-    int         i;
 
     /*
      * Catch a crash in protected code.
-     * Restores the environment saved in lc_jump_env, which looks like
-     * SETJMP() returns 1.
      */
     if (lc_active)
     {
         lc_active = FALSE;      /* don't jump again */
-        LONGJMP(lc_jump_env, 1);
+        longjmp(lc_jump_env, 1);
         /* NOTREACHED */
     }
 
@@ -586,6 +581,8 @@ deathtrap SIGDEFARG(sigarg)
 
     /* Set the v:dying variable. */
     set_vim_var_nr(VV_DYING, (long)entered);
+
+    int i;
 
     /* try to find the name of this signal */
     for (i = 0; signal_info[i].sig != -1; i++)
@@ -792,9 +789,8 @@ catch_signals(func_deadly, func_other)
     void (*func_deadly)();
     void (*func_other)();
 {
-    int     i;
-
-    for (i = 0; signal_info[i].sig != -1; i++)
+    for (int i = 0; signal_info[i].sig != -1; i++)
+    {
         if (signal_info[i].deadly)
         {
             struct sigaction sa;
@@ -816,6 +812,7 @@ catch_signals(func_deadly, func_other)
         }
         else if (func_other != SIG_ERR)
             signal(signal_info[i].sig, func_other);
+    }
 }
 
 /*
@@ -867,6 +864,7 @@ mch_check_win(argc, argv)
 {
     if (isatty(1))
         return OK;
+
     return FAIL;
 }
 
@@ -878,6 +876,7 @@ mch_input_isatty()
 {
     if (isatty(read_cmd_fd))
         return TRUE;
+
     return FALSE;
 }
 
@@ -994,6 +993,7 @@ vim_is_xterm(name)
 {
     if (name == NULL)
         return FALSE;
+
     return (STRNICMP(name, "xterm", 5) == 0
          || STRNICMP(name, "rxvt", 4) == 0
          || STRCMP(name, "builtin_xterm") == 0);
@@ -1023,6 +1023,7 @@ use_xterm_mouse()
         return 2;
     if (ttym_flags == TTYM_XTERM)
         return 1;
+
     return 0;
 }
 
@@ -1032,6 +1033,7 @@ vim_is_iris(name)
 {
     if (name == NULL)
         return FALSE;
+
     return (STRNICMP(name, "iris-ansi", 9) == 0 || STRCMP(name, "builtin_iris-ansi") == 0);
 }
 
@@ -1059,6 +1061,7 @@ vim_is_fastterm(name)
         return FALSE;
     if (vim_is_xterm(name) || vim_is_vt300(name) || vim_is_iris(name))
         return TRUE;
+
     return (   STRNICMP(name, "hpterm", 6) == 0
             || STRNICMP(name, "sun-cmd", 7) == 0
             || STRNICMP(name, "screen", 6) == 0
@@ -1275,6 +1278,7 @@ mch_getperm(name)
     /* Keep the #ifdef outside of stat(), it may be a macro. */
     if (stat((char *)name, &statb))
         return -1;
+
     return statb.st_mode;
 }
 
@@ -1336,6 +1340,7 @@ executable_file(name)
 
     if (stat((char *)name, &st))
         return 0;
+
     return S_ISREG(st.st_mode) && mch_access((char *)name, X_OK) == 0;
 }
 
@@ -1456,17 +1461,6 @@ mch_early_init()
     init_signal_stack();
 }
 
-#if defined(EXITFREE)
-    void
-mch_free_mem()
-{
-    vim_free(signal_stack);
-    signal_stack = NULL;
-    vim_free(oldtitle);
-    vim_free(oldicon);
-}
-#endif
-
 static void exit_scroll(void);
 
 /*
@@ -1535,10 +1529,6 @@ mch_exit(r)
     out_flush();
     ml_close_all(TRUE);         /* remove all memfiles */
     may_core_dump();
-
-#if defined(EXITFREE)
-    free_all_mem();
-#endif
 
     exit(r);
 }
@@ -1799,13 +1789,11 @@ mch_get_shellsize()
             columns = atoi((char *)p);
     }
 
-#if defined(HAVE_TGETENT)
     /*
      * 3. try reading "co" and "li" entries from termcap
      */
     if (columns == 0 || rows == 0)
         getlinecol(&columns, &rows);
-#endif
 
     /*
      * 4. If everything fails, use the old values
@@ -3193,6 +3181,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
 notfound:
     if (flags & EW_NOTFOUND)
         return save_patterns(num_pat, pat, num_file, file);
+
     return FAIL;
 }
 
@@ -3261,11 +3250,10 @@ have_wildcard(num, file)
     int     num;
     char_u  **file;
 {
-    int     i;
-
-    for (i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
         if (mch_has_wildcard(file[i]))
             return 1;
+
     return 0;
 }
 
@@ -3274,10 +3262,9 @@ have_dollars(num, file)
     int     num;
     char_u  **file;
 {
-    int     i;
-
-    for (i = 0; i < num; i++)
+    for (int i = 0; i < num; i++)
         if (vim_strchr(file[i], '$') != NULL)
             return TRUE;
+
     return FALSE;
 }

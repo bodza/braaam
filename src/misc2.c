@@ -17,6 +17,7 @@ virtual_active()
      * VIsual_active has already been reset, thus we can't check for "block" being used. */
     if (virtual_op != MAYBE)
         return virtual_op;
+
     return (ve_flags == VE_ALL
             || ((ve_flags & VE_BLOCK) && VIsual_active && VIsual_mode == Ctrl_V)
             || ((ve_flags & VE_INSERT) && (State & INSERT)));
@@ -292,6 +293,7 @@ coladvance2(pos, addspaces, finetune, wcol)
 
     if (col < wcol)
         return FAIL;
+
     return OK;
 }
 
@@ -715,131 +717,6 @@ do_outofmem_msg(size)
         EMSGN("E342: Out of memory!  (allocating %lu bytes)", size);
     }
 }
-
-#if defined(EXITFREE)
-
-/*
- * Free everything that we allocated.
- * Can be used to detect memory leaks, e.g., with ccmalloc.
- * NOTE: This is tricky!  Things are freed that functions depend on.  Don't be
- * surprised if Vim crashes...
- * Some things can't be freed, esp. things local to a library function.
- */
-    void
-free_all_mem()
-{
-    buf_T       *buf, *nextbuf;
-    static int  entered = FALSE;
-
-    /* When we cause a crash here it is caught and Vim tries to exit cleanly.
-     * Don't try freeing everything again. */
-    if (entered)
-        return;
-    entered = TRUE;
-
-    /* Don't want to trigger autocommands from here on. */
-    block_autocmds();
-
-    /* Close all tabs and windows.  Reset 'equalalways' to avoid redraws. */
-    p_ea = FALSE;
-    if (first_tabpage->tp_next != NULL)
-        do_cmdline_cmd((char_u *)"tabonly!");
-    if (firstwin != lastwin)
-        do_cmdline_cmd((char_u *)"only!");
-
-    /* Clear user commands (before deleting buffers). */
-    ex_comclear(NULL);
-
-    /* Clear mappings, abbreviations, breakpoints. */
-    do_cmdline_cmd((char_u *)"lmapclear");
-    do_cmdline_cmd((char_u *)"xmapclear");
-    do_cmdline_cmd((char_u *)"mapclear");
-    do_cmdline_cmd((char_u *)"mapclear!");
-    do_cmdline_cmd((char_u *)"abclear");
-    do_cmdline_cmd((char_u *)"breakdel *");
-
-    free_titles();
-
-    /* Obviously named calls. */
-    free_all_autocmds();
-    clear_termcodes();
-    free_all_options();
-    free_all_marks();
-    alist_clear(&global_alist);
-    free_homedir();
-    free_users();
-    free_search_patterns();
-    free_old_sub();
-    free_last_insert();
-    free_prev_shellcmd();
-    free_regexp_stuff();
-    free_cd_dir();
-    set_expr_line(NULL);
-    clear_sb_text();          /* free any scrollback text */
-
-    /* Free some global vars. */
-    vim_free(username);
-    vim_regfree(clip_exclude_prog);
-    vim_free(last_cmdline);
-    vim_free(new_last_cmdline);
-    set_keep_msg(NULL, 0);
-
-    /* Clear cmdline history. */
-    p_hi = 0;
-    init_history();
-
-    /* Close all script inputs. */
-    close_all_scripts();
-
-    /* Destroy all windows.  Must come before freeing buffers. */
-    win_free_all();
-
-    /* Free all buffers.  Reset 'autochdir' to avoid accessing things that
-     * were freed already. */
-    for (buf = firstbuf; buf != NULL; )
-    {
-        nextbuf = buf->b_next;
-        close_buffer(NULL, buf, DOBUF_WIPE, FALSE);
-        if (buf_valid(buf))
-            buf = nextbuf;      /* didn't work, try next one */
-        else
-            buf = firstbuf;
-    }
-
-    /* Clear registers. */
-    clear_registers();
-    ResetRedobuff();
-    ResetRedobuff();
-
-    /* highlight info */
-    free_highlight();
-
-    reset_last_sourcing();
-
-    free_tabpage(first_tabpage);
-    first_tabpage = NULL;
-
-    /* Machine-specific free. */
-    mch_free_mem();
-
-    /* message history */
-    for (;;)
-        if (delete_first_msg() == FAIL)
-            break;
-
-    eval_clear();
-
-    free_termoptions();
-
-    /* screenlines (can't display anything now!) */
-    free_screenlines();
-
-    clear_hl_tables();
-
-    vim_free(IObuff);
-    vim_free(NameBuff);
-}
-#endif
 
 /*
  * Copy "string" into newly allocated memory.
@@ -1419,9 +1296,7 @@ ga_clear(gap)
 ga_clear_strings(gap)
     garray_T *gap;
 {
-    int         i;
-
-    for (i = 0; i < gap->ga_len; ++i)
+    for (int i = 0; i < gap->ga_len; ++i)
         vim_free(((char_u **)(gap->ga_data))[i]);
     ga_clear(gap);
 }
@@ -1882,47 +1757,44 @@ static struct mousetable
 name_to_mod_mask(c)
     int     c;
 {
-    int     i;
-
     c = TOUPPER_ASC(c);
-    for (i = 0; mod_mask_table[i].mod_mask != 0; i++)
+    for (int i = 0; mod_mask_table[i].mod_mask != 0; i++)
         if (c == mod_mask_table[i].name)
             return mod_mask_table[i].mod_flag;
+
     return 0;
 }
 
 /*
- * Check if if there is a special key code for "key" that includes the
- * modifiers specified.
+ * Check if if there is a special key code for "key" that includes the modifiers specified.
  */
     int
 simplify_key(key, modifiers)
     int     key;
     int     *modifiers;
 {
-    int     i;
-    int     key0;
-    int     key1;
-
     if (*modifiers & (MOD_MASK_SHIFT | MOD_MASK_CTRL | MOD_MASK_ALT))
     {
+        int     key0;
+        int     key1;
+
         /* TAB is a special case */
         if (key == TAB && (*modifiers & MOD_MASK_SHIFT))
         {
             *modifiers &= ~MOD_MASK_SHIFT;
             return K_S_TAB;
         }
+
         key0 = KEY2TERMCAP0(key);
         key1 = KEY2TERMCAP1(key);
-        for (i = 0; modifier_keys_table[i] != NUL; i += MOD_KEYS_ENTRY_SIZE)
-            if (key0 == modifier_keys_table[i + 3]
-                    && key1 == modifier_keys_table[i + 4]
-                    && (*modifiers & modifier_keys_table[i]))
+        for (int i = 0; modifier_keys_table[i] != NUL; i += MOD_KEYS_ENTRY_SIZE)
+            if (key0 == modifier_keys_table[i + 3] && key1 == modifier_keys_table[i + 4] && (*modifiers & modifier_keys_table[i]))
             {
                 *modifiers &= ~modifier_keys_table[i];
                 return TERMCAP2KEY(modifier_keys_table[i + 1], modifier_keys_table[i + 2]);
             }
     }
+
     return key;
 }
 
@@ -2001,9 +1873,7 @@ get_special_key_name(c, modifiers)
      */
     if (c > 0 && utf_char2len(c) == 1)
     {
-        if (table_idx < 0
-                && (!vim_isprintc(c) || (c & 0x7f) == ' ')
-                && (c & 0x80))
+        if (table_idx < 0 && (!vim_isprintc(c) || (c & 0x7f) == ' ') && (c & 0x80))
         {
             c &= 0x7f;
             modifiers |= MOD_MASK_ALT;
@@ -2328,6 +2198,7 @@ get_key_name(i)
 {
     if (i >= (int)KEY_NAMES_TABLE_LEN)
         return NULL;
+
     return  key_names_table[i].name;
 }
 
@@ -2341,9 +2212,7 @@ get_mouse_button(code, is_click, is_drag)
     int     *is_click;
     int     *is_drag;
 {
-    int     i;
-
-    for (i = 0; mouse_table[i].pseudo_code; i++)
+    for (int i = 0; mouse_table[i].pseudo_code; i++)
         if (code == mouse_table[i].pseudo_code)
         {
             *is_click = mouse_table[i].is_click;
@@ -2364,9 +2233,7 @@ get_pseudo_mouse_code(button, is_click, is_drag)
     int     is_click;
     int     is_drag;
 {
-    int     i;
-
-    for (i = 0; mouse_table[i].pseudo_code; i++)
+    for (int i = 0; mouse_table[i].pseudo_code; i++)
         if (button == mouse_table[i].button
             && is_click == mouse_table[i].is_click
             && is_drag == mouse_table[i].is_drag)
@@ -2389,6 +2256,7 @@ get_fileformat(buf)
         return EOL_UNIX;
     if (c == 'm')
         return EOL_MAC;
+
     return EOL_DOS;
 }
 
@@ -2414,6 +2282,7 @@ get_fileformat_force(buf, eap)
         return EOL_UNIX;
     if (c == 'm')
         return EOL_MAC;
+
     return EOL_DOS;
 }
 
@@ -2548,6 +2417,7 @@ get_real_state()
         {
             if (VIsual_select)
                 return SELECTMODE;
+
             return VISUAL;
         }
         else if (finish_op)
@@ -2907,8 +2777,8 @@ pathcmp(p, q, maxlen)
                 return -1;
             if (vim_ispathsep(c2))
                 return 1;
-            return p_fic ? vim_toupper(c1) - vim_toupper(c2)
-                    : c1 - c2;  /* no match */
+
+            return (p_fic) ? vim_toupper(c1) - vim_toupper(c2) : c1 - c2;  /* no match */
         }
     }
     if (s == NULL)      /* "i" ran into "maxlen" */
@@ -2921,6 +2791,7 @@ pathcmp(p, q, maxlen)
         return 0;   /* match with trailing slash */
     if (s == q)
         return -1;          /* no match */
+
     return 1;
 }
 
@@ -3055,9 +2926,7 @@ get8ctime(fd)
     FILE        *fd;
 {
     time_t      n = 0;
-    int         i;
-
-    for (i = 0; i < 8; ++i)
+    for (int i = 0; i < 8; ++i)
         n = (n << 8) + getc(fd);
     return n;
 }

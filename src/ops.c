@@ -664,8 +664,7 @@ op_reindent(oap, how)
      * there is no change still need to remove the Visual highlighting. */
     if (last_changed != 0)
         changed_lines(first_changed, 0,
-                oap->is_VIsual ? start_lnum + oap->line_count :
-                last_changed + 1, 0L);
+                oap->is_VIsual ? start_lnum + oap->line_count : last_changed + 1, 0L);
     else if (oap->is_VIsual)
         redraw_curbuf_later(INVERTED);
 
@@ -757,6 +756,7 @@ get_expr_line_src()
 {
     if (expr_line == NULL)
         return NULL;
+
     return vim_strsave(expr_line);
 }
 
@@ -780,6 +780,7 @@ valid_yank_reg(regname, writing)
             || (!writing && regname == '~')
                                                         )
         return TRUE;
+
     return FALSE;
 }
 
@@ -1597,10 +1598,10 @@ op_delete(oap)
 
         /* Yank into small delete register when no named register specified
          * and the delete is within one line. */
-        if ((
-            ((clip_unnamed & CLIP_UNNAMED) && oap->regname == '*') ||
-            ((clip_unnamed & CLIP_UNNAMED_PLUS) && oap->regname == '+') ||
-            oap->regname == 0) && oap->motion_type != MLINE && oap->line_count == 1)
+        if ((((clip_unnamed & CLIP_UNNAMED) && oap->regname == '*')
+          || ((clip_unnamed & CLIP_UNNAMED_PLUS) && oap->regname == '+')
+          || oap->regname == 0)
+                && oap->motion_type != MLINE && oap->line_count == 1)
         {
             oap->regname = '-';
             get_yank_register(oap->regname, TRUE);
@@ -1985,8 +1986,7 @@ op_replace(oap, c)
             else
             {
                 /* Replacing with \r or \n means splitting the line. */
-                after_p = alloc_check(
-                                   (unsigned)(oldlen + 1 + n - STRLEN(newp)));
+                after_p = alloc_check((unsigned)(oldlen + 1 + n - STRLEN(newp)));
                 if (after_p != NULL)
                     STRMOVE(after_p, oldp);
             }
@@ -2561,26 +2561,9 @@ op_change(oap)
     void
 init_yank()
 {
-    int         i;
-
-    for (i = 0; i < NUM_REGISTERS; ++i)
+    for (int i = 0; i < NUM_REGISTERS; ++i)
         y_regs[i].y_array = NULL;
 }
-
-#if defined(EXITFREE)
-    void
-clear_registers()
-{
-    int         i;
-
-    for (i = 0; i < NUM_REGISTERS; ++i)
-    {
-        y_current = &y_regs[i];
-        if (y_current->y_array != NULL)
-            free_yank_all();
-    }
-}
-#endif
 
 /*
  * Free "n" lines from the current yank register.
@@ -2923,8 +2906,7 @@ copy_yank_reg(reg)
     y_current = reg;
     free_yank_all();
     *y_current = *curr;
-    y_current->y_array = (char_u **)lalloc_clear(
-                        (long_u)(sizeof(char_u *) * y_current->y_size), TRUE);
+    y_current->y_array = (char_u **)lalloc_clear((long_u)(sizeof(char_u *) * y_current->y_size), TRUE);
     if (y_current->y_array == NULL)
         y_current->y_size = 0;
     else
@@ -4083,6 +4065,7 @@ same_leader(lnum, leader1_len, leader1_flags, leader2_len, leader2_flags)
                 for (p = leader2_flags; *p && *p != ':'; ++p)
                     if (*p == COM_MIDDLE)
                         return TRUE;
+
                 return FALSE;
             }
         }
@@ -5309,6 +5292,7 @@ get_reg_contents(regname, flags)
             return NULL;
         if (flags & GREG_EXPR_SRC)
             return getreg_wrap_one_line(get_expr_line_src(), flags);
+
         return getreg_wrap_one_line(get_expr_line(), flags);
     }
 
@@ -5327,6 +5311,7 @@ get_reg_contents(regname, flags)
             return NULL;
         if (allocated)
             return getreg_wrap_one_line(retval, flags);
+
         return getreg_wrap_one_line(vim_strsave(retval), flags);
     }
 

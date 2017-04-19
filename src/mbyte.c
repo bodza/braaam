@@ -104,11 +104,10 @@ enc_canon_table[] =
 enc_canon_search(name)
     char_u      *name;
 {
-    int         i;
-
-    for (i = 0; i < IDX_COUNT; ++i)
+    for (int i = 0; i < IDX_COUNT; ++i)
         if (STRCMP(name, enc_canon_table[i].name) == 0)
             return i;
+
     return -1;
 }
 
@@ -125,6 +124,7 @@ enc_canon_props(name)
     i = enc_canon_search(name);
     if (i >= 0)
         return enc_canon_table[i].prop;
+
     return 0;
 }
 
@@ -243,6 +243,7 @@ mb_get_class_buf(p, buf)
             return 0;
         if (vim_iswordc_buf(p[0], buf))
             return 2;
+
         return 1;
     }
     return utf_class(utf_ptr2char(p));
@@ -551,6 +552,7 @@ utf_ptr2cells(p)
         /* If the char is ASCII it must be an overlong sequence. */
         if (c < 0x80)
             return char2cells(c);
+
         return utf_char2cells(c);
     }
     return 1;
@@ -575,6 +577,7 @@ utf_ptr2cells_len(p, size)
         /* If the char is ASCII it must be an overlong sequence. */
         if (c < 0x80)
             return char2cells(c);
+
         return utf_char2cells(c);
     }
     return 1;
@@ -864,6 +867,7 @@ utf_ptr2len(p)
     for (i = 1; i < len; ++i)
         if ((p[i] & 0xc0) != 0x80)
             return 1;
+
     return len;
 }
 
@@ -906,6 +910,7 @@ utf_ptr2len_len(p, size)
     for (i = 1; i < m; ++i)
         if ((p[i] & 0xc0) != 0x80)
             return 1;
+
     return len;
 }
 
@@ -1017,6 +1022,7 @@ utf_char2len(c)
         return 4;
     if (c < 0x4000000)
         return 5;
+
     return 6;
 }
 
@@ -1439,6 +1445,7 @@ utf_class(c)
             return 0;       /* blank */
         if (vim_iswordc(c))
             return 2;       /* word character */
+
         return 1;           /* punctuation */
     }
 
@@ -2123,6 +2130,7 @@ utf_strnicmp(s1, s2, n1, n2)
         /* some string ended. shorter string is smaller */
         if (c1 == 0 && c2 == 0)
             return 0;
+
         return c1 == 0 ? -1 : 1;
     }
 
@@ -2163,6 +2171,7 @@ utf_strnicmp(s1, s2, n1, n2)
 
     if (n1 == 0 && n2 == 0)
         return 0;
+
     return n1 == 0 ? -1 : 1;
 }
 
@@ -2535,6 +2544,7 @@ mb_fix_col(col, row)
     row = check_row(row);
     if (ScreenLines != NULL && col > 0 && ScreenLines[LineOffset[row] + col] == 0)
         return col - 1;
+
     return col;
 }
 

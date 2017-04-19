@@ -607,6 +607,7 @@ fm_getname(fmark, lead_len)
 {
     if (fmark->fnum == curbuf->b_fnum)              /* current buffer */
         return mark_line(&(fmark->mark), lead_len);
+
     return buflist_nr2name(fmark->fnum, FALSE);
 }
 
@@ -1192,9 +1193,7 @@ copy_jumplist(from, to)
     win_T       *from;
     win_T       *to;
 {
-    int         i;
-
-    for (i = 0; i < from->w_jumplistlen; ++i)
+    for (int i = 0; i < from->w_jumplistlen; ++i)
     {
         to->w_jumplist[i] = from->w_jumplist[i];
         if (from->w_jumplist[i].fname != NULL)
@@ -1211,9 +1210,7 @@ copy_jumplist(from, to)
 free_jumplist(wp)
     win_T       *wp;
 {
-    int         i;
-
-    for (i = 0; i < wp->w_jumplistlen; ++i)
+    for (int i = 0; i < wp->w_jumplistlen; ++i)
         vim_free(wp->w_jumplist[i].fname);
 }
 
@@ -1224,15 +1221,3 @@ set_last_cursor(win)
     if (win->w_buffer != NULL)
         win->w_buffer->b_last_cursor = win->w_cursor;
 }
-
-#if defined(EXITFREE)
-    void
-free_all_marks()
-{
-    int         i;
-
-    for (i = 0; i < NMARKS + EXTRA_MARKS; i++)
-        if (namedfm[i].fmark.mark.lnum != 0)
-            vim_free(namedfm[i].fname);
-}
-#endif

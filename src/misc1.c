@@ -1777,6 +1777,7 @@ plines_win(wp, lnum, winheight)
     lines = plines_win_nofold(wp, lnum);
     if (winheight > 0 && lines > wp->w_height)
         return (int)wp->w_height;
+
     return lines;
 }
 
@@ -2117,6 +2118,7 @@ del_char(fixpos)
     mb_adjust_cursor();
     if (*ml_get_cursor() == NUL)
         return FAIL;
+
     return del_chars(1L, fixpos);
 }
 
@@ -3258,20 +3260,6 @@ init_homedir()
     }
 }
 
-#if defined(EXITFREE)
-    void
-free_homedir()
-{
-    vim_free(homedir);
-}
-
-    void
-free_users()
-{
-    ga_clear_strings(&ga_users);
-}
-#endif
-
 /*
  * Call expand_env() and store the result in an allocated string.
  * This is not very memory efficient, this expects the result to be freed again soon.
@@ -3659,6 +3647,7 @@ get_users(xp, idx)
     init_users();
     if (idx < ga_users.ga_len)
         return ((char_u **)ga_users.ga_data)[idx];
+
     return NULL;
 }
 
@@ -3853,6 +3842,7 @@ fullpathcmp(s1, s2, checkname)
         return FPC_DIFFX;
     if (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino)
         return FPC_SAME;
+
     return FPC_DIFF;
 }
 
@@ -4027,6 +4017,7 @@ vim_fnamecmp(x, y)
 {
     if (p_fic)
         return MB_STRICMP(x, y);
+
     return STRCMP(x, y);
 }
 
@@ -4037,6 +4028,7 @@ vim_fnamencmp(x, y, len)
 {
     if (p_fic)
         return MB_STRNICMP(x, y, len);
+
     return STRNCMP(x, y, len);
 }
 
@@ -4460,6 +4452,7 @@ cin_islabel()           /* XXX */
                     || cin_iscase(line, TRUE)
                     || (cin_islabel_skip(&line) && cin_nocode(line)))
                 return TRUE;
+
             return FALSE;
         }
         curwin->w_cursor = cursor_save;
@@ -4550,6 +4543,7 @@ cin_iscase(s, strict)
 
     if (cin_isdefault(s))
         return TRUE;
+
     return FALSE;
 }
 
@@ -4583,6 +4577,7 @@ cin_isscopedecl(s)
         i = 7;
     else
         return FALSE;
+
     return (*(s = cin_skipcomment(s + i)) == ':' && s[1] != ':');
 }
 
@@ -4657,6 +4652,7 @@ after_label(l)
     l = cin_skipcomment(l + 1);
     if (*l == NUL)
         return NULL;
+
     return l;
 }
 
@@ -4828,6 +4824,7 @@ cin_ispreproc(s)
 {
     if (*skipwhite(s) == '#')
         return TRUE;
+
     return FALSE;
 }
 
@@ -5601,6 +5598,7 @@ corr_ind_maxparen(startpos)
 
     if (n > 0 && n < curbuf->b_ind_maxparen / 2)
         return curbuf->b_ind_maxparen - (int)n;
+
     return curbuf->b_ind_maxparen;
 }
 
@@ -6183,8 +6181,7 @@ get_c_indent()
                 }
 
                 /* XXX */
-                if ((trypos = find_match_paren(
-                        corr_ind_maxparen(&cur_curpos))) != NULL
+                if ((trypos = find_match_paren(corr_ind_maxparen(&cur_curpos))) != NULL
                         && trypos->lnum == our_paren_pos.lnum
                         && trypos->col == our_paren_pos.col)
                 {
@@ -6649,8 +6646,7 @@ get_c_indent()
                              */                                 /* XXX */
                             trypos = NULL;
                             if (find_last_paren(l, '(', ')'))
-                                trypos = find_match_paren(
-                                                      curbuf->b_ind_maxparen);
+                                trypos = find_match_paren(curbuf->b_ind_maxparen);
 
                             if (trypos == NULL && find_last_paren(l, '{', '}'))
                                 trypos = find_start_brace();
@@ -7275,8 +7271,7 @@ get_c_indent()
                                         && *l != NUL
                                         && l[STRLEN(l) - 1] == '\\')
                                                                 /* XXX */
-                                    cont_amount = cin_get_equal_amount(
-                                                       curwin->w_cursor.lnum);
+                                    cont_amount = cin_get_equal_amount(curwin->w_cursor.lnum);
                                 if (lookfor != LOOKFOR_TERM
                                                 && lookfor != LOOKFOR_JS_KEY
                                                 && lookfor != LOOKFOR_COMMA)
@@ -7676,8 +7671,7 @@ term_again:
                     while (curwin->w_cursor.lnum > 1)
                     {
                         look = ml_get(--curwin->w_cursor.lnum);
-                        if (!(cin_nocode(look) || cin_ispreproc_cont(
-                                              &look, &curwin->w_cursor.lnum)))
+                        if (!(cin_nocode(look) || cin_ispreproc_cont(&look, &curwin->w_cursor.lnum)))
                             break;
                     }
                     if (curwin->w_cursor.lnum > 0 && cin_ends_in(look, (char_u *)"}", NULL))
@@ -7759,6 +7753,7 @@ theend:
 
     if (amount < 0)
         return 0;
+
     return amount;
 }
 
@@ -8116,8 +8111,7 @@ get_lisp_indent()
                         }
                         while (vim_iswhite(*that))
                         {
-                            amount += lbr_chartabsize(
-                                                 line, that, (colnr_T)amount);
+                            amount += lbr_chartabsize(line, that, (colnr_T)amount);
                             that++;
                         }
                         if (!*that || *that == ';')
@@ -8211,6 +8205,7 @@ vim_fexists(fname)
 
     if (mch_stat((char *)fname, &st))
         return FALSE;
+
     return TRUE;
 }
 

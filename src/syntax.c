@@ -331,7 +331,7 @@ static void invalidate_current_state(void);
 static int syn_stack_equal(synstate_T *sp);
 static void validate_current_state(void);
 static int syn_finish_line(int syncing);
-static int syn_current_attr(int syncing, int displaying, int *can_spell, int keep_state);
+static int syn_current_attr(int syncing, int displaying, int keep_state);
 static int did_match_already(int idx, garray_T *gap);
 static stateitem_T *push_next_match(stateitem_T *cur_si);
 static void check_state_ends(void);
@@ -358,7 +358,6 @@ static char_u *syn_getcurline(void);
 static int syn_regexec(regmmatch_T *rmp, linenr_T lnum, colnr_T col, syn_time_T *st);
 static int check_keyword_id(char_u *line, int startcol, int *endcol, long *flags, short **next_list, stateitem_T *cur_si, int *ccharp);
 static void syn_cmd_case(exarg_T *eap, int syncing);
-static void syn_cmd_spell(exarg_T *eap, int syncing);
 static void syntax_sync_clear(void);
 static void syn_remove_pattern(synblock_T *block, int idx);
 static void syn_clear_pattern(synblock_T *block, int i);
@@ -1646,7 +1645,7 @@ syn_finish_line(syncing)
     {
         while (!current_finished)
         {
-            (void)syn_current_attr(syncing, FALSE, NULL, FALSE);
+            (void)syn_current_attr(syncing, FALSE, FALSE);
             /*
              * When syncing, and found some item, need to check the item.
              */
@@ -1681,22 +1680,13 @@ syn_finish_line(syncing)
  * "col" is normally 0 for the first use in a line, and increments by one each
  * time.  It's allowed to skip characters and to stop before the end of the
  * line.  But only a "col" after a previously used column is allowed.
- * When "can_spell" is not NULL set it to TRUE when spell-checking should be done.
  */
     int
-get_syntax_attr(col, can_spell, keep_state)
+get_syntax_attr(col, keep_state)
     colnr_T     col;
-    int         *can_spell;
     int         keep_state;     /* keep state of char at "col" */
 {
     int     attr = 0;
-
-    if (can_spell != NULL)
-        /* Default: Only do spelling when there is no @Spell cluster or when
-         * ":syn spell toplevel" was used. */
-        *can_spell = syn_block->b_syn_spell == SYNSPL_DEFAULT
-                    ? (syn_block->b_spell_cluster_id == 0)
-                    : (syn_block->b_syn_spell == SYNSPL_TOP);
 
     /* check for out of memory situation */
     if (syn_block->b_sst_array == NULL)
@@ -1721,7 +1711,7 @@ get_syntax_attr(col, can_spell, keep_state)
      */
     while (current_col <= col)
     {
-        attr = syn_current_attr(FALSE, TRUE, can_spell, current_col == col ? keep_state : FALSE);
+        attr = syn_current_attr(FALSE, TRUE, (current_col == col) ? keep_state : FALSE);
         ++current_col;
     }
 
@@ -1732,10 +1722,9 @@ get_syntax_attr(col, can_spell, keep_state)
  * Get syntax attributes for current_lnum, current_col.
  */
     static int
-syn_current_attr(syncing, displaying, can_spell, keep_state)
+syn_current_attr(syncing, displaying, keep_state)
     int         syncing;                /* When 1: called for syncing */
     int         displaying;             /* result will be displayed */
-    int         *can_spell;             /* return: do spell checking */
     int         keep_state;             /* keep syntax stack afterwards */
 {
     int         syn_id;
@@ -1880,10 +1869,8 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                             }
                             else
                             {
-                                cur_si->si_attr = CUR_STATE(
-                                        current_state.ga_len - 2).si_attr;
-                                cur_si->si_trans_id = CUR_STATE(
-                                        current_state.ga_len - 2).si_trans_id;
+                                cur_si->si_attr = CUR_STATE(current_state.ga_len - 2).si_attr;
+                                cur_si->si_trans_id = CUR_STATE(current_state.ga_len - 2).si_trans_id;
                             }
                         }
                         else
@@ -2176,52 +2163,6 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
             }
         }
 
-        if (can_spell != NULL)
-        {
-            struct sp_syn   sps;
-
-            /*
-             * set "can_spell" to TRUE if spell checking is supposed to be
-             * done in the current item.
-             */
-            if (syn_block->b_spell_cluster_id == 0)
-            {
-                /* There is no @Spell cluster: Do spelling for items without
-                 * @NoSpell cluster. */
-                if (syn_block->b_nospell_cluster_id == 0 || current_trans_id == 0)
-                    *can_spell = (syn_block->b_syn_spell != SYNSPL_NOTOP);
-                else
-                {
-                    sps.inc_tag = 0;
-                    sps.id = syn_block->b_nospell_cluster_id;
-                    sps.cont_in_list = NULL;
-                    *can_spell = !in_id_list(sip, sip->si_cont_list, &sps, 0);
-                }
-            }
-            else
-            {
-                /* The @Spell cluster is defined: Do spelling in items with
-                 * the @Spell cluster.  But not when @NoSpell is also there.
-                 * At the toplevel only spell check when ":syn spell toplevel" was used. */
-                if (current_trans_id == 0)
-                    *can_spell = (syn_block->b_syn_spell == SYNSPL_TOP);
-                else
-                {
-                    sps.inc_tag = 0;
-                    sps.id = syn_block->b_spell_cluster_id;
-                    sps.cont_in_list = NULL;
-                    *can_spell = in_id_list(sip, sip->si_cont_list, &sps, 0);
-
-                    if (syn_block->b_nospell_cluster_id != 0)
-                    {
-                        sps.id = syn_block->b_nospell_cluster_id;
-                        if (in_id_list(sip, sip->si_cont_list, &sps, 0))
-                            *can_spell = FALSE;
-                    }
-                }
-            }
-        }
-
         /*
          * Check for end of current state (and the states before it) at the
          * next column.  Don't do this for syncing, because we would miss a
@@ -2241,12 +2182,6 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
             }
         }
     }
-    else if (can_spell != NULL)
-        /* Default: Only do spelling when there is no @Spell cluster or when
-         * ":syn spell toplevel" was used. */
-        *can_spell = syn_block->b_syn_spell == SYNSPL_DEFAULT
-                    ? (syn_block->b_spell_cluster_id == 0)
-                    : (syn_block->b_syn_spell == SYNSPL_TOP);
 
     /* nextgroup ends at end of line, unless "skipnl" or "skipempty" present */
     if (current_next_list != NULL
@@ -2273,9 +2208,7 @@ did_match_already(idx, gap)
     int         idx;
     garray_T    *gap;
 {
-    int         i;
-
-    for (i = current_state.ga_len; --i >= 0; )
+    for (int i = current_state.ga_len; --i >= 0; )
         if (CUR_STATE(i).si_m_startcol == (int)current_col
                 && CUR_STATE(i).si_m_lnum == (int)current_lnum
                 && CUR_STATE(i).si_idx == idx)
@@ -2283,7 +2216,7 @@ did_match_already(idx, gap)
 
     /* Zero-width matches with a nextgroup argument are not put on the syntax
      * stack, and can only be matched once anyway. */
-    for (i = gap->ga_len; --i >= 0; )
+    for (int i = gap->ga_len; --i >= 0; )
         if (((int *)(gap->ga_data))[i] == idx)
             return TRUE;
 
@@ -3129,7 +3062,7 @@ check_keyword_id(line, startcol, endcolp, flagsp, next_listp, cur_si, ccharp)
      */
     for (round = 1; round <= 2; ++round)
     {
-        ht = round == 1 ? &syn_block->b_keywtab : &syn_block->b_keywtab_ic;
+        ht = (round == 1) ? &syn_block->b_keywtab : &syn_block->b_keywtab_ic;
         if (ht->ht_used == 0)
             continue;
         if (round == 2) /* ignore case */
@@ -3212,43 +3145,14 @@ syn_cmd_case(eap, syncing)
 }
 
 /*
- * Handle ":syntax spell" command.
- */
-    static void
-syn_cmd_spell(eap, syncing)
-    exarg_T     *eap;
-    int         syncing UNUSED;
-{
-    char_u      *arg = eap->arg;
-    char_u      *next;
-
-    eap->nextcmd = find_nextcmd(arg);
-    if (eap->skip)
-        return;
-
-    next = skiptowhite(arg);
-    if (STRNICMP(arg, "toplevel", 8) == 0 && next - arg == 8)
-        curwin->w_s->b_syn_spell = SYNSPL_TOP;
-    else if (STRNICMP(arg, "notoplevel", 10) == 0 && next - arg == 10)
-        curwin->w_s->b_syn_spell = SYNSPL_NOTOP;
-    else if (STRNICMP(arg, "default", 7) == 0 && next - arg == 7)
-        curwin->w_s->b_syn_spell = SYNSPL_DEFAULT;
-    else
-        EMSG2("E390: Illegal argument: %s", arg);
-}
-
-/*
  * Clear all syntax info for one buffer.
  */
     void
 syntax_clear(block)
     synblock_T  *block;
 {
-    int i;
-
     block->b_syn_error = FALSE;     /* clear previous error */
     block->b_syn_ic = FALSE;        /* Use case, by default */
-    block->b_syn_spell = SYNSPL_DEFAULT; /* default spell checking */
     block->b_syn_containedin = FALSE;
 
     /* free the keywords */
@@ -3256,12 +3160,12 @@ syntax_clear(block)
     clear_keywtab(&block->b_keywtab_ic);
 
     /* free the syntax patterns */
-    for (i = block->b_syn_patterns.ga_len; --i >= 0; )
+    for (int i = block->b_syn_patterns.ga_len; --i >= 0; )
         syn_clear_pattern(block, i);
     ga_clear(&block->b_syn_patterns);
 
     /* free the syntax clusters */
-    for (i = block->b_syn_clusters.ga_len; --i >= 0; )
+    for (int i = block->b_syn_clusters.ga_len; --i >= 0; )
         syn_clear_cluster(block, i);
     ga_clear(&block->b_syn_clusters);
     block->b_spell_cluster_id = 0;
@@ -3823,9 +3727,7 @@ syn_list_flags(nlist, flags, attr)
     int                 flags;
     int                 attr;
 {
-    int         i;
-
-    for (i = 0; nlist[i].flag != 0; ++i)
+    for (int i = 0; nlist[i].flag != 0; ++i)
         if (flags & nlist[i].flag)
         {
             msg_puts_attr((char_u *)nlist[i].name, attr);
@@ -4232,6 +4134,7 @@ get_group_name(arg, name_end)
      */
     if (ends_excmd(*arg) || *rest == NUL)
         return NULL;
+
     return rest;
 }
 
@@ -4499,7 +4402,7 @@ syn_cmd_include(eap, syncing)
     current_syn_inc_tag = ++running_syn_inc_tag;
     prev_toplvl_grp = curwin->w_s->b_syn_topgrp;
     curwin->w_s->b_syn_topgrp = sgl_id;
-    if (source ? do_source(eap->arg, FALSE, DOSO_NONE) == FAIL : source_runtime(eap->arg, TRUE) == FAIL)
+    if (source ? do_source(eap->arg, FALSE) == FAIL : source_runtime(eap->arg, TRUE) == FAIL)
         EMSG2((char *)e_notopen, eap->arg);
     curwin->w_s->b_syn_topgrp = prev_toplvl_grp;
     current_syn_inc_tag = prev_syn_inc_tag;
@@ -5911,7 +5814,6 @@ static struct subcommand subcommands[] =
     {"off",             syn_cmd_off},
     {"region",          syn_cmd_region},
     {"reset",           syn_cmd_reset},
-    {"spell",           syn_cmd_spell},
     {"sync",            syn_cmd_sync},
     {"",                syn_cmd_list},
     {NULL, NULL}
@@ -6088,6 +5990,7 @@ get_syntax_name(xp, idx)
 {
     if (expand_what == EXP_SUBCMD)
         return (char_u *)subcommands[idx].name;
+
     return (char_u *)case_args[idx];
 }
 
@@ -6095,12 +5998,11 @@ get_syntax_name(xp, idx)
  * Function called for expression evaluation: get syntax ID at file position.
  */
     int
-syn_get_id(wp, lnum, col, trans, spellp, keep_state)
+syn_get_id(wp, lnum, col, trans, keep_state)
     win_T       *wp;
     long        lnum;
     colnr_T     col;
     int         trans;       /* remove transparency */
-    int         *spellp;     /* return: can do spell checking */
     int         keep_state;  /* keep state of char at "col" */
 {
     /* When the position is not after the current position and in the same
@@ -6108,7 +6010,7 @@ syn_get_id(wp, lnum, col, trans, spellp, keep_state)
     if (wp->w_buffer != syn_buf || lnum != current_lnum || col < current_col)
         syntax_start(wp, lnum);
 
-    (void)get_syntax_attr(col, spellp, keep_state);
+    (void)get_syntax_attr(col, keep_state);
 
     return (trans ? current_trans_id : current_id);
 }
@@ -7025,22 +6927,6 @@ do_highlight(line, forceit, init)
     need_highlight_changed = TRUE;
 }
 
-#if defined(EXITFREE)
-    void
-free_highlight()
-{
-    int     i;
-
-    for (i = 0; i < highlight_ga.ga_len; ++i)
-    {
-        highlight_clear(i);
-        vim_free(HL_TABLE()[i].sg_name);
-        vim_free(HL_TABLE()[i].sg_name_u);
-    }
-    ga_clear(&highlight_ga);
-}
-#endif
-
 /*
  * Reset the cterm colors to what they were before Vim was started, if
  * possible.  Otherwise reset them to zero.
@@ -7123,7 +7009,6 @@ get_attr_entry(table, aep)
     garray_T    *table;
     attrentry_T *aep;
 {
-    int         i;
     attrentry_T *taep;
     static int  recursive = FALSE;
 
@@ -7136,7 +7021,7 @@ get_attr_entry(table, aep)
     /*
      * Try to find an entry with the same specifications.
      */
-    for (i = 0; i < table->ga_len; ++i)
+    for (int i = 0; i < table->ga_len; ++i)
     {
         taep = &(((attrentry_T *)table->ga_data)[i]);
         if (aep->ae_attr == taep->ae_attr
@@ -7173,7 +7058,7 @@ get_attr_entry(table, aep)
 
         must_redraw = CLEAR;
 
-        for (i = 0; i < highlight_ga.ga_len; ++i)
+        for (int i = 0; i < highlight_ga.ga_len; ++i)
             set_hl_attr(i);
 
         recursive = FALSE;
@@ -7214,11 +7099,10 @@ get_attr_entry(table, aep)
     void
 clear_hl_tables()
 {
-    int         i;
-    attrentry_T *taep;
-
-    for (i = 0; i < term_attr_table.ga_len; ++i)
+    for (int i = 0; i < term_attr_table.ga_len; ++i)
     {
+        attrentry_T *taep;
+
         taep = &(((attrentry_T *)term_attr_table.ga_data)[i]);
         vim_free(taep->ae_u.term.start);
         vim_free(taep->ae_u.term.stop);
@@ -7325,6 +7209,7 @@ syn_attr2attr(attr)
 
     if (aep == NULL)        /* highlighting not set */
         return 0;
+
     return aep->ae_attr;
 }
 
@@ -7335,6 +7220,7 @@ syn_term_attr2entry(attr)
     attr -= ATTR_OFF;
     if (attr >= term_attr_table.ga_len)     /* did ":syntax clear" */
         return NULL;
+
     return &(TERM_ATTR_ENTRY(attr));
 }
 
@@ -7345,6 +7231,7 @@ syn_cterm_attr2entry(attr)
     attr -= ATTR_OFF;
     if (attr >= cterm_attr_table.ga_len)        /* did ":syntax clear" */
         return NULL;
+
     return &(CTERM_ATTR_ENTRY(attr));
 }
 
@@ -7399,13 +7286,13 @@ highlight_list_arg(id, didh, type, iarg, sarg, name)
     char        *name;
 {
     char_u      buf[100];
-    char_u      *ts;
-    int         i;
 
     if (got_int)
         return FALSE;
     if (type == LIST_STRING ? (sarg != NULL) : (iarg != 0))
     {
+        char_u      *ts;
+
         ts = buf;
         if (type == LIST_INT)
             sprintf((char *)buf, "%d", iarg - 1);
@@ -7414,7 +7301,7 @@ highlight_list_arg(id, didh, type, iarg, sarg, name)
         else /* type == LIST_ATTR */
         {
             buf[0] = NUL;
-            for (i = 0; hl_attr_table[i] != 0; ++i)
+            for (int i = 0; hl_attr_table[i] != 0; ++i)
             {
                 if (iarg & hl_attr_table[i])
                 {
@@ -7465,6 +7352,7 @@ highlight_has_attr(id, flag, modec)
 
     if (attr & flag)
         return (char_u *)"1";
+
     return NULL;
 }
 
@@ -7501,6 +7389,7 @@ highlight_color(id, what, modec)
             return (HL_TABLE()[id - 1].sg_gui_fg_name);
         if (sp)
             return (HL_TABLE()[id - 1].sg_gui_sp_name);
+
         return (HL_TABLE()[id - 1].sg_gui_bg_name);
     }
     if (font || sp)
@@ -7654,6 +7543,7 @@ syn_id2name(id)
 {
     if (id <= 0 || id > highlight_ga.ga_len)
         return (char_u *)"";
+
     return HL_TABLE()[id - 1].sg_name;
 }
 
@@ -8054,11 +7944,9 @@ set_context_in_highlight_cmd(xp, arg)
     static void
 highlight_list()
 {
-    int         i;
-
-    for (i = 10; --i >= 0; )
+    for (int i = 10; --i >= 0; )
         highlight_list_two(i, hl_attr(HLF_D));
-    for (i = 40; --i >= 0; )
+    for (int i = 40; --i >= 0; )
         highlight_list_two(99, 0);
 }
 
@@ -8092,5 +7980,6 @@ get_highlight_name(xp, idx)
         return (char_u *)"clear";
     if (idx < 0 || idx >= highlight_ga.ga_len)
         return NULL;
+
     return HL_TABLE()[idx].sg_name;
 }

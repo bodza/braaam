@@ -408,6 +408,7 @@ str_foldcase(str, orglen, buf, buflen)
 
     if (buf == NULL)
         return (char_u *)ga.ga_data;
+
     return buf;
 }
 
@@ -534,6 +535,7 @@ nr2hex(c)
 {
     if ((c & 0xf) <= 9)
         return (c & 0xf) + '0';
+
     return (c & 0xf) - 10 + 'a';
 }
 
@@ -551,6 +553,7 @@ byte2cells(b)
 {
     if (b >= 0x80)
         return 0;
+
     return (chartab[b] & CT_CELL_MASK);
 }
 
@@ -729,6 +732,7 @@ vim_iswordc_buf(c, buf)
 {
     if (c >= 0x100)
         return utf_class(c) >= 2;
+
     return (c > 0 && c < 0x100 && GET_CHARTAB(buf, c) != 0);
 }
 
@@ -741,6 +745,7 @@ vim_iswordp(p)
 {
     if (MB_BYTE2LEN(*p) > 1)
         return mb_get_class(p) >= 2;
+
     return GET_CHARTAB(curbuf, *p) != 0;
 }
 
@@ -751,6 +756,7 @@ vim_iswordp_buf(p, buf)
 {
     if (MB_BYTE2LEN(*p) > 1)
         return mb_get_class(p) >= 2;
+
     return (GET_CHARTAB(buf, *p) != 0);
 }
 
@@ -791,6 +797,7 @@ vim_isprintc(c)
 {
     if (c >= 0x100)
         return utf_printable(c);
+
     return (c >= 0x100 || (c > 0 && (chartab[c] & CT_PRINT_CHAR)));
 }
 
@@ -804,6 +811,7 @@ vim_isprintc_strict(c)
 {
     if (c >= 0x100)
         return utf_printable(c);
+
     return (c >= 0x100 || (c > 0 && (chartab[c] & CT_PRINT_CHAR)));
 }
 
@@ -1049,6 +1057,7 @@ in_win_border(wp, vcol)
     width2 = width1 + win_col_off2(wp);
     if (width2 <= 0)
         return FALSE;
+
     return ((vcol - width1) % width2 == width2 - 1);
 }
 
@@ -1383,6 +1392,7 @@ vim_islower(c)
         return FALSE;
     if (c >= 0x80)
         return utf_islower(c);
+
     return islower(c);
 }
 
@@ -1394,6 +1404,7 @@ vim_isupper(c)
         return FALSE;
     if (c >= 0x80)
         return utf_isupper(c);
+
     return isupper(c);
 }
 
@@ -1405,6 +1416,7 @@ vim_toupper(c)
         return c;
     if (c >= 0x80)
         return utf_toupper(c);
+
     return toupper(c);
 }
 
@@ -1416,6 +1428,7 @@ vim_tolower(c)
         return c;
     if (c >= 0x80)
         return utf_tolower(c);
+
     return tolower(c);
 }
 
@@ -1601,10 +1614,10 @@ hex2nr(c)
         return c - 'a' + 10;
     if (c >= 'A' && c <= 'F')
         return c - 'A' + 10;
+
     return c - '0';
 }
 
-#if defined(FEAT_TERMRESPONSE)
 /*
  * Convert two hex characters to a byte.
  * Return -1 if one of the characters is not hex.
@@ -1615,9 +1628,9 @@ hexhex2nr(p)
 {
     if (!vim_isxdigit(p[0]) || !vim_isxdigit(p[1]))
         return -1;
+
     return (hex2nr(p[0]) << 4) + hex2nr(p[1]);
 }
-#endif
 
 /*
  * Return TRUE if "str" starts with a backslash that should be removed.

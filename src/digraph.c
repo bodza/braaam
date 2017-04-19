@@ -1464,7 +1464,6 @@ getexactdigraph(char1, char2, meta_char)
     int         char2;
     int         meta_char;
 {
-    int         i;
     int         retval = 0;
     digr_T      *dp;
 
@@ -1475,7 +1474,7 @@ getexactdigraph(char1, char2, meta_char)
      * Search user digraphs first.
      */
     dp = (digr_T *)user_digraphs.ga_data;
-    for (i = 0; i < user_digraphs.ga_len; ++i)
+    for (int i = 0; i < user_digraphs.ga_len; ++i)
     {
         if ((int)dp->char1 == char1 && (int)dp->char2 == char2)
         {
@@ -1491,7 +1490,7 @@ getexactdigraph(char1, char2, meta_char)
     if (retval == 0)
     {
         dp = digraphdefault;
-        for (i = 0; dp->char1 != 0; ++i)
+        for (int i = 0; dp->char1 != 0; ++i)
         {
             if ((int)dp->char1 == char1 && (int)dp->char2 == char2)
             {
@@ -1506,6 +1505,7 @@ getexactdigraph(char1, char2, meta_char)
     {
         if (char1 == ' ' && meta_char)  /* <space> <char> --> meta-char */
             return (char2 | 0x80);
+
         return char2;
     }
 
@@ -1528,6 +1528,7 @@ getdigraph(char1, char2, meta_char)
             && (char1 != char2)
             && ((retval = getexactdigraph(char2, char1, meta_char)) == char1))
         return char2;
+
     return retval;
 }
 

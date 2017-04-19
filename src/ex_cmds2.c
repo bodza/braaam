@@ -369,8 +369,7 @@ dbg_parsearg(arg, gap)
         bp->dbg_type = DBG_FUNC;
     else if (STRNCMP(p, "file", 4) == 0)
         bp->dbg_type = DBG_FILE;
-    else if (
-            STRNCMP(p, "here", 4) == 0)
+    else if (STRNCMP(p, "here", 4) == 0)
     {
         if (curbuf->b_ffname == NULL)
         {
@@ -390,8 +389,7 @@ dbg_parsearg(arg, gap)
     /* Find optional line number. */
     if (here)
         bp->dbg_lnum = curwin->w_cursor.lnum;
-    else if (
-            VIM_ISDIGIT(*p))
+    else if (VIM_ISDIGIT(*p))
     {
         bp->dbg_lnum = getdigits(&p);
         p = skipwhite(p);
@@ -434,6 +432,7 @@ dbg_parsearg(arg, gap)
 
     if (bp->dbg_name == NULL)
         return FAIL;
+
     return OK;
 }
 
@@ -613,7 +612,7 @@ dbg_find_breakpoint(file, fname, after)
 }
 
 /*
- * Common code for dbg_find_breakpoint() and has_profiling().
+ * Common code for dbg_find_breakpoint().
  */
     static linenr_T
 debuggy_find(file, fname, after, gap, fp)
@@ -872,6 +871,7 @@ check_changed(buf, flags)
             if (!buf_valid(buf))
                 /* Autocommand deleted buffer, oops!  It's not changed now. */
                 return FALSE;
+
             return bufIsChanged(buf);
         }
         if (flags & CCGD_EXCMD)
@@ -975,11 +975,10 @@ add_bufnum(bufnrs, bufnump, nr)
     int     *bufnump;
     int     nr;
 {
-    int i;
-
-    for (i = 0; i < *bufnump; ++i)
+    for (int i = 0; i < *bufnump; ++i)
         if (bufnrs[i] == nr)
             return;
+
     bufnrs[*bufnump] = nr;
     *bufnump = *bufnump + 1;
 }
@@ -1970,7 +1969,7 @@ source_callback(fname, cookie)
     char_u      *fname;
     void        *cookie UNUSED;
 {
-    (void)do_source(fname, FALSE, DOSO_NONE);
+    (void)do_source(fname, FALSE);
 }
 
 /*
@@ -2124,7 +2123,7 @@ cmd_source(fname, eap)
         openscript(fname, global_busy || listcmd_busy || eap->nextcmd != NULL || eap->cstack->cs_idx >= 0);
 
     /* ":source" read ex commands */
-    else if (do_source(fname, FALSE, DOSO_NONE) == FAIL)
+    else if (do_source(fname, FALSE) == FAIL)
         EMSG2((char *)e_notopen, fname);
 }
 
@@ -2212,10 +2211,9 @@ fopen_noinh_readbin(filename)
  * return FAIL if file could not be opened, OK otherwise
  */
     int
-do_source(fname, check_other, is_vimrc)
+do_source(fname, check_other)
     char_u      *fname;
     int         check_other;        /* check for .vimrc and _vimrc */
-    int         is_vimrc;           /* DOSO_ value */
 {
     struct source_cookie    cookie;
     char_u                  *save_sourcing_name;
@@ -2294,7 +2292,6 @@ do_source(fname, check_other, is_vimrc)
     /*
      * The file exists.
      * - In verbose mode, give a message.
-     * - For a vimrc file, may want to set 'compatible', call vimrc_found().
      */
     if (p_verbose > 1)
     {
@@ -2305,10 +2302,6 @@ do_source(fname, check_other, is_vimrc)
             smsg((char_u *)"line %ld: sourcing \"%s\"", sourcing_lnum, fname);
         verbose_leave();
     }
-    if (is_vimrc == DOSO_VIMRC)
-        vimrc_found(fname_exp, (char_u *)"MYVIMRC");
-    else if (is_vimrc == DOSO_GVIMRC)
-        vimrc_found(fname_exp, (char_u *)"MYGVIMRC");
 
     cookie.nextline = NULL;
     cookie.finished = FALSE;
@@ -2346,8 +2339,7 @@ do_source(fname, check_other, is_vimrc)
         }
     }
 
-    /* Don't use local function variables, if called from a function.
-     * Also starts profiling timer for nested script. */
+    /* Don't use local function variables, if called from a function. */
     save_funccalp = save_funccal();
 
     /*
@@ -2440,9 +2432,7 @@ theend:
 ex_scriptnames(eap)
     exarg_T     *eap UNUSED;
 {
-    int i;
-
-    for (i = 1; i <= script_items.ga_len && !got_int; ++i)
+    for (int i = 1; i <= script_items.ga_len && !got_int; ++i)
         if (SCRIPT_ITEM(i).sn_name != NULL)
         {
             home_replace(SCRIPT_ITEM(i).sn_name, NameBuff, MAXPATHL, TRUE);
@@ -2467,20 +2457,9 @@ get_scriptname(id)
         return (char_u *)"environment variable";
     if (id == SID_ERROR)
         return (char_u *)"error handler";
+
     return SCRIPT_ITEM(id).sn_name;
 }
-
-#if defined(EXITFREE)
-    void
-free_scriptnames()
-{
-    int                 i;
-
-    for (i = script_items.ga_len; i > 0; --i)
-        vim_free(SCRIPT_ITEM(i).sn_name);
-    ga_clear(&script_items);
-}
-#endif
 
 /*
  * Get one full line from a sourced file.
@@ -2718,50 +2697,4 @@ ex_checktime(eap)
             (void)buf_check_timestamp(buf, FALSE);
     }
     no_check_timestamps = save_no_check_timestamps;
-}
-
-/* Complicated #if; matches with where get_mess_env() is used below. */
-static char_u *get_mess_env(void);
-
-/*
- * Get the language used for messages from the environment.
- */
-    static char_u *
-get_mess_env()
-{
-    char_u      *p;
-
-    p = mch_getenv((char_u *)"LC_ALL");
-    if (p == NULL || *p == NUL)
-    {
-        p = mch_getenv((char_u *)"LC_MESSAGES");
-        if (p == NULL || *p == NUL)
-        {
-            p = mch_getenv((char_u *)"LANG");
-            if (p != NULL && VIM_ISDIGIT(*p))
-                p = NULL;               /* ignore something like "1043" */
-        }
-    }
-    return p;
-}
-
-/*
- * Set the "v:lang" variable according to the current locale setting.
- * Also do "v:lc_time"and "v:ctype".
- */
-    void
-set_lang_var()
-{
-    char_u      *loc;
-
-    /* setlocale() not supported: use the default value */
-    loc = (char_u *)"C";
-    set_vim_var_string(VV_CTYPE, loc, -1);
-
-    /* When LC_MESSAGES isn't defined use the value from $LC_MESSAGES, fall
-     * back to LC_CTYPE if it's empty. */
-    loc = get_mess_env();
-    set_vim_var_string(VV_LANG, loc, -1);
-
-    set_vim_var_string(VV_LC_TIME, loc, -1);
 }

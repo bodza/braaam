@@ -2210,6 +2210,7 @@ get_end_emsg(cstack)
         return e_endwhile;
     if (cstack->cs_flags[cstack->cs_idx] & CSF_FOR)
         return e_endfor;
+
     return e_endif;
 }
 
@@ -2267,5 +2268,6 @@ has_loop_cmd(p)
     }
     if ((p[0] == 'w' && p[1] == 'h') || (p[0] == 'f' && p[1] == 'o' && p[2] == 'r'))
         return TRUE;
+
     return FALSE;
 }

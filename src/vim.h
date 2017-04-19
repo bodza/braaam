@@ -21,11 +21,6 @@
 /* Defined to the size of time_t */
 #define SIZEOF_TIME_T 8
 
-/* Define if tgetent() returns zero for an error */
-#define TGETENT_ZERO_ERR 0
-
-#define HAVE_TGETENT 1
-
 /* user ID of root is usually zero, but not for everybody */
 #define ROOT_UID 0
 
@@ -50,15 +45,6 @@
  * RUNTIME_DIRNAME      Generic name for the directory of the runtime files.
  */
 #define RUNTIME_DIRNAME "runtime"
-
-/*
- * +termresponse        send t_RV to obtain terminal response.  Used for xterm
- *                      to check if mouse dragging can be used and if term
- *                      codes can be obtained.
- */
-#if defined(HAVE_TGETENT)
-#define FEAT_TERMRESPONSE
-#endif
 
 /* ----------------------------------------------------------------------- */
 
@@ -133,13 +119,7 @@
 
 #define SYNTAX_FNAME   "$VIMRUNTIME/syntax/%s.vim"
 
-#define DFLT_BDIR    ".,~/tmp,~/"    /* default for 'backupdir' */
-#define DFLT_DIR     ".,~/tmp,/var/tmp,/tmp" /* default for 'directory' */
-
 #define DFLT_RUNTIMEPATH     "~/.vim,$VIMRUNTIME"
-
-#define TEMPDIRNAMES  "$TMPDIR", "/tmp", ".", "$HOME"
-#define TEMPNAMELEN    256
 
 /* Special wildcards that need to be handled by the shell */
 #define SPECIAL_WILDCHAR    "`'{"
@@ -190,15 +170,8 @@
 #define S_ISCHR(m) (((m) & S_IFMT) == S_IFCHR)
 #endif
 
-/* Note: Some systems need both string.h and strings.h (Savage).  However,
- * some systems can't handle both, only use string.h in that case. */
 #include <string.h>
 #include <strings.h>
-
-#include <setjmp.h>
-#define JMP_BUF jmp_buf
-#define SETJMP(x) setjmp(x)
-#define LONGJMP longjmp
 
 /* ----------------------------------------------------------------------- */
 
@@ -755,7 +728,6 @@ enum key_extra
 #define K_RIGHTMOUSE    TERMCAP2KEY(KS_EXTRA, KE_RIGHTMOUSE)
 #define K_RIGHTDRAG     TERMCAP2KEY(KS_EXTRA, KE_RIGHTDRAG)
 #define K_RIGHTRELEASE  TERMCAP2KEY(KS_EXTRA, KE_RIGHTRELEASE)
-#define K_X1MOUSE       TERMCAP2KEY(KS_EXTRA, KE_X1MOUSE)
 #define K_X1MOUSE       TERMCAP2KEY(KS_EXTRA, KE_X1MOUSE)
 #define K_X1DRAG        TERMCAP2KEY(KS_EXTRA, KE_X1DRAG)
 #define K_X1RELEASE     TERMCAP2KEY(KS_EXTRA, KE_X1RELEASE)
@@ -1629,7 +1601,6 @@ enum auto_event
     EVENT_CMDWINENTER,          /* after entering the cmdline window */
     EVENT_CMDWINLEAVE,          /* before leaving the cmdline window */
     EVENT_COLORSCHEME,          /* after loading a colorscheme */
-    EVENT_COMPLETEDONE,         /* after finishing insert complete */
     EVENT_FILEAPPENDPOST,       /* after appending to a file */
     EVENT_FILEAPPENDPRE,        /* before appending to a file */
     EVENT_FILEAPPENDCMD,        /* append to a file using command */
@@ -1649,16 +1620,10 @@ enum auto_event
     EVENT_FILTERWRITEPRE,       /* before writing to a filter */
     EVENT_FOCUSGAINED,          /* got the focus */
     EVENT_FOCUSLOST,            /* lost the focus to another app */
-    EVENT_GUIENTER,             /* after starting the GUI */
-    EVENT_GUIFAILED,            /* after starting the GUI failed */
     EVENT_INSERTCHANGE,         /* when changing Insert/Replace mode */
     EVENT_INSERTENTER,          /* when entering Insert mode */
     EVENT_INSERTLEAVE,          /* when leaving Insert mode */
-    EVENT_MENUPOPUP,            /* just before popup menu is displayed */
-    EVENT_QUICKFIXCMDPOST,      /* after :make, :grep etc. */
-    EVENT_QUICKFIXCMDPRE,       /* before :make, :grep etc. */
     EVENT_QUITPRE,              /* before :quit */
-    EVENT_SESSIONLOADPOST,      /* after loading a session file */
     EVENT_STDINREADPOST,        /* after reading from stdin */
     EVENT_STDINREADPRE,         /* before reading from stdin */
     EVENT_SYNTAX,               /* syntax selected */
@@ -1671,7 +1636,6 @@ enum auto_event
     EVENT_VIMRESIZED,           /* after Vim window was resized */
     EVENT_WINENTER,             /* after entering a window */
     EVENT_WINLEAVE,             /* before leaving a window */
-    EVENT_ENCODINGCHANGED,      /* after changing the 'encoding' option */
     EVENT_INSERTCHARPRE,        /* before inserting a char */
     EVENT_CURSORHOLD,           /* cursor in same position for a while */
     EVENT_CURSORHOLDI,          /* idem, in Insert mode */
@@ -1680,7 +1644,6 @@ enum auto_event
     EVENT_SWAPEXISTS,           /* found existing swap file */
     EVENT_SOURCEPRE,            /* before sourcing a Vim script */
     EVENT_SOURCECMD,            /* sourcing a Vim script using command */
-    EVENT_SPELLFILEMISSING,     /* spell file missing */
     EVENT_CURSORMOVED,          /* cursor was moved */
     EVENT_CURSORMOVEDI,         /* cursor was moved in Insert mode */
     EVENT_TABLEAVE,             /* before leaving a tab page */
@@ -3677,11 +3640,6 @@ typedef struct list_stack_S
     struct list_stack_S *prev;
 } list_stack_T;
 
-/* values for b_syn_spell: what to do with toplevel text */
-#define SYNSPL_DEFAULT  0       /* spell check if @Spell not defined */
-#define SYNSPL_TOP      1       /* spell check toplevel text */
-#define SYNSPL_NOTOP    2       /* don't spell check toplevel text */
-
 /*
  * These are items normally related to a buffer.  But when using ":ownsyntax"
  * a window may have its own instance.
@@ -3691,7 +3649,6 @@ typedef struct {
     hashtab_T   b_keywtab_ic;           /* idem, ignore case */
     int         b_syn_error;            /* TRUE when error occurred in HL */
     int         b_syn_ic;               /* ignore case for :syn cmds */
-    int         b_syn_spell;            /* SYNSPL_ values */
     garray_T    b_syn_patterns;         /* table for syntax patterns */
     garray_T    b_syn_clusters;         /* table for syntax clusters */
     int         b_spell_cluster_id;     /* @Spell cluster ID or 0 */
@@ -4298,8 +4255,6 @@ struct window_S
 
     /* A few options have local flags for P_INSECURE. */
     long_u      w_p_stl_flags;      /* flags for 'statusline' */
-    long_u      w_p_fde_flags;      /* flags for 'foldexpr' */
-    long_u      w_p_fdt_flags;      /* flags for 'foldtext' */
     int         *w_p_cc_cols;       /* array of columns to highlight or NULL */
     int         w_p_brimin;         /* minimum width for breakindent */
     int         w_p_brishift;       /* additional shift for breakindent */
@@ -4535,8 +4490,6 @@ typedef struct {
 #define IN_SEP_LINE            4       /* on vertical separator line */
 #define IN_OTHER_WIN           8       /* in other window but can't go there */
 #define CURSOR_MOVED           0x100
-#define MOUSE_FOLD_CLOSE       0x200   /* clicked on '-' in fold column */
-#define MOUSE_FOLD_OPEN        0x400   /* clicked on '+' in fold column */
 
 /* flags for jump_to_mouse() */
 #define MOUSE_FOCUS            0x01    /* need to stay in this window */
@@ -4558,58 +4511,39 @@ typedef struct {
 #define VV_WARNINGMSG   4
 #define VV_STATUSMSG    5
 #define VV_SHELL_ERROR  6
-#define VV_THIS_SESSION 7
-#define VV_VERSION      8
-#define VV_LNUM         9
-#define VV_TERMRESPONSE 10
-#define VV_FNAME        11
-#define VV_LANG         12
-#define VV_LC_TIME      13
-#define VV_CTYPE        14
-#define VV_CC_FROM      15
-#define VV_CC_TO        16
-#define VV_FNAME_IN     17
-#define VV_FNAME_OUT    18
-#define VV_FNAME_NEW    19
-#define VV_FNAME_DIFF   20
-#define VV_CMDARG       21
-#define VV_FOLDSTART    22
-#define VV_FOLDEND      23
-#define VV_FOLDDASHES   24
-#define VV_FOLDLEVEL    25
-#define VV_PROGNAME     26
-#define VV_SEND_SERVER  27
-#define VV_DYING        28
-#define VV_EXCEPTION    29
-#define VV_THROWPOINT   30
-#define VV_REG          31
-#define VV_CMDBANG      32
-#define VV_INSERTMODE   33
-#define VV_VAL          34
-#define VV_KEY          35
-#define VV_PROFILING    36
-#define VV_FCS_REASON   37
-#define VV_FCS_CHOICE   38
-#define VV_BEVAL_BUFNR  39
-#define VV_BEVAL_WINNR  40
-#define VV_BEVAL_LNUM   41
-#define VV_BEVAL_COL    42
-#define VV_BEVAL_TEXT   43
-#define VV_SCROLLSTART  44
-#define VV_SWAPNAME     45
-#define VV_SWAPCHOICE   46
-#define VV_SWAPCOMMAND  47
-#define VV_CHAR         48
-#define VV_MOUSE_WIN    49
-#define VV_MOUSE_LNUM   50
-#define VV_MOUSE_COL    51
-#define VV_OP           52
-#define VV_SEARCHFORWARD 53
-#define VV_HLSEARCH     54
-#define VV_OLDFILES     55
-#define VV_WINDOWID     56
-#define VV_PROGPATH     57
-#define VV_LEN          58      /* number of v: vars */
+#define VV_VERSION      7
+#define VV_LNUM         8
+#define VV_TERMRESPONSE 9
+#define VV_CC_FROM      10
+#define VV_CC_TO        11
+#define VV_FNAME_IN     12
+#define VV_FNAME_OUT    13
+#define VV_CMDARG       14
+#define VV_PROGNAME     15
+#define VV_DYING        16
+#define VV_EXCEPTION    17
+#define VV_THROWPOINT   18
+#define VV_REG          19
+#define VV_CMDBANG      20
+#define VV_INSERTMODE   21
+#define VV_VAL          22
+#define VV_KEY          23
+#define VV_FCS_REASON   24
+#define VV_FCS_CHOICE   25
+#define VV_SCROLLSTART  26
+#define VV_SWAPNAME     27
+#define VV_SWAPCHOICE   28
+#define VV_SWAPCOMMAND  29
+#define VV_CHAR         30
+#define VV_MOUSE_WIN    31
+#define VV_MOUSE_LNUM   32
+#define VV_MOUSE_COL    33
+#define VV_OP           34
+#define VV_SEARCHFORWARD 35
+#define VV_HLSEARCH     36
+#define VV_OLDFILES     37
+#define VV_PROGPATH     38
+#define VV_LEN          39      /* number of v: vars */
 
 /* Selection states for modeless selection */
 #define SELECT_CLEARED         0
@@ -5185,14 +5119,6 @@ EXTERN int      orig_line_count INIT(= 0);  /* Line count when "gR" started */
 EXTERN int      vr_lines_changed INIT(= 0); /* #Lines changed by "gR" so far */
 
 /*
- * Stuff for setjmp() and longjmp().
- * Used to protect areas where we could crash.
- */
-EXTERN JMP_BUF lc_jump_env;     /* argument to SETJMP() */
-/* volatile because it is used in signal handler deathtrap(). */
-EXTERN volatile int lc_active INIT(= FALSE); /* TRUE when lc_jump_env is valid. */
-
-/*
  * To speed up BYTELEN() we fill a table with the byte lengths.
  */
 EXTERN char     mb_bytelen_tab[256];
@@ -5392,7 +5318,6 @@ EXTERN char_u no_lines_msg[]    INIT(= "--No lines in buffer--");
 /*
  * When ":global" is used to number of substitutions and changed lines is
  * accumulated until it's finished.
- * Also used for ":spellrepall".
  */
 EXTERN long     sub_nsubs;      /* total number of substitutions */
 EXTERN linenr_T sub_nlines;     /* total number of lines changed */
@@ -5562,11 +5487,6 @@ EXTERN char *ignoredp;
 #define BAD_KEEP        -1      /* leave it */
 #define BAD_DROP        -2      /* erase it */
 
-/* last argument for do_source() */
-#define DOSO_NONE       0
-#define DOSO_VIMRC      1       /* loading vimrc file */
-#define DOSO_GVIMRC     2       /* loading gvimrc file */
-
 /* flags for buf_freeall() */
 #define BFA_DEL         1       /* buffer is going to be deleted */
 #define BFA_WIPE        2       /* buffer is going to be wiped out */
@@ -5603,7 +5523,5 @@ EXTERN char *ignoredp;
 
 /* Character used as separated in autoload function/variable names. */
 #define AUTOLOAD_CHAR '#'
-
-#define SET_NO_HLSEARCH(flag) no_hlsearch = (flag); set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls)
 
 #endif

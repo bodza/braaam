@@ -264,27 +264,15 @@ static struct vimvar
     {VV_NAME("warningmsg",       VAR_STRING), 0},
     {VV_NAME("statusmsg",        VAR_STRING), 0},
     {VV_NAME("shell_error",      VAR_NUMBER), VV_COMPAT+VV_RO},
-    {VV_NAME("this_session",     VAR_STRING), VV_COMPAT},
     {VV_NAME("version",          VAR_NUMBER), VV_COMPAT+VV_RO},
     {VV_NAME("lnum",             VAR_NUMBER), VV_RO_SBX},
     {VV_NAME("termresponse",     VAR_STRING), VV_RO},
-    {VV_NAME("fname",            VAR_STRING), VV_RO},
-    {VV_NAME("lang",             VAR_STRING), VV_RO},
-    {VV_NAME("lc_time",          VAR_STRING), VV_RO},
-    {VV_NAME("ctype",            VAR_STRING), VV_RO},
     {VV_NAME("charconvert_from", VAR_STRING), VV_RO},
     {VV_NAME("charconvert_to",   VAR_STRING), VV_RO},
     {VV_NAME("fname_in",         VAR_STRING), VV_RO},
     {VV_NAME("fname_out",        VAR_STRING), VV_RO},
-    {VV_NAME("fname_new",        VAR_STRING), VV_RO},
-    {VV_NAME("fname_diff",       VAR_STRING), VV_RO},
     {VV_NAME("cmdarg",           VAR_STRING), VV_RO},
-    {VV_NAME("foldstart",        VAR_NUMBER), VV_RO_SBX},
-    {VV_NAME("foldend",          VAR_NUMBER), VV_RO_SBX},
-    {VV_NAME("folddashes",       VAR_STRING), VV_RO_SBX},
-    {VV_NAME("foldlevel",        VAR_NUMBER), VV_RO_SBX},
     {VV_NAME("progname",         VAR_STRING), VV_RO},
-    {VV_NAME("servername",       VAR_STRING), VV_RO},
     {VV_NAME("dying",            VAR_NUMBER), VV_RO},
     {VV_NAME("exception",        VAR_STRING), VV_RO},
     {VV_NAME("throwpoint",       VAR_STRING), VV_RO},
@@ -293,14 +281,8 @@ static struct vimvar
     {VV_NAME("insertmode",       VAR_STRING), VV_RO},
     {VV_NAME("val",              VAR_UNKNOWN), VV_RO},
     {VV_NAME("key",              VAR_UNKNOWN), VV_RO},
-    {VV_NAME("profiling",        VAR_NUMBER), VV_RO},
     {VV_NAME("fcs_reason",       VAR_STRING), VV_RO},
     {VV_NAME("fcs_choice",       VAR_STRING), 0},
-    {VV_NAME("beval_bufnr",      VAR_NUMBER), VV_RO},
-    {VV_NAME("beval_winnr",      VAR_NUMBER), VV_RO},
-    {VV_NAME("beval_lnum",       VAR_NUMBER), VV_RO},
-    {VV_NAME("beval_col",        VAR_NUMBER), VV_RO},
-    {VV_NAME("beval_text",       VAR_STRING), VV_RO},
     {VV_NAME("scrollstart",      VAR_STRING), 0},
     {VV_NAME("swapname",         VAR_STRING), VV_RO},
     {VV_NAME("swapchoice",       VAR_STRING), 0},
@@ -313,7 +295,6 @@ static struct vimvar
     {VV_NAME("searchforward",    VAR_NUMBER), 0},
     {VV_NAME("hlsearch",         VAR_NUMBER), 0},
     {VV_NAME("oldfiles",         VAR_LIST), 0},
-    {VV_NAME("windowid",         VAR_NUMBER), VV_RO},
     {VV_NAME("progpath",         VAR_STRING), VV_RO},
 };
 
@@ -462,11 +443,6 @@ static void f_floor(typval_T *argvars, typval_T *rettv);
 static void f_fmod(typval_T *argvars, typval_T *rettv);
 static void f_fnameescape(typval_T *argvars, typval_T *rettv);
 static void f_fnamemodify(typval_T *argvars, typval_T *rettv);
-static void f_foldclosed(typval_T *argvars, typval_T *rettv);
-static void f_foldclosedend(typval_T *argvars, typval_T *rettv);
-static void f_foldlevel(typval_T *argvars, typval_T *rettv);
-static void f_foldtext(typval_T *argvars, typval_T *rettv);
-static void f_foldtextresult(typval_T *argvars, typval_T *rettv);
 static void f_foreground(typval_T *argvars, typval_T *rettv);
 static void f_function(typval_T *argvars, typval_T *rettv);
 static void f_garbagecollect(typval_T *argvars, typval_T *rettv);
@@ -600,8 +576,6 @@ static void f_sin(typval_T *argvars, typval_T *rettv);
 static void f_sinh(typval_T *argvars, typval_T *rettv);
 static void f_sort(typval_T *argvars, typval_T *rettv);
 static void f_soundfold(typval_T *argvars, typval_T *rettv);
-static void f_spellbadword(typval_T *argvars, typval_T *rettv);
-static void f_spellsuggest(typval_T *argvars, typval_T *rettv);
 static void f_split(typval_T *argvars, typval_T *rettv);
 static void f_sqrt(typval_T *argvars, typval_T *rettv);
 static void f_str2float(typval_T *argvars, typval_T *rettv);
@@ -754,58 +728,6 @@ eval_init()
     set_vim_var_nr(VV_HLSEARCH, 1L);
     set_reg_var(0);  /* default for v:register is not 0 but '"' */
 }
-
-#if defined(EXITFREE)
-    void
-eval_clear()
-{
-    int             i;
-    struct vimvar   *p;
-
-    for (i = 0; i < VV_LEN; ++i)
-    {
-        p = &vimvars[i];
-        if (p->vv_di.di_tv.v_type == VAR_STRING)
-        {
-            vim_free(p->vv_str);
-            p->vv_str = NULL;
-        }
-        else if (p->vv_di.di_tv.v_type == VAR_LIST)
-        {
-            list_unref(p->vv_list);
-            p->vv_list = NULL;
-        }
-    }
-    hash_clear(&vimvarht);
-    hash_init(&vimvarht);  /* garbage_collect() will access it */
-    hash_clear(&compat_hashtab);
-
-    free_scriptnames();
-    free_locales();
-
-    /* global variables */
-    vars_clear(&globvarht);
-
-    /* autoloaded script names */
-    ga_clear_strings(&ga_loaded);
-
-    /* Script-local variables. First clear all the variables and in a second
-     * loop free the scriptvar_T, because a variable in one script might hold
-     * a reference to the whole scope of another script. */
-    for (i = 1; i <= ga_scripts.ga_len; ++i)
-        vars_clear(&SCRIPT_VARS(i));
-    for (i = 1; i <= ga_scripts.ga_len; ++i)
-        vim_free(SCRIPT_SV(i));
-    ga_clear(&ga_scripts);
-
-    /* unreferenced lists and dicts */
-    (void)garbage_collect();
-
-    /* functions */
-    free_all_functions();
-    hash_clear(&func_hashtab);
-}
-#endif
 
 /*
  * Return the name of the executed function.
@@ -1053,6 +975,7 @@ eval_charconvert(enc_from, enc_to, fname_from, fname_to)
 
     if (err)
         return FAIL;
+
     return OK;
 }
 
@@ -1576,6 +1499,7 @@ ex_let_vars(arg_start, tv, copy, semicolon, var_count, nextchars)
          */
         if (ex_let_one(arg, tv, copy, nextchars, nextchars) == NULL)
             return FAIL;
+
         return OK;
     }
 
@@ -1707,6 +1631,7 @@ skip_var_one(arg)
 {
     if (*arg == '@' && arg[1] != NUL)
         return arg + 2;
+
     return find_name_end(*arg == '$' || *arg == '&' ? arg + 1 : arg,
                                    NULL, NULL, FNE_INCL_BR | FNE_CHECK_START);
 }
@@ -3530,6 +3455,7 @@ get_user_var_name(xp, idx)
             ++hi;
         if (STRNCMP("g:", xp->xp_pattern, 2) == 0)
             return cat_prefix_varname('g', hi->hi_key);
+
         return hi->hi_key;
     }
 
@@ -3941,7 +3867,7 @@ eval4(arg, rettv, evaluate)
                             len = 5;
                         if (!vim_isIDc(p[len]))
                         {
-                            type = len == 2 ? TYPE_EQUAL : TYPE_NEQUAL;
+                            type = (len == 2) ? TYPE_EQUAL : TYPE_NEQUAL;
                             type_is = TRUE;
                         }
                     }
@@ -5506,6 +5432,7 @@ list_len(l)
 {
     if (l == NULL)
         return 0L;
+
     return l->lv_len;
 }
 
@@ -5533,7 +5460,8 @@ list_equal(l1, l2, ic, recursive)
                                item1 = item1->li_next, item2 = item2->li_next)
         if (!tv_equal(&item1->li_tv, &item2->li_tv, ic, recursive))
             return FALSE;
-    return item1 == NULL && item2 == NULL;
+
+    return (item1 == NULL && item2 == NULL);
 }
 
 /*
@@ -5785,6 +5713,7 @@ list_idx_of_item(l, item)
         ++idx;
     if (li == NULL)
         return -1;
+
     return idx;
 }
 
@@ -5875,6 +5804,7 @@ list_append_string(l, str, len)
     else if ((li->li_tv.vval.v_string = (len >= 0 ? vim_strnsave(str, len)
                                                  : vim_strsave(str))) == NULL)
         return FAIL;
+
     return OK;
 }
 
@@ -5967,6 +5897,7 @@ list_extend(l1, l2, bef)
     for (item = l2->lv_first; item != NULL && --todo >= 0; item = item->li_next)
         if (list_insert_tv(l1, &item->li_tv, bef) == FAIL)
             return FAIL;
+
     return OK;
 }
 
@@ -6519,8 +6450,7 @@ set_ref_in_item(tv, copyID, ht_stack, list_stack)
                 }
                 else
                 {
-                    ht_stack_T *newitem = (ht_stack_T*)malloc(
-                                                          sizeof(ht_stack_T));
+                    ht_stack_T *newitem = (ht_stack_T*)malloc(sizeof(ht_stack_T));
                     if (newitem == NULL)
                         abort = TRUE;
                     else
@@ -6545,8 +6475,7 @@ set_ref_in_item(tv, copyID, ht_stack, list_stack)
                 }
                 else
                 {
-                    list_stack_T *newitem = (list_stack_T*)malloc(
-                                                        sizeof(list_stack_T));
+                    list_stack_T *newitem = (list_stack_T*)malloc(sizeof(list_stack_T));
                     if (newitem == NULL)
                         abort = TRUE;
                     else
@@ -6881,6 +6810,7 @@ dict_len(d)
 {
     if (d == NULL)
         return 0L;
+
     return (long)d->dv_hashtab.ht_used;
 }
 
@@ -6920,6 +6850,7 @@ dict_find(d, key, len)
     vim_free(tofree);
     if (HASHITEM_EMPTY(hi))
         return NULL;
+
     return HI2DI(hi);
 }
 
@@ -6960,6 +6891,7 @@ get_dict_number(d, key)
     di = dict_find(d, key, -1);
     if (di == NULL)
         return 0;
+
     return get_tv_number(&di->di_tv);
 }
 
@@ -7476,11 +7408,6 @@ static struct fst
     {"fmod",            2, 2, f_fmod},
     {"fnameescape",     1, 1, f_fnameescape},
     {"fnamemodify",     2, 2, f_fnamemodify},
-    {"foldclosed",      1, 1, f_foldclosed},
-    {"foldclosedend",   1, 1, f_foldclosedend},
-    {"foldlevel",       1, 1, f_foldlevel},
-    {"foldtext",        0, 0, f_foldtext},
-    {"foldtextresult",  1, 1, f_foldtextresult},
     {"foreground",      0, 0, f_foreground},
     {"function",        1, 1, f_function},
     {"garbagecollect",  0, 1, f_garbagecollect},
@@ -7615,8 +7542,6 @@ static struct fst
     {"sinh",            1, 1, f_sinh},
     {"sort",            1, 3, f_sort},
     {"soundfold",       1, 1, f_soundfold},
-    {"spellbadword",    0, 1, f_spellbadword},
-    {"spellsuggest",    1, 3, f_spellsuggest},
     {"split",           1, 3, f_split},
     {"sqrt",            1, 1, f_sqrt},
     {"str2float",       1, 1, f_str2float},
@@ -9920,8 +9845,7 @@ f_fnameescape(argvars, rettv)
     typval_T    *argvars;
     typval_T    *rettv;
 {
-    rettv->vval.v_string = vim_strsave_fnameescape(
-                                           get_tv_string(&argvars[0]), FALSE);
+    rettv->vval.v_string = vim_strsave_fnameescape(get_tv_string(&argvars[0]), FALSE);
     rettv->v_type = VAR_STRING;
 }
 
@@ -9956,76 +9880,6 @@ f_fnamemodify(argvars, rettv)
     else
         rettv->vval.v_string = vim_strnsave(fname, len);
     vim_free(fbuf);
-}
-
-static void foldclosed_both(typval_T *argvars, typval_T *rettv, int end);
-
-/*
- * "foldclosed()" function
- */
-    static void
-foldclosed_both(argvars, rettv, end)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-    int         end UNUSED;
-{
-    rettv->vval.v_number = -1;
-}
-
-/*
- * "foldclosed()" function
- */
-    static void
-f_foldclosed(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    foldclosed_both(argvars, rettv, FALSE);
-}
-
-/*
- * "foldclosedend()" function
- */
-    static void
-f_foldclosedend(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    foldclosed_both(argvars, rettv, TRUE);
-}
-
-/*
- * "foldlevel()" function
- */
-    static void
-f_foldlevel(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv UNUSED;
-{
-}
-
-/*
- * "foldtext()" function
- */
-    static void
-f_foldtext(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    rettv->v_type = VAR_STRING;
-    rettv->vval.v_string = NULL;
-}
-
-/*
- * "foldtextresult(lnum)" function
- */
-    static void
-f_foldtextresult(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    rettv->v_type = VAR_STRING;
-    rettv->vval.v_string = NULL;
 }
 
 /*
@@ -10777,9 +10631,7 @@ getpos_both(argvars, rettv, getcurpos)
         list_append_number(l, (fp != NULL) ? (varnumber_T)fp->lnum : (varnumber_T)0);
         list_append_number(l, (fp != NULL)
                      ? (varnumber_T)(fp->col == MAXCOL ? MAXCOL : fp->col + 1) : (varnumber_T)0);
-        list_append_number(l,
-                                (fp != NULL) ? (varnumber_T)fp->coladd :
-                                                              (varnumber_T)0);
+        list_append_number(l, (fp != NULL) ? (varnumber_T)fp->coladd : (varnumber_T)0);
         if (getcurpos)
             list_append_number(l, curwin->w_curswant == MAXCOL ?
                     (varnumber_T)MAXCOL : (varnumber_T)curwin->w_curswant + 1);
@@ -11235,13 +11087,9 @@ f_has(argvars, rettv)
         "statusline",
         "syntax",
         "terminfo",
-#if defined(FEAT_TERMRESPONSE)
         "termresponse",
-#endif
         "textobjects",
-#if defined(HAVE_TGETENT)
         "tgetent",
-#endif
         "title",
         "user_commands",
         "vertsplit",
@@ -11374,7 +11222,7 @@ f_histadd(argvars, rettv)
     if (check_restricted() || check_secure())
         return;
     str = get_tv_string_chk(&argvars[0]);       /* NULL on type error */
-    histype = str != NULL ? get_histtype(str) : -1;
+    histype = (str != NULL) ? get_histtype(str) : -1;
     if (histype >= 0)
     {
         str = get_tv_string_buf(&argvars[1], buf);
@@ -11455,7 +11303,7 @@ f_histnr(argvars, rettv)
 
     char_u      *history = get_tv_string_chk(&argvars[0]);
 
-    i = history == NULL ? HIST_CMD - 1 : get_histtype(history);
+    i = (history == NULL) ? HIST_CMD - 1 : get_histtype(history);
     if (i >= HIST_CMD && i < HIST_COUNT)
         i = get_history_idx(i);
     else
@@ -13176,7 +13024,7 @@ f_readfile(argvars, rettv)
                     long growmin  = (long)((p - start) * 2 + prevlen);
                     prevsize = grow50pc > growmin ? grow50pc : growmin;
                 }
-                newprev = prev == NULL ? alloc(prevsize) : realloc(prev, prevsize);
+                newprev = (prev == NULL) ? alloc(prevsize) : realloc(prev, prevsize);
                 if (newprev == NULL)
                 {
                     do_outofmem_msg((long_u)prevsize);
@@ -15270,42 +15118,6 @@ f_soundfold(argvars, rettv)
     rettv->vval.v_string = vim_strsave(s);
 }
 
-/*
- * "spellbadword()" function
- */
-    static void
-f_spellbadword(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    char_u      *word = (char_u *)"";
-    hlf_T       attr = HLF_COUNT;
-    int         len = 0;
-
-    if (rettv_list_alloc(rettv) == FAIL)
-        return;
-
-    list_append_string(rettv->vval.v_list, word, len);
-    list_append_string(rettv->vval.v_list, (char_u *)(
-                        attr == HLF_SPB ? "bad" :
-                        attr == HLF_SPR ? "rare" :
-                        attr == HLF_SPL ? "local" :
-                        attr == HLF_SPC ? "caps" :
-                        ""), -1);
-}
-
-/*
- * "spellsuggest()" function
- */
-    static void
-f_spellsuggest(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    if (rettv_list_alloc(rettv) == FAIL)
-        return;
-}
-
     static void
 f_split(argvars, rettv)
     typval_T    *argvars;
@@ -15542,8 +15354,7 @@ f_strlen(argvars, rettv)
     typval_T    *argvars;
     typval_T    *rettv;
 {
-    rettv->vval.v_number = (varnumber_T)(STRLEN(
-                                              get_tv_string(&argvars[0])));
+    rettv->vval.v_number = (varnumber_T)(STRLEN(get_tv_string(&argvars[0])));
 }
 
 /*
@@ -15783,7 +15594,7 @@ f_synID(argvars, rettv)
 
     if (!transerr && lnum >= 1 && lnum <= curbuf->b_ml.ml_line_count
             && col >= 0 && col < (long)STRLEN(ml_get(lnum)))
-        id = syn_get_id(curwin, lnum, (colnr_T)col, trans, NULL, FALSE);
+        id = syn_get_id(curwin, lnum, (colnr_T)col, trans, FALSE);
 
     rettv->vval.v_number = id;
 }
@@ -15920,7 +15731,7 @@ f_synconcealed(argvars, rettv)
             && col >= 0 && col <= (long)STRLEN(ml_get(lnum))
             && curwin->w_p_cole > 0)
         {
-            (void)syn_get_id(curwin, lnum, col, FALSE, NULL, FALSE);
+            (void)syn_get_id(curwin, lnum, col, FALSE, FALSE);
             syntax_flags = get_syntax_info(&matchid);
 
             /* get the conceal character */
@@ -15964,7 +15775,7 @@ f_synstack(argvars, rettv)
             && col >= 0 && col <= (long)STRLEN(ml_get(lnum))
             && rettv_list_alloc(rettv) != FAIL)
     {
-        (void)syn_get_id(curwin, lnum, (colnr_T)col, FALSE, NULL, TRUE);
+        (void)syn_get_id(curwin, lnum, (colnr_T)col, FALSE, TRUE);
         for (i = 0; ; ++i)
         {
             id = syn_get_stack_item(i);
@@ -16501,7 +16312,7 @@ f_trunc(argvars, rettv)
     rettv->v_type = VAR_FLOAT;
     if (get_float_arg(argvars, &f) == OK)
         /* trunc() is not in C90, use floor() or ceil() instead. */
-        rettv->vval.v_float = f > 0 ? floor(f) : ceil(f);
+        rettv->vval.v_float = (f > 0) ? floor(f) : ceil(f);
     else
         rettv->vval.v_float = 0.0;
 }
@@ -17009,6 +16820,7 @@ var2fpos(varp, dollar_lnum, fnum)
     {
         if (VIsual_active)
             return &VIsual;
+
         return &curwin->w_cursor;
     }
     if (name[0] == '\'')                        /* mark */
@@ -17016,6 +16828,7 @@ var2fpos(varp, dollar_lnum, fnum)
         pp = getmark_buf_fnum(curbuf, name[1], FALSE, fnum);
         if (pp == NULL || pp == (pos_T *)-1 || pp->lnum <= 0)
             return NULL;
+
         return pp;
     }
 
@@ -17968,6 +17781,7 @@ get_tv_lnum_buf(argvars, buf)
             && argvars[0].vval.v_string[0] == '$'
             && buf != NULL)
         return buf->b_ml.ml_line_count;
+
     return get_tv_number_chk(&argvars[0], NULL);
 }
 
@@ -18036,6 +17850,7 @@ get_tv_string_buf_chk(varp, buf)
         case VAR_STRING:
             if (varp->vval.v_string != NULL)
                 return varp->vval.v_string;
+
             return (char_u *)"";
         default:
             EMSG2((char *)e_intern2, "get_tv_string_buf()");
@@ -18064,6 +17879,7 @@ find_var(name, htp, no_autoload)
         *htp = ht;
     if (ht == NULL)
         return NULL;
+
     return find_var_in_ht(ht, *name, varname, no_autoload || htp != NULL);
 }
 
@@ -18143,6 +17959,7 @@ find_var_ht(name, varname)
 
         if (current_funccal == NULL)
             return &globvarht;                  /* global variable */
+
         return &current_funccal->l_vars.dv_hashtab; /* l: variable */
     }
     *varname = name + 2;
@@ -18167,6 +17984,7 @@ find_var_ht(name, varname)
     if (*name == 's'                            /* script variable */
             && current_SID > 0 && current_SID <= ga_scripts.ga_len)
         return &SCRIPT_VARS(current_SID);
+
     return NULL;
 }
 
@@ -18184,6 +18002,7 @@ get_var_value(name)
     v = find_var(name, NULL, FALSE);
     if (v == NULL)
         return NULL;
+
     return get_tv_string(&v->di_tv);
 }
 
@@ -19839,6 +19658,7 @@ eval_fname_script(p)
         return 5;
     if (p[0] == 's' && p[1] == ':')
         return 2;
+
     return 0;
 }
 
@@ -19912,25 +19732,9 @@ find_func(name)
     hi = hash_find(&func_hashtab, name);
     if (!HASHITEM_EMPTY(hi))
         return HI2UF(hi);
+
     return NULL;
 }
-
-#if defined(EXITFREE)
-    void
-free_all_functions()
-{
-    hashitem_T  *hi;
-
-    /* Need to start all over every time, because func_free() may change the hash table. */
-    while (func_hashtab.ht_used > 0)
-        for (hi = func_hashtab.ht_array; ; ++hi)
-            if (!HASHITEM_EMPTY(hi))
-            {
-                func_free(HI2UF(hi));
-                break;
-            }
-}
-#endif
 
     int
 translated_function_exists(name)
@@ -19938,6 +19742,7 @@ translated_function_exists(name)
 {
     if (builtin_function(name, -1))
         return find_internal_func(name) >= 0;
+
     return find_func(name) != NULL;
 }
 
@@ -20905,37 +20710,6 @@ last_set_msg(scriptID)
             vim_free(p);
             verbose_leave();
         }
-    }
-}
-
-/*
- * List v:oldfiles in a nice way.
- */
-    void
-ex_oldfiles(eap)
-    exarg_T     *eap UNUSED;
-{
-    list_T      *l = vimvars[VV_OLDFILES].vv_list;
-    listitem_T  *li;
-    int         nr = 0;
-
-    if (l == NULL)
-        msg((char_u *)"No old files");
-    else
-    {
-        msg_start();
-        msg_scroll = TRUE;
-        for (li = l->lv_first; li != NULL && !got_int; li = li->li_next)
-        {
-            msg_outnum((long)++nr);
-            MSG_PUTS(": ");
-            msg_outtrans(get_tv_string(&li->li_tv));
-            msg_putchar('\n');
-            out_flush();            /* output one line at a time */
-            ui_breakcheck();
-        }
-        /* Assume "got_int" was set to truncate the listing. */
-        got_int = FALSE;
     }
 }
 

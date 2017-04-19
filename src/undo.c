@@ -245,6 +245,7 @@ get_undolevel()
 {
     if (curbuf->b_p_ul == NO_LOCAL_UNDOLEVEL)
         return p_ul;
+
     return curbuf->b_p_ul;
 }
 
@@ -700,6 +701,7 @@ undo_write(bi, ptr, len)
 {
     if (fwrite(ptr, len, (size_t)1, bi->bi_fp) != 1)
         return FAIL;
+
     return OK;
 }
 
@@ -728,10 +730,9 @@ undo_write_bytes(bi, nr, len)
     int     len;
 {
     char_u  buf[8];
-    int     i;
     int     bufi = 0;
 
-    for (i = len - 1; i >= 0; --i)
+    for (int i = len - 1; i >= 0; --i)
         buf[bufi++] = (char_u)(nr >> (i * 8));
     return undo_write(bi, buf, (size_t)len);
 }
@@ -788,6 +789,7 @@ undo_read(bi, buffer, size)
 {
     if (fread(buffer, (size_t)size, 1, bi->bi_fp) != 1)
         return FAIL;
+
     return OK;
 }
 
@@ -836,7 +838,7 @@ serialize_header(bi, hash)
 
     /* If the buffer is encrypted then all text bytes following will be
      * encrypted.  Numbers and other info is not crypted. */
-        undo_write_bytes(bi, (long_u)UF_VERSION, 2);
+    undo_write_bytes(bi, (long_u)UF_VERSION, 2);
 
     /* Write a hash of the buffer text, so that we can verify it is still the
      * same when reading the buffer text. */
@@ -878,7 +880,6 @@ serialize_uhp(bi, uhp)
     bufinfo_T   *bi;
     u_header_T  *uhp;
 {
-    int         i;
     u_entry_T   *uep;
     char_u      time_buf[8];
 
@@ -894,7 +895,7 @@ serialize_uhp(bi, uhp)
     undo_write_bytes(bi, (long_u)uhp->uh_cursor_vcol, 4);
     undo_write_bytes(bi, (long_u)uhp->uh_flags, 2);
     /* Assume NMARKS will stay the same. */
-    for (i = 0; i < NMARKS; ++i)
+    for (int i = 0; i < NMARKS; ++i)
         serialize_pos(bi, uhp->uh_namedm[i]);
     serialize_visualinfo(bi, &uhp->uh_visual);
     time_to_bytes(uhp->uh_time, time_buf);
@@ -924,7 +925,6 @@ unserialize_uhp(bi, file_name)
     char_u      *file_name;
 {
     u_header_T  *uhp;
-    int         i;
     u_entry_T   *uep, *last_uep;
     int         c;
     int         error;
@@ -947,7 +947,7 @@ unserialize_uhp(bi, file_name)
     unserialize_pos(bi, &uhp->uh_cursor);
     uhp->uh_cursor_vcol = undo_read_4c(bi);
     uhp->uh_flags = undo_read_2c(bi);
-    for (i = 0; i < NMARKS; ++i)
+    for (int i = 0; i < NMARKS; ++i)
         unserialize_pos(bi, &uhp->uh_namedm[i]);
     unserialize_visualinfo(bi, &uhp->uh_visual);
     uhp->uh_time = undo_read_time(bi);
@@ -1008,16 +1008,14 @@ serialize_uep(bi, uep)
     bufinfo_T   *bi;
     u_entry_T   *uep;
 {
-    int         i;
-    size_t      len;
-
     undo_write_bytes(bi, (long_u)uep->ue_top, 4);
     undo_write_bytes(bi, (long_u)uep->ue_bot, 4);
     undo_write_bytes(bi, (long_u)uep->ue_lcount, 4);
     undo_write_bytes(bi, (long_u)uep->ue_size, 4);
-    for (i = 0; i < uep->ue_size; ++i)
+    for (int i = 0; i < uep->ue_size; ++i)
     {
-        len = STRLEN(uep->ue_array[i]);
+        size_t      len = STRLEN(uep->ue_array[i]);
+
         if (undo_write_bytes(bi, (long_u)len, 4) == FAIL)
             return FAIL;
         if (len > 0 && fwrite_crypt(bi, uep->ue_array[i], len) == FAIL)
@@ -1231,8 +1229,7 @@ u_write_undo(name, forceit, buf, hash)
 
                 len = read_eintr(fd, mbuf, UF_START_MAGIC_LEN);
                 close(fd);
-                if (len < UF_START_MAGIC_LEN
-                      || memcmp(mbuf, UF_START_MAGIC, UF_START_MAGIC_LEN) != 0)
+                if (len < UF_START_MAGIC_LEN || memcmp(mbuf, UF_START_MAGIC, UF_START_MAGIC_LEN) != 0)
                 {
                     if (name != NULL || p_verbose > 0)
                     {
@@ -1373,7 +1370,6 @@ u_read_undo(name, hash, orig_name)
     short       old_idx = -1, new_idx = -1, cur_idx = -1;
     long        num_read_uhps = 0;
     time_t      seq_time;
-    int         i, j;
     int         c;
     u_header_T  *uhp;
     u_header_T  **uhp_table = NULL;
@@ -1516,8 +1512,7 @@ u_read_undo(name, hash, orig_name)
      * When there are no headers uhp_table is NULL. */
     if (num_head > 0)
     {
-        uhp_table = (u_header_T **)U_ALLOC_LINE(
-                                             num_head * sizeof(u_header_T *));
+        uhp_table = (u_header_T **)U_ALLOC_LINE(num_head * sizeof(u_header_T *));
         if (uhp_table == NULL)
             goto error;
     }
@@ -1547,73 +1542,58 @@ u_read_undo(name, hash, orig_name)
         goto error;
     }
 
-#define SET_FLAG(j)
-
     /* We have put all of the headers into a table. Now we iterate through the
      * table and swizzle each sequence number we have stored in uh_*_seq into
      * a pointer corresponding to the header with that sequence number. */
-    for (i = 0; i < num_head; i++)
+    for (int i = 0; i < num_head; i++)
     {
         uhp = uhp_table[i];
         if (uhp == NULL)
             continue;
-        for (j = 0; j < num_head; j++)
+        for (int j = 0; j < num_head; j++)
             if (uhp_table[j] != NULL && i != j && uhp_table[i]->uh_seq == uhp_table[j]->uh_seq)
             {
                 corruption_error("duplicate uh_seq", file_name);
                 goto error;
             }
-        for (j = 0; j < num_head; j++)
+        for (int j = 0; j < num_head; j++)
             if (uhp_table[j] != NULL && uhp_table[j]->uh_seq == uhp->uh_next.seq)
             {
                 uhp->uh_next.ptr = uhp_table[j];
-                SET_FLAG(j);
                 break;
             }
-        for (j = 0; j < num_head; j++)
+        for (int j = 0; j < num_head; j++)
             if (uhp_table[j] != NULL && uhp_table[j]->uh_seq == uhp->uh_prev.seq)
             {
                 uhp->uh_prev.ptr = uhp_table[j];
-                SET_FLAG(j);
                 break;
             }
-        for (j = 0; j < num_head; j++)
+        for (int j = 0; j < num_head; j++)
             if (uhp_table[j] != NULL && uhp_table[j]->uh_seq == uhp->uh_alt_next.seq)
             {
                 uhp->uh_alt_next.ptr = uhp_table[j];
-                SET_FLAG(j);
                 break;
             }
-        for (j = 0; j < num_head; j++)
+        for (int j = 0; j < num_head; j++)
             if (uhp_table[j] != NULL && uhp_table[j]->uh_seq == uhp->uh_alt_prev.seq)
             {
                 uhp->uh_alt_prev.ptr = uhp_table[j];
-                SET_FLAG(j);
                 break;
             }
         if (old_header_seq > 0 && old_idx < 0 && uhp->uh_seq == old_header_seq)
-        {
             old_idx = i;
-            SET_FLAG(i);
-        }
         if (new_header_seq > 0 && new_idx < 0 && uhp->uh_seq == new_header_seq)
-        {
             new_idx = i;
-            SET_FLAG(i);
-        }
         if (cur_header_seq > 0 && cur_idx < 0 && uhp->uh_seq == cur_header_seq)
-        {
             cur_idx = i;
-            SET_FLAG(i);
-        }
     }
 
     /* Now that we have read the undo info successfully, free the current undo
      * info and use the info from the file. */
     u_blockfree(curbuf);
-    curbuf->b_u_oldhead = old_idx < 0 ? NULL : uhp_table[old_idx];
-    curbuf->b_u_newhead = new_idx < 0 ? NULL : uhp_table[new_idx];
-    curbuf->b_u_curhead = cur_idx < 0 ? NULL : uhp_table[cur_idx];
+    curbuf->b_u_oldhead = (old_idx < 0) ? NULL : uhp_table[old_idx];
+    curbuf->b_u_newhead = (new_idx < 0) ? NULL : uhp_table[new_idx];
+    curbuf->b_u_curhead = (cur_idx < 0) ? NULL : uhp_table[cur_idx];
     curbuf->b_u_line_ptr = line_ptr;
     curbuf->b_u_line_lnum = line_lnum;
     curbuf->b_u_line_colnr = line_colnr;
@@ -1635,7 +1615,7 @@ error:
     vim_free(line_ptr);
     if (uhp_table != NULL)
     {
-        for (i = 0; i < num_read_uhps; i++)
+        for (int i = 0; i < num_read_uhps; i++)
             if (uhp_table[i] != NULL)
                 u_free_uhp(uhp_table[i]);
         vim_free(uhp_table);

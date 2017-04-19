@@ -972,10 +972,7 @@ win_split_ins(size, flags, new_wp, dir)
      * equalize the window sizes.
      */
     if (do_equal || dir != 0)
-        win_equal(wp, TRUE,
-                (flags & WSP_VERT) ? (dir == 'v' ? 'b' : 'h')
-                : dir == 'h' ? 'b' :
-                'v');
+        win_equal(wp, TRUE, (flags & WSP_VERT) ? (dir == 'v' ? 'b' : 'h') : dir == 'h' ? 'b' : 'v');
 
     /* Don't change the window height/width to 'winheight' / 'winwidth' if a size was given. */
     if (flags & WSP_VERT)
@@ -1073,6 +1070,7 @@ win_valid(win)
     for (wp = firstwin; wp != NULL; wp = wp->w_next)
         if (wp == win)
             return TRUE;
+
     return FALSE;
 }
 
@@ -2104,30 +2102,6 @@ win_free_mem(win, dirp, tp)
     return wp;
 }
 
-#if defined(EXITFREE)
-    void
-win_free_all()
-{
-    int         dummy;
-
-    while (first_tabpage->tp_next != NULL)
-        tabpage_close(TRUE);
-
-    if (aucmd_win != NULL)
-    {
-        (void)win_free_mem(aucmd_win, &dummy, NULL);
-        aucmd_win = NULL;
-    }
-
-    while (firstwin != NULL)
-        (void)win_free_mem(firstwin, &dummy, NULL);
-
-    /* No window should be used after this. Set curwin to NULL to crash
-     * instead of using freed memory. */
-    curwin = NULL;
-}
-#endif
-
 /*
  * Remove a window and its frame from the tree of frames.
  * Returns a pointer to the window that got the freed up space.
@@ -2306,6 +2280,7 @@ win_altframe(win, tp)
         b = p_sb;
     if ((!b && frp->fr_next != NULL) || frp->fr_prev == NULL)
         return frp->fr_next;
+
     return frp->fr_prev;
 }
 
@@ -2355,6 +2330,7 @@ frame_has_win(frp, wp)
     for (p = frp->fr_child; p != NULL; p = p->fr_next)
         if (frame_has_win(p, wp))
             return TRUE;
+
     return FALSE;
 }
 
@@ -2483,6 +2459,7 @@ frame_fixed_height(frp)
         for (frp = frp->fr_child; frp != NULL; frp = frp->fr_next)
             if (frame_fixed_height(frp))
                 return TRUE;
+
         return FALSE;
     }
 
@@ -2491,6 +2468,7 @@ frame_fixed_height(frp)
     for (frp = frp->fr_child; frp != NULL; frp = frp->fr_next)
         if (!frame_fixed_height(frp))
             return FALSE;
+
     return TRUE;
 }
 
@@ -2512,6 +2490,7 @@ frame_fixed_width(frp)
         for (frp = frp->fr_child; frp != NULL; frp = frp->fr_next)
             if (frame_fixed_width(frp))
                 return TRUE;
+
         return FALSE;
     }
 
@@ -2520,6 +2499,7 @@ frame_fixed_width(frp)
     for (frp = frp->fr_child; frp != NULL; frp = frp->fr_next)
         if (!frame_fixed_width(frp))
             return FALSE;
+
     return TRUE;
 }
 
@@ -3191,6 +3171,7 @@ valid_tabpage(tpc)
     for (tp = first_tabpage; tp != NULL; tp = tp->tp_next)
         if (tp == tpc)
             return TRUE;
+
     return FALSE;
 }
 
@@ -4026,6 +4007,7 @@ win_alloc_lines(wp)
     wp->w_lines = (wline_T *)alloc_clear((unsigned)(Rows * sizeof(wline_T)));
     if (wp->w_lines == NULL)
         return FAIL;
+
     return OK;
 }
 
@@ -5218,6 +5200,7 @@ path_is_url(p)
         return URL_SLASH;
     else if (STRNCMP(p, ":\\\\", (size_t)3) == 0)
         return URL_BACKSLASH;
+
     return 0;
 }
 
@@ -5452,6 +5435,7 @@ check_snapshot_rec(sn, fr)
             || (sn->fr_child != NULL
                 && check_snapshot_rec(sn->fr_child, fr->fr_child) == FAIL))
         return FAIL;
+
     return OK;
 }
 
@@ -5665,7 +5649,7 @@ match_add(wp, grp, pat, prio, id, pos_list)
     m = (matchitem_T *)alloc_clear(sizeof(matchitem_T));
     m->id = id;
     m->priority = prio;
-    m->pattern = pat == NULL ? NULL : vim_strsave(pat);
+    m->pattern = (pat == NULL) ? NULL : vim_strsave(pat);
     m->hlg_id = hlg_id;
     m->match.regprog = regprog;
     m->match.rmm_ic = FALSE;

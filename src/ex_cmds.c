@@ -269,6 +269,7 @@ sort_compare(s1, s2)
     /* If two lines have the same value, preserve the original line order. */
     if (result == 0)
         return (int)(l1.lnum - l2.lnum);
+
     return result;
 }
 
@@ -816,14 +817,6 @@ ex_copy(line1, line2, n)
 
 static char_u   *prevcmd = NULL;        /* the previous command */
 
-#if defined(EXITFREE)
-    void
-free_prev_shellcmd()
-{
-    vim_free(prevcmd);
-}
-#endif
-
 /*
  * Handle the ":!cmd" command.  Also for ":r !cmd" and ":w !cmd"
  * Bangs in the argument are replaced with the previously entered command.
@@ -1054,7 +1047,7 @@ do_filter(line1, line2, eap, cmd, do_in, do_out)
         curwin->w_cursor.lnum = line2;
     }
     else if ((do_in && (itmp = vim_tempname('i', FALSE)) == NULL)
-                || (do_out && (otmp = vim_tempname('o', FALSE)) == NULL))
+          || (do_out && (otmp = vim_tempname('o', FALSE)) == NULL))
     {
         EMSG((char *)e_notmp);
         goto filterend;
@@ -1183,8 +1176,7 @@ do_filter(line1, line2, eap, cmd, do_in, do_out)
             del_lines(linecount, TRUE);
             curbuf->b_op_start.lnum -= linecount;       /* adjust '[ */
             curbuf->b_op_end.lnum -= linecount;         /* adjust '] */
-            write_lnum_adjust(-linecount);              /* adjust last line
-                                                           for next write */
+            write_lnum_adjust(-linecount);              /* adjust last line for next write */
         }
         else
         {
@@ -1270,9 +1262,7 @@ do_shell(cmd, flags)
     msg_putchar('\n');              /* may shift screen one line up */
 
     /* warning message before calling the shell */
-    if (p_warn
-                && !autocmd_busy
-                && msg_silent == 0)
+    if (p_warn && !autocmd_busy && msg_silent == 0)
         for (buf = firstbuf; buf; buf = buf->b_next)
             if (bufIsChanged(buf))
             {
@@ -1308,7 +1298,6 @@ do_shell(cmd, flags)
     {
         /*
          * For ":sh" there is no need to call wait_return(), just redraw.
-         * Also for the Win32 GUI (the output is in a console window).
          * Otherwise there is probably text on the screen that the user wants
          * to read before redrawing, so call wait_return().
          */
@@ -1428,9 +1417,7 @@ append_redir(buf, buflen, opt, fname)
         vim_snprintf((char *)end + 1, (size_t)(buflen - (end + 1 - buf)), (char *)opt, (char *)fname);
     }
     else
-        vim_snprintf((char *)end, (size_t)(buflen - (end - buf)),
-                " %s%s",        /* " > %s" causes problems on Amiga */
-                (char *)opt, (char *)fname);
+        vim_snprintf((char *)end, (size_t)(buflen - (end - buf)), " %s%s", (char *)opt, (char *)fname);
 }
 
 /*
@@ -1459,8 +1446,7 @@ print_line_no_prefix(lnum, use_number, list)
 
     if (curwin->w_p_nu || use_number)
     {
-        vim_snprintf((char *)numbuf, sizeof(numbuf),
-                                   "%*ld ", number_width(curwin), (long)lnum);
+        vim_snprintf((char *)numbuf, sizeof(numbuf), "%*ld ", number_width(curwin), (long)lnum);
         msg_puts_attr(numbuf, hl_attr(HLF_N));  /* Highlight line nrs */
     }
     msg_prt_line(ml_get(lnum), list);
@@ -1661,8 +1647,7 @@ do_write(eap)
         /*
          * Not writing the whole file is only allowed with '!'.
          */
-        if (       (eap->line1 != 1
-                    || eap->line2 != curbuf->b_ml.ml_line_count)
+        if (       (eap->line1 != 1 || eap->line2 != curbuf->b_ml.ml_line_count)
                 && !eap->forceit
                 && !eap->append
                 && !p_wa)
@@ -1733,8 +1718,7 @@ do_write(eap)
                 do_modelines(0);
             }
 
-            /* Autocommands may have changed buffer names, esp. when
-             * 'autochdir' is set. */
+            /* Autocommands may have changed buffer names, esp. when 'autochdir' is set. */
             fname = curbuf->b_sfname;
         }
 
@@ -1776,11 +1760,10 @@ check_overwrite(eap, buf, fname, ffname, other)
      * write to other file or b_flags set or not writing the whole file:
      * overwriting only allowed with '!'
      */
-    if (       (other
-                || (buf->b_flags & BF_NOTEDITED)
-                || ((buf->b_flags & BF_NEW)
-                    && vim_strchr(p_cpo, CPO_OVERNEW) == NULL)
-                || (buf->b_flags & BF_READERR))
+    if ((other
+               || (buf->b_flags & BF_NOTEDITED)
+               || ((buf->b_flags & BF_NEW) && vim_strchr(p_cpo, CPO_OVERNEW) == NULL)
+               || (buf->b_flags & BF_READERR))
             && !p_wa
             && vim_fexists(ffname))
     {
@@ -2696,8 +2679,7 @@ ex_append(eap)
              * when getline() returns. */
             State = CMDLINE;
             theline = eap->getline(
-                    eap->cstack->cs_looplevel > 0 ? -1 :
-                    NUL, eap->cookie, indent);
+                    (eap->cstack->cs_looplevel > 0) ? -1 : NUL, eap->cookie, indent);
             State = save_State;
         }
         lines_left = Rows - 1;
@@ -4194,11 +4176,3 @@ global_exe(cmd)
     if (!do_sub_msg(FALSE) && curbuf == old_buf)
         msgmore(curbuf->b_ml.ml_line_count - old_lcount);
 }
-
-#if defined(EXITFREE)
-    void
-free_old_sub()
-{
-    vim_free(old_sub);
-}
-#endif

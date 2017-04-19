@@ -66,9 +66,9 @@ ui_inchar_undo(s, len)
  * If "wtime" == -1 wait forever for characters.
  * If "wtime" > 0 wait "wtime" milliseconds for a character.
  *
- * "tb_change_cnt" is the value of typebuf.tb_change_cnt if "buf" points into
- * it.  When typebuf.tb_change_cnt changes (e.g., when a message is received
- * from a remote client) "buf" can no longer be used.  "tb_change_cnt" is NULL otherwise.
+ * "tb_change_cnt" is the value of typebuf.tb_change_cnt if "buf" points into it.
+ * When typebuf.tb_change_cnt changes (e.g., when a message is received from a remote client)
+ * "buf" can no longer be used.  "tb_change_cnt" is NULL otherwise.
  */
     int
 ui_inchar(buf, maxlen, wtime, tb_change_cnt)
@@ -91,9 +91,7 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
             ctrl_c_interrupts = FALSE;
     }
 
-    {
-        retval = mch_inchar(buf, maxlen, wtime, tb_change_cnt);
-    }
+    retval = mch_inchar(buf, maxlen, wtime, tb_change_cnt);
 
     if (wtime == -1 || wtime > 100L)
         /* block SIGHUP et al. */
@@ -122,7 +120,7 @@ ui_delay(msec, ignoreinput)
     long        msec;
     int         ignoreinput;
 {
-        mch_delay(msec, ignoreinput);
+    mch_delay(msec, ignoreinput);
 }
 
 /*
@@ -162,9 +160,7 @@ suspend_shell()
     int
 ui_get_shellsize()
 {
-    int     retval;
-
-        retval = mch_get_shellsize();
+    int     retval = mch_get_shellsize();
 
     check_shellsize();
 
@@ -186,7 +182,7 @@ ui_get_shellsize()
 ui_set_shellsize(mustset)
     int         mustset UNUSED; /* set by the user */
 {
-        mch_set_shellsize();
+    mch_set_shellsize();
 }
 
 /*
@@ -204,7 +200,7 @@ ui_new_shellsize()
     void
 ui_breakcheck()
 {
-        mch_breakcheck();
+    mch_breakcheck();
 }
 
 /*****************************************************************************
@@ -226,8 +222,8 @@ static void clip_copy_selection(VimClipboard *clip);
 
 /*
  * Call this to initialise the clipboard.  Pass it FALSE if the clipboard code
- * is included, but the clipboard can not be used, or TRUE if the clipboard can
- * be used.  Eg unix may call this with FALSE, then call it again with TRUE if the GUI starts.
+ * is included, but the clipboard can not be used, or TRUE if the clipboard can be used.
+ * Eg unix may call this with FALSE, then call it again with TRUE if the GUI starts.
  */
     void
 clip_init(can_use)
@@ -297,8 +293,7 @@ clip_own_selection(cbd)
     VimClipboard        *cbd;
 {
     /*
-     * Also want to check somehow that we are reading from the keyboard rather
-     * than a mapping etc.
+     * Also want to check somehow that we are reading from the keyboard rather than a mapping etc.
      */
     /* Only own the clipboard when we didn't own it yet. */
     if (!cbd->owned && cbd->available)
@@ -411,8 +406,7 @@ clip_auto_select()
     int
 clip_isautosel_star()
 {
-    return (
-            clip_autoselect_star);
+    return (clip_autoselect_star);
 }
 
 /*
@@ -421,8 +415,7 @@ clip_isautosel_star()
     int
 clip_isautosel_plus()
 {
-    return (
-            clip_autoselect_plus);
+    return (clip_autoselect_plus);
 }
 
 /*
@@ -540,14 +533,14 @@ clip_start_selection(col, row, repeated_click)
             cb->origin_end_col   = cb->word_end_col;
 
             clip_invert_area((int)cb->start.lnum, cb->word_start_col,
-                            (int)cb->end.lnum, cb->word_end_col, CLIP_SET);
+                             (int)cb->end.lnum, cb->word_end_col, CLIP_SET);
             cb->start.col = cb->word_start_col;
             cb->end.col   = cb->word_end_col;
             break;
 
         case SELECT_MODE_LINE:
-            clip_invert_area((int)cb->start.lnum, 0, (int)cb->start.lnum,
-                            (int)Columns, CLIP_SET);
+            clip_invert_area((int)cb->start.lnum, 0,
+                             (int)cb->start.lnum, (int)Columns, CLIP_SET);
             cb->start.col = 0;
             cb->end.col   = Columns;
             break;
@@ -708,8 +701,8 @@ clip_clear_selection(cbd)
     if (cbd->state == SELECT_CLEARED)
         return;
 
-    clip_invert_area((int)cbd->start.lnum, cbd->start.col, (int)cbd->end.lnum,
-                                                     cbd->end.col, CLIP_CLEAR);
+    clip_invert_area((int)cbd->start.lnum, cbd->start.col,
+                     (int)cbd->end.lnum, cbd->end.col, CLIP_CLEAR);
     cbd->state = SELECT_CLEARED;
 }
 
@@ -720,9 +713,8 @@ clip_clear_selection(cbd)
 clip_may_clear_selection(row1, row2)
     int row1, row2;
 {
-    if (clip_star.state == SELECT_DONE
-            && row2 >= clip_star.start.lnum
-            && row1 <= clip_star.end.lnum)
+    if (clip_star.state == SELECT_DONE && row2 >= clip_star.start.lnum
+                                       && row1 <= clip_star.end.lnum)
         clip_clear_selection(&clip_star);
 }
 
@@ -831,7 +823,7 @@ clip_invert_rectangle(row, col, height, width, invert)
     int         width;
     int         invert;
 {
-        screen_draw_rectangle(row, col, height, width, invert);
+    screen_draw_rectangle(row, col, height, width, invert);
 }
 
 /*
@@ -920,11 +912,10 @@ clip_copy_modeless_selection(both)
         if (row < screen_Rows && end_col <= screen_Columns)
         {
             int     off;
-            int     i;
             int     ci;
 
             off = LineOffset[row];
-            for (i = start_col; i < end_col; ++i)
+            for (int i = start_col; i < end_col; ++i)
             {
                 /* The base character is either in ScreenLinesUC[] or ScreenLines[]. */
                 if (ScreenLinesUC[off + i] == 0)
@@ -1366,6 +1357,7 @@ check_col(col)
         return 0;
     if (col >= (int)screen_Columns)
         return (int)screen_Columns - 1;
+
     return col;
 }
 
@@ -1380,20 +1372,14 @@ check_row(row)
         return 0;
     if (row >= (int)screen_Rows)
         return (int)screen_Rows - 1;
+
     return row;
 }
-
-/*
- * Stuff for the X clipboard.  Shared between VMS and Unix.
- */
 
 /*
  * Move the cursor to the specified row and column on the screen.
  * Change current window if necessary.  Returns an integer with the
  * CURSOR_MOVED bit set if the cursor has moved or unset otherwise.
- *
- * The MOUSE_FOLD_CLOSE bit is set when clicked on the '-' in a fold column.
- * The MOUSE_FOLD_OPEN bit is set when clicked on the '+' in a fold column.
  *
  * If flags has MOUSE_FOCUS, then the current window will not be changed, and
  * if the mouse is outside the window then the text will scroll, or if the
@@ -1463,6 +1449,7 @@ retnomove:
         /* Continue a modeless selection in another window. */
         if (cmdwin_type != 0 && row < W_WINROW(curwin))
             return IN_OTHER_WIN;
+
         return IN_BUFFER;
     }
 
@@ -1529,6 +1516,7 @@ retnomove:
             on_sep_line = 0;
             if (on_status_line)
                 return IN_STATUS_LINE;
+
             return IN_OTHER_WIN;
         }
         /* Only change window focus when not clicking on or dragging the

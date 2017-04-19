@@ -234,21 +234,17 @@ redraw_asap(type)
 
     /* Allocate space to save the text displayed in the command line area. */
     rows = Rows - cmdline_row;
-    screenline = (schar_T *)lalloc(
-                           (long_u)(rows * Columns * sizeof(schar_T)), FALSE);
-    screenattr = (sattr_T *)lalloc(
-                           (long_u)(rows * Columns * sizeof(sattr_T)), FALSE);
+    screenline = (schar_T *)lalloc((long_u)(rows * Columns * sizeof(schar_T)), FALSE);
+    screenattr = (sattr_T *)lalloc((long_u)(rows * Columns * sizeof(sattr_T)), FALSE);
     if (screenline == NULL || screenattr == NULL)
         ret = 2;
 
-    screenlineUC = (u8char_T *)lalloc(
-                        (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
+    screenlineUC = (u8char_T *)lalloc((long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
     if (screenlineUC == NULL)
         ret = 2;
     for (i = 0; i < p_mco; ++i)
     {
-        screenlineC[i] = (u8char_T *)lalloc(
-                        (long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
+        screenlineC[i] = (u8char_T *)lalloc((long_u)(rows * Columns * sizeof(u8char_T)), FALSE);
         if (screenlineC[i] == NULL)
             ret = 2;
     }
@@ -569,6 +565,7 @@ conceal_cursor_line(wp)
         c = 'c';
     else
         return FALSE;
+
     return vim_strchr(wp->w_p_cocu, c) != NULL;
 }
 
@@ -1240,12 +1237,10 @@ win_update(wp)
                                 || did_update == DID_FOLD
                                 || (did_update == DID_LINE
                                     && syntax_present(wp)
-                                    && (
-                                        syntax_check_changed(lnum)))
+                                    && syntax_check_changed(lnum))
                                 /* match in fixed position might need redraw
                                  * if lines were inserted or deleted */
-                                || (wp->w_match_head != NULL
-                                                    && buf->b_mod_xlines != 0)
+                                || (wp->w_match_head != NULL && buf->b_mod_xlines != 0)
                                 )))))
         {
             if (lnum == mod_top)
@@ -1688,7 +1683,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
     int         u8cc[MAX_MCO];          /* composing UTF-8 chars */
     colnr_T     trailcol = MAXCOL;      /* start of trailing spaces */
     int         need_showbreak = FALSE;
-#define LINE_ATTR
+
     int         line_attr = 0;          /* attribute for the whole line */
     matchitem_T *cur;                   /* points to the match list */
     match_T     *shl;                   /* points to search_hl or a match */
@@ -1699,18 +1694,16 @@ win_line(wp, lnum, startrow, endrow, nochange)
     int         prevcol_hl_flag;        /* flag to indicate whether prevcol
                                            equals startcol of search_hl or one
                                            of the matches */
-#if defined(LINE_ATTR)
     int         did_line_attr = 0;
-#endif
 
     /* draw_state: items that are drawn in sequence: */
 #define WL_START        0               /* nothing done yet */
-#define WL_CMDLINE     WL_START + 1    /* cmdline window column */
-#define WL_FOLD        WL_CMDLINE
-#define WL_SIGN        WL_FOLD         /* column for signs */
+#define WL_CMDLINE      WL_START + 1    /* cmdline window column */
+#define WL_FOLD         WL_CMDLINE
+#define WL_SIGN         WL_FOLD         /* column for signs */
 #define WL_NR           WL_SIGN + 1     /* line number */
-#define WL_BRI         WL_NR + 1       /* 'breakindent' */
-#define WL_SBR         WL_BRI + 1      /* 'showbreak' or 'diff' */
+#define WL_BRI          WL_NR + 1       /* 'breakindent' */
+#define WL_SBR          WL_BRI + 1      /* 'showbreak' or 'diff' */
 #define WL_LINE         WL_SBR + 1      /* text in the line */
     int         draw_state = WL_START;  /* what to draw next */
 
@@ -1871,10 +1864,8 @@ win_line(wp, lnum, startrow, endrow, nochange)
         attr = hl_attr(HLF_I);
     }
 
-#if defined(LINE_ATTR)
     if (line_attr != 0)
         area_highlighting = TRUE;
-#endif
 
     line = ml_get_buf(wp->w_buffer, lnum, FALSE);
     ptr = line;
@@ -2301,7 +2292,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
 
             /* Decide which of the highlight attributes to use. */
             attr_pri = TRUE;
-#if defined(LINE_ATTR)
+
             if (area_attr != 0)
                 char_attr = hl_combine_attr(line_attr, area_attr);
             else if (search_attr != 0)
@@ -2312,12 +2303,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                 || vcol < fromcol || vcol_prev < fromcol_prev
                                 || vcol >= tocol))
                 char_attr = line_attr;
-#else
-            if (area_attr != 0)
-                char_attr = area_attr;
-            else if (search_attr != 0)
-                char_attr = search_attr;
-#endif
             else
             {
                 attr_pri = FALSE;
@@ -2429,9 +2414,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                  * Draw it as a space with a composing char. */
                 if (utf_iscomposing(mb_c))
                 {
-                    int i;
-
-                    for (i = Screen_mco - 1; i > 0; --i)
+                    for (int i = Screen_mco - 1; i > 0; --i)
                         u8cc[i] = u8cc[i - 1];
                     u8cc[0] = mb_c;
                     mb_c = ' ';
@@ -2537,7 +2520,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     save_did_emsg = did_emsg;
                     did_emsg = FALSE;
 
-                    syntax_attr = get_syntax_attr((colnr_T)v - 1, NULL, FALSE);
+                    syntax_attr = get_syntax_attr((colnr_T)v - 1, FALSE);
 
                     if (did_emsg)
                     {
@@ -2577,7 +2560,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     if (c == TAB && n_extra + col > W_WIDTH(wp))
                         n_extra = (int)wp->w_buffer->b_p_ts - vcol % (int)wp->w_buffer->b_p_ts - 1;
 
-                    c_extra = mb_off > 0 ? MB_FILLER_CHAR : ' ';
+                    c_extra = (mb_off > 0) ? MB_FILLER_CHAR : ' ';
                     if (vim_iswhite(c))
                     {
                         if (c == TAB)
@@ -2719,9 +2702,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                             || ((fromcol >= 0 || fromcol_prev >= 0)
                                 && tocol > vcol
                                 && VIsual_mode != Ctrl_V
-                                && (
-                                    wp->w_p_rl ? (col >= 0) :
-                                    (col < W_WIDTH(wp)))
+                                && (wp->w_p_rl ? (col >= 0) : (col < W_WIDTH(wp)))
                                 && !(noinvcur
                                     && lnum == wp->w_cursor.lnum
                                     && (colnr_T)vcol == wp->w_virtcol)))
@@ -2729,14 +2710,9 @@ win_line(wp, lnum, startrow, endrow, nochange)
                 {
                     /* Display a '$' after the line or highlight an extra
                      * character if the line break is included. */
-#if defined(LINE_ATTR)
+
                     /* For a diff line the highlighting continues after the "$". */
-                    if (
-#if defined(LINE_ATTR)
-                            line_attr == 0
-#endif
-                       )
-#endif
+                    if (line_attr == 0)
                     {
                         /* In virtualedit, visual selections may extend
                          * beyond end of line. */
@@ -2812,7 +2788,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     c = ' ';
                     --ptr;          /* put it back at the NUL */
                 }
-#if defined(LINE_ATTR)
                 else if ((line_attr != 0) && (wp->w_p_rl ? (col >= 0) : (col - boguscols < W_WIDTH(wp))))
                 {
                     /* Highlight until the right side of the window */
@@ -2826,7 +2801,6 @@ win_line(wp, lnum, startrow, endrow, nochange)
                     if (line_attr != 0 && char_attr == search_attr && col > 0)
                         char_attr = line_attr;
                 }
-#endif
             }
 
             if (   wp->w_p_cole > 0
@@ -2950,11 +2924,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
         /*
          * At end of the text line or just after the last character.
          */
-        if (c == NUL
-#if defined(LINE_ATTR)
-                || did_line_attr == 1
-#endif
-                )
+        if (c == NUL || did_line_attr == 1)
         {
             long prevcol = (long)(ptr - line) - (c == NUL);
 
@@ -2989,11 +2959,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
                                 || lnum == curwin->w_cursor.lnum)
                             && c == NUL)
                         /* highlight 'hlsearch' match at end of line */
-                        || (prevcol_hl_flag == TRUE
-#if defined(LINE_ATTR)
-                            && did_line_attr <= 1
-#endif
-                           )
+                        || (prevcol_hl_flag == TRUE && did_line_attr <= 1)
                        ))
             {
                 int n = 0;
@@ -3153,9 +3119,7 @@ win_line(wp, lnum, startrow, endrow, nochange)
         /* line continues beyond line end */
         if (lcs_ext
                 && !wp->w_p_wrap
-                && (
-                    wp->w_p_rl ? col == 0 :
-                    col == W_WIDTH(wp) - 1)
+                && (wp->w_p_rl ? col == 0 : col == W_WIDTH(wp) - 1)
                 && (*ptr != NUL
                     || (wp->w_p_list && lcs_eol_one > 0)
                     || (n_extra && (c_extra != NUL || *p_extra != NUL))))
@@ -3468,9 +3432,7 @@ comp_char_differs(off_from, off_to)
     int     off_from;
     int     off_to;
 {
-    int     i;
-
-    for (i = 0; i < Screen_mco; ++i)
+    for (int i = 0; i < Screen_mco; ++i)
     {
         if (ScreenLinesC[i][off_from] != ScreenLinesC[i][off_to])
             return TRUE;
@@ -3503,6 +3465,7 @@ char_needs_redraw(off_from, off_to, cols)
                             && ScreenLines[off_from + 1] != ScreenLines[off_to + 1]))
                ))
         return TRUE;
+
     return FALSE;
 }
 
@@ -3643,9 +3606,7 @@ screen_line(row, coloff, endcol, clear_width, rlflag)
             ScreenLinesUC[off_to] = ScreenLinesUC[off_from];
             if (ScreenLinesUC[off_from] != 0)
             {
-                int     i;
-
-                for (i = 0; i < Screen_mco; ++i)
+                for (int i = 0; i < Screen_mco; ++i)
                     ScreenLinesC[i][off_to] = ScreenLinesC[i][off_from];
             }
             if (char_cells == 2)
@@ -4037,9 +3998,7 @@ get_keymap_str(wp, buf, len)
         curbuf = old_curbuf;
         curwin = old_curwin;
         if (p == NULL || *p == NUL)
-        {
             p = (char_u *)"lang";
-        }
         if ((int)(STRLEN(p) + 3) < len)
             sprintf((char *)buf, "<%s>", p);
         else
@@ -4147,7 +4106,7 @@ win_redr_custom(wp, draw_ruler)
 
     /* Temporarily reset 'cursorbind', we don't want a side effect from moving
      * the cursor away and back. */
-    ewp = wp == NULL ? curwin : wp;
+    ewp = (wp == NULL) ? curwin : wp;
     p_crb_save = ewp->w_p_crb;
     ewp->w_p_crb = FALSE;
 
@@ -4275,9 +4234,7 @@ screen_comp_differs(off, u8cc)
     int     off;
     int     *u8cc;
 {
-    int     i;
-
-    for (i = 0; i < Screen_mco; ++i)
+    for (int i = 0; i < Screen_mco; ++i)
     {
         if (ScreenLinesC[i][off] != (u8char_T)u8cc[i])
             return TRUE;
@@ -4675,7 +4632,8 @@ next_search_hl(win, shl, lnum, mincol, cur)
                 {
                     /* don't free regprog in the match list, it's a copy */
                     vim_regfree(shl->rm.regprog);
-                    SET_NO_HLSEARCH(TRUE);
+                    no_hlsearch = TRUE;
+                    set_vim_var_nr(VV_HLSEARCH, !no_hlsearch && p_hls);
                 }
                 shl->rm.regprog = NULL;
                 shl->lnum = 0;
@@ -6833,6 +6791,7 @@ fillchar_status(attr, is_curwin)
         return fill;
     if (is_curwin)
         return '^';
+
     return '=';
 }
 

@@ -337,6 +337,7 @@ other_sourcing_name()
     {
         if (last_sourcing_name != NULL)
             return STRCMP(sourcing_name, last_sourcing_name) != 0;
+
         return TRUE;
     }
     return FALSE;
@@ -437,6 +438,7 @@ emsg_not_now()
 {
     if ((emsg_off > 0 && vim_strchr(p_debug, 'm') == NULL && vim_strchr(p_debug, 't') == NULL) || emsg_skip > 0)
         return TRUE;
+
     return FALSE;
 }
 
@@ -594,6 +596,7 @@ msg_trunc_attr(s, force, attr)
 
     if (n)
         return s;
+
     return NULL;
 }
 
@@ -991,7 +994,6 @@ set_keep_msg(s, attr)
     keep_msg_attr = attr;
 }
 
-#if defined(FEAT_TERMRESPONSE)
 /*
  * If there currently is a message being displayed, set "keep_msg" to it, so
  * that it will be displayed again after redraw.
@@ -1002,7 +1004,6 @@ set_keep_msg_from_hist()
     if (keep_msg == NULL && last_msg_hist != NULL && msg_scrolled == 0 && (State & NORMAL))
         set_keep_msg(last_msg_hist->msg, last_msg_hist->attr);
 }
-#endif
 
 /*
  * Prepare for outputting characters in the command line.
@@ -3119,6 +3120,7 @@ vim_dialog_yesno(type, title, message, dflt)
                 message,
                 (char_u *)"&Yes\n&No", dflt, NULL, FALSE) == 1)
         return VIM_YES;
+
     return VIM_NO;
 }
 
@@ -3355,7 +3357,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
 
             /* temporary buffer for simple numeric->string conversion */
 #define TMP_LEN 350    /* On my system 1e308 is the biggest number possible.
-                         * That sounds reasonable to use as the maximum printable. */
+                        * That sounds reasonable to use as the maximum printable. */
             char    tmp[TMP_LEN];
 
             /* string address in case of string argument */
@@ -3407,7 +3409,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 int j;
 
                 p++;
-                j = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
+                j = (tvs != NULL) ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                 if (j >= 0)
                     min_field_width = j;
                 else
@@ -3436,7 +3438,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 {
                     int j;
 
-                    j = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
+                    j = (tvs != NULL) ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                     p++;
                     if (j >= 0)
                         precision = j;
@@ -3503,7 +3505,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     {
                         int j;
 
-                        j = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
+                        j = (tvs != NULL) ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                         /* standard demands unsigned char */
                         uchar_arg = (unsigned char)j;
                         str_arg = (char *)&uchar_arg;
@@ -3512,7 +3514,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
 
                 case 's':
                 case 'S':
-                    str_arg = tvs != NULL ? tv_str(tvs, &arg_idx) : va_arg(ap, char *);
+                    str_arg = (tvs != NULL) ? tv_str(tvs, &arg_idx) : va_arg(ap, char *);
                     if (str_arg == NULL)
                     {
                         str_arg = "[NULL]";
@@ -3579,7 +3581,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     if (fmt_spec == 'p')
                     {
                         length_modifier = '\0';
-                        ptr_arg = tvs != NULL ? (void *)tv_str(tvs, &arg_idx) : va_arg(ap, void *);
+                        ptr_arg = (tvs != NULL) ? (void *)tv_str(tvs, &arg_idx) : va_arg(ap, void *);
                         if (ptr_arg != NULL)
                             arg_sign = 1;
                     }
@@ -3591,14 +3593,14 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         case '\0':
                         case 'h':
                             /* char and short arguments are passed as int. */
-                            int_arg = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
+                            int_arg = (tvs != NULL) ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                             if (int_arg > 0)
                                 arg_sign =  1;
                             else if (int_arg < 0)
                                 arg_sign = -1;
                             break;
                         case 'l':
-                            long_arg = tvs != NULL ? tv_nr(tvs, &arg_idx) : va_arg(ap, long int);
+                            long_arg = (tvs != NULL) ? tv_nr(tvs, &arg_idx) : va_arg(ap, long int);
                             if (long_arg > 0)
                                 arg_sign =  1;
                             else if (long_arg < 0)
@@ -3613,15 +3615,13 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                         {
                             case '\0':
                             case 'h':
-                                uint_arg = tvs != NULL ? (unsigned)
-                                                        tv_nr(tvs, &arg_idx) :
+                                uint_arg = (tvs != NULL) ? (unsigned)tv_nr(tvs, &arg_idx) :
                                                 va_arg(ap, unsigned int);
                                 if (uint_arg != 0)
                                     arg_sign = 1;
                                 break;
                             case 'l':
-                                ulong_arg = tvs != NULL ? (unsigned long)
-                                                        tv_nr(tvs, &arg_idx) :
+                                ulong_arg = (tvs != NULL) ? (unsigned long)tv_nr(tvs, &arg_idx) :
                                                 va_arg(ap, unsigned long int);
                                 if (ulong_arg != 0)
                                     arg_sign = 1;
@@ -3694,11 +3694,9 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             switch (length_modifier)
                             {
                             case '\0':
-                            case 'h': str_arg_l += sprintf(
-                                                 tmp + str_arg_l, f, int_arg);
+                            case 'h': str_arg_l += sprintf(tmp + str_arg_l, f, int_arg);
                                       break;
-                            case 'l': str_arg_l += sprintf(
-                                                tmp + str_arg_l, f, long_arg);
+                            case 'l': str_arg_l += sprintf(tmp + str_arg_l, f, long_arg);
                                       break;
                             }
                         }
@@ -3708,11 +3706,9 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             switch (length_modifier)
                             {
                             case '\0':
-                            case 'h': str_arg_l += sprintf(
-                                                tmp + str_arg_l, f, uint_arg);
+                            case 'h': str_arg_l += sprintf(tmp + str_arg_l, f, uint_arg);
                                       break;
-                            case 'l': str_arg_l += sprintf(
-                                               tmp + str_arg_l, f, ulong_arg);
+                            case 'l': str_arg_l += sprintf(tmp + str_arg_l, f, ulong_arg);
                                       break;
                             }
                         }
@@ -3775,8 +3771,8 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     int         l;
                     int         remove_trailing_zeroes = FALSE;
 
-                    f = tvs != NULL ? tv_float(tvs, &arg_idx) : va_arg(ap, double);
-                    abs_f = f < 0 ? -f : f;
+                    f = (tvs != NULL) ? tv_float(tvs, &arg_idx) : va_arg(ap, double);
+                    abs_f = (f < 0) ? -f : f;
 
                     if (fmt_spec == 'g' || fmt_spec == 'G')
                     {

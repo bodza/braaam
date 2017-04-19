@@ -901,7 +901,7 @@ normalchar:
             auto_format(FALSE, TRUE);
 
             break;
-        }   /* end of switch (c) */
+        }
 
         /* If typed something may trigger CursorHoldI again. */
         if (c != K_CURSORHOLD)
@@ -2599,15 +2599,6 @@ set_last_insert(c)
     }
 }
 
-#if defined(EXITFREE)
-    void
-free_last_insert()
-{
-    vim_free(last_insert);
-    last_insert = NULL;
-}
-#endif
-
 /*
  * Add character "c" to buffer "s".  Escape the special meaning of K_SPECIAL
  * and CSI.  Handle multi-byte characters.
@@ -2893,6 +2884,7 @@ get_last_insert()
 {
     if (last_insert == NULL)
         return NULL;
+
     return last_insert + last_insert_skip;
 }
 
@@ -3018,6 +3010,7 @@ replace_pop()
 {
     if (replace_stack_nr == 0)
         return -1;
+
     return (int)replace_stack[--replace_stack_nr];
 }
 
@@ -3028,9 +3021,7 @@ replace_pop()
 replace_join(off)
     int     off;        /* offset for which NUL to remove */
 {
-    int     i;
-
-    for (i = replace_stack_nr; --i >= 0; )
+    for (int i = replace_stack_nr; --i >= 0; )
         if (replace_stack[i] == NUL && off-- <= 0)
         {
             --replace_stack_nr;
@@ -3878,9 +3869,7 @@ ins_insert(replaceState)
     int     replaceState;
 {
     set_vim_var_string(VV_INSERTMODE,
-                   (char_u *)((State & REPLACE_FLAG) ? "i" :
-                            replaceState == VREPLACE ? "v" :
-                            "r"), 1);
+                (char_u *)((State & REPLACE_FLAG) ? "i" : replaceState == VREPLACE ? "v" : "r"), 1);
     apply_autocmds(EVENT_INSERTCHANGE, NULL, NULL, FALSE, curbuf);
     if (State & REPLACE_FLAG)
         State = INSERT | (State & LANGMAP);
@@ -4872,9 +4861,7 @@ ins_eol(c)
         curwin->w_cursor.col += (colnr_T)STRLEN(ml_get_cursor());
 
     AppendToRedobuff(NL_STR);
-    i = open_line(FORWARD,
-            has_format_option(FO_RET_COMS) ? OPENLINE_DO_COM :
-            0, old_indent);
+    i = open_line(FORWARD, has_format_option(FO_RET_COMS) ? OPENLINE_DO_COM : 0, old_indent);
     old_indent = 0;
     can_cindent = TRUE;
 

@@ -1715,9 +1715,7 @@ do_pending_operator(cap, old_col, gui_yank)
                     op_reindent(oap, get_lisp_indent);
                     break;
                 }
-                op_reindent(oap,
-                        *curbuf->b_p_inde != NUL ? get_expr_indent :
-                            get_c_indent);
+                op_reindent(oap, *curbuf->b_p_inde != NUL ? get_expr_indent : get_c_indent);
                 break;
             }
 
@@ -2697,6 +2695,7 @@ get_mouse_class(p)
      */
     if (c != NUL && vim_strchr((char_u *)"-+*/%<>&|^!=", c) != NULL)
         return 1;
+
     return c;
 }
 
@@ -6585,11 +6584,9 @@ n_opencmd(cap)
     if (!checkclearopq(cap->oap))
     {
         if (u_save((linenr_T)(curwin->w_cursor.lnum - (cap->cmdchar == 'O' ? 1 : 0)),
-                   (linenr_T)(curwin->w_cursor.lnum + (cap->cmdchar == 'o' ? 1 : 0))
-                       ) == OK
+                   (linenr_T)(curwin->w_cursor.lnum + (cap->cmdchar == 'o' ? 1 : 0))) == OK
                 && open_line(cap->cmdchar == 'O' ? BACKWARD : FORWARD,
-                    has_format_option(FO_OPEN_COMS) ? OPENLINE_DO_COM :
-                    0, 0))
+                    has_format_option(FO_OPEN_COMS) ? OPENLINE_DO_COM : 0, 0))
         {
             if (curwin->w_p_cole > 0 && oldline != curwin->w_cursor.lnum)
                 update_single_line(curwin, oldline);

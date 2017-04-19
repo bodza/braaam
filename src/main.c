@@ -46,7 +46,6 @@ static void main_msg(char *s);
 static void usage(void);
 static int get_number_arg(char_u *p, int *idx, int def);
 static void parse_command_name(mparm_T *parmp);
-static void early_arg_scan(mparm_T *parmp);
 static void command_line_scan(mparm_T *parmp);
 static void check_tty(mparm_T *parmp);
 static void read_stdin(void);
@@ -117,15 +116,6 @@ main(argc, argv)
     if ((IObuff = alloc(IOSIZE)) == NULL || (NameBuff = alloc(MAXPATHL)) == NULL)
         mch_exit(0);
 
-    /*
-     * Do a first scan of the arguments in "argv[]":
-     *   -display or --display
-     *   --server...
-     *   --socketid
-     *   --windowid
-     */
-    early_arg_scan(&params);
-
     clip_init(FALSE);           /* Initialise clipboard stuff */
 
     /*
@@ -154,8 +144,6 @@ main(argc, argv)
      */
     init_homedir();             /* find real value of $HOME */
     set_init_1();
-
-    set_lang_var();             /* set v:lang and v:ctype */
 
     /*
      * Figure out the way to work from the command name argv[0].
@@ -323,9 +311,7 @@ main(argc, argv)
     }
 
     starttermcap();         /* start termcap if not done by wait_return() */
-#if defined(FEAT_TERMRESPONSE)
     may_req_ambiguous_char_width();
-#endif
 
     setmouse();                         /* may start using the mouse */
     if (scroll_region)
@@ -378,11 +364,9 @@ main(argc, argv)
     no_wait_return = FALSE;
     starting = 0;
 
-#if defined(FEAT_TERMRESPONSE)
     /* Requesting the termresponse is postponed until here, so that a "-c q"
      * argument doesn't make it appear in the shell Vim was started from. */
     may_req_termresponse();
-#endif
 
     /* start in insert mode */
     if (p_im)
@@ -741,33 +725,6 @@ parse_command_name(parmp)
             exmode_active = EXMODE_VIM;
         else
             exmode_active = EXMODE_NORMAL;
-    }
-}
-
-/*
- * Get the name of the display, before gui_prepare() removes it from
- * argv[].  Used for the xterm-clipboard display.
- *
- * Also find the --server... arguments and --socketid and --windowid
- */
-    static void
-early_arg_scan(parmp)
-    mparm_T     *parmp UNUSED;
-{
-    int         argc = parmp->argc;
-    char        **argv = parmp->argv;
-    int         i;
-
-    for (i = 1; i < argc; i++)
-    {
-        if (STRCMP(argv[i], "--") == 0)
-            break;
-
-        else if (strncmp(argv[i], "-nb", (size_t)3) == 0)
-        {
-            mch_errmsg("'-nb' cannot be used: not enabled at compile time\n");
-            mch_exit(2);
-        }
     }
 }
 
@@ -1494,7 +1451,7 @@ source_startup_scripts(parmp)
      * any things he doesn't like.
      */
     if (parmp->evim_mode)
-        (void)do_source((char_u *)EVIM_FILE, FALSE, DOSO_NONE);
+        (void)do_source((char_u *)EVIM_FILE, FALSE);
 
     /*
      * If -u argument given, use only the initializations from that file and nothing else.
@@ -1508,7 +1465,7 @@ source_startup_scripts(parmp)
         }
         else
         {
-            if (do_source(parmp->use_vimrc, FALSE, DOSO_NONE) != OK)
+            if (do_source(parmp->use_vimrc, FALSE) != OK)
                 EMSG2("E282: Cannot read from \"%s\"", parmp->use_vimrc);
         }
     }
@@ -1517,7 +1474,7 @@ source_startup_scripts(parmp)
         /*
          * Get system wide defaults, if the file name is defined.
          */
-        (void)do_source((char_u *)SYS_VIMRC_FILE, FALSE, DOSO_NONE);
+        (void)do_source((char_u *)SYS_VIMRC_FILE, FALSE);
 
         /*
          * Try to read initialization commands from the following places:
@@ -1529,11 +1486,11 @@ source_startup_scripts(parmp)
          * - second user exrc file ($VIM/.exrc for Dos)
          * The first that exists is used, the rest is ignored.
          */
-        if (process_env((char_u *)"VIMINIT", TRUE) != OK)
+        if (process_env((char_u *)"VIMINIT") != OK)
         {
-            if (do_source((char_u *)USR_VIMRC_FILE, TRUE, DOSO_VIMRC) == FAIL
-                && process_env((char_u *)"EXINIT", FALSE) == FAIL
-                && do_source((char_u *)USR_EXRC_FILE, FALSE, DOSO_NONE) == FAIL)
+            if (do_source((char_u *)USR_VIMRC_FILE, TRUE) == FAIL
+                && process_env((char_u *)"EXINIT") == FAIL
+                && do_source((char_u *)USR_EXRC_FILE, FALSE) == FAIL)
             {
             }
         }
@@ -1555,7 +1512,7 @@ source_startup_scripts(parmp)
             i = FAIL;
             if (fullpathcmp((char_u *)USR_VIMRC_FILE, (char_u *)VIMRC_FILE, FALSE) != FPC_SAME
                 && fullpathcmp((char_u *)SYS_VIMRC_FILE, (char_u *)VIMRC_FILE, FALSE) != FPC_SAME)
-                i = do_source((char_u *)VIMRC_FILE, TRUE, DOSO_VIMRC);
+                i = do_source((char_u *)VIMRC_FILE, TRUE);
 
             if (i == FAIL)
             {
@@ -1565,7 +1522,7 @@ source_startup_scripts(parmp)
                 else
                     secure = 0;
                 if (fullpathcmp((char_u *)USR_EXRC_FILE, (char_u *)EXRC_FILE, FALSE) != FPC_SAME)
-                    (void)do_source((char_u *)EXRC_FILE, FALSE, DOSO_NONE);
+                    (void)do_source((char_u *)EXRC_FILE, FALSE);
             }
         }
         if (secure == 2)
@@ -1579,9 +1536,8 @@ source_startup_scripts(parmp)
  * Returns FAIL if the environment variable was not executed, OK otherwise.
  */
     int
-process_env(env, is_viminit)
+process_env(env)
     char_u      *env;
-    int         is_viminit; /* when TRUE, called for VIMINIT */
 {
     char_u      *initstr;
     char_u      *save_sourcing_name;
@@ -1590,8 +1546,6 @@ process_env(env, is_viminit)
 
     if ((initstr = mch_getenv(env)) != NULL && *initstr != NUL)
     {
-        if (is_viminit)
-            vimrc_found(NULL, NULL);
         save_sourcing_name = sourcing_name;
         save_sourcing_lnum = sourcing_lnum;
         sourcing_name = env;
@@ -1620,8 +1574,7 @@ file_owned(fname)
     uid_t       uid = getuid();
 
     return !(mch_stat(fname, &s) != 0 || s.st_uid != uid
-            || mch_lstat(fname, &s) != 0 || s.st_uid != uid
-            );
+          || mch_lstat(fname, &s) != 0 || s.st_uid != uid);
 }
 
 /*

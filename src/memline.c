@@ -625,6 +625,7 @@ ml_check_b0_id(b0p)
                 && b0p->b0_id[1] != BLOCK0_ID1_C2)
             )
         return FAIL;
+
     return OK;
 }
 
@@ -1503,8 +1504,7 @@ recover_names(fname, list, nr, fname_out)
             file_count += num_files;
             if (nr <= file_count)
             {
-                *fname_out = vim_strsave(
-                                      files[nr - 1 + num_files - file_count]);
+                *fname_out = vim_strsave(files[nr - 1 + num_files - file_count]);
                 dirp = (char_u *)"";                /* stop searching */
             }
         }
@@ -3829,8 +3829,8 @@ findswapname(buf, dirp, old_fname)
                                         ? (char_u *)"Swap file already exists!"
                                         : name,
                                     process_still_running
-                                        ? (char_u *)"&Open Read-Only\n&Edit anyway\n&Recover\n&Quit\n&Abort" :
-                                        (char_u *)"&Open Read-Only\n&Edit anyway\n&Recover\n&Delete it\n&Quit\n&Abort", 1, NULL, FALSE);
+                                        ? (char_u *)"&Open Read-Only\n&Edit anyway\n&Recover\n&Quit\n&Abort"
+                                        : (char_u *)"&Open Read-Only\n&Edit anyway\n&Recover\n&Delete it\n&Quit\n&Abort", 1, NULL, FALSE);
 
                         if (process_still_running && choice >= 4)
                             choice++;   /* Skip missing "Delete it" button */
@@ -4008,6 +4008,7 @@ fnamecmp_ino(fname_c, fname_s, ino_block0)
      */
     if (ino_s == 0 && ino_c == 0 && retval_c == FAIL && retval_s == FAIL)
         return FALSE;
+
     return TRUE;
 }
 #endif
@@ -4419,6 +4420,7 @@ ml_find_line_or_offset(buf, lnum, offp)
             curline += idx - start_idx + extra;
             if (curline > buf->b_ml.ml_line_count)
                 return -1;      /* exactly one byte beyond the end */
+
             return curline;
         }
         curline = buf->b_ml.ml_locked_high + 1;

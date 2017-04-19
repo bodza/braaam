@@ -660,7 +660,7 @@ getcmdline(firstc, count, indent)
                 ui_cursor_shape();      /* may show different cursor shape */
                 goto cmdline_not_changed;
 
-/*      case '@':   only in very old vi */
+     /* case '@':   only in very old vi */
         case Ctrl_U:
                 /* delete all characters left of the cursor */
                 j = ccline.cmdpos;
@@ -1391,6 +1391,7 @@ text_locked()
 {
     if (cmdwin_type != 0)
         return TRUE;
+
     return textlock != 0;
 }
 
@@ -1442,6 +1443,7 @@ cmdline_charsize(idx)
 {
     if (cmdline_star > 0)           /* showing '*', always 1 position */
         return 1;
+
     return ptr2cells(ccline.cmdbuff + idx);
 }
 
@@ -1738,8 +1740,7 @@ redraw:
         }
         else
         {
-            msg_outtrans_len(
-                     ((char_u *)line_ga.ga_data) + line_ga.ga_len, len);
+            msg_outtrans_len(((char_u *)line_ga.ga_data) + line_ga.ga_len, len);
             vcol += char2cells(c1);
         }
         line_ga.ga_len += len;
@@ -2568,6 +2569,7 @@ ExpandOne(xp, str, orig, options, mode)
             }
             if (findex == -1)
                 return vim_strsave(orig_save);
+
             return vim_strsave(xp->xp_files[findex]);
         }
         else
@@ -2986,9 +2988,8 @@ showmatches(xp, wildmenu)
                          * $HOME has been replaced with ~/. */
                         exp_path = expand_env_save_opt(files_found[k], TRUE);
                         halved_slash = backslash_halve_save(
-                                exp_path != NULL ? exp_path : files_found[k]);
-                        j = mch_isdir(halved_slash != NULL ? halved_slash
-                                                            : files_found[k]);
+                                (exp_path != NULL) ? exp_path : files_found[k]);
+                        j = mch_isdir(halved_slash != NULL ? halved_slash : files_found[k]);
                         vim_free(exp_path);
                         vim_free(halved_slash);
                     }
@@ -4014,6 +4015,7 @@ hist_char2type(c)
         return HIST_INPUT;
     if (c == '>')
         return HIST_DEBUG;
+
     return HIST_SEARCH;     /* must be '?' or '/' */
 }
 
@@ -4056,6 +4058,7 @@ get_history_arg(xp, idx)
         return (char_u *)history_names[idx - short_names_count];
     if (idx == short_names_count + history_name_count)
         return (char_u *)"all";
+
     return NULL;
 }
 
@@ -4082,8 +4085,7 @@ init_history()
         {
             if (newlen)
             {
-                temp = (histentry_T *)lalloc(
-                                (long_u)(newlen * sizeof(histentry_T)), TRUE);
+                temp = (histentry_T *)lalloc((long_u)(newlen * sizeof(histentry_T)), TRUE);
                 if (temp == NULL)   /* out of memory! */
                 {
                     if (type == 0)  /* first one: just keep the old length */
@@ -4323,6 +4325,7 @@ get_ccline_ptr()
         return &ccline;
     if (prev_ccline_used && prev_ccline.cmdbuff != NULL)
         return &prev_ccline;
+
     return NULL;
 }
 
@@ -4338,6 +4341,7 @@ get_cmdline_str()
 
     if (p == NULL)
         return NULL;
+
     return vim_strnsave(p->cmdbuff, p->cmdlen);
 }
 
@@ -4354,6 +4358,7 @@ get_cmdline_pos()
 
     if (p == NULL)
         return -1;
+
     return p->cmdpos;
 }
 
@@ -4395,6 +4400,7 @@ get_cmdline_type()
         return NUL;
     if (p->cmdfirstc == NUL)
         return (p->input_fn) ? '@' : '-';
+
     return p->cmdfirstc;
 }
 
@@ -4974,9 +4980,7 @@ script_get(eap, cmd)
 
     for (;;)
     {
-        theline = eap->getline(
-            eap->cstack->cs_looplevel > 0 ? -1 :
-            NUL, eap->cookie, 0);
+        theline = eap->getline(eap->cstack->cs_looplevel > 0 ? -1 : NUL, eap->cookie, 0);
 
         if (theline == NULL || STRCMP(end_pattern, theline) == 0)
         {
