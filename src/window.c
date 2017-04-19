@@ -82,7 +82,7 @@ do_window(nchar, Prenum, xchar)
     else
         Prenum1 = Prenum;
 
-#define CHECK_CMDWIN if (cmdwin_type != 0) { EMSG(_(e_cmdwin)); break; }
+#define CHECK_CMDWIN if (cmdwin_type != 0) { EMSG((char *)e_cmdwin); break; }
 
     switch (nchar)
     {
@@ -226,7 +226,7 @@ do_window(nchar, Prenum, xchar)
 /* move window to new tab page */
     case 'T':
                 if (one_window())
-                    MSG(_(m_onlyone));
+                    MSG((char *)m_onlyone);
                 else
                 {
                     tabpage_T   *oldtab = curtab;
@@ -522,7 +522,7 @@ win_split(size, flags)
     flags |= cmdmod.split;
     if ((flags & WSP_TOP) && (flags & WSP_BOT))
     {
-        EMSG(_("E442: Can't split topleft and botright at the same time"));
+        EMSG((char *)"E442: Can't split topleft and botright at the same time");
         return FAIL;
     }
 
@@ -576,7 +576,7 @@ win_split_ins(size, flags, new_wp, dir)
     {
         if (oldwin->w_height <= p_wmh && new_wp == NULL)
         {
-            EMSG(_(e_noroom));
+            EMSG((char *)e_noroom);
             return FAIL;
         }
         need_status = STATUS_HEIGHT;
@@ -627,7 +627,7 @@ win_split_ins(size, flags, new_wp, dir)
         }
         if (available < needed && new_wp == NULL)
         {
-            EMSG(_(e_noroom));
+            EMSG((char *)e_noroom);
             return FAIL;
         }
         if (new_size == 0)
@@ -707,7 +707,7 @@ win_split_ins(size, flags, new_wp, dir)
         }
         if (available < needed && new_wp == NULL)
         {
-            EMSG(_(e_noroom));
+            EMSG((char *)e_noroom);
             return FAIL;
         }
         oldwin_height = oldwin->w_height;
@@ -1304,7 +1304,7 @@ win_rotate(upwards, count)
     for (frp = curwin->w_frame->fr_parent->fr_child; frp != NULL; frp = frp->fr_next)
         if (frp->fr_win == NULL)
         {
-            EMSG(_("E443: Cannot rotate when another window is split"));
+            EMSG((char *)"E443: Cannot rotate when another window is split");
             return;
         }
 
@@ -1937,7 +1937,7 @@ win_close(win, free_buf)
 
     if (last_window())
     {
-        EMSG(_("E444: Cannot close last window"));
+        EMSG((char *)"E444: Cannot close last window");
         return FAIL;
     }
 
@@ -1945,12 +1945,12 @@ win_close(win, free_buf)
         return FAIL; /* window is already being closed */
     if (win == aucmd_win)
     {
-        EMSG(_("E813: Cannot close autocmd window"));
+        EMSG((char *)"E813: Cannot close autocmd window");
         return FAIL;
     }
     if ((firstwin == aucmd_win || lastwin == aucmd_win) && one_window())
     {
-        EMSG(_("E814: Cannot close window, only autocmd window would remain"));
+        EMSG((char *)"E814: Cannot close window, only autocmd window would remain");
         return FAIL;
     }
 
@@ -2122,7 +2122,7 @@ win_close_othertab(win, free_buf, tp)
                 ;
             if (ptp == NULL)
             {
-                EMSG2(_(e_intern2), "win_close_othertab()");
+                EMSG2((char *)e_intern2, "win_close_othertab()");
                 return;
             }
             ptp->tp_next = tp->tp_next;
@@ -2914,7 +2914,7 @@ close_others(message, forceit)
     if (one_window())
     {
         if (message && !autocmd_busy)
-            MSG(_(m_onlyone));
+            MSG((char *)m_onlyone);
         return;
     }
 
@@ -2950,7 +2950,7 @@ close_others(message, forceit)
     }
 
     if (message && lastwin != firstwin)
-        EMSG(_("E445: Other window contains changes"));
+        EMSG((char *)"E445: Other window contains changes");
 }
 
 /*
@@ -3405,9 +3405,9 @@ goto_tabpage(n)
     {
         /* Not allowed when editing the command line. */
         if (cmdwin_type != 0)
-            EMSG(_(e_cmdwin));
+            EMSG((char *)e_cmdwin);
         else
-            EMSG(_(e_secure));
+            EMSG((char *)e_secure);
         return;
     }
 
@@ -4709,7 +4709,7 @@ win_setminheight()
         --p_wmh;
         if (first)
         {
-            EMSG(_(e_noroom));
+            EMSG((char *)e_noroom);
             first = FALSE;
         }
     }
@@ -5155,7 +5155,7 @@ command_height()
             {
                 if (frp == NULL)
                 {
-                    EMSG(_(e_noroom));
+                    EMSG((char *)e_noroom);
                     p_ch = old_p_ch;
                     curtab->tp_ch_used = p_ch;
                     cmdline_row = Rows - p_ch;
@@ -5249,7 +5249,7 @@ last_status_rec(fr, statusline)
             {
                 if (fp == topframe)
                 {
-                    EMSG(_(e_noroom));
+                    EMSG((char *)e_noroom);
                     return;
                 }
                 /* In a column of frames: go to frame above.  If already at
@@ -5744,12 +5744,12 @@ match_add(wp, grp, pat, prio, id, pos_list)
     }
     if ((hlg_id = syn_namen2id(grp, (int)STRLEN(grp))) == 0)
     {
-        EMSG2(_(e_nogroup), grp);
+        EMSG2((char *)e_nogroup, grp);
         return -1;
     }
     if (pat != NULL && (regprog = vim_regcomp(pat, RE_MAGIC)) == NULL)
     {
-        EMSG2(_(e_invarg2), pat);
+        EMSG2((char *)e_invarg2, pat);
         return -1;
     }
 
@@ -5838,7 +5838,7 @@ match_add(wp, grp, pat, prio, id, pos_list)
             }
             else
             {
-                EMSG(_("List or number required"));
+                EMSG((char *)"List or number required");
                 goto fail;
             }
             if (toplnum == 0 || lnum < toplnum)

@@ -1660,7 +1660,6 @@ get_scroll_overlap(lp, dir)
     return;
 }
 
-/* #define KEEP_SCREEN_LINE */
 /*
  * Scroll 'scroll' lines up or down.
  */
@@ -1696,13 +1695,11 @@ halfpage(flag, Prenum)
                     break;
                 ++curwin->w_topline;
 
-#if !defined(KEEP_SCREEN_LINE)
                 if (curwin->w_cursor.lnum < curbuf->b_ml.ml_line_count)
                 {
                     ++curwin->w_cursor.lnum;
                     curwin->w_valid &= ~(VALID_VIRTCOL|VALID_CHEIGHT|VALID_WCOL);
                 }
-#endif
             }
             curwin->w_valid &= ~(VALID_CROW|VALID_WROW);
             scrolled += i;
@@ -1724,7 +1721,6 @@ halfpage(flag, Prenum)
             }
         }
 
-#if !defined(KEEP_SCREEN_LINE)
         /*
          * When hit bottom of the file: move cursor down.
          */
@@ -1733,17 +1729,6 @@ halfpage(flag, Prenum)
             curwin->w_cursor.lnum += n;
             check_cursor_lnum();
         }
-#else
-        /* try to put the cursor in the same screen line */
-        while ((curwin->w_cursor.lnum < curwin->w_topline || scrolled > 0)
-                             && curwin->w_cursor.lnum < curwin->w_botline - 1)
-        {
-            scrolled -= plines(curwin->w_cursor.lnum);
-            if (scrolled < 0 && curwin->w_cursor.lnum >= curwin->w_topline)
-                break;
-            ++curwin->w_cursor.lnum;
-        }
-#endif
     }
     else
     {
@@ -1761,15 +1746,12 @@ halfpage(flag, Prenum)
             }
             curwin->w_valid &= ~(VALID_CROW|VALID_WROW|VALID_BOTLINE|VALID_BOTLINE_AP);
             scrolled += i;
-#if !defined(KEEP_SCREEN_LINE)
             if (curwin->w_cursor.lnum > 1)
             {
                 --curwin->w_cursor.lnum;
                 curwin->w_valid &= ~(VALID_VIRTCOL|VALID_CHEIGHT|VALID_WCOL);
             }
-#endif
         }
-#if !defined(KEEP_SCREEN_LINE)
         /*
          * When hit top of the file: move cursor up.
          */
@@ -1780,18 +1762,6 @@ halfpage(flag, Prenum)
             else
                 curwin->w_cursor.lnum -= n;
         }
-#else
-        /* try to put the cursor in the same screen line */
-        scrolled += n;      /* move cursor when topline is 1 */
-        while (curwin->w_cursor.lnum > curwin->w_topline
-              && (scrolled > 0 || curwin->w_cursor.lnum >= curwin->w_botline))
-        {
-            scrolled -= plines(curwin->w_cursor.lnum - 1);
-            if (scrolled < 0 && curwin->w_cursor.lnum < curwin->w_botline)
-                break;
-            --curwin->w_cursor.lnum;
-        }
-#endif
     }
     cursor_correct();
     beginline(BL_SOL | BL_FIX);

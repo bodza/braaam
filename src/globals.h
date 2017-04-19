@@ -400,10 +400,8 @@ EXTERN int      ru_col;         /* column for ruler */
 EXTERN int      ru_wid;         /* 'rulerfmt' width of ruler when non-zero */
 EXTERN int      sc_col;         /* column for shown command */
 
-#if defined(TEMPDIRNAMES)
 EXTERN char_u   *vim_tempdir INIT(= NULL); /* Name of Vim's own temp dir.
                                               Ends in a slash. */
-#endif
 
 /*
  * When starting or exiting some things are done differently (e.g. screen
@@ -647,10 +645,6 @@ EXTERN int      ins_at_eol INIT(= FALSE); /* put cursor after eol when
 
 EXTERN int      no_abbr INIT(= TRUE);   /* TRUE when no abbreviations loaded */
 
-#if defined(USE_EXE_NAME)
-EXTERN char_u   *exe_name;              /* the name of the executable */
-#endif
-
 #if defined(USE_ON_FLY_SCROLL)
 EXTERN int      dont_scroll INIT(= FALSE);/* don't use scrollbars when TRUE */
 #endif
@@ -663,7 +657,6 @@ EXTERN int      msg_silent INIT(= 0);   /* don't print messages */
 EXTERN int      emsg_silent INIT(= 0);  /* don't print error messages */
 EXTERN int      cmd_silent INIT(= FALSE); /* don't echo the command line */
 
-#define HAS_SWAP_EXISTS_ACTION
 EXTERN int      swap_exists_action INIT(= SEA_NONE); /* For dialog when swap file already exists. */
 EXTERN int      swap_exists_did_quit INIT(= FALSE);  /* Selected "quit" at the dialog. */
 
@@ -710,9 +703,6 @@ EXTERN int      read_cmd_fd INIT(= 0);      /* fd to read commands from */
 /* volatile because it is used in signal handler catch_sigint(). */
 EXTERN volatile int got_int INIT(= FALSE);    /* set to TRUE when interrupt
                                                 signal occurred */
-#if defined(USE_TERM_CONSOLE)
-EXTERN int      term_console INIT(= FALSE); /* set to TRUE when console used */
-#endif
 EXTERN int      termcap_active INIT(= FALSE);   /* set by starttermcap() */
 EXTERN int      cur_tmode INIT(= TMODE_COOK);   /* input terminal mode */
 EXTERN int      bangredo INIT(= FALSE);     /* set to TRUE with ! command */
@@ -854,15 +844,6 @@ EXTERN int              need_cursor_line_redraw INIT(= FALSE);
  * command until the first is completed.
  */
 EXTERN int      suppress_alternate_input INIT(= FALSE);
-#endif
-
-#if defined(USE_MCH_ERRMSG)
-/* Grow array to collect error messages in until they can be displayed. */
-EXTERN garray_T error_ga
-#if defined(DO_INIT)
-        = {0, 0, 0, 0, NULL}
-#endif
-        ;
 #endif
 
 /*

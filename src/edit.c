@@ -50,9 +50,7 @@ static void ins_up(int startcol);
 static void ins_pageup(void);
 static void ins_down(int startcol);
 static void ins_pagedown(void);
-#if defined(FEAT_DND)
 static void ins_drop(void);
-#endif
 static int  ins_tab(void);
 static int  ins_eol(int c);
 static int  ins_digraph(void);
@@ -137,14 +135,14 @@ edit(cmdchar, startln, count)
     /* Don't allow inserting in the sandbox. */
     if (sandbox != 0)
     {
-        EMSG(_(e_sandbox));
+        EMSG((char *)e_sandbox);
         return FALSE;
     }
     /* Don't allow changes in the buffer while editing the cmdline.  The
      * caller of getcmdline() may get confused. */
     if (textlock != 0)
     {
-        EMSG(_(e_secure));
+        EMSG((char *)e_secure);
         return FALSE;
     }
 
@@ -791,11 +789,9 @@ doESCkey:
             ins_pagedown();
             break;
 
-#if defined(FEAT_DND)
         case K_DROP:    /* drag-n-drop event */
             ins_drop();
             break;
-#endif
 
         case K_S_TAB:   /* When not mapped, use like a normal TAB */
             c = TAB;
@@ -2881,7 +2877,7 @@ stuff_inserted(c, count, no_esc)
     ptr = get_last_insert();
     if (ptr == NULL)
     {
-        EMSG(_(e_noinstext));
+        EMSG((char *)e_noinstext);
         return FAIL;
     }
 
@@ -4699,13 +4695,11 @@ ins_pagedown()
         vim_beep();
 }
 
-#if defined(FEAT_DND)
     static void
 ins_drop()
 {
     do_put('~', BACKWARD, 1L, PUT_CURSEND);
 }
-#endif
 
 /*
  * Handle TAB in Insert or Replace mode.

@@ -1699,7 +1699,7 @@ set_init_1()
     for (opt_idx = 0; !istermoption(&options[opt_idx]); opt_idx++)
     {
         if ((options[opt_idx].flags & P_GETTEXT) && options[opt_idx].var != NULL)
-            p = (char_u *)_(*(char **)options[opt_idx].var);
+            p = (char_u *)(*(char **)options[opt_idx].var);
         else
             p = option_expand(opt_idx, NULL);
         if (p != NULL && (p = vim_strsave(p)) != NULL)
@@ -2301,7 +2301,7 @@ do_set(arg, opt_flags)
             {
                 if (flags & (P_SECURE | P_NO_ML))
                 {
-                    errmsg = (char_u *)_("E520: Not allowed in a modeline");
+                    errmsg = (char_u *)"E520: Not allowed in a modeline";
                     goto skip;
                 }
             }
@@ -2309,7 +2309,7 @@ do_set(arg, opt_flags)
             /* Disallow changing some options in the sandbox */
             if (sandbox != 0 && (flags & P_SECURE))
             {
-                errmsg = (char_u *)_(e_sandbox);
+                errmsg = (char_u *)e_sandbox;
                 goto skip;
             }
 
@@ -2409,7 +2409,7 @@ do_set(arg, opt_flags)
                     else if (nextchar == '&')
                         value = (int)(long)(long_i)options[opt_idx].def_val[
                                                 ((flags & P_VI_DEF) || cp_val)
-                                                 ?  VI_DEFAULT : VIM_DEFAULT];
+                                                 ? VI_DEFAULT : VIM_DEFAULT];
                     else if (nextchar == '<')
                     {
                         /* For 'autoread' -1 means to use global value. */
@@ -2460,7 +2460,7 @@ do_set(arg, opt_flags)
                         if (nextchar == '&')
                             value = (long)(long_i)options[opt_idx].def_val[
                                                 ((flags & P_VI_DEF) || cp_val)
-                                                 ?  VI_DEFAULT : VIM_DEFAULT];
+                                                 ? VI_DEFAULT : VIM_DEFAULT];
                         else if (nextchar == '<')
                         {
                             /* For 'undolevels' NO_LOCAL_UNDOLEVEL means to
@@ -2533,7 +2533,7 @@ do_set(arg, opt_flags)
                         {
                             newval = options[opt_idx].def_val[
                                                 ((flags & P_VI_DEF) || cp_val)
-                                                 ?  VI_DEFAULT : VIM_DEFAULT];
+                                                 ? VI_DEFAULT : VIM_DEFAULT];
                             if ((char_u **)varp == &p_bg)
                             {
                                 /* guess the value of 'background' */
@@ -2857,7 +2857,7 @@ skip:
 
         if (errmsg != NULL)
         {
-            vim_strncpy(IObuff, (char_u *)_(errmsg), IOSIZE - 1);
+            vim_strncpy(IObuff, (char_u *)errmsg, IOSIZE - 1);
             i = (int)STRLEN(IObuff) + 2;
             if (i + (arg - startarg) < IOSIZE)
             {
@@ -2926,7 +2926,7 @@ illegal_char(errbuf, c)
 {
     if (errbuf == NULL)
         return (char_u *)"";
-    sprintf((char *)errbuf, _("E539: Illegal character <%s>"), (char *)transchar(c));
+    sprintf((char *)errbuf, (char *)"E539: Illegal character <%s>", (char *)transchar(c));
     return errbuf;
 }
 
@@ -3230,7 +3230,7 @@ was_set_insecurely(opt, opt_flags)
         flagp = insecure_flag(idx, opt_flags);
         return (*flagp & P_INSECURE) != 0;
     }
-    EMSG2(_(e_intern2), "was_set_insecurely()");
+    EMSG2((char *)e_intern2, "was_set_insecurely()");
     return -1;
 }
 
@@ -3291,8 +3291,8 @@ set_string_option_direct(name, opt_idx, val, opt_flags, set_sid)
         idx = findoption(name);
         if (idx < 0)    /* not found (should not happen) */
         {
-            EMSG2(_(e_intern2), "set_string_option_direct()");
-            EMSG2(_("For option %s"), name);
+            EMSG2((char *)e_intern2, "set_string_option_direct()");
+            EMSG2((char *)"For option %s", name);
             return;
         }
     }
@@ -3539,9 +3539,9 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
         if (check_opt_strings(p_ambw, p_ambw_values, FALSE) != OK)
             errmsg = e_invarg;
         else if (set_chars_option(&p_lcs) != NULL)
-            errmsg = (char_u *)_("E834: Conflicts with value of 'listchars'");
+            errmsg = (char_u *)"E834: Conflicts with value of 'listchars'";
         else if (set_chars_option(&p_fcs) != NULL)
-            errmsg = (char_u *)_("E835: Conflicts with value of 'fillchars'");
+            errmsg = (char_u *)"E835: Conflicts with value of 'fillchars'";
     }
 
     /* 'background' */
@@ -5028,7 +5028,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
         if (errbuf != NULL)
         {
             vim_snprintf((char *)errbuf, errbuflen,
-                               _("E593: Need at least %d lines"), min_rows());
+                               (char *)"E593: Need at least %d lines", min_rows());
             errmsg = errbuf;
         }
         Rows = min_rows();
@@ -5038,7 +5038,7 @@ set_num_option(opt_idx, varp, value, errbuf, errbuflen, opt_flags)
         if (errbuf != NULL)
         {
             vim_snprintf((char *)errbuf, errbuflen,
-                            _("E594: Need at least %d columns"), MIN_COLUMNS);
+                            (char *)"E594: Need at least %d columns", MIN_COLUMNS);
             errmsg = errbuf;
         }
         Columns = MIN_COLUMNS;
@@ -5326,14 +5326,14 @@ set_option_value(name, number, string, opt_flags)
 
     opt_idx = findoption(name);
     if (opt_idx < 0)
-        EMSG2(_("E355: Unknown option: %s"), name);
+        EMSG2((char *)"E355: Unknown option: %s", name);
     else
     {
         flags = options[opt_idx].flags;
         /* Disallow changing some options in the sandbox */
         if (sandbox > 0 && (flags & P_SECURE))
         {
-            EMSG(_(e_sandbox));
+            EMSG((char *)e_sandbox);
             return NULL;
         }
         if (flags & P_STRING)
@@ -5356,7 +5356,7 @@ set_option_value(name, number, string, opt_flags)
                         /* There's another character after zeros or the string
                          * is empty.  In both cases, we are trying to set a
                          * num option using a string. */
-                        EMSG3(_("E521: Number required: &%s = '%s'"), name, string);
+                        EMSG3((char *)"E521: Number required: &%s = '%s'", name, string);
                         return NULL;     /* do nothing as we hit an error */
                     }
                 }
@@ -5473,13 +5473,13 @@ showoptions(all, opt_flags)
 
     /* Highlight title */
     if (all == 2)
-        MSG_PUTS_TITLE(_("\n--- Terminal codes ---"));
+        MSG_PUTS_TITLE((char *)"\n--- Terminal codes ---");
     else if (opt_flags & OPT_GLOBAL)
-        MSG_PUTS_TITLE(_("\n--- Global option values ---"));
+        MSG_PUTS_TITLE((char *)"\n--- Global option values ---");
     else if (opt_flags & OPT_LOCAL)
-        MSG_PUTS_TITLE(_("\n--- Local option values ---"));
+        MSG_PUTS_TITLE((char *)"\n--- Local option values ---");
     else
-        MSG_PUTS_TITLE(_("\n--- Options ---"));
+        MSG_PUTS_TITLE((char *)"\n--- Options ---");
 
     /*
      * do the loop two times:
@@ -6146,7 +6146,7 @@ get_varp(p)
         case PV_TX:     return (char_u *)&(curbuf->b_p_tx);
         case PV_UDF:    return (char_u *)&(curbuf->b_p_udf);
         case PV_WM:     return (char_u *)&(curbuf->b_p_wm);
-        default:        EMSG(_("E356: get_varp ERROR"));
+        default:        EMSG((char *)"E356: get_varp ERROR");
     }
     /* always return a valid pointer to avoid a crash! */
     return (char_u *)&(curbuf->b_p_wm);

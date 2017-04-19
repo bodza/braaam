@@ -19,7 +19,6 @@
 #include "vim.h"
 
 static char_u   *buflist_match(regmatch_T *rmp, buf_T *buf, int ignore_case);
-#define HAVE_BUFLIST_MATCH
 static char_u   *fname_match(regmatch_T *rmp, char_u *name, int ignore_case);
 static void     buflist_setfpos(buf_T *buf, win_T *win, linenr_T lnum, colnr_T col, int copy_options);
 static wininfo_T *find_wininfo(buf_T *buf, int skip_diff_buffer);
@@ -75,10 +74,10 @@ open_buffer(read_stdin, eap, flags)
          */
         if (curbuf == NULL)
         {
-            EMSG(_("E82: Cannot allocate any buffer, exiting..."));
+            EMSG((char *)"E82: Cannot allocate any buffer, exiting...");
             getout(2);
         }
-        EMSG(_("E83: Cannot allocate buffer, using other one..."));
+        EMSG((char *)"E83: Cannot allocate buffer, using other one...");
         enter_buffer(curbuf);
         if (old_tw != curbuf->b_p_tw)
             check_colorcolumn(curwin);
@@ -277,7 +276,7 @@ close_buffer(win, buf, action, abort_if_last)
         {
             /* Autocommands deleted the buffer. */
 aucmd_abort:
-            EMSG(_(e_auabort));
+            EMSG((char *)e_auabort);
             return;
         }
         buf->b_closing = FALSE;
@@ -541,13 +540,10 @@ goto_buffer(eap, start, dir, count)
     int         dir;
     int         count;
 {
-#if defined(HAS_SWAP_EXISTS_ACTION)
     buf_T       *old_curbuf = curbuf;
 
     swap_exists_action = SEA_DIALOG;
-#endif
     (void)do_buffer(*eap->cmd == 's' ? DOBUF_SPLIT : DOBUF_GOTO, start, dir, count, eap->forceit);
-#if defined(HAS_SWAP_EXISTS_ACTION)
     if (swap_exists_action == SEA_QUIT && *eap->cmd == 's')
     {
         cleanup_T   cs;
@@ -567,10 +563,8 @@ goto_buffer(eap, start, dir, count)
     }
     else
         handle_swap_exists(old_curbuf);
-#endif
 }
 
-#if defined(HAS_SWAP_EXISTS_ACTION)
 /*
  * Handle the situation of swap_exists_action being set.
  * It is allowed for "old_curbuf" to be NULL or invalid.
@@ -627,7 +621,6 @@ handle_swap_exists(old_curbuf)
     }
     swap_exists_action = SEA_NONE;
 }
-#endif
 
 /*
  * do_bufdel() - delete or unload buffer(s)
@@ -666,7 +659,7 @@ do_bufdel(command, arg, addr_count, start_bnr, end_bnr, forceit)
         if (addr_count == 2)
         {
             if (*arg)           /* both range and argument is not allowed */
-                return (char_u *)_(e_trailing);
+                return (char_u *)e_trailing;
             bnr = start_bnr;
         }
         else    /* addr_count == 1 */
@@ -717,11 +710,11 @@ do_bufdel(command, arg, addr_count, start_bnr, end_bnr, forceit)
         if (deleted == 0)
         {
             if (command == DOBUF_UNLOAD)
-                STRCPY(IObuff, _("E515: No buffers were unloaded"));
+                STRCPY(IObuff, (char *)"E515: No buffers were unloaded");
             else if (command == DOBUF_DEL)
-                STRCPY(IObuff, _("E516: No buffers were deleted"));
+                STRCPY(IObuff, (char *)"E516: No buffers were deleted");
             else
-                STRCPY(IObuff, _("E517: No buffers were wiped out"));
+                STRCPY(IObuff, (char *)"E517: No buffers were wiped out");
             errormsg = IObuff;
         }
         else if (deleted >= p_report)
@@ -729,23 +722,23 @@ do_bufdel(command, arg, addr_count, start_bnr, end_bnr, forceit)
             if (command == DOBUF_UNLOAD)
             {
                 if (deleted == 1)
-                    MSG(_("1 buffer unloaded"));
+                    MSG((char *)"1 buffer unloaded");
                 else
-                    smsg((char_u *)_("%d buffers unloaded"), deleted);
+                    smsg((char_u *)"%d buffers unloaded", deleted);
             }
             else if (command == DOBUF_DEL)
             {
                 if (deleted == 1)
-                    MSG(_("1 buffer deleted"));
+                    MSG((char *)"1 buffer deleted");
                 else
-                    smsg((char_u *)_("%d buffers deleted"), deleted);
+                    smsg((char_u *)"%d buffers deleted", deleted);
             }
             else
             {
                 if (deleted == 1)
-                    MSG(_("1 buffer wiped out"));
+                    MSG((char *)"1 buffer wiped out");
                 else
-                    smsg((char_u *)_("%d buffers wiped out"), deleted);
+                    smsg((char_u *)"%d buffers wiped out", deleted);
             }
         }
     }
@@ -770,7 +763,7 @@ empty_curbuf(close_others, forceit, action)
 
     if (action == DOBUF_UNLOAD)
     {
-        EMSG(_("E90: Cannot unload last buffer"));
+        EMSG((char *)"E90: Cannot unload last buffer");
         return FAIL;
     }
 
@@ -842,7 +835,7 @@ do_buffer(action, start, dir, count, forceit)
         }
         if (!bufIsChanged(buf))
         {
-            EMSG(_("E84: No modified buffer found"));
+            EMSG((char *)"E84: No modified buffer found");
             return FAIL;
         }
     }
@@ -881,7 +874,7 @@ do_buffer(action, start, dir, count, forceit)
             if (bp == buf)
             {
                 /* back where we started, didn't find anything. */
-                EMSG(_("E85: There is no listed buffer"));
+                EMSG((char *)"E85: There is no listed buffer");
                 return FAIL;
             }
         }
@@ -893,12 +886,12 @@ do_buffer(action, start, dir, count, forceit)
         {
             /* don't warn when deleting */
             if (!unload)
-                EMSGN(_(e_nobufnr), count);
+                EMSGN((char *)e_nobufnr, count);
         }
         else if (dir == FORWARD)
-            EMSG(_("E87: Cannot go beyond last buffer"));
+            EMSG((char *)"E87: Cannot go beyond last buffer");
         else
-            EMSG(_("E88: Cannot go before first buffer"));
+            EMSG((char *)"E88: Cannot go before first buffer");
         return FAIL;
     }
 
@@ -920,8 +913,7 @@ do_buffer(action, start, dir, count, forceit)
             {
                 dialog_changed(buf, FALSE);
                 if (!buf_valid(buf))
-                    /* Autocommand deleted buffer, oops!  It's not changed
-                     * now. */
+                    /* Autocommand deleted buffer, oops!  It's not changed now. */
                     return FAIL;
                 /* If it's still changed fail silently, the dialog already
                  * mentioned why it fails. */
@@ -930,7 +922,7 @@ do_buffer(action, start, dir, count, forceit)
             }
             else
             {
-                EMSGN(_("E89: No write since last change for buffer %ld (add ! to override)"),
+                EMSGN((char *)"E89: No write since last change for buffer %ld (add ! to override)",
                                                                  buf->b_fnum);
                 return FAIL;
             }
@@ -1108,7 +1100,7 @@ do_buffer(action, start, dir, count, forceit)
         }
         if (bufIsChanged(curbuf))
         {
-            EMSG(_(e_nowrtmsg));
+            EMSG((char *)e_nowrtmsg);
             return FAIL;
         }
     }
@@ -1411,7 +1403,7 @@ buflist_new(ffname, sfname, lnum, flags)
         buf->b_fnum = top_file_num++;
         if (top_file_num < 0)           /* wrap around (may cause duplicates) */
         {
-            EMSG(_("W14: Warning: List of file names overflow"));
+            EMSG((char *)"W14: Warning: List of file names overflow");
             if (emsg_silent == 0)
             {
                 out_flush();
@@ -1536,9 +1528,9 @@ buflist_getfile(n, lnum, options, forceit)
     if (buf == NULL)
     {
         if ((options & GETF_ALT) && n == 0)
-            EMSG(_(e_noalt));
+            EMSG((char *)e_noalt);
         else
-            EMSGN(_("E92: Buffer %ld not found"), n);
+            EMSGN((char *)"E92: Buffer %ld not found", n);
         return FAIL;
     }
 
@@ -1793,9 +1785,9 @@ buflist_findpat(pattern, pattern_end, unlisted, diffmode, curtab_only)
     }
 
     if (match == -2)
-        EMSG2(_("E93: More than one match for %s"), pattern);
+        EMSG2((char *)"E93: More than one match for %s", pattern);
     else if (match < 0)
-        EMSG2(_("E94: No matching buffer for %s"), pattern);
+        EMSG2((char *)"E94: No matching buffer for %s", pattern);
     return match;
 }
 
@@ -1903,7 +1895,6 @@ ExpandBufnames(pat, num_file, file, options)
     return (count == 0 ? FAIL : OK);
 }
 
-#if defined(HAVE_BUFLIST_MATCH)
 /*
  * Check for a match on the file name for buffer "buf" with regprog "prog".
  */
@@ -1954,7 +1945,6 @@ fname_match(rmp, name, ignore_case)
 
     return match;
 }
-#endif
 
 /*
  * find file in buffer list by number
@@ -2179,7 +2169,7 @@ buflist_list(eap)
             IObuff[len++] = ' ';
         } while (--i > 0 && len < IOSIZE - 18);
         vim_snprintf((char *)IObuff + len, (size_t)(IOSIZE - len),
-                _("line %ld"), buf == curbuf ? curwin->w_cursor.lnum
+                (char *)"line %ld", buf == curbuf ? curwin->w_cursor.lnum
                                                : (long)buflist_findlnum(buf));
         msg_outtrans(IObuff);
         out_flush();        /* output one line at a time */
@@ -2255,7 +2245,7 @@ setfname(buf, ffname, sfname, message)
             if (obuf->b_ml.ml_mfp != NULL)      /* it's loaded, fail */
             {
                 if (message)
-                    EMSG(_("E95: Buffer with this name already exists"));
+                    EMSG((char *)"E95: Buffer with this name already exists");
                 vim_free(ffname);
                 return FAIL;
             }
@@ -2372,7 +2362,7 @@ getaltfname(errmsg)
     if (buflist_name_nr(0, &fname, &dummy) == FAIL)
     {
         if (errmsg)
-            EMSG(_(e_noalt));
+            EMSG((char *)e_noalt);
         return NULL;
     }
     return fname;
@@ -2530,11 +2520,11 @@ fileinfo(fullname, shorthelp, dont_truncate)
     }
 
     vim_snprintf_add((char *)buffer, IOSIZE, "\"%s%s%s%s%s%s",
-            curbufIsChanged() ? (shortmess(SHM_MOD) ?  " [+]" : _(" [Modified]")) : " ",
-            (curbuf->b_flags & BF_NOTEDITED) ? _("[Not edited]") : "",
-            (curbuf->b_flags & BF_NEW) ? _("[New file]") : "",
-            (curbuf->b_flags & BF_READERR) ? _("[Read errors]") : "",
-            curbuf->b_p_ro ? (shortmess(SHM_RO) ? _("[RO]") : _("[readonly]")) : "",
+            curbufIsChanged() ? (shortmess(SHM_MOD) ? " [+]" : (char *)" [Modified]") : " ",
+            (curbuf->b_flags & BF_NOTEDITED) ? (char *)"[Not edited]" : "",
+            (curbuf->b_flags & BF_NEW) ? (char *)"[New file]" : "",
+            (curbuf->b_flags & BF_READERR) ? (char *)"[Read errors]" : "",
+            curbuf->b_p_ro ? (shortmess(SHM_RO) ? (char *)"[RO]" : (char *)"[readonly]") : "",
             (curbufIsChanged() || (curbuf->b_flags & BF_WRITE_MASK) || curbuf->b_p_ro) ? " " : "");
     /* With 32 bit longs and more than 21,474,836 lines multiplying by 100
      * causes an overflow, thus for large numbers divide instead. */
@@ -2544,21 +2534,21 @@ fileinfo(fullname, shorthelp, dont_truncate)
         n = (int)(((long)curwin->w_cursor.lnum * 100L) / (long)curbuf->b_ml.ml_line_count);
     if (curbuf->b_ml.ml_flags & ML_EMPTY)
     {
-        vim_snprintf_add((char *)buffer, IOSIZE, "%s", _(no_lines_msg));
+        vim_snprintf_add((char *)buffer, IOSIZE, "%s", (char *)no_lines_msg);
     }
     else if (p_ru)
     {
         /* Current line and column are already on the screen -- webb */
         if (curbuf->b_ml.ml_line_count == 1)
-            vim_snprintf_add((char *)buffer, IOSIZE, _("1 line --%d%%--"), n);
+            vim_snprintf_add((char *)buffer, IOSIZE, (char *)"1 line --%d%%--", n);
         else
-            vim_snprintf_add((char *)buffer, IOSIZE, _("%ld lines --%d%%--"),
+            vim_snprintf_add((char *)buffer, IOSIZE, (char *)"%ld lines --%d%%--",
                                          (long)curbuf->b_ml.ml_line_count, n);
     }
     else
     {
         vim_snprintf_add((char *)buffer, IOSIZE,
-                _("line %ld of %ld --%d%%-- col "),
+                (char *)"line %ld of %ld --%d%%-- col ",
                 (long)curwin->w_cursor.lnum,
                 (long)curbuf->b_ml.ml_line_count,
                 n);
@@ -2677,7 +2667,7 @@ maketitle()
 #define SPACE_FOR_DIR   (IOSIZE - 20)
 #define SPACE_FOR_ARGNR (IOSIZE - 10)  /* at least room for " - VIM" */
             if (curbuf->b_fname == NULL)
-                vim_strncpy(buf, (char_u *)_("[No Name]"), SPACE_FOR_FNAME);
+                vim_strncpy(buf, (char_u *)"[No Name]", SPACE_FOR_FNAME);
             else
             {
                 p = transstr(gettail(curbuf->b_fname));
@@ -2709,7 +2699,7 @@ maketitle()
                 p = gettail_sep(buf + off);
                 if (p == buf + off)
                     /* must be a help buffer */
-                    vim_strncpy(buf + off, (char_u *)_("help"), (size_t)(SPACE_FOR_DIR - off - 1));
+                    vim_strncpy(buf + off, (char_u *)"help", (size_t)(SPACE_FOR_DIR - off - 1));
                 else
                     *p = NUL;
 
@@ -3309,15 +3299,14 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
         case STL_ROFLAG_ALT:
             itemisflag = TRUE;
             if (wp->w_buffer->b_p_ro)
-                str = (char_u *)((opt == STL_ROFLAG_ALT) ? ",RO" : _("[RO]"));
+                str = (char_u *)((opt == STL_ROFLAG_ALT) ? ",RO" : (char *)"[RO]");
             break;
 
         case STL_HELPFLAG:
         case STL_HELPFLAG_ALT:
             itemisflag = TRUE;
             if (wp->w_buffer->b_help)
-                str = (char_u *)((opt == STL_HELPFLAG_ALT) ? ",HLP"
-                                                               : _("[Help]"));
+                str = (char_u *)((opt == STL_HELPFLAG_ALT) ? ",HLP" : (char *)"[Help]");
             break;
 
         case STL_FILETYPE:
@@ -3643,9 +3632,9 @@ get_rel_pos(wp, buf, buflen)
     above = wp->w_topline - 1;
     below = wp->w_buffer->b_ml.ml_line_count - wp->w_botline + 1;
     if (below <= 0)
-        vim_strncpy(buf, (char_u *)(above == 0 ? _("All") : _("Bot")), (size_t)(buflen - 1));
+        vim_strncpy(buf, (char_u *)(above == 0 ? (char *)"All" : (char *)"Bot"), (size_t)(buflen - 1));
     else if (above <= 0)
-        vim_strncpy(buf, (char_u *)_("Top"), (size_t)(buflen - 1));
+        vim_strncpy(buf, (char_u *)"Top", (size_t)(buflen - 1));
     else
         vim_snprintf((char *)buf, (size_t)buflen, "%2d%%", above > 1000000L
                                     ? (int)(above / ((above + below) / 100L))
@@ -3718,22 +3707,6 @@ fname_expand(buf, ffname, sfname)
     if (*sfname == NULL)        /* if no short file name given, use ffname */
         *sfname = *ffname;
     *ffname = fix_fname(*ffname);   /* expand to full path */
-
-#if defined(FEAT_SHORTCUT)
-    if (!buf->b_p_bin)
-    {
-        char_u  *rfname;
-
-        /* If the file name is a shortcut file, use the file it links to. */
-        rfname = mch_resolve_shortcut(*ffname);
-        if (rfname != NULL)
-        {
-            vim_free(*ffname);
-            *ffname = rfname;
-            *sfname = rfname;
-        }
-    }
-#endif
 }
 
 /*
@@ -4125,18 +4098,13 @@ ex_buffer_all(eap)
                 continue;
 
             /* Open the buffer in this window. */
-#if defined(HAS_SWAP_EXISTS_ACTION)
             swap_exists_action = SEA_DIALOG;
-#endif
             set_curbuf(buf, DOBUF_GOTO);
             if (!buf_valid(buf))        /* autocommands deleted the buffer!!! */
             {
-#if defined(HAS_SWAP_EXISTS_ACTION)
                 swap_exists_action = SEA_NONE;
-#endif
                 break;
             }
-#if defined(HAS_SWAP_EXISTS_ACTION)
             if (swap_exists_action == SEA_QUIT)
             {
                 cleanup_T   cs;
@@ -4158,7 +4126,6 @@ ex_buffer_all(eap)
             }
             else
                 handle_swap_exists(NULL);
-#endif
         }
 
         ui_breakcheck();
@@ -4371,7 +4338,7 @@ buf_spname(buf)
     buf_T       *buf;
 {
     if (buf->b_fname == NULL)
-        return (char_u *)_("[No Name]");
+        return (char_u *)"[No Name]";
     return NULL;
 }
 

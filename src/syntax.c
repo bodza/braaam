@@ -3229,7 +3229,7 @@ syn_cmd_conceal(eap, syncing)
     else if (STRNICMP(arg, "off", 3) == 0 && next - arg == 3)
         curwin->w_s->b_syn_conceal = FALSE;
     else
-        EMSG2(_("E390: Illegal argument: %s"), arg);
+        EMSG2((char *)"E390: Illegal argument: %s", arg);
 }
 
 /*
@@ -3253,7 +3253,7 @@ syn_cmd_case(eap, syncing)
     else if (STRNICMP(arg, "ignore", 6) == 0 && next - arg == 6)
         curwin->w_s->b_syn_ic = TRUE;
     else
-        EMSG2(_("E390: Illegal argument: %s"), arg);
+        EMSG2((char *)"E390: Illegal argument: %s", arg);
 }
 
 /*
@@ -3279,7 +3279,7 @@ syn_cmd_spell(eap, syncing)
     else if (STRNICMP(arg, "default", 7) == 0 && next - arg == 7)
         curwin->w_s->b_syn_spell = SYNSPL_DEFAULT;
     else
-        EMSG2(_("E390: Illegal argument: %s"), arg);
+        EMSG2((char *)"E390: Illegal argument: %s", arg);
 }
 
 /*
@@ -3474,7 +3474,7 @@ syn_cmd_clear(eap, syncing)
                 id = syn_scl_namen2id(arg + 1, (int)(arg_end - arg - 1));
                 if (id == 0)
                 {
-                    EMSG2(_("E391: No such syntax cluster: %s"), arg);
+                    EMSG2((char *)"E391: No such syntax cluster: %s", arg);
                     break;
                 }
                 else
@@ -3495,7 +3495,7 @@ syn_cmd_clear(eap, syncing)
                 id = syn_namen2id(arg, (int)(arg_end - arg));
                 if (id == 0)
                 {
-                    EMSG2(_(e_nogroup), arg);
+                    EMSG2((char *)e_nogroup, arg);
                     break;
                 }
                 else
@@ -3633,7 +3633,7 @@ syn_cmd_list(eap, syncing)
 
     if (!syntax_present(curwin))
     {
-        MSG(_(msg_no_items));
+        MSG((char *)msg_no_items);
         return;
     }
 
@@ -3641,7 +3641,7 @@ syn_cmd_list(eap, syncing)
     {
         if (curwin->w_s->b_syn_sync_flags & SF_CCOMMENT)
         {
-            MSG_PUTS(_("syncing on C-style comments"));
+            MSG_PUTS((char *)"syncing on C-style comments");
             syn_lines_msg();
             syn_match_msg();
             return;
@@ -3649,28 +3649,28 @@ syn_cmd_list(eap, syncing)
         else if (!(curwin->w_s->b_syn_sync_flags & SF_MATCH))
         {
             if (curwin->w_s->b_syn_sync_minlines == 0)
-                MSG_PUTS(_("no syncing"));
+                MSG_PUTS((char *)"no syncing");
             else
             {
-                MSG_PUTS(_("syncing starts "));
+                MSG_PUTS((char *)"syncing starts ");
                 msg_outnum(curwin->w_s->b_syn_sync_minlines);
-                MSG_PUTS(_(" lines before top line"));
+                MSG_PUTS((char *)" lines before top line");
                 syn_match_msg();
             }
             return;
         }
-        MSG_PUTS_TITLE(_("\n--- Syntax sync items ---"));
+        MSG_PUTS_TITLE((char *)"\n--- Syntax sync items ---");
         if (curwin->w_s->b_syn_sync_minlines > 0
                 || curwin->w_s->b_syn_sync_maxlines > 0
                 || curwin->w_s->b_syn_sync_linebreaks > 0)
         {
-            MSG_PUTS(_("\nsyncing on items"));
+            MSG_PUTS((char *)"\nsyncing on items");
             syn_lines_msg();
             syn_match_msg();
         }
     }
     else
-        MSG_PUTS_TITLE(_("\n--- Syntax items ---"));
+        MSG_PUTS_TITLE((char *)"\n--- Syntax items ---");
     if (ends_excmd(*arg))
     {
         /*
@@ -3693,7 +3693,7 @@ syn_cmd_list(eap, syncing)
             {
                 id = syn_scl_namen2id(arg + 1, (int)(arg_end - arg - 1));
                 if (id == 0)
-                    EMSG2(_("E392: No such syntax cluster: %s"), arg);
+                    EMSG2((char *)"E392: No such syntax cluster: %s", arg);
                 else
                     syn_list_cluster(id - SYNID_CLUSTER);
             }
@@ -3701,7 +3701,7 @@ syn_cmd_list(eap, syncing)
             {
                 id = syn_namen2id(arg, (int)(arg_end - arg));
                 if (id == 0)
-                    EMSG2(_(e_nogroup), arg);
+                    EMSG2((char *)e_nogroup, arg);
                 else
                     syn_list_one(id, syncing, TRUE);
             }
@@ -3719,17 +3719,17 @@ syn_lines_msg()
         MSG_PUTS("; ");
         if (curwin->w_s->b_syn_sync_minlines > 0)
         {
-            MSG_PUTS(_("minimal "));
+            MSG_PUTS((char *)"minimal ");
             msg_outnum(curwin->w_s->b_syn_sync_minlines);
             if (curwin->w_s->b_syn_sync_maxlines)
                 MSG_PUTS(", ");
         }
         if (curwin->w_s->b_syn_sync_maxlines > 0)
         {
-            MSG_PUTS(_("maximal "));
+            MSG_PUTS((char *)"maximal ");
             msg_outnum(curwin->w_s->b_syn_sync_maxlines);
         }
-        MSG_PUTS(_(" lines before top line"));
+        MSG_PUTS((char *)" lines before top line");
     }
 }
 
@@ -3738,9 +3738,9 @@ syn_match_msg()
 {
     if (curwin->w_s->b_syn_sync_linebreaks > 0)
     {
-        MSG_PUTS(_("; match "));
+        MSG_PUTS((char *)"; match ");
         msg_outnum(curwin->w_s->b_syn_sync_linebreaks);
-        MSG_PUTS(_(" line breaks"));
+        MSG_PUTS((char *)" line breaks");
     }
 }
 
@@ -4373,7 +4373,7 @@ get_syn_options(arg, opt, conceal_char)
         {
             if (!opt->has_cont_list)
             {
-                EMSG(_("E395: contains argument not accepted here"));
+                EMSG((char *)"E395: contains argument not accepted here");
                 return NULL;
             }
             if (get_id_list(&arg, 8, &opt->cont_list) == FAIL)
@@ -4403,7 +4403,7 @@ get_syn_options(arg, opt, conceal_char)
             }
             if (!vim_isprintc_strict(*conceal_char))
             {
-                EMSG(_("E844: invalid cchar value"));
+                EMSG((char *)"E844: invalid cchar value");
                 return NULL;
             }
             arg = skipwhite(arg + 7);
@@ -4417,7 +4417,7 @@ get_syn_options(arg, opt, conceal_char)
             {
                 if (opt->sync_idx == NULL)
                 {
-                    EMSG(_("E393: group[t]here not accepted here"));
+                    EMSG((char *)"E393: group[t]here not accepted here");
                     return NULL;
                 }
                 gname_start = arg;
@@ -4441,7 +4441,7 @@ get_syn_options(arg, opt, conceal_char)
                         }
                     if (i < 0)
                     {
-                        EMSG2(_("E394: Didn't find region item for %s"), gname);
+                        EMSG2((char *)"E394: Didn't find region item for %s", gname);
                         vim_free(gname);
                         return NULL;
                     }
@@ -4511,7 +4511,7 @@ syn_cmd_include(eap, syncing)
         rest = get_group_name(arg, &group_name_end);
         if (rest == NULL)
         {
-            EMSG((char_u *)_("E397: Filename required"));
+            EMSG((char_u *)"E397: Filename required");
             return;
         }
         sgl_id = syn_check_cluster(arg, (int)(group_name_end - arg));
@@ -4547,7 +4547,7 @@ syn_cmd_include(eap, syncing)
      */
     if (running_syn_inc_tag >= MAX_SYN_INC_TAG)
     {
-        EMSG((char_u *)_("E847: Too many syntax includes"));
+        EMSG((char_u *)"E847: Too many syntax includes");
         return;
     }
     prev_syn_inc_tag = current_syn_inc_tag;
@@ -4556,7 +4556,7 @@ syn_cmd_include(eap, syncing)
     curwin->w_s->b_syn_topgrp = sgl_id;
     if (source ? do_source(eap->arg, FALSE, DOSO_NONE) == FAIL
                                 : source_runtime(eap->arg, TRUE) == FAIL)
-        EMSG2(_(e_notopen), eap->arg);
+        EMSG2((char *)e_notopen, eap->arg);
     curwin->w_s->b_syn_topgrp = prev_toplvl_grp;
     current_syn_inc_tag = prev_syn_inc_tag;
 }
@@ -4641,7 +4641,7 @@ syn_cmd_keyword(eap, syncing)
                             break;
                         if (p[1] == NUL)
                         {
-                            EMSG2(_("E789: Missing ']': %s"), kw);
+                            EMSG2((char *)"E789: Missing ']': %s", kw);
                             kw = p + 2;         /* skip over the NUL */
                             break;
                         }
@@ -4675,7 +4675,7 @@ syn_cmd_keyword(eap, syncing)
     if (rest != NULL)
         eap->nextcmd = check_nextcmd(rest);
     else
-        EMSG2(_(e_invarg2), arg);
+        EMSG2((char *)e_invarg2, arg);
 
     redraw_curbuf_later(SOME_VALID);
     syn_stack_free_all(curwin->w_s);            /* Need to recompute all syntax. */
@@ -4775,7 +4775,7 @@ syn_cmd_match(eap, syncing)
     vim_free(syn_opt_arg.next_list);
 
     if (rest == NULL)
-        EMSG2(_(e_invarg2), arg);
+        EMSG2((char *)e_invarg2, arg);
 }
 
 /*
@@ -4876,7 +4876,7 @@ syn_cmd_region(eap, syncing)
         if (*rest != '=')
         {
             rest = NULL;
-            EMSG2(_("E398: Missing '=': %s"), arg);
+            EMSG2((char *)"E398: Missing '=': %s", arg);
             break;
         }
         rest = skipwhite(rest + 1);
@@ -5025,9 +5025,9 @@ syn_cmd_region(eap, syncing)
         vim_free(syn_opt_arg.cont_in_list);
         vim_free(syn_opt_arg.next_list);
         if (not_enough)
-            EMSG2(_("E399: Not enough arguments: syntax region %s"), arg);
+            EMSG2((char *)"E399: Not enough arguments: syntax region %s", arg);
         else if (illegal || rest == NULL)
-            EMSG2(_(e_invarg2), arg);
+            EMSG2((char *)e_invarg2, arg);
     }
 }
 
@@ -5264,7 +5264,7 @@ syn_add_cluster(name)
     len = curwin->w_s->b_syn_clusters.ga_len;
     if (len >= MAX_CLUSTER_ID)
     {
-        EMSG((char_u *)_("E848: Too many syntax clusters"));
+        EMSG((char_u *)"E848: Too many syntax clusters");
         vim_free(name);
         return 0;
     }
@@ -5346,7 +5346,7 @@ syn_cmd_cluster(eap, syncing)
             clstr_list = NULL;
             if (get_id_list(&rest, opt_len, &clstr_list) == FAIL)
             {
-                EMSG2(_(e_invarg2), rest);
+                EMSG2((char *)e_invarg2, rest);
                 break;
             }
             syn_combine_list(&SYN_CLSTR(curwin->w_s)[scl_id].scl_list, &clstr_list, list_op);
@@ -5361,9 +5361,9 @@ syn_cmd_cluster(eap, syncing)
     }
 
     if (!got_clstr)
-        EMSG(_("E400: No cluster specified"));
+        EMSG((char *)"E400: No cluster specified");
     if (rest == NULL || !ends_excmd(*rest))
-        EMSG2(_(e_invarg2), arg);
+        EMSG2((char *)e_invarg2, arg);
 }
 
 /*
@@ -5398,7 +5398,7 @@ get_syn_pattern(arg, ci)
     end = skip_regexp(arg + 1, *arg, TRUE, NULL);
     if (*end != *arg)                       /* end delimiter not found */
     {
-        EMSG2(_("E401: Pattern delimiter not found: %s"), arg);
+        EMSG2((char *)"E401: Pattern delimiter not found: %s", arg);
         return NULL;
     }
     /* store the pattern and compiled regexp program */
@@ -5473,7 +5473,7 @@ get_syn_pattern(arg, ci)
 
     if (!ends_excmd(*end) && !vim_iswhite(*end))
     {
-        EMSG2(_("E402: Garbage after pattern: %s"), arg);
+        EMSG2((char *)"E402: Garbage after pattern: %s", arg);
         return NULL;
     }
     return skipwhite(end);
@@ -5561,7 +5561,7 @@ syn_cmd_sync(eap, syncing)
         {
             if (curwin->w_s->b_syn_linecont_pat != NULL)
             {
-                EMSG(_("E403: syntax sync: line continuations pattern specified twice"));
+                EMSG((char *)"E403: syntax sync: line continuations pattern specified twice");
                 finished = TRUE;
                 break;
             }
@@ -5617,7 +5617,7 @@ syn_cmd_sync(eap, syncing)
     }
     vim_free(key);
     if (illegal)
-        EMSG2(_("E404: Illegal arguments: %s"), arg_start);
+        EMSG2((char *)"E404: Illegal arguments: %s", arg_start);
     else if (!finished)
     {
         eap->nextcmd = check_nextcmd(arg_start);
@@ -5667,13 +5667,13 @@ get_id_list(arg, keylen, list)
         p = skipwhite(*arg + keylen);
         if (*p != '=')
         {
-            EMSG2(_("E405: Missing equal sign: %s"), *arg);
+            EMSG2((char *)"E405: Missing equal sign: %s", *arg);
             break;
         }
         p = skipwhite(p + 1);
         if (ends_excmd(*p))
         {
-            EMSG2(_("E406: Empty argument: %s"), *arg);
+            EMSG2((char *)"E406: Empty argument: %s", *arg);
             break;
         }
 
@@ -5699,14 +5699,14 @@ get_id_list(arg, keylen, list)
             {
                 if (TOUPPER_ASC(**arg) != 'C')
                 {
-                    EMSG2(_("E407: %s not allowed here"), name + 1);
+                    EMSG2((char *)"E407: %s not allowed here", name + 1);
                     failed = TRUE;
                     vim_free(name);
                     break;
                 }
                 if (count != 0)
                 {
-                    EMSG2(_("E408: %s must be first in contains list"), name + 1);
+                    EMSG2((char *)"E408: %s must be first in contains list", name + 1);
                     failed = TRUE;
                     vim_free(name);
                     break;
@@ -5775,7 +5775,7 @@ get_id_list(arg, keylen, list)
             vim_free(name);
             if (id == 0)
             {
-                EMSG2(_("E409: Unknown group name: %s"), p);
+                EMSG2((char *)"E409: Unknown group name: %s", p);
                 failed = TRUE;
                 break;
             }
@@ -6009,7 +6009,7 @@ ex_syntax(eap)
         {
             if (subcommands[i].name == NULL)
             {
-                EMSG2(_("E410: Invalid :syntax subcommand: %s"), subcmd_name);
+                EMSG2((char *)"E410: Invalid :syntax subcommand: %s", subcmd_name);
                 break;
             }
             if (STRCMP(subcmd_name, (char_u *)subcommands[i].name) == 0)
@@ -6411,7 +6411,7 @@ init_highlight(both, reset)
         static int      recursive = 0;
 
         if (recursive >= 5)
-            EMSG(_("E679: recursive loop loading syncolor.vim"));
+            EMSG((char *)"E679: recursive loop loading syncolor.vim");
         else
         {
             ++recursive;
@@ -6528,7 +6528,7 @@ do_highlight(line, forceit, init)
     {
         id = syn_namen2id(line, (int)(name_end - line));
         if (id == 0)
-            EMSG2(_("E411: highlight group not found: %s"), line);
+            EMSG2((char *)"E411: highlight group not found: %s", line);
         else
             highlight_list_one(id);
         return;
@@ -6552,13 +6552,13 @@ do_highlight(line, forceit, init)
 
         if (ends_excmd(*from_start) || ends_excmd(*to_start))
         {
-            EMSG2(_("E412: Not enough arguments: \":highlight link %s\""), from_start);
+            EMSG2((char *)"E412: Not enough arguments: \":highlight link %s\"", from_start);
             return;
         }
 
         if (!ends_excmd(*skipwhite(to_end)))
         {
-            EMSG2(_("E413: Too many arguments: \":highlight link %s\""), from_start);
+            EMSG2((char *)"E413: Too many arguments: \":highlight link %s\"", from_start);
             return;
         }
 
@@ -6577,7 +6577,7 @@ do_highlight(line, forceit, init)
             if (to_id > 0 && !forceit && !init && hl_has_settings(from_id - 1, dodefault))
             {
                 if (sourcing_name == NULL && !dodefault)
-                    EMSG(_("E414: group has settings, highlight link ignored"));
+                    EMSG((char *)"E414: group has settings, highlight link ignored");
             }
             else
             {
@@ -6649,7 +6649,7 @@ do_highlight(line, forceit, init)
         key_start = linep;
         if (*linep == '=')
         {
-            EMSG2(_("E415: unexpected equal sign: %s"), key_start);
+            EMSG2((char *)"E415: unexpected equal sign: %s", key_start);
             error = TRUE;
             break;
         }
@@ -6685,7 +6685,7 @@ do_highlight(line, forceit, init)
          */
         if (*linep != '=')
         {
-            EMSG2(_("E416: missing equal sign: %s"), key_start);
+            EMSG2((char *)"E416: missing equal sign: %s", key_start);
             error = TRUE;
             break;
         }
@@ -6701,7 +6701,7 @@ do_highlight(line, forceit, init)
             linep = vim_strchr(linep, '\'');
             if (linep == NULL)
             {
-                EMSG2(_(e_invarg2), key_start);
+                EMSG2((char *)e_invarg2, key_start);
                 error = TRUE;
                 break;
             }
@@ -6713,7 +6713,7 @@ do_highlight(line, forceit, init)
         }
         if (linep == arg_start)
         {
-            EMSG2(_("E417: missing argument: %s"), key_start);
+            EMSG2((char *)"E417: missing argument: %s", key_start);
             error = TRUE;
             break;
         }
@@ -6748,7 +6748,7 @@ do_highlight(line, forceit, init)
                 }
                 if (i < 0)
                 {
-                    EMSG2(_("E418: Illegal value: %s"), arg);
+                    EMSG2((char *)"E418: Illegal value: %s", arg);
                     error = TRUE;
                     break;
                 }
@@ -6792,189 +6792,188 @@ do_highlight(line, forceit, init)
         }
         else if (STRCMP(key, "CTERMFG") == 0 || STRCMP(key, "CTERMBG") == 0)
         {
-          if (!init || !(HL_TABLE()[idx].sg_set & SG_CTERM))
-          {
-            if (!init)
-                HL_TABLE()[idx].sg_set |= SG_CTERM;
-
-            /* When setting the foreground color, and previously the "bold"
-             * flag was set for a light color, reset it now */
-            if (key[5] == 'F' && HL_TABLE()[idx].sg_cterm_bold)
+            if (!init || !(HL_TABLE()[idx].sg_set & SG_CTERM))
             {
-                HL_TABLE()[idx].sg_cterm &= ~HL_BOLD;
-                HL_TABLE()[idx].sg_cterm_bold = FALSE;
-            }
+                if (!init)
+                    HL_TABLE()[idx].sg_set |= SG_CTERM;
 
-            if (VIM_ISDIGIT(*arg))
-                color = atoi((char *)arg);
-            else if (STRICMP(arg, "fg") == 0)
-            {
-                if (cterm_normal_fg_color)
-                    color = cterm_normal_fg_color - 1;
-                else
+                /* When setting the foreground color, and previously the "bold"
+                 * flag was set for a light color, reset it now */
+                if (key[5] == 'F' && HL_TABLE()[idx].sg_cterm_bold)
                 {
-                    EMSG(_("E419: FG color unknown"));
-                    error = TRUE;
-                    break;
+                    HL_TABLE()[idx].sg_cterm &= ~HL_BOLD;
+                    HL_TABLE()[idx].sg_cterm_bold = FALSE;
                 }
-            }
-            else if (STRICMP(arg, "bg") == 0)
-            {
-                if (cterm_normal_bg_color > 0)
-                    color = cterm_normal_bg_color - 1;
-                else
-                {
-                    EMSG(_("E420: BG color unknown"));
-                    error = TRUE;
-                    break;
-                }
-            }
-            else
-            {
-                static char *(color_names[28]) = {
-                            "Black", "DarkBlue", "DarkGreen", "DarkCyan",
-                            "DarkRed", "DarkMagenta", "Brown", "DarkYellow",
-                            "Gray", "Grey",
-                            "LightGray", "LightGrey", "DarkGray", "DarkGrey",
-                            "Blue", "LightBlue", "Green", "LightGreen",
-                            "Cyan", "LightCyan", "Red", "LightRed", "Magenta",
-                            "LightMagenta", "Yellow", "LightYellow", "White", "NONE"};
-                static int color_numbers_16[28] = {0, 1, 2, 3,
-                                                 4, 5, 6, 6,
-                                                 7, 7,
-                                                 7, 7, 8, 8,
-                                                 9, 9, 10, 10,
-                                                 11, 11, 12, 12, 13,
-                                                 13, 14, 14, 15, -1};
-                /* for xterm with 88 colors... */
-                static int color_numbers_88[28] = {0, 4, 2, 6,
-                                                 1, 5, 32, 72,
-                                                 84, 84,
-                                                 7, 7, 82, 82,
-                                                 12, 43, 10, 61,
-                                                 14, 63, 9, 74, 13,
-                                                 75, 11, 78, 15, -1};
-                /* for xterm with 256 colors... */
-                static int color_numbers_256[28] = {0, 4, 2, 6,
-                                                 1, 5, 130, 130,
-                                                 248, 248,
-                                                 7, 7, 242, 242,
-                                                 12, 81, 10, 121,
-                                                 14, 159, 9, 224, 13,
-                                                 225, 11, 229, 15, -1};
-                /* for terminals with less than 16 colors... */
-                static int color_numbers_8[28] = {0, 4, 2, 6,
-                                                 1, 5, 3, 3,
-                                                 7, 7,
-                                                 7, 7, 0+8, 0+8,
-                                                 4+8, 4+8, 2+8, 2+8,
-                                                 6+8, 6+8, 1+8, 1+8, 5+8,
-                                                 5+8, 3+8, 3+8, 7+8, -1};
 
-                /* reduce calls to STRICMP a bit, it can be slow */
-                off = TOUPPER_ASC(*arg);
-                for (i = (sizeof(color_names) / sizeof(char *)); --i >= 0; )
-                    if (off == color_names[i][0] && STRICMP(arg + 1, color_names[i] + 1) == 0)
+                if (VIM_ISDIGIT(*arg))
+                    color = atoi((char *)arg);
+                else if (STRICMP(arg, "fg") == 0)
+                {
+                    if (cterm_normal_fg_color)
+                        color = cterm_normal_fg_color - 1;
+                    else
+                    {
+                        EMSG((char *)"E419: FG color unknown");
+                        error = TRUE;
                         break;
-                if (i < 0)
-                {
-                    EMSG2(_("E421: Color name or number not recognized: %s"), key_start);
-                    error = TRUE;
-                    break;
+                    }
                 }
+                else if (STRICMP(arg, "bg") == 0)
+                {
+                    if (cterm_normal_bg_color > 0)
+                        color = cterm_normal_bg_color - 1;
+                    else
+                    {
+                        EMSG((char *)"E420: BG color unknown");
+                        error = TRUE;
+                        break;
+                    }
+                }
+                else
+                {
+                    static char *(color_names[28]) = {
+                                "Black", "DarkBlue", "DarkGreen", "DarkCyan",
+                                "DarkRed", "DarkMagenta", "Brown", "DarkYellow",
+                                "Gray", "Grey",
+                                "LightGray", "LightGrey", "DarkGray", "DarkGrey",
+                                "Blue", "LightBlue", "Green", "LightGreen",
+                                "Cyan", "LightCyan", "Red", "LightRed", "Magenta",
+                                "LightMagenta", "Yellow", "LightYellow", "White", "NONE"};
+                    static int color_numbers_16[28] = {0, 1, 2, 3,
+                                                    4, 5, 6, 6,
+                                                    7, 7,
+                                                    7, 7, 8, 8,
+                                                    9, 9, 10, 10,
+                                                    11, 11, 12, 12, 13,
+                                                    13, 14, 14, 15, -1};
+                    /* for xterm with 88 colors... */
+                    static int color_numbers_88[28] = {0, 4, 2, 6,
+                                                    1, 5, 32, 72,
+                                                    84, 84,
+                                                    7, 7, 82, 82,
+                                                    12, 43, 10, 61,
+                                                    14, 63, 9, 74, 13,
+                                                    75, 11, 78, 15, -1};
+                    /* for xterm with 256 colors... */
+                    static int color_numbers_256[28] = {0, 4, 2, 6,
+                                                    1, 5, 130, 130,
+                                                    248, 248,
+                                                    7, 7, 242, 242,
+                                                    12, 81, 10, 121,
+                                                    14, 159, 9, 224, 13,
+                                                    225, 11, 229, 15, -1};
+                    /* for terminals with less than 16 colors... */
+                    static int color_numbers_8[28] = {0, 4, 2, 6,
+                                                    1, 5, 3, 3,
+                                                    7, 7,
+                                                    7, 7, 0+8, 0+8,
+                                                    4+8, 4+8, 2+8, 2+8,
+                                                    6+8, 6+8, 1+8, 1+8, 5+8,
+                                                    5+8, 3+8, 3+8, 7+8, -1};
 
-                /* Use the _16 table to check if its a valid color name. */
-                color = color_numbers_16[i];
-                if (color >= 0)
-                {
-                    if (t_colors == 8)
+                    /* reduce calls to STRICMP a bit, it can be slow */
+                    off = TOUPPER_ASC(*arg);
+                    for (i = (sizeof(color_names) / sizeof(char *)); --i >= 0; )
+                        if (off == color_names[i][0] && STRICMP(arg + 1, color_names[i] + 1) == 0)
+                            break;
+                    if (i < 0)
                     {
-                        /* t_Co is 8: use the 8 colors table */
-                        color = color_numbers_8[i];
-                        if (key[5] == 'F')
+                        EMSG2((char *)"E421: Color name or number not recognized: %s", key_start);
+                        error = TRUE;
+                        break;
+                    }
+
+                    /* Use the _16 table to check if its a valid color name. */
+                    color = color_numbers_16[i];
+                    if (color >= 0)
+                    {
+                        if (t_colors == 8)
                         {
-                            /* set/reset bold attribute to get light foreground
-                             * colors (on some terminals, e.g. "linux") */
-                            if (color & 8)
+                            /* t_Co is 8: use the 8 colors table */
+                            color = color_numbers_8[i];
+                            if (key[5] == 'F')
                             {
-                                HL_TABLE()[idx].sg_cterm |= HL_BOLD;
-                                HL_TABLE()[idx].sg_cterm_bold = TRUE;
+                                /* set/reset bold attribute to get light foreground
+                                 * colors (on some terminals, e.g. "linux") */
+                                if (color & 8)
+                                {
+                                    HL_TABLE()[idx].sg_cterm |= HL_BOLD;
+                                    HL_TABLE()[idx].sg_cterm_bold = TRUE;
+                                }
+                                else
+                                    HL_TABLE()[idx].sg_cterm &= ~HL_BOLD;
                             }
-                            else
-                                HL_TABLE()[idx].sg_cterm &= ~HL_BOLD;
+                            color &= 7;     /* truncate to 8 colors */
                         }
-                        color &= 7;     /* truncate to 8 colors */
-                    }
-                    else if (t_colors == 16 || t_colors == 88 || t_colors == 256)
-                    {
-                        /*
-                         * Guess: if the termcap entry ends in 'm', it is
-                         * probably an xterm-like terminal.  Use the changed
-                         * order for colors.
-                         */
-                        if (*T_CAF != NUL)
-                            p = T_CAF;
-                        else
-                            p = T_CSF;
-                        if (*p != NUL && *(p + STRLEN(p) - 1) == 'm')
-                            switch (t_colors)
-                            {
-                                case 16:
-                                    color = color_numbers_8[i];
-                                    break;
-                                case 88:
-                                    color = color_numbers_88[i];
-                                    break;
-                                case 256:
-                                    color = color_numbers_256[i];
-                                    break;
-                            }
-                    }
-                }
-            }
-            /* Add one to the argument, to avoid zero.  Zero is used for
-             * "NONE", then "color" is -1. */
-            if (key[5] == 'F')
-            {
-                HL_TABLE()[idx].sg_cterm_fg = color + 1;
-                if (is_normal_group)
-                {
-                    cterm_normal_fg_color = color + 1;
-                    cterm_normal_fg_bold = (HL_TABLE()[idx].sg_cterm & HL_BOLD);
-                    {
-                        must_redraw = CLEAR;
-                        if (termcap_active && color >= 0)
-                            term_fg_color(color);
-                    }
-                }
-            }
-            else
-            {
-                HL_TABLE()[idx].sg_cterm_bg = color + 1;
-                if (is_normal_group)
-                {
-                    cterm_normal_bg_color = color + 1;
-                    {
-                        must_redraw = CLEAR;
-                        if (color >= 0)
+                        else if (t_colors == 16 || t_colors == 88 || t_colors == 256)
                         {
-                            if (termcap_active)
-                                term_bg_color(color);
-                            if (t_colors < 16)
-                                i = (color == 0 || color == 4);
+                            /*
+                             * Guess: if the termcap entry ends in 'm', it is
+                             * probably an xterm-like terminal.  Use the changed
+                             * order for colors.
+                             */
+                            if (*T_CAF != NUL)
+                                p = T_CAF;
                             else
-                                i = (color < 7 || color == 8);
-                            /* Set the 'background' option if the value is
-                             * wrong. */
-                            if (i != (*p_bg == 'd'))
-                                set_option_value((char_u *)"bg", 0L,
-                                        i ?  (char_u *)"dark"
-                                          : (char_u *)"light", 0);
+                                p = T_CSF;
+                            if (*p != NUL && *(p + STRLEN(p) - 1) == 'm')
+                                switch (t_colors)
+                                {
+                                    case 16:
+                                        color = color_numbers_8[i];
+                                        break;
+                                    case 88:
+                                        color = color_numbers_88[i];
+                                        break;
+                                    case 256:
+                                        color = color_numbers_256[i];
+                                        break;
+                                }
                         }
                     }
                 }
+                /* Add one to the argument, to avoid zero.  Zero is used for
+                 * "NONE", then "color" is -1. */
+                if (key[5] == 'F')
+                {
+                    HL_TABLE()[idx].sg_cterm_fg = color + 1;
+                    if (is_normal_group)
+                    {
+                        cterm_normal_fg_color = color + 1;
+                        cterm_normal_fg_bold = (HL_TABLE()[idx].sg_cterm & HL_BOLD);
+                        {
+                            must_redraw = CLEAR;
+                            if (termcap_active && color >= 0)
+                                term_fg_color(color);
+                        }
+                    }
+                }
+                else
+                {
+                    HL_TABLE()[idx].sg_cterm_bg = color + 1;
+                    if (is_normal_group)
+                    {
+                        cterm_normal_bg_color = color + 1;
+                        {
+                            must_redraw = CLEAR;
+                            if (color >= 0)
+                            {
+                                if (termcap_active)
+                                    term_bg_color(color);
+                                if (t_colors < 16)
+                                    i = (color == 0 || color == 4);
+                                else
+                                    i = (color < 7 || color == 8);
+                                /* Set the 'background' option if the value is wrong. */
+                                if (i != (*p_bg == 'd'))
+                                    set_option_value((char_u *)"bg", 0L,
+                                            i ? (char_u *)"dark"
+                                            : (char_u *)"light", 0);
+                            }
+                        }
+                    }
+                }
             }
-          }
         }
         else if (STRCMP(key, "GUIFG") == 0)
         {
@@ -7054,7 +7053,7 @@ do_highlight(line, forceit, init)
                     /* Append it to the already found stuff */
                     if ((int)(STRLEN(buf) + STRLEN(p)) >= 99)
                     {
-                        EMSG2(_("E422: terminal code too long: %s"), arg);
+                        EMSG2((char *)"E422: terminal code too long: %s", arg);
                         error = TRUE;
                         break;
                     }
@@ -7101,7 +7100,7 @@ do_highlight(line, forceit, init)
         }
         else
         {
-            EMSG2(_("E423: Illegal argument: %s"), key_start);
+            EMSG2((char *)"E423: Illegal argument: %s", key_start);
             error = TRUE;
             break;
         }
@@ -7282,7 +7281,7 @@ get_attr_entry(table, aep)
          */
         if (recursive)
         {
-            EMSG(_("E424: Too many different highlighting attributes in use"));
+            EMSG((char *)"E424: Too many different highlighting attributes in use");
             return 0;
         }
         recursive = TRUE;
@@ -7840,7 +7839,7 @@ syn_add_group(name)
     {
         if (!vim_isprintc(*p))
         {
-            EMSG(_("E669: Unprintable character in group name"));
+            EMSG((char *)"E669: Unprintable character in group name");
             vim_free(name);
             return 0;
         }
@@ -7849,7 +7848,7 @@ syn_add_group(name)
             /* This is an error, but since there previously was no check only
              * give a warning. */
             msg_source(hl_attr(HLF_W));
-            MSG(_("W18: Invalid character in group name"));
+            MSG((char *)"W18: Invalid character in group name");
             break;
         }
     }
@@ -7865,7 +7864,7 @@ syn_add_group(name)
 
     if (highlight_ga.ga_len >= MAX_HL_ID)
     {
-        EMSG(_("E849: Too many highlight and syntax groups"));
+        EMSG((char *)"E849: Too many highlight and syntax groups");
         vim_free(name);
         return 0;
     }

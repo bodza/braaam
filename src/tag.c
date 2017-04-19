@@ -211,7 +211,7 @@ do_tag(tag, type, count, forceit, verbose)
                     tagstacklen == 0)
             {
                 /* empty stack */
-                EMSG(_(e_tagstack));
+                EMSG((char *)e_tagstack);
                 goto end_do_tag;
             }
 
@@ -219,7 +219,7 @@ do_tag(tag, type, count, forceit, verbose)
             {
                 if ((tagstackidx -= count) < 0)
                 {
-                    EMSG(_(bottommsg));
+                    EMSG((char *)bottommsg);
                     if (tagstackidx + count == 0)
                     {
                         /* We did [num]^T from the bottom of the stack */
@@ -233,7 +233,7 @@ do_tag(tag, type, count, forceit, verbose)
                 }
                 else if (tagstackidx >= tagstacklen)    /* count == 0? */
                 {
-                    EMSG(_(topmsg));
+                    EMSG((char *)topmsg);
                     goto end_do_tag;
                 }
 
@@ -285,12 +285,12 @@ do_tag(tag, type, count, forceit, verbose)
                          * position.
                          */
                         tagstackidx = tagstacklen - 1;
-                        EMSG(_(topmsg));
+                        EMSG((char *)topmsg);
                         save_pos = FALSE;
                     }
                     else if (tagstackidx < 0)   /* must have been count == 0 */
                     {
-                        EMSG(_(bottommsg));
+                        EMSG((char *)bottommsg);
                         tagstackidx = 0;
                         goto end_do_tag;
                     }
@@ -323,7 +323,7 @@ do_tag(tag, type, count, forceit, verbose)
                     cur_match = MAXCOL - 1;
                 else if (cur_match < 0)
                 {
-                    EMSG(_("E425: Cannot go before first matching tag"));
+                    EMSG((char *)"E425: Cannot go before first matching tag");
                     skip_msg = TRUE;
                     cur_match = 0;
                     cur_fnum = curbuf->b_fnum;
@@ -447,7 +447,7 @@ do_tag(tag, type, count, forceit, verbose)
         if (num_matches <= 0)
         {
             if (verbose)
-                EMSG2(_("E426: tag not found: %s"), name);
+                EMSG2((char *)"E426: tag not found: %s", name);
         }
         else
         {
@@ -469,10 +469,10 @@ do_tag(tag, type, count, forceit, verbose)
                 if (msg_col == 0)
                     msg_didout = FALSE; /* overwrite previous message */
                 msg_start();
-                MSG_PUTS_ATTR(_("  # pri kind tag"), hl_attr(HLF_T));
+                MSG_PUTS_ATTR((char *)"  # pri kind tag", hl_attr(HLF_T));
                 msg_clr_eos();
                 taglen_advance(taglen);
-                MSG_PUTS_ATTR(_("file\n"), hl_attr(HLF_T));
+                MSG_PUTS_ATTR((char *)"file\n", hl_attr(HLF_T));
 
                 for (i = 0; i < num_matches && !got_int; ++i)
                 {
@@ -646,9 +646,9 @@ do_tag(tag, type, count, forceit, verbose)
                 if ((type == DT_NEXT || type == DT_FIRST) && nofile_fname == NULL)
                 {
                     if (num_matches == 1)
-                        EMSG(_("E427: There is only one matching tag"));
+                        EMSG((char *)"E427: There is only one matching tag");
                     else
-                        EMSG(_("E428: Cannot go beyond last matching tag"));
+                        EMSG((char *)"E428: Cannot go beyond last matching tag");
                     skip_msg = TRUE;
                 }
                 cur_match = num_matches - 1;
@@ -665,18 +665,18 @@ do_tag(tag, type, count, forceit, verbose)
              * file didn't exist.  Otherwise an EMSG() is given below.
              */
             if (nofile_fname != NULL && error_cur_match != cur_match)
-                smsg((char_u *)_("File \"%s\" does not exist"), nofile_fname);
+                smsg((char_u *)"File \"%s\" does not exist", nofile_fname);
 
             ic = (matches[cur_match][0] & MT_IC_OFF);
             if (type != DT_SELECT && type != DT_JUMP && (num_matches > 1 || ic) && !skip_msg)
             {
                 /* Give an indication of the number of matching tags */
-                sprintf((char *)IObuff, _("tag %d of %d%s"),
+                sprintf((char *)IObuff, (char *)"tag %d of %d%s",
                                 cur_match + 1,
                                 num_matches,
-                                max_num_matches != MAXCOL ? _(" or more") : "");
+                                max_num_matches != MAXCOL ? (char *)" or more" : "");
                 if (ic)
-                    STRCAT(IObuff, _("  Using tag with different case!"));
+                    STRCAT(IObuff, (char *)"  Using tag with different case!");
                 if ((num_matches > prev_num_matches || new_tag) && num_matches > 1)
                 {
                     if (ic)
@@ -724,7 +724,7 @@ do_tag(tag, type, count, forceit, verbose)
                     }
                     continue;
                 }
-                EMSG2(_("E429: File \"%s\" does not exist"), nofile_fname);
+                EMSG2((char *)"E429: File \"%s\" does not exist", nofile_fname);
             }
             else
             {
@@ -783,7 +783,7 @@ do_tags(eap)
     int         tagstacklen = curwin->w_tagstacklen;
 
     /* Highlight title */
-    MSG_PUTS_TITLE(_("\n  # TO tag         FROM line  in file/text"));
+    MSG_PUTS_TITLE((char *)"\n  # TO tag         FROM line  in file/text");
     for (i = 0; i < tagstacklen; ++i)
     {
         if (tagstack[i].tagname != NULL)
@@ -1074,7 +1074,7 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
             if (p_verbose >= 5)
             {
                 verbose_enter();
-                smsg((char_u *)_("Searching tags file %s"), tag_fname);
+                smsg((char_u *)"Searching tags file %s", tag_fname);
                 verbose_leave();
             }
         }
@@ -1327,7 +1327,7 @@ parse_line:
                         if (p_verbose >= 5)
                         {
                             verbose_enter();
-                            MSG(_("Ignoring long line in tags file"));
+                            MSG((char *)"Ignoring long line in tags file");
                             verbose_leave();
                         }
                         if (state != TS_LINEAR)
@@ -1683,12 +1683,12 @@ parse_line:
                     break;
                 }
             }
-        } /* forever */
+        }
 
         if (line_error)
         {
-            EMSG2(_("E431: Format error in tags file \"%s\""), tag_fname);
-                EMSGN(_("Before byte %ld"), (long)ftell(fp));
+            EMSG2((char *)"E431: Format error in tags file \"%s\"", tag_fname);
+                EMSGN((char *)"Before byte %ld", (long)ftell(fp));
             stop_searching = TRUE;
             line_error = FALSE;
         }
@@ -1700,7 +1700,7 @@ parse_line:
         tag_file_sorted = NUL;
         if (sort_error)
         {
-            EMSG2(_("E432: Tags file not sorted: %s"), tag_fname);
+            EMSG2((char *)"E432: Tags file not sorted: %s", tag_fname);
             sort_error = FALSE;
         }
 
@@ -1715,7 +1715,7 @@ parse_line:
 
         if (stop_searching)
             break;
-      } /* end of for-each-file loop */
+      }
 
             tagname_free(&tn);
 
@@ -1729,7 +1729,7 @@ parse_line:
     if (!stop_searching)
     {
         if (!did_open && verbose)       /* never opened any tags file */
-            EMSG(_("E433: No tags file"));
+            EMSG((char *)"E433: No tags file");
         retval = OK;            /* It's OK even when no tag found */
     }
 
@@ -2272,7 +2272,7 @@ jumpto_tag(lbuf, forceit, keep_help)
                 }
                 if (found == 0)
                 {
-                    EMSG(_("E434: Can't find tag pattern"));
+                    EMSG((char *)"E434: Can't find tag pattern");
                     curwin->w_cursor.lnum = save_lnum;
                 }
                 else
@@ -2283,7 +2283,7 @@ jumpto_tag(lbuf, forceit, keep_help)
                      */
                     if (found == 2 || !save_p_ic)
                     {
-                        MSG(_("E435: Couldn't find tag, just guessing!"));
+                        MSG((char *)"E435: Couldn't find tag, just guessing!");
                         if (!msg_scrolled && msg_silent == 0)
                         {
                             out_flush();
@@ -2735,7 +2735,7 @@ add_tag_field(dict, field_name, start, end)
         if (p_verbose > 0)
         {
             verbose_enter();
-            smsg((char_u *)_("Duplicate field name: %s"), field_name);
+            smsg((char_u *)"Duplicate field name: %s", field_name);
             verbose_leave();
         }
         return FAIL;

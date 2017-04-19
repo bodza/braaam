@@ -20,13 +20,6 @@
 
 #include "vim.h"
 
-#if 0
-#define HT_DEBUG       /* extra checks for table consistency  and statistics */
-
-static long hash_count_lookup = 0;      /* count number of hashtab lookups */
-static long hash_count_perturb = 0;     /* count number of "misses" */
-#endif
-
 /* Magic value for algorithm that walks through the array. */
 #define PERTURB_SHIFT 5
 
@@ -129,10 +122,6 @@ hash_lookup(ht, key, hash)
     hashitem_T  *hi;
     unsigned    idx;
 
-#if defined(HT_DEBUG)
-    ++hash_count_lookup;
-#endif
-
     /*
      * Quickly handle the most common situations:
      * - return if there is no item at all
@@ -162,9 +151,6 @@ hash_lookup(ht, key, hash)
      */
     for (perturb = hash; ; perturb >>= PERTURB_SHIFT)
     {
-#if defined(HT_DEBUG)
-        ++hash_count_perturb;       /* count a "miss" for hashtab lookup */
-#endif
         idx = (unsigned)((idx << 2U) + idx + perturb + 1U);
         hi = &ht->ht_array[idx & ht->ht_mask];
         if (hi->hi_key == NULL)
@@ -186,13 +172,6 @@ hash_lookup(ht, key, hash)
     void
 hash_debug_results()
 {
-#if defined(HT_DEBUG)
-    fprintf(stderr, "\r\n\r\n\r\n\r\n");
-    fprintf(stderr, "Number of hashtable lookups: %ld\r\n", hash_count_lookup);
-    fprintf(stderr, "Number of perturb loops: %ld\r\n", hash_count_perturb);
-    fprintf(stderr, "Percentage of perturb loops: %ld%%\r\n",
-                                hash_count_perturb * 100 / hash_count_lookup);
-#endif
 }
 
 /*
@@ -210,7 +189,7 @@ hash_add(ht, key)
     hi = hash_lookup(ht, key, hash);
     if (!HASHITEM_EMPTY(hi))
     {
-        EMSG2(_(e_intern2), "hash_add()");
+        EMSG2((char *)e_intern2, "hash_add()");
         return FAIL;
     }
     return hash_add_item(ht, hi, key, hash);
@@ -341,13 +320,6 @@ hash_may_resize(ht, minitems)
     /* Don't resize a locked table. */
     if (ht->ht_locked > 0)
         return OK;
-
-#if defined(HT_DEBUG)
-    if (ht->ht_used > ht->ht_filled)
-        EMSG("hash_may_resize(): more used than filled");
-    if (ht->ht_filled >= ht->ht_mask + 1)
-        EMSG("hash_may_resize(): table completely filled");
-#endif
 
     if (minitems == 0)
     {

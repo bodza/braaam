@@ -1580,18 +1580,18 @@ putdigraph(str)
         char2 = *str++;
         if (char2 == 0)
         {
-            EMSG(_(e_invarg));
+            EMSG((char *)e_invarg);
             return;
         }
         if (char1 == ESC || char2 == ESC)
         {
-            EMSG(_("E104: Escape not allowed in digraph"));
+            EMSG((char *)"E104: Escape not allowed in digraph");
             return;
         }
         str = skipwhite(str);
         if (!VIM_ISDIGIT(*str))
         {
-            EMSG(_(e_number_exp));
+            EMSG((char *)e_number_exp);
             return;
         }
         n = getdigits(&str);

@@ -237,7 +237,7 @@ add_buff(buf, s, slen)
     }
     else if (buf->bh_curr == NULL)      /* buffer has already been read */
     {
-        EMSG(_("E222: Add to read buffer"));
+        EMSG((char *)"E222: Add to read buffer");
         return;
     }
     else if (buf->bh_index != 0)
@@ -963,7 +963,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
         newlen = typebuf.tb_len + addlen + newoff + 4 * (MAXMAPLEN + 4);
         if (newlen < 0)             /* string is getting too long */
         {
-            EMSG(_(e_toocompl));    /* also calls flush_buffers */
+            EMSG((char *)e_toocompl);    /* also calls flush_buffers */
             setcursor();
             return FAIL;
         }
@@ -1268,11 +1268,11 @@ alloc_typebuf()
 free_typebuf()
 {
     if (typebuf.tb_buf == typebuf_init)
-        EMSG2(_(e_intern2), "Free typebuf 1");
+        EMSG2((char *)e_intern2, "Free typebuf 1");
     else
         vim_free(typebuf.tb_buf);
     if (typebuf.tb_noremap == noremapbuf_init)
-        EMSG2(_(e_intern2), "Free typebuf 2");
+        EMSG2((char *)e_intern2, "Free typebuf 2");
     else
         vim_free(typebuf.tb_noremap);
 }
@@ -1322,9 +1322,7 @@ save_typeahead(tp)
     readbuf1.bh_first.b_next = NULL;
     tp->save_readbuf2 = readbuf2;
     readbuf2.bh_first.b_next = NULL;
-#if defined(USE_INPUT_BUF)
     tp->save_inputbuf = get_input_buf();
-#endif
 }
 
 /*
@@ -1348,9 +1346,7 @@ restore_typeahead(tp)
     readbuf1 = tp->save_readbuf1;
     free_buff(&readbuf2);
     readbuf2 = tp->save_readbuf2;
-#if defined(USE_INPUT_BUF)
     set_input_buf(tp->save_inputbuf);
-#endif
 }
 
 /*
@@ -1363,7 +1359,7 @@ openscript(name, directly)
 {
     if (curscript + 1 == NSCRIPT)
     {
-        EMSG(_(e_nesting));
+        EMSG((char *)e_nesting);
         return;
     }
     if (ignore_script)
@@ -1376,7 +1372,7 @@ openscript(name, directly)
     expand_env(name, NameBuff, MAXPATHL);
     if ((scriptin[curscript] = mch_fopen((char *)NameBuff, READBIN)) == NULL)
     {
-        EMSG2(_(e_notopen), name);
+        EMSG2((char *)e_notopen, name);
         if (curscript)
             --curscript;
         return;
@@ -2188,7 +2184,7 @@ vgetorpeek(advance)
                          */
                         if (++mapdepth >= p_mmd)
                         {
-                            EMSG(_("E223: recursive mapping"));
+                            EMSG((char *)"E223: recursive mapping");
                             if (State & CMDLINE)
                                 redrawcmdline();
                             else
@@ -2721,7 +2717,6 @@ fix_input_buffer(buf, len, script)
     return len;
 }
 
-#if defined(USE_INPUT_BUF)
 /*
  * Return TRUE when bytes are in the input buffer or in the typeahead buffer.
  * Normally the input buffer would be sufficient, but the server_to_input_buf()
@@ -2733,7 +2728,6 @@ input_available()
 {
     return (!vim_is_input_buf_empty() || typebuf_was_filled);
 }
-#endif
 
 /*
  * map[!]                   : show all key mappings
@@ -3036,9 +3030,9 @@ do_map(maptype, arg, mode, abbrev)
                         && STRNCMP(mp->m_keys, keys, (size_t)len) == 0)
                 {
                     if (abbrev)
-                        EMSG2(_("E224: global abbreviation already exists for %s"), mp->m_keys);
+                        EMSG2((char *)"E224: global abbreviation already exists for %s", mp->m_keys);
                     else
-                        EMSG2(_("E225: global mapping already exists for %s"), mp->m_keys);
+                        EMSG2((char *)"E225: global mapping already exists for %s", mp->m_keys);
                     retval = 5;
                     goto theend;
                 }
@@ -3165,9 +3159,9 @@ do_map(maptype, arg, mode, abbrev)
                         else if (unique)
                         {
                             if (abbrev)
-                                EMSG2(_("E226: abbreviation already exists for %s"), p);
+                                EMSG2((char *)"E226: abbreviation already exists for %s", p);
                             else
-                                EMSG2(_("E227: mapping already exists for %s"), p);
+                                EMSG2((char *)"E227: mapping already exists for %s", p);
                             retval = 5;
                             goto theend;
                         }
@@ -3242,9 +3236,9 @@ do_map(maptype, arg, mode, abbrev)
                 )
         {
             if (abbrev)
-                MSG(_("No abbreviation found"));
+                MSG((char *)"No abbreviation found");
             else
-                MSG(_("No mapping found"));
+                MSG((char *)"No mapping found");
         }
         goto theend;                        /* listing finished */
     }
@@ -3401,7 +3395,7 @@ map_clear(cmdp, arg, forceit, abbr)
     local = (STRCMP(arg, "<buffer>") == 0);
     if (!local && *arg != NUL)
     {
-        EMSG(_(e_invarg));
+        EMSG((char *)e_invarg);
         return;
     }
 
@@ -3843,8 +3837,8 @@ ExpandMappings(regmatch, num_file, file)
                     }
                     vim_free(p);
                 }
-            } /* for (mp) */
-        } /* for (hash) */
+            }
+        }
 
         if (count == 0)                 /* no match found */
             break; /* for (round) */
@@ -3855,7 +3849,7 @@ ExpandMappings(regmatch, num_file, file)
             if (*file == NULL)
                 return FAIL;
         }
-    } /* for (round) */
+    }
 
     if (count > 1)
     {
@@ -4360,7 +4354,7 @@ makemap(fd, buf)
                         c1 = 'l';
                         break;
                     default:
-                        EMSG(_("E228: makemap: Illegal mode"));
+                        EMSG((char *)"E228: makemap: Illegal mode");
                         return FAIL;
                 }
                 do      /* do this twice if c2 is set, 3 times with c3 */

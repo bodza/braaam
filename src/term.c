@@ -102,9 +102,6 @@ static int u7_status = U7_GET;
  * Some versions define ospeed to be speed_t, but that is incompatible with
  * BSD, where ospeed is short and speed_t is long.
  */
-#if !defined(HAVE_OSPEED)
-short ospeed;
-#endif
 
 #define TGETSTR(s, p)  vim_tgetstr((s), (p))
 #define TGETENT(b, t)  tgetent((char *)(b), (char *)(t))
@@ -605,7 +602,7 @@ set_termname(term)
                 }
                 mch_errmsg("'");
                 mch_errmsg((char *)term);
-                mch_errmsg(_("' not known. Available builtin terminals are:"));
+                mch_errmsg((char *)"' not known. Available builtin terminals are:");
                 mch_errmsg("\r\n");
                 for (termp = &(builtin_termcaps[0]); termp->bt_string != NULL; ++termp)
                 {
@@ -628,7 +625,7 @@ set_termname(term)
                     return FAIL;
                 }
                 term = DEFAULT_TERM;
-                mch_errmsg(_("defaulting to '"));
+                mch_errmsg((char *)"defaulting to '");
                 mch_errmsg((char *)term);
                 mch_errmsg("'\r\n");
                 if (emsg_silent == 0)
@@ -721,28 +718,11 @@ set_termname(term)
             check_mouse_termcode();     /* set mouse termcode anyway */
     }
 
-#if defined(USE_TERM_CONSOLE)
-    /* DEFAULT_TERM indicates that it is the machine console. */
-    if (STRCMP(term, DEFAULT_TERM) != 0)
-        term_console = FALSE;
-    else
-    {
-        term_console = TRUE;
-    }
-#endif
-
     /*
      * 'ttyfast' is default on for xterm, iris-ansi and a few others.
      */
     if (vim_is_fastterm(term))
         p_tf = TRUE;
-#if defined(USE_TERM_CONSOLE)
-    /*
-     * 'ttyfast' is default on consoles
-     */
-    if (term_console)
-        p_tf = TRUE;
-#endif
 
     ttest(TRUE);        /* make sure we have a valid set of terminal codes */
 
@@ -866,10 +846,10 @@ tgetent_error(tbuf, term)
 
         if (i < 0)
 #if defined(TGETENT_ZERO_ERR)
-            return (char_u *)_("E557: Cannot open termcap file");
+            return (char_u *)"E557: Cannot open termcap file";
         if (i == 0)
 #endif
-            return (char_u *)_("E558: Terminal entry not found in terminfo");
+            return (char_u *)"E558: Terminal entry not found in terminfo";
     }
     return NULL;
 }
@@ -1022,7 +1002,7 @@ add_termcap_entry(name, force)
             EMSG(error_msg);
         else
 #endif
-            EMSG2(_("E436: No \"%s\" entry in termcap"), name);
+            EMSG2((char *)"E436: No \"%s\" entry in termcap", name);
     }
     return FAIL;
 }
@@ -1179,11 +1159,7 @@ termcapinit(name)
 /*
  * the number of calls to ui_write is reduced by using the buffer "out_buf"
  */
-#if defined(DOS16)
-#define OUT_SIZE       255             /* only have 640K total... */
-#else
 #define OUT_SIZE      2047
-#endif
             /* Add one to allow mch_write() in os_win32.c to append a NUL */
 static char_u           out_buf[OUT_SIZE + 1];
 static int              out_pos = 0;    /* number of chars in out_buf */
@@ -1438,7 +1414,7 @@ ttest(pairs)
      * MUST have "cm": cursor motion.
      */
     if (*T_CM == NUL)
-        EMSG(_("E437: terminal capability \"cm\" required"));
+        EMSG((char *)"E437: terminal capability \"cm\" required");
 
     /*
      * if "cs" defined, use a scroll region, it's faster.
@@ -1927,26 +1903,6 @@ may_req_ambiguous_char_width()
     }
 }
 
-#if defined(DEBUG_TERMRESPONSE)
-    static void
-log_tr(char *msg)
-{
-    static FILE *fd_tr = NULL;
-    static proftime_T start;
-    proftime_T now;
-
-    if (fd_tr == NULL)
-    {
-        fd_tr = fopen("termresponse.log", "w");
-        profile_start(&start);
-    }
-    now = start;
-    profile_end(&now);
-    fprintf(fd_tr, "%s: %s %s\n",
-            profile_msg(&now),
-            must_redraw == NOT_VALID ? "NV" : must_redraw == CLEAR ? "CL" : "  ", msg);
-}
-#endif
 #endif
 
 /*
@@ -2412,10 +2368,7 @@ switch_to_8bit()
 }
 #endif
 
-#if defined(CHECK_DOUBLE_CLICK)
 static linenr_T orig_topline = 0;
-#endif
-#if defined(CHECK_DOUBLE_CLICK)
 /*
  * Checking for double clicks ourselves.
  * "orig_topline" is used to avoid detecting a double-click when the window
@@ -2431,7 +2384,6 @@ set_mouse_topline(wp)
 {
     orig_topline = wp->w_topline;
 }
-#endif
 
 /*
  * Check if typebuf.tb_buf[] contains a terminal key code.
@@ -2477,14 +2429,12 @@ check_termcode(max_offset, buf, bufsize, buflen)
     static int  held_button = MOUSE_RELEASE;
     static int  orig_num_clicks = 1;
     static int  orig_mouse_code = 0x0;
-#if defined(CHECK_DOUBLE_CLICK)
     static int  orig_mouse_col = 0;
     static int  orig_mouse_row = 0;
     static struct timeval  orig_mouse_time = {0, 0};
                                         /* time of previous mouse click */
     struct timeval  mouse_time;         /* time of current mouse click */
     long        timediff;               /* elapsed time in msec */
-#endif
     int         cpo_koffset;
 
     cpo_koffset = (vim_strchr(p_cpo, CPO_KOFFSET) != NULL);
@@ -2717,17 +2667,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                              * that right away if possible, keeping any
                              * messages. */
                             set_option_value((char_u *)"ambw", 0L, (char_u *)aw, 0);
-#if defined(DEBUG_TERMRESPONSE)
-                            {
-                                char buf[100];
-                                int  r = redraw_asap(CLEAR);
-
-                                sprintf(buf, "set 'ambiwidth', redraw_asap(): %d", r);
-                                log_tr(buf);
-                            }
-#else
                             redraw_asap(CLEAR);
-#endif
                         }
                     }
                     key_name[0] = (int)KS_EXTRA;
@@ -2919,7 +2859,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
             }
             else if (wheel_code == 0)
             {
-#if defined(CHECK_DOUBLE_CLICK)
                 {
                     /*
                      * Compute the time elapsed since the previous mouse click.
@@ -2948,9 +2887,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     orig_mouse_row = mouse_row;
                     orig_topline = curwin->w_topline;
                 }
-#else
-                orig_num_clicks = NUM_MOUSE_CLICKS(mouse_code);
-#endif
                 is_click = TRUE;
                 orig_mouse_code = mouse_code;
             }
@@ -3161,7 +3097,7 @@ replace_termcodes(from, bufp, from_part, do_lt, special)
             if (STRNICMP(src, "<SID>", 5) == 0)
             {
                 if (current_SID <= 0)
-                    EMSG(_(e_usingsid));
+                    EMSG((char *)e_usingsid);
                 else
                 {
                     src += 5;
@@ -3363,7 +3299,7 @@ show_termcodes()
         return;
 
     /* Highlight title */
-    MSG_PUTS_TITLE(_("\n--- Terminal keys ---"));
+    MSG_PUTS_TITLE((char *)"\n--- Terminal keys ---");
 
     /*
      * do the loop two times:
@@ -3506,12 +3442,6 @@ req_more_codes_from_term()
      * many, there can be a buffer overflow somewhere. */
     while (xt_index_out < xt_index_in + 10 && key_names[xt_index_out] != NULL)
     {
-#if defined(DEBUG_TERMRESPONSE)
-        char dbuf[100];
-
-        sprintf(dbuf, "Requesting XT %d: %s", xt_index_out, key_names[xt_index_out]);
-        log_tr(dbuf);
-#endif
         sprintf(buf, "\033P+q%02x%02x\033\\", key_names[xt_index_out][0], key_names[xt_index_out][1]);
         out_str_nf((char_u *)buf);
         ++xt_index_out;
@@ -3557,14 +3487,6 @@ got_code_from_term(code, len)
                 break;
             }
         }
-#if defined(DEBUG_TERMRESPONSE)
-        {
-            char buf[100];
-
-            sprintf(buf, "Received XT %d: %s", xt_index_in, (char *)name);
-            log_tr(buf);
-        }
-#endif
         if (key_names[i] != NULL)
         {
             for (i = 8; (c = hexhex2nr(code + i)) >= 0; i += 2)
@@ -3583,17 +3505,7 @@ got_code_from_term(code, len)
                     set_keep_msg_from_hist();
                     set_color_count(i);
                     init_highlight(TRUE, FALSE);
-#if defined(DEBUG_TERMRESPONSE)
-                    {
-                        char buf[100];
-                        int  r = redraw_asap(CLEAR);
-
-                        sprintf(buf, "Received t_Co, redraw_asap(): %d", r);
-                        log_tr(buf);
-                    }
-#else
                     redraw_asap(CLEAR);
-#endif
                 }
             }
             else

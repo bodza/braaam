@@ -838,12 +838,10 @@ getcmdline(firstc, count, indent)
                 redrawcmd();
                 goto cmdline_changed;
 
-#if defined(FEAT_DND)
         case K_DROP:
                 cmdline_paste('~', TRUE, FALSE);
                 redrawcmd();
                 goto cmdline_changed;
-#endif
 
         case K_LEFTDRAG:
         case K_LEFTRELEASE:
@@ -1447,9 +1445,9 @@ text_locked()
 text_locked_msg()
 {
     if (cmdwin_type != 0)
-        EMSG(_(e_cmdwin));
+        EMSG((char *)e_cmdwin);
     else
-        EMSG(_(e_secure));
+        EMSG((char *)e_secure);
 }
 
 /*
@@ -1461,7 +1459,7 @@ curbuf_locked()
 {
     if (curbuf_lock > 0)
     {
-        EMSG(_("E788: Not allowed to edit another buffer now"));
+        EMSG((char *)"E788: Not allowed to edit another buffer now");
         return TRUE;
     }
     return allbuf_locked();
@@ -1476,7 +1474,7 @@ allbuf_locked()
 {
     if (allbuf_lock > 0)
     {
-        EMSG(_("E811: Not allowed to change buffer information now"));
+        EMSG((char *)"E811: Not allowed to change buffer information now");
         return TRUE;
     }
     return FALSE;
@@ -2702,13 +2700,13 @@ ExpandOne(xp, str, orig, options, mode)
              * causing the pattern to be added, which has illegal characters.
              */
             if (!(options & WILD_SILENT) && (options & WILD_LIST_NOTFOUND))
-                EMSG2(_(e_nomatch2), str);
+                EMSG2((char *)e_nomatch2, str);
 #endif
         }
         else if (xp->xp_numfiles == 0)
         {
             if (!(options & WILD_SILENT))
-                EMSG2(_(e_nomatch2), str);
+                EMSG2((char *)e_nomatch2, str);
         }
         else
         {
@@ -2745,7 +2743,7 @@ ExpandOne(xp, str, orig, options, mode)
                      * (and possibly have to hit return to continue!).
                      */
                     if (!(options & WILD_SILENT))
-                        EMSG(_(e_toomany));
+                        EMSG((char *)e_toomany);
                     else if (!(options & WILD_NO_BEEP))
                         beep_flush();
                 }
@@ -3084,10 +3082,10 @@ showmatches(xp, wildmenu)
 
         if (xp->xp_context == EXPAND_TAGS_LISTFILES)
         {
-            MSG_PUTS_ATTR(_("tagname"), hl_attr(HLF_T));
+            MSG_PUTS_ATTR((char *)"tagname", hl_attr(HLF_T));
             msg_clr_eos();
             msg_advance(maxlen - 3);
-            MSG_PUTS_ATTR(_(" kind file\n"), hl_attr(HLF_T));
+            MSG_PUTS_ATTR((char *)" kind file\n", hl_attr(HLF_T));
         }
 
         /* list the files line by line */
@@ -4805,7 +4803,7 @@ ex_history(eap)
 
     if (hislen == 0)
     {
-        MSG(_("'history' option is zero"));
+        MSG((char *)"'history' option is zero");
         return;
     }
 
@@ -4827,7 +4825,7 @@ ex_history(eap)
             else
             {
                 *end = i;
-                EMSG(_(e_trailing));
+                EMSG((char *)e_trailing);
                 return;
             }
         }
@@ -4839,7 +4837,7 @@ ex_history(eap)
         end = arg;
     if (!get_list_range(&end, &hisidx1, &hisidx2) || *end != NUL)
     {
-        EMSG(_(e_trailing));
+        EMSG((char *)e_trailing);
         return;
     }
 
@@ -5031,7 +5029,7 @@ ex_window()
     if (!win_valid(old_curwin) || !buf_valid(old_curbuf))
     {
         cmdwin_result = Ctrl_C;
-        EMSG(_("E199: Active window or buffer deleted"));
+        EMSG((char *)"E199: Active window or buffer deleted");
     }
     else
     {

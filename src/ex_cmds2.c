@@ -71,13 +71,13 @@ do_debug(cmd)
     State = NORMAL;
 
     if (!debug_did_msg)
-        MSG(_("Entering Debug mode.  Type \"cont\" to continue."));
+        MSG((char *)"Entering Debug mode.  Type \"cont\" to continue.");
     if (sourcing_name != NULL)
         msg(sourcing_name);
     if (sourcing_lnum != 0)
-        smsg((char_u *)_("line %ld: %s"), (long)sourcing_lnum, cmd);
+        smsg((char_u *)"line %ld: %s", (long)sourcing_lnum, cmd);
     else
-        smsg((char_u *)_("cmd: %s"), cmd);
+        smsg((char_u *)"cmd: %s", cmd);
 
     /*
      * Repeat getting a command and executing it.
@@ -269,7 +269,7 @@ dbg_check_breakpoint(eap)
                 p = (char_u *)"<SNR>";
             else
                 p = (char_u *)"";
-            smsg((char_u *)_("Breakpoint in \"%s%s\" line %ld"),
+            smsg((char_u *)"Breakpoint in \"%s%s\" line %ld",
                     p,
                     debug_breakpoint_name + (*p == NUL ? 0 : 3),
                     (long)debug_breakpoint_lnum);
@@ -379,7 +379,7 @@ dbg_parsearg(arg, gap)
     {
         if (curbuf->b_ffname == NULL)
         {
-            EMSG(_(e_noname));
+            EMSG((char *)e_noname);
             return FAIL;
         }
         bp->dbg_type = DBG_FILE;
@@ -387,7 +387,7 @@ dbg_parsearg(arg, gap)
     }
     else
     {
-        EMSG2(_(e_invarg2), p);
+        EMSG2((char *)e_invarg2, p);
         return FAIL;
     }
     p = skipwhite(p + 4);
@@ -409,7 +409,7 @@ dbg_parsearg(arg, gap)
             || (here && *p != NUL)
             || (bp->dbg_type == DBG_FUNC && strstr((char *)p, "()") != NULL))
     {
-        EMSG2(_(e_invarg2), arg);
+        EMSG2((char *)e_invarg2, arg);
         return FAIL;
     }
 
@@ -557,7 +557,7 @@ ex_breakdel(eap)
     }
 
     if (todel < 0)
-        EMSG2(_("E161: Breakpoint not found: %s"), eap->arg);
+        EMSG2((char *)"E161: Breakpoint not found: %s", eap->arg);
     else
     {
         while (gap->ga_len > 0)
@@ -590,14 +590,14 @@ ex_breaklist(eap)
     int         i;
 
     if (dbg_breakp.ga_len == 0)
-        MSG(_("No breakpoints defined"));
+        MSG((char *)"No breakpoints defined");
     else
         for (i = 0; i < dbg_breakp.ga_len; ++i)
         {
             bp = &BREAKP(i);
             if (bp->dbg_type == DBG_FILE)
                 home_replace(NULL, bp->dbg_name, NameBuff, MAXPATHL, TRUE);
-            smsg((char_u *)_("%3d  %s %s  line %ld"),
+            smsg((char_u *)"%3d  %s %s  line %ld",
                     bp->dbg_nr,
                     bp->dbg_type == DBG_FUNC ? "func" : "file",
                     bp->dbg_type == DBG_FUNC ? bp->dbg_name : NameBuff,
@@ -902,9 +902,9 @@ check_changed(buf, flags)
             return bufIsChanged(buf);
         }
         if (flags & CCGD_EXCMD)
-            EMSG(_(e_nowrtmsg));
+            EMSG((char *)e_nowrtmsg);
         else
-            EMSG(_(e_nowrtmsg_nobang));
+            EMSG((char *)e_nowrtmsg_nobang);
         return TRUE;
     }
     return FALSE;
@@ -924,9 +924,9 @@ dialog_changed(buf, checkall)
     buf_T       *buf2;
     exarg_T     ea;
 
-    dialog_msg(buff, _("Save changes to \"%s\"?"),
+    dialog_msg(buff, (char *)"Save changes to \"%s\"?",
                         (buf->b_fname != NULL) ?
-                        buf->b_fname : (char_u *)_("Untitled"));
+                        buf->b_fname : (char_u *)"Untitled");
     if (checkall)
         ret = vim_dialog_yesnoallcancel(VIM_QUESTION, NULL, buff, 1);
     else
@@ -1093,7 +1093,7 @@ check_changed_any(hidden)
             msg_col = 0;
             msg_didout = FALSE;
         }
-        if (EMSG2(_("E162: No write since last change for buffer \"%s\""),
+        if (EMSG2((char *)"E162: No write since last change for buffer \"%s\"",
                     buf_spname(buf) != NULL ? buf_spname(buf) : buf->b_fname))
         {
             save = no_wait_return;
@@ -1135,7 +1135,7 @@ check_fname()
 {
     if (curbuf->b_ffname == NULL)
     {
-        EMSG(_(e_noname));
+        EMSG((char *)e_noname);
         return FAIL;
     }
     return OK;
@@ -1160,7 +1160,7 @@ buf_write_all(buf, forceit)
     if (curbuf != old_curbuf)
     {
         msg_source(hl_attr(HLF_W));
-        MSG(_("Warning: Entered other buffer unexpectedly (check autocommands)"));
+        MSG((char *)"Warning: Entered other buffer unexpectedly (check autocommands)");
     }
     return retval;
 }
@@ -1335,7 +1335,7 @@ do_arglist(str, what, after)
             vim_regfree(regmatch.regprog);
             vim_free(p);
             if (!didone)
-                EMSG2(_(e_nomatch2), ((char_u **)new_ga.ga_data)[i]);
+                EMSG2((char *)e_nomatch2, ((char_u **)new_ga.ga_data)[i]);
         }
         ga_clear(&new_ga);
     }
@@ -1348,7 +1348,7 @@ do_arglist(str, what, after)
             return FAIL;
         if (exp_count == 0)
         {
-            EMSG(_(e_nomatch));
+            EMSG((char *)e_nomatch);
             return FAIL;
         }
 
@@ -1560,11 +1560,11 @@ do_argfile(eap, argn)
     if (argn < 0 || argn >= ARGCOUNT)
     {
         if (ARGCOUNT <= 1)
-            EMSG(_("E163: There is only one file to edit"));
+            EMSG((char *)"E163: There is only one file to edit");
         else if (argn < 0)
-            EMSG(_("E164: Cannot go before first file"));
+            EMSG((char *)"E164: Cannot go before first file");
         else
-            EMSG(_("E165: Cannot go beyond last file"));
+            EMSG((char *)"E165: Cannot go beyond last file");
     }
     else
     {
@@ -1713,7 +1713,7 @@ ex_argdelete(eap)
             eap->line2 = ARGCOUNT;
         n = eap->line2 - eap->line1 + 1;
         if (*eap->arg != NUL || n <= 0)
-            EMSG(_(e_invarg));
+            EMSG((char *)e_invarg);
         else
         {
             for (i = eap->line1; i <= eap->line2; ++i)
@@ -1728,7 +1728,7 @@ ex_argdelete(eap)
         }
     }
     else if (*eap->arg == NUL)
-        EMSG(_(e_argreq));
+        EMSG((char *)e_argreq);
     else
         do_arglist(eap->arg, AL_DEL, 0);
     maketitle();
@@ -1972,8 +1972,7 @@ ex_compiler(eap)
             if (eap->forceit)
             {
                 /* ":compiler! {name}" sets global options */
-                do_cmdline_cmd((char_u *)
-                                   "command -nargs=* CompilerSet set <args>");
+                do_cmdline_cmd((char_u *)"command -nargs=* CompilerSet set <args>");
             }
             else
             {
@@ -1986,15 +1985,14 @@ ex_compiler(eap)
                 old_cur_comp = get_var_value((char_u *)"g:current_compiler");
                 if (old_cur_comp != NULL)
                     old_cur_comp = vim_strsave(old_cur_comp);
-                do_cmdline_cmd((char_u *)
-                              "command -nargs=* CompilerSet setlocal <args>");
+                do_cmdline_cmd((char_u *)"command -nargs=* CompilerSet setlocal <args>");
             }
             do_unlet((char_u *)"g:current_compiler", TRUE);
             do_unlet((char_u *)"b:current_compiler", TRUE);
 
             sprintf((char *)buf, "compiler/%s.vim", eap->arg);
             if (source_runtime(buf, TRUE) == FAIL)
-                EMSG2(_("E666: compiler not supported: %s"), eap->arg);
+                EMSG2((char *)"E666: compiler not supported: %s", eap->arg);
             vim_free(buf);
 
             do_cmdline_cmd((char_u *)":delcommand CompilerSet");
@@ -2090,7 +2088,7 @@ do_in_runtimepath(name, all, callback, cookie)
         if (p_verbose > 1 && name != NULL)
         {
             verbose_enter();
-            smsg((char_u *)_("Searching for \"%s\" in \"%s\""), (char *)name, (char *)p_rtp);
+            smsg((char_u *)"Searching for \"%s\" in \"%s\"", (char *)name, (char *)p_rtp);
             verbose_leave();
         }
 
@@ -2121,7 +2119,7 @@ do_in_runtimepath(name, all, callback, cookie)
                     if (p_verbose > 2)
                     {
                         verbose_enter();
-                        smsg((char_u *)_("Searching for \"%s\""), buf);
+                        smsg((char_u *)"Searching for \"%s\"", buf);
                         verbose_leave();
                     }
 
@@ -2146,7 +2144,7 @@ do_in_runtimepath(name, all, callback, cookie)
     if (p_verbose > 0 && !did_one && name != NULL)
     {
         verbose_enter();
-        smsg((char_u *)_("not found in 'runtimepath': \"%s\""), name);
+        smsg((char_u *)"not found in 'runtimepath': \"%s\"", name);
         verbose_leave();
     }
 
@@ -2179,7 +2177,7 @@ cmd_source(fname, eap)
     exarg_T     *eap;
 {
     if (*fname == NUL)
-        EMSG(_(e_argreq));
+        EMSG((char *)e_argreq);
 
     else if (eap != NULL && eap->forceit)
         /* ":source!": read Normal mode commands
@@ -2194,7 +2192,7 @@ cmd_source(fname, eap)
 
     /* ":source" read ex commands */
     else if (do_source(fname, FALSE, DOSO_NONE) == FAIL)
-        EMSG2(_(e_notopen), fname);
+        EMSG2((char *)e_notopen, fname);
 }
 
 /*
@@ -2250,7 +2248,6 @@ source_level(cookie)
 
 static char_u *get_one_sourceline(struct source_cookie *sp);
 
-#define USE_FOPEN_NOINH
 static FILE *fopen_noinh_readbin(char *filename);
 
 /*
@@ -2312,7 +2309,7 @@ do_source(fname, check_other, is_vimrc)
         return retval;
     if (mch_isdir(fname_exp))
     {
-        smsg((char_u *)_("Cannot source a directory: \"%s\""), fname);
+        smsg((char_u *)"Cannot source a directory: \"%s\"", fname);
         goto theend;
     }
 
@@ -2327,11 +2324,7 @@ do_source(fname, check_other, is_vimrc)
     /* Apply SourcePre autocommands, they may get the file. */
     apply_autocmds(EVENT_SOURCEPRE, fname_exp, fname_exp, FALSE, curbuf);
 
-#if defined(USE_FOPEN_NOINH)
     cookie.fp = fopen_noinh_readbin((char *)fname_exp);
-#else
-    cookie.fp = mch_fopen((char *)fname_exp, READBIN);
-#endif
     if (cookie.fp == NULL && check_other)
     {
         /*
@@ -2348,11 +2341,7 @@ do_source(fname, check_other, is_vimrc)
                 *p = '.';
             else
                 *p = '_';
-#if defined(USE_FOPEN_NOINH)
             cookie.fp = fopen_noinh_readbin((char *)fname_exp);
-#else
-            cookie.fp = mch_fopen((char *)fname_exp, READBIN);
-#endif
         }
     }
 
@@ -2362,9 +2351,9 @@ do_source(fname, check_other, is_vimrc)
         {
             verbose_enter();
             if (sourcing_name == NULL)
-                smsg((char_u *)_("could not source \"%s\""), fname);
+                smsg((char_u *)"could not source \"%s\"", fname);
             else
-                smsg((char_u *)_("line %ld: could not source \"%s\""), sourcing_lnum, fname);
+                smsg((char_u *)"line %ld: could not source \"%s\"", sourcing_lnum, fname);
             verbose_leave();
         }
         goto theend;
@@ -2379,9 +2368,9 @@ do_source(fname, check_other, is_vimrc)
     {
         verbose_enter();
         if (sourcing_name == NULL)
-            smsg((char_u *)_("sourcing \"%s\""), fname);
+            smsg((char_u *)"sourcing \"%s\"", fname);
         else
-            smsg((char_u *)_("line %ld: sourcing \"%s\""), sourcing_lnum, fname);
+            smsg((char_u *)"line %ld: sourcing \"%s\"", sourcing_lnum, fname);
         verbose_leave();
     }
     if (is_vimrc == DOSO_VIMRC)
@@ -2485,15 +2474,15 @@ do_source(fname, check_other, is_vimrc)
     retval = OK;
 
     if (got_int)
-        EMSG(_(e_interr));
+        EMSG((char *)e_interr);
     sourcing_name = save_sourcing_name;
     sourcing_lnum = save_sourcing_lnum;
     if (p_verbose > 1)
     {
         verbose_enter();
-        smsg((char_u *)_("finished sourcing %s"), fname);
+        smsg((char_u *)"finished sourcing %s", fname);
         if (sourcing_name != NULL)
-            smsg((char_u *)_("continuing in %s"), sourcing_name);
+            smsg((char_u *)"continuing in %s", sourcing_name);
         verbose_leave();
     }
 
@@ -2541,15 +2530,15 @@ get_scriptname(id)
     scid_T      id;
 {
     if (id == SID_MODELINE)
-        return (char_u *)_("modeline");
+        return (char_u *)"modeline";
     if (id == SID_CMDARG)
-        return (char_u *)_("--cmd argument");
+        return (char_u *)"--cmd argument";
     if (id == SID_CARG)
-        return (char_u *)_("-c argument");
+        return (char_u *)"-c argument";
     if (id == SID_ENV)
-        return (char_u *)_("environment variable");
+        return (char_u *)"environment variable";
     if (id == SID_ERROR)
-        return (char_u *)_("error handler");
+        return (char_u *)"error handler";
     return SCRIPT_ITEM(id).sn_name;
 }
 
@@ -2750,7 +2739,7 @@ ex_scriptencoding(eap)
 
     if (!getline_equal(eap->getline, eap->cookie, getsourceline))
     {
-        EMSG(_("E167: :scriptencoding used outside of a sourced file"));
+        EMSG((char *)"E167: :scriptencoding used outside of a sourced file");
         return;
     }
 
@@ -2781,7 +2770,7 @@ ex_finish(eap)
     if (getline_equal(eap->getline, eap->cookie, getsourceline))
         do_finish(eap, FALSE);
     else
-        EMSG(_("E168: :finish used outside of a sourced file"));
+        EMSG((char *)"E168: :finish used outside of a sourced file");
 }
 
 /*

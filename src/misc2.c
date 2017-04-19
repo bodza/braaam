@@ -196,12 +196,9 @@ coladvance2(pos, addspaces, finetune, wcol)
             col -= csize;
         }
 
-        if (virtual_active()
-                && addspaces
-                && ((col != wcol && col != wcol + 1) || csize > 1))
+        if (virtual_active() && addspaces && ((col != wcol && col != wcol + 1) || csize > 1))
         {
-            /* 'virtualedit' is set: The difference between wcol and col is
-             * filled with spaces. */
+            /* 'virtualedit' is set: The difference between wcol and col is filled with spaces. */
 
             if (line[idx] == NUL)
             {
@@ -669,7 +666,7 @@ lalloc(size, message)
     {
         /* Don't hide this message */
         emsg_silent = 0;
-        EMSGN(_("E341: Internal error: lalloc(%ld, )"), size);
+        EMSGN((char *)"E341: Internal error: lalloc(%ld, )", size);
         return NULL;
     }
 
@@ -732,7 +729,7 @@ do_outofmem_msg(size)
          * message fails, e.g. when setting v:errmsg. */
         did_outofmem_msg = TRUE;
 
-        EMSGN(_("E342: Out of memory!  (allocating %lu bytes)"), size);
+        EMSGN((char *)"E342: Out of memory!  (allocating %lu bytes)", size);
     }
 }
 
@@ -1321,21 +1318,6 @@ vim_free(x)
     }
 }
 
-#if !defined(HAVE_MEMSET)
-    void *
-vim_memset(ptr, c, size)
-    void    *ptr;
-    int     c;
-    size_t  size;
-{
-    char *p = ptr;
-
-    while (size-- > 0)
-        *p++ = c;
-    return ptr;
-}
-#endif
-
 #if defined(VIM_MEMCMP)
 /*
  * Return zero when "b1" and "b2" are the same for "len" bytes.
@@ -1357,62 +1339,6 @@ vim_memcmp(b1, b2, len)
         ++p2;
     }
     return 0;
-}
-#endif
-
-#if !defined(HAVE_STRCASECMP)
-/*
- * Compare two strings, ignoring case, using current locale.
- * Doesn't work for multi-byte characters.
- * return 0 for match, < 0 for smaller, > 0 for bigger
- */
-    int
-vim_stricmp(s1, s2)
-    char        *s1;
-    char        *s2;
-{
-    int         i;
-
-    for (;;)
-    {
-        i = (int)TOLOWER_LOC(*s1) - (int)TOLOWER_LOC(*s2);
-        if (i != 0)
-            return i;                       /* this character different */
-        if (*s1 == NUL)
-            break;                          /* strings match until NUL */
-        ++s1;
-        ++s2;
-    }
-    return 0;                               /* strings match */
-}
-#endif
-
-#if !defined(HAVE_STRNCASECMP)
-/*
- * Compare two strings, for length "len", ignoring case, using current locale.
- * Doesn't work for multi-byte characters.
- * return 0 for match, < 0 for smaller, > 0 for bigger
- */
-    int
-vim_strnicmp(s1, s2, len)
-    char        *s1;
-    char        *s2;
-    size_t      len;
-{
-    int         i;
-
-    while (len > 0)
-    {
-        i = (int)TOLOWER_LOC(*s1) - (int)TOLOWER_LOC(*s2);
-        if (i != 0)
-            return i;                       /* this character different */
-        if (*s1 == NUL)
-            break;                          /* strings match until NUL */
-        ++s1;
-        ++s2;
-        --len;
-    }
-    return 0;                               /* strings match */
 }
 #endif
 
@@ -1514,29 +1440,6 @@ vim_strrchr(string, c)
     }
     return retval;
 }
-
-/*
- * Vim's version of strpbrk(), in case it's missing.
- * Don't generate a prototype for this, causes problems when it's not used.
- */
-#if !defined(HAVE_STRPBRK)
-#if defined(vim_strpbrk)
-#undef vim_strpbrk
-#endif
-    char_u *
-vim_strpbrk(s, charset)
-    char_u      *s;
-    char_u      *charset;
-{
-    while (*s)
-    {
-        if (vim_strchr(charset, *s) != NULL)
-            return s;
-        mb_ptr_adv(s);
-    }
-    return NULL;
-}
-#endif
 
 /*
  * Vim has its own isspace() function, because on some machines isspace()
@@ -2644,7 +2547,7 @@ call_shell(cmd, opt)
     if (p_verbose > 3)
     {
         verbose_enter();
-        smsg((char_u *)_("Calling shell to execute: \"%s\""), cmd == NULL ? p_sh : cmd);
+        smsg((char_u *)"Calling shell to execute: \"%s\"", cmd == NULL ? p_sh : cmd);
         out_char('\n');
         cursor_on();
         verbose_leave();
@@ -2652,7 +2555,7 @@ call_shell(cmd, opt)
 
     if (*p_sh == NUL)
     {
-        EMSG(_(e_shellempty));
+        EMSG((char *)e_shellempty);
         retval = -1;
     }
     else
@@ -2949,7 +2852,7 @@ parse_shape_opt(what)
                             }
                             p = endp;
                         }
-                    } /* if (what != SHAPE_MOUSE) */
+                    }
 
                     if (*p == '-')
                         ++p;
@@ -3343,7 +3246,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what, sear
     /* create an absolute path */
     if (STRLEN(search_ctx->ffsc_start_dir) + STRLEN(search_ctx->ffsc_fix_path) + 3 >= MAXPATHL)
     {
-        EMSG(_(e_pathtoolong));
+        EMSG((char *)e_pathtoolong);
         goto error_return;
     }
     STRCPY(ff_expand_buffer, search_ctx->ffsc_start_dir);
@@ -3917,47 +3820,6 @@ get_user_name(buf, len)
     return OK;
 }
 
-#if !defined(HAVE_QSORT)
-/*
- * Our own qsort(), for systems that don't have it.
- * It's simple and slow.  From the K&R C book.
- */
-    void
-qsort(base, elm_count, elm_size, cmp)
-    void        *base;
-    size_t      elm_count;
-    size_t      elm_size;
-    int (*cmp)(const void *, const void *);
-{
-    char_u      *buf;
-    char_u      *p1;
-    char_u      *p2;
-    int         i, j;
-    int         gap;
-
-    buf = alloc((unsigned)elm_size);
-    if (buf == NULL)
-        return;
-
-    for (gap = elm_count / 2; gap > 0; gap /= 2)
-        for (i = gap; i < elm_count; ++i)
-            for (j = i - gap; j >= 0; j -= gap)
-            {
-                /* Compare the elements. */
-                p1 = (char_u *)base + j * elm_size;
-                p2 = (char_u *)base + (j + gap) * elm_size;
-                if ((*cmp)((void *)p1, (void *)p2) <= 0)
-                    break;
-                /* Exchange the elements. */
-                mch_memmove(buf, p1, elm_size);
-                mch_memmove(p1, p2, elm_size);
-                mch_memmove(p2, buf, elm_size);
-            }
-
-    vim_free(buf);
-}
-#endif
-
 /*
  * Sort an array of strings.
  */
@@ -4063,147 +3925,6 @@ pathcmp(p, q, maxlen)
  *
  *  (history removed, not very interesting.  See the "screen" sources.)
  */
-
-#if !defined(HAVE_SETENV) && !defined(HAVE_PUTENV)
-
-#define EXTRASIZE 5             /* increment to add to env. size */
-
-static int  envsize = -1;       /* current size of environment */
-extern
-       char **environ;          /* the global which is your env. */
-
-static int  findenv(char *name); /* look for a name in the env. */
-static int  newenv(void);      /* copy env. from stack to heap */
-static int  moreenv(void);     /* incr. size of env. */
-
-    int
-putenv(string)
-    const char *string;
-{
-    int     i;
-    char    *p;
-
-    if (envsize < 0)
-    {                           /* first time putenv called */
-        if (newenv() < 0)       /* copy env. to heap */
-            return -1;
-    }
-
-    i = findenv((char *)string); /* look for name in environment */
-
-    if (i < 0)
-    {                           /* name must be added */
-        for (i = 0; environ[i]; i++)
-            ;
-        if (i >= (envsize - 1))
-        {                       /* need new slot */
-            if (moreenv() < 0)
-                return -1;
-        }
-        p = (char *)alloc((unsigned)(strlen(string) + 1));
-        if (p == NULL)          /* not enough core */
-            return -1;
-        environ[i + 1] = 0;     /* new end of env. */
-    }
-    else
-    {                           /* name already in env. */
-        p = vim_realloc(environ[i], strlen(string) + 1);
-        if (p == NULL)
-            return -1;
-    }
-    sprintf(p, "%s", string);   /* copy into env. */
-    environ[i] = p;
-
-    return 0;
-}
-
-    static int
-findenv(name)
-    char *name;
-{
-    char    *namechar, *envchar;
-    int     i, found;
-
-    found = 0;
-    for (i = 0; environ[i] && !found; i++)
-    {
-        envchar = environ[i];
-        namechar = name;
-        while (*namechar && *namechar != '=' && (*namechar == *envchar))
-        {
-            namechar++;
-            envchar++;
-        }
-        found = ((*namechar == '\0' || *namechar == '=') && *envchar == '=');
-    }
-    return found ? i - 1 : -1;
-}
-
-    static int
-newenv()
-{
-    char    **env, *elem;
-    int     i, esize;
-
-    for (i = 0; environ[i]; i++)
-        ;
-    esize = i + EXTRASIZE + 1;
-    env = (char **)alloc((unsigned)(esize * sizeof (elem)));
-    if (env == NULL)
-        return -1;
-
-    for (i = 0; environ[i]; i++)
-    {
-        elem = (char *)alloc((unsigned)(strlen(environ[i]) + 1));
-        if (elem == NULL)
-            return -1;
-        env[i] = elem;
-        strcpy(elem, environ[i]);
-    }
-
-    env[i] = 0;
-    environ = env;
-    envsize = esize;
-    return 0;
-}
-
-    static int
-moreenv()
-{
-    int     esize;
-    char    **env;
-
-    esize = envsize + EXTRASIZE;
-    env = (char **)vim_realloc((char *)environ, esize * sizeof (*env));
-    if (env == 0)
-        return -1;
-    environ = env;
-    envsize = esize;
-    return 0;
-}
-
-#if defined(USE_VIMPTY_GETENV)
-    char_u *
-vimpty_getenv(string)
-    const char_u *string;
-{
-    int i;
-    char_u *p;
-
-    if (envsize < 0)
-        return NULL;
-
-    i = findenv((char *)string);
-
-    if (i < 0)
-        return NULL;
-
-    p = vim_strchr((char_u *)environ[i], '=');
-    return (p + 1);
-}
-#endif
-
-#endif
 
 /*
  * Return 0 for not writable, 1 for writable file, 2 for a dir which we have

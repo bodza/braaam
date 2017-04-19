@@ -56,12 +56,6 @@ typedef struct file_buffer      buf_T;  /* forward declaration */
 #include "regexp.h"
 
 /*
- * This is here because gui.h needs the pos_T and win_T, and win_T needs gui.h
- * for scrollbar_T.
- */
-#define guicolor_T int         /* avoid error in prototypes */
-
-/*
  * marks: positions in a file
  * (a normal mark is a lnum/col pair, the same as a file position)
  */
@@ -768,9 +762,7 @@ typedef struct
     int                 old_mod_mask;
     buffheader_T        save_readbuf1;
     buffheader_T        save_readbuf2;
-#if defined(USE_INPUT_BUF)
     char_u              *save_inputbuf;
-#endif
 } tasave_T;
 
 /*
@@ -1096,9 +1088,6 @@ struct file_buffer
     int         b_dev_valid;    /* TRUE when b_dev has a valid number */
     dev_t       b_dev;          /* device number */
     ino_t       b_ino;          /* inode number */
-#if defined(FEAT_CW_EDITOR)
-    FSSpec      b_FSSpec;       /* MacOS File Identification */
-#endif
 
     int         b_fnum;         /* buffer number for this file. */
 

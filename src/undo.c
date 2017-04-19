@@ -210,28 +210,26 @@ u_savedel(lnum, nlines)
     if (undo_off)
         return OK;
 
-    return (u_savecommon(lnum - 1, lnum + nlines,
-                     nlines == curbuf->b_ml.ml_line_count ? 2 : lnum, FALSE));
+    return (u_savecommon(lnum - 1, lnum + nlines, nlines == curbuf->b_ml.ml_line_count ? 2 : lnum, FALSE));
 }
 
 /*
- * Return TRUE when undo is allowed.  Otherwise give an error message and
- * return FALSE.
+ * Return TRUE when undo is allowed.  Otherwise give an error message and return FALSE.
  */
     int
 undo_allowed()
 {
-    /* Don't allow changes when 'modifiable' is off.  */
+    /* Don't allow changes when 'modifiable' is off. */
     if (!curbuf->b_p_ma)
     {
-        EMSG(_(e_modifiable));
+        EMSG((char *)e_modifiable);
         return FALSE;
     }
 
     /* In the sandbox it's not allowed to change the text. */
     if (sandbox != 0)
     {
-        EMSG(_(e_sandbox));
+        EMSG((char *)e_sandbox);
         return FALSE;
     }
 
@@ -239,7 +237,7 @@ undo_allowed()
      * caller of getcmdline() may get confused. */
     if (textlock != 0)
     {
-        EMSG(_(e_secure));
+        EMSG((char *)e_secure);
         return FALSE;
     }
 
@@ -298,7 +296,7 @@ u_savecommon(top, bot, newbot, reload)
         {
             /* This happens when the FileChangedRO autocommand changes the
              * file in a way it becomes shorter. */
-            EMSG(_("E881: Line count changed unexpectedly"));
+            EMSG((char *)"E881: Line count changed unexpectedly");
             return FAIL;
         }
     }
@@ -549,7 +547,7 @@ u_savecommon(top, bot, newbot, reload)
 
 nomem:
     msg_silent = 0;     /* must display the prompt */
-    if (ask_yesno((char_u *)_("No undo possible; continue anyway"), TRUE) == 'y')
+    if (ask_yesno((char_u *)"No undo possible; continue anyway", TRUE) == 'y')
     {
         undo_off = TRUE;            /* will be reset when character typed */
         return OK;
@@ -679,7 +677,7 @@ corruption_error(mesg, file_name)
     char *mesg;
     char_u *file_name;
 {
-    EMSG3(_("E825: Corrupted undo file (%s): %s"), mesg, file_name);
+    EMSG3((char *)"E825: Corrupted undo file (%s): %s", mesg, file_name);
 }
 
     static void
@@ -1190,8 +1188,7 @@ u_write_undo(name, forceit, buf, hash)
             if (p_verbose > 0)
             {
                 verbose_enter();
-                smsg((char_u *)
-                   _("Cannot write undo file in any directory in 'undodir'"));
+                smsg((char_u *)"Cannot write undo file in any directory in 'undodir'");
                 verbose_leave();
             }
             return;
@@ -1232,8 +1229,7 @@ u_write_undo(name, forceit, buf, hash)
                 {
                     if (name == NULL)
                         verbose_enter();
-                    smsg((char_u *)
-                      _("Will not overwrite with undo file, cannot read: %s"), file_name);
+                    smsg((char_u *)"Will not overwrite with undo file, cannot read: %s", file_name);
                     if (name == NULL)
                         verbose_leave();
                 }
@@ -1253,8 +1249,7 @@ u_write_undo(name, forceit, buf, hash)
                     {
                         if (name == NULL)
                             verbose_enter();
-                        smsg((char_u *)
-                        _("Will not overwrite, this is not an undo file: %s"), file_name);
+                        smsg((char_u *)"Will not overwrite, this is not an undo file: %s", file_name);
                         if (name == NULL)
                             verbose_leave();
                     }
@@ -1270,7 +1265,7 @@ u_write_undo(name, forceit, buf, hash)
     if (buf->b_u_numhead == 0 && buf->b_u_line_ptr == NULL)
     {
         if (p_verbose > 0)
-            verb_msg((char_u *)_("Skipping undo file write, nothing to undo"));
+            verb_msg((char_u *)"Skipping undo file write, nothing to undo");
         goto theend;
     }
 
@@ -1278,14 +1273,14 @@ u_write_undo(name, forceit, buf, hash)
                             O_CREAT|O_EXTRA|O_WRONLY|O_EXCL|O_NOFOLLOW, perm);
     if (fd < 0)
     {
-        EMSG2(_(e_not_open), file_name);
+        EMSG2((char *)e_not_open, file_name);
         goto theend;
     }
     (void)mch_setperm(file_name, perm);
     if (p_verbose > 0)
     {
         verbose_enter();
-        smsg((char_u *)_("Writing undo file: %s"), file_name);
+        smsg((char_u *)"Writing undo file: %s", file_name);
         verbose_leave();
     }
 
@@ -1304,7 +1299,7 @@ u_write_undo(name, forceit, buf, hash)
     fp = fdopen(fd, "w");
     if (fp == NULL)
     {
-        EMSG2(_(e_not_open), file_name);
+        EMSG2((char *)e_not_open, file_name);
         close(fd);
         mch_remove(file_name);
         goto theend;
@@ -1355,7 +1350,7 @@ u_write_undo(name, forceit, buf, hash)
 write_error:
     fclose(fp);
     if (!write_ok)
-        EMSG2(_("E829: write error in undo file: %s"), file_name);
+        EMSG2((char *)"E829: write error in undo file: %s", file_name);
 
 theend:
     if (file_name != name)
@@ -1416,7 +1411,7 @@ u_read_undo(name, hash, orig_name)
             if (p_verbose > 0)
             {
                 verbose_enter();
-                smsg((char_u *)_("Not reading undo file, owner differs: %s"), file_name);
+                smsg((char_u *)"Not reading undo file, owner differs: %s", file_name);
                 verbose_leave();
             }
             return;
@@ -1428,7 +1423,7 @@ u_read_undo(name, hash, orig_name)
     if (p_verbose > 0)
     {
         verbose_enter();
-        smsg((char_u *)_("Reading undo file: %s"), file_name);
+        smsg((char_u *)"Reading undo file: %s", file_name);
         verbose_leave();
     }
 
@@ -1436,7 +1431,7 @@ u_read_undo(name, hash, orig_name)
     if (fp == NULL)
     {
         if (name != NULL || p_verbose > 0)
-            EMSG2(_("E822: Cannot open undo file for reading: %s"), file_name);
+            EMSG2((char *)"E822: Cannot open undo file for reading: %s", file_name);
         goto error;
     }
     bi.bi_buf = curbuf;
@@ -1448,18 +1443,18 @@ u_read_undo(name, hash, orig_name)
     if (fread(magic_buf, UF_START_MAGIC_LEN, 1, fp) != 1
                 || memcmp(magic_buf, UF_START_MAGIC, UF_START_MAGIC_LEN) != 0)
     {
-        EMSG2(_("E823: Not an undo file: %s"), file_name);
+        EMSG2((char *)"E823: Not an undo file: %s", file_name);
         goto error;
     }
     version = get2c(fp);
     if (version == UF_VERSION_CRYPT)
     {
-        EMSG2(_("E827: Undo file is encrypted: %s"), file_name);
+        EMSG2((char *)"E827: Undo file is encrypted: %s", file_name);
         goto error;
     }
     else if (version != UF_VERSION)
     {
-        EMSG2(_("E824: Incompatible undo file: %s"), file_name);
+        EMSG2((char *)"E824: Incompatible undo file: %s", file_name);
         goto error;
     }
 
@@ -1475,8 +1470,7 @@ u_read_undo(name, hash, orig_name)
         {
             if (name == NULL)
                 verbose_enter();
-            give_warning((char_u *)
-                      _("File contents changed, cannot use undo info"), TRUE);
+            give_warning((char_u *)"File contents changed, cannot use undo info", TRUE);
             if (name == NULL)
                 verbose_leave();
         }
@@ -1645,7 +1639,7 @@ u_read_undo(name, hash, orig_name)
     vim_free(uhp_table);
 
     if (name != NULL)
-        smsg((char_u *)_("Finished reading undo file %s"), file_name);
+        smsg((char_u *)"Finished reading undo file %s", file_name);
     goto theend;
 
 error:
@@ -1744,7 +1738,7 @@ u_doit(startcount)
                 beep_flush();
                 if (count == startcount - 1)
                 {
-                    MSG(_("Already at oldest change"));
+                    MSG((char *)"Already at oldest change");
                     return;
                 }
                 break;
@@ -1759,7 +1753,7 @@ u_doit(startcount)
                 beep_flush();   /* nothing to redo */
                 if (count == startcount - 1)
                 {
-                    MSG(_("Already at newest change"));
+                    MSG((char *)"Already at newest change");
                     return;
                 }
                 break;
@@ -1995,16 +1989,16 @@ undo_time(step, sec, file, absolute)
 
         if (absolute)
         {
-            EMSGN(_("E830: Undo number %ld not found"), step);
+            EMSGN((char *)"E830: Undo number %ld not found", step);
             return;
         }
 
         if (closest == closest_start)
         {
             if (step < 0)
-                MSG(_("Already at oldest change"));
+                MSG((char *)"Already at oldest change");
             else
-                MSG(_("Already at newest change"));
+                MSG((char *)"Already at newest change");
             return;
         }
 
@@ -2106,7 +2100,7 @@ undo_time(step, sec, file, absolute)
             if (uhp == NULL || uhp->uh_walk != mark)
             {
                 /* Need to redo more but can't find it... */
-                EMSG2(_(e_intern2), "undo_time()");
+                EMSG2((char *)e_intern2, "undo_time()");
                 break;
             }
         }
@@ -2171,7 +2165,7 @@ u_undoredo(undo)
         if (top > curbuf->b_ml.ml_line_count || top >= bot || bot > curbuf->b_ml.ml_line_count + 1)
         {
             unblock_autocmds();
-            EMSG(_("E438: u_undo: line numbers wrong"));
+            EMSG((char *)"E438: u_undo: line numbers wrong");
             changed();          /* don't want UNCHANGED now */
             return;
         }
@@ -2453,10 +2447,10 @@ u_undo_end(did_undo, absolute)
         }
     }
 
-    smsg((char_u *)_("%ld %s; %s #%ld  %s"),
+    smsg((char_u *)"%ld %s; %s #%ld  %s",
             u_oldcount < 0 ? -u_oldcount : u_oldcount,
-            _(msgstr),
-            did_undo ? _("before") : _("after"),
+            (char *)msgstr,
+            did_undo ? (char *)"before" : (char *)"after",
             uhp == NULL ? 0L : uhp->uh_seq,
             msgbuf);
 }
@@ -2562,13 +2556,13 @@ ex_undolist(eap)
     }
 
     if (ga.ga_len == 0)
-        MSG(_("Nothing to undo"));
+        MSG((char *)"Nothing to undo");
     else
     {
         sort_strings((char_u **)ga.ga_data, ga.ga_len);
 
         msg_start();
-        msg_puts_attr((char_u *)_("number changes  when               saved"), hl_attr(HLF_T));
+        msg_puts_attr((char_u *)"number changes  when               saved", hl_attr(HLF_T));
         for (i = 0; i < ga.ga_len && !got_int; ++i)
         {
             msg_putchar('\n');
@@ -2591,7 +2585,6 @@ u_add_time(buf, buflen, tt)
     size_t      buflen;
     time_t      tt;
 {
-#if defined(HAVE_STRFTIME)
     struct tm   *curtime;
 
     if (time(NULL) - tt >= 100)
@@ -2605,8 +2598,7 @@ u_add_time(buf, buflen, tt)
             (void)strftime((char *)buf, buflen, "%Y/%m/%d %H:%M:%S", curtime);
     }
     else
-#endif
-        vim_snprintf((char *)buf, buflen, _("%ld seconds ago"), (long)(time(NULL) - tt));
+        vim_snprintf((char *)buf, buflen, (char *)"%ld seconds ago", (long)(time(NULL) - tt));
 }
 
 /*
@@ -2620,7 +2612,7 @@ ex_undojoin(eap)
         return;             /* nothing changed before */
     if (curbuf->b_u_curhead != NULL)
     {
-        EMSG(_("E790: undojoin is not allowed after undo"));
+        EMSG((char *)"E790: undojoin is not allowed after undo");
         return;
     }
     if (!curbuf->b_u_synced)
@@ -2725,7 +2717,7 @@ u_get_headentry()
 {
     if (curbuf->b_u_newhead == NULL || curbuf->b_u_newhead->uh_entry == NULL)
     {
-        EMSG(_("E439: undo list corrupt"));
+        EMSG((char *)"E439: undo list corrupt");
         return NULL;
     }
     return curbuf->b_u_newhead->uh_entry;
@@ -2757,7 +2749,7 @@ u_getbot()
         uep->ue_bot = uep->ue_top + uep->ue_size + 1 + extra;
         if (uep->ue_bot < 1 || uep->ue_bot > curbuf->b_ml.ml_line_count)
         {
-            EMSG(_("E440: undo line missing"));
+            EMSG((char *)"E440: undo line missing");
             uep->ue_bot = uep->ue_top + 1;  /* assume all lines deleted, will
                                              * get all the old lines back
                                              * without deleting the current

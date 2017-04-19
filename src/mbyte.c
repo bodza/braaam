@@ -74,14 +74,6 @@
 
 #include <wchar.h>
 
-#if 0
-/* This has been disabled, because several people reported problems with the
- * wcwidth() and iswprint() library functions, esp. for Hebrew. */
-#if defined(__STDC_ISO_10646__)
-#define USE_WCHAR_FUNCTIONS
-#endif
-#endif
-
 static int enc_canon_search(char_u *name);
 static int dbcs_char2len(int c);
 static int dbcs_char2bytes(int c, char_u *buf);
@@ -1225,23 +1217,10 @@ utf_char2cells(c)
 
     if (c >= 0x100)
     {
-#if defined(USE_WCHAR_FUNCTIONS)
-        /*
-         * Assume the library function wcwidth() works better than our own
-         * stuff.  It should return 1 for ambiguous width chars!
-         */
-        int     n = wcwidth(c);
-
-        if (n < 0)
-            return 6;           /* unprintable, displays <xxxx> */
-        if (n > 1)
-            return n;
-#else
         if (!utf_printable(c))
             return 6;           /* unprintable, displays <xxxx> */
         if (intable(doublewidth, sizeof(doublewidth), c))
             return 2;
-#endif
     }
 
     /* Characters below 0x100 are influenced by 'isprint' option */
@@ -2176,12 +2155,6 @@ utf_iscomposing(c)
 utf_printable(c)
     int         c;
 {
-#if defined(USE_WCHAR_FUNCTIONS)
-    /*
-     * Assume the iswprint() library function works better than our own stuff.
-     */
-    return iswprint(c);
-#else
     /* Sorted list of non-overlapping intervals.
      * 0xd800-0xdfff is reserved for UTF-16, actually illegal. */
     static struct interval nonprint[] =
@@ -2192,7 +2165,6 @@ utf_printable(c)
     };
 
     return !intable(nonprint, sizeof(nonprint), c);
-#endif
 }
 
 /*
@@ -2890,7 +2862,7 @@ utf_toupper(a)
     if (a < 128 && (cmp_flags & CMP_KEEPASCII))
         return TOUPPER_ASC(a);
 
-#if defined(HAVE_TOWUPPER) && defined(__STDC_ISO_10646__)
+#if defined(__STDC_ISO_10646__)
     /* If towupper() is available and handles Unicode, use it. */
     if (!(cmp_flags & CMP_INTERNAL))
         return towupper(a);
@@ -2924,7 +2896,7 @@ utf_tolower(a)
     if (a < 128 && (cmp_flags & CMP_KEEPASCII))
         return TOLOWER_ASC(a);
 
-#if defined(HAVE_TOWLOWER) && defined(__STDC_ISO_10646__)
+#if defined(__STDC_ISO_10646__)
     /* If towlower() is available and handles Unicode, use it. */
     if (!(cmp_flags & CMP_INTERNAL))
         return towlower(a);

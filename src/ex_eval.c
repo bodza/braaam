@@ -187,7 +187,7 @@ cause_errthrow(mesg, severe, ignore)
      * interrupt exception is catchable by the innermost try conditional and
      * not replaced by an interrupt message error exception.
      */
-    if (mesg == (char_u *)_(e_interr))
+    if (mesg == (char_u *)e_interr)
     {
         *ignore = TRUE;
         return TRUE;
@@ -251,7 +251,7 @@ cause_errthrow(mesg, severe, ignore)
             if (elem == NULL)
             {
                 suppress_errthrow = TRUE;
-                EMSG(_(e_outofmem));
+                EMSG((char *)e_outofmem);
             }
             else
             {
@@ -260,7 +260,7 @@ cause_errthrow(mesg, severe, ignore)
                 {
                     vim_free(elem);
                     suppress_errthrow = TRUE;
-                    EMSG(_(e_outofmem));
+                    EMSG((char *)e_outofmem);
                 }
                 else
                 {
@@ -513,7 +513,7 @@ throw_exception(value, type, cmdname)
                 && (((char_u *)value)[3] == NUL || ((char_u *)value)[3] == ':'
                     || ((char_u *)value)[3] == '('))
         {
-            EMSG(_("E608: Cannot :throw exceptions with 'Vim' prefix"));
+            EMSG((char *)"E608: Cannot :throw exceptions with 'Vim' prefix");
             goto fail;
         }
     }
@@ -553,7 +553,7 @@ throw_exception(value, type, cmdname)
         if (debug_break_level > 0 || *p_vfile == NUL)
             msg_scroll = TRUE;      /* always scroll up, don't overwrite */
 
-        smsg((char_u *)_("Exception thrown: %s"), excp->value);
+        smsg((char_u *)"Exception thrown: %s", excp->value);
         msg_puts((char_u *)"\n");   /* don't overwrite this either */
 
         if (debug_break_level > 0 || *p_vfile == NUL)
@@ -571,7 +571,7 @@ throw_exception(value, type, cmdname)
 nomem:
     vim_free(excp);
     suppress_errthrow = TRUE;
-    EMSG(_(e_outofmem));
+    EMSG((char *)e_outofmem);
 fail:
     current_exception = NULL;
     return FAIL;
@@ -590,7 +590,7 @@ discard_exception(excp, was_finished)
 
     if (excp == NULL)
     {
-        EMSG(_(e_internal));
+        EMSG((char *)e_internal);
         return;
     }
 
@@ -607,8 +607,8 @@ discard_exception(excp, was_finished)
         if (debug_break_level > 0 || *p_vfile == NUL)
             msg_scroll = TRUE;      /* always scroll up, don't overwrite */
         smsg(was_finished
-                    ? (char_u *)_("Exception finished: %s")
-                    : (char_u *)_("Exception discarded: %s"),
+                    ? (char_u *)"Exception finished: %s"
+                    : (char_u *)"Exception discarded: %s",
                 excp->value);
         msg_puts((char_u *)"\n");   /* don't overwrite this either */
         if (debug_break_level > 0 || *p_vfile == NUL)
@@ -654,7 +654,7 @@ catch_exception(excp)
     if (*excp->throw_name != NUL)
     {
         if (excp->throw_lnum != 0)
-            vim_snprintf((char *)IObuff, IOSIZE, _("%s, line %ld"),
+            vim_snprintf((char *)IObuff, IOSIZE, (char *)"%s, line %ld",
                                     excp->throw_name, (long)excp->throw_lnum);
         else
             vim_snprintf((char *)IObuff, IOSIZE, "%s", excp->throw_name);
@@ -676,7 +676,7 @@ catch_exception(excp)
         if (debug_break_level > 0 || *p_vfile == NUL)
             msg_scroll = TRUE;      /* always scroll up, don't overwrite */
 
-        smsg((char_u *)_("Exception caught: %s"), excp->value);
+        smsg((char_u *)"Exception caught: %s", excp->value);
         msg_puts((char_u *)"\n");   /* don't overwrite this either */
 
         if (debug_break_level > 0 || *p_vfile == NUL)
@@ -697,7 +697,7 @@ finish_exception(excp)
     except_T    *excp;
 {
     if (excp != caught_stack)
-        EMSG(_(e_internal));
+        EMSG((char *)e_internal);
     caught_stack = caught_stack->caught;
     if (caught_stack != NULL)
     {
@@ -706,7 +706,7 @@ finish_exception(excp)
         {
             if (caught_stack->throw_lnum != 0)
                 vim_snprintf((char *)IObuff, IOSIZE,
-                        _("%s, line %ld"), caught_stack->throw_name,
+                        (char *)"%s, line %ld", caught_stack->throw_name,
                         (long)caught_stack->throw_lnum);
             else
                 vim_snprintf((char *)IObuff, IOSIZE, "%s",
@@ -755,14 +755,14 @@ report_pending(action, pending, value)
     switch (action)
     {
         case RP_MAKE:
-            mesg = (char_u *)_("%s made pending");
+            mesg = (char_u *)"%s made pending";
             break;
         case RP_RESUME:
-            mesg = (char_u *)_("%s resumed");
+            mesg = (char_u *)"%s resumed";
             break;
         /* case RP_DISCARD: */
         default:
-            mesg = (char_u *)_("%s discarded");
+            mesg = (char_u *)"%s discarded";
             break;
     }
 
@@ -788,17 +788,17 @@ report_pending(action, pending, value)
         default:
             if (pending & CSTP_THROW)
             {
-                vim_snprintf((char *)IObuff, IOSIZE, (char *)mesg, _("Exception"));
+                vim_snprintf((char *)IObuff, IOSIZE, (char *)mesg, (char *)"Exception");
                 mesg = vim_strnsave(IObuff, (int)STRLEN(IObuff) + 4);
                 STRCAT(mesg, ": %s");
                 s = (char *)((except_T *)value)->value;
             }
             else if ((pending & CSTP_ERROR) && (pending & CSTP_INTERRUPT))
-                s = _("Error and interrupt");
+                s = (char *)"Error and interrupt";
             else if (pending & CSTP_ERROR)
-                s = _("Error");
+                s = (char *)"Error";
             else /* if (pending & CSTP_INTERRUPT) */
-                s = _("Interrupt");
+                s = (char *)"Interrupt";
     }
 
     save_msg_silent = msg_silent;
@@ -1233,9 +1233,9 @@ ex_endwhile(eap)
             /* If we are in a ":while" or ":for" but used the wrong endloop
              * command, do not rewind to the next enclosing ":for"/":while". */
             if (fl & CSF_WHILE)
-                eap->errmsg = (char_u *)_("E732: Using :endfor with :while");
+                eap->errmsg = (char_u *)"E732: Using :endfor with :while";
             else if (fl & CSF_FOR)
-                eap->errmsg = (char_u *)_("E733: Using :endwhile with :for");
+                eap->errmsg = (char_u *)"E733: Using :endwhile with :for";
         }
         if (!(fl & (CSF_WHILE | CSF_FOR)))
         {
@@ -1299,7 +1299,7 @@ ex_throw(eap)
         value = eval_to_string_skip(arg, &eap->nextcmd, eap->skip);
     else
     {
-        EMSG(_(e_argreq));
+        EMSG((char *)e_argreq);
         value = NULL;
     }
 
@@ -1453,7 +1453,7 @@ ex_try(eap)
 
                 elem = (eslist_T *)alloc((unsigned)sizeof(struct eslist_elem));
                 if (elem == NULL)
-                    EMSG(_(e_outofmem));
+                    EMSG((char *)e_outofmem);
                 else
                 {
                     elem->saved_emsg_silent = emsg_silent;
@@ -1546,7 +1546,7 @@ ex_catch(eap)
         {
             if (end != NULL && *end != NUL && !ends_excmd(*skipwhite(end + 1)))
             {
-                EMSG(_(e_trailing));
+                EMSG((char *)e_trailing);
                 return;
             }
 
@@ -1574,7 +1574,7 @@ ex_catch(eap)
                     *end = save_char;
                 p_cpo = save_cpo;
                 if (regmatch.regprog == NULL)
-                    EMSG2(_(e_invarg2), pat);
+                    EMSG2((char *)e_invarg2, pat);
                 else
                 {
                     /*
@@ -1604,7 +1604,7 @@ ex_catch(eap)
              * ":break", ":return", ":finish", error, interrupt, or another
              * exception. */
             if (cstack->cs_exception[cstack->cs_idx] != current_exception)
-                EMSG(_(e_internal));
+                EMSG((char *)e_internal);
         }
         else
         {
@@ -1737,7 +1737,7 @@ ex_finally(eap)
                  * exception will be discarded. */
                 if (did_throw && cstack->cs_exception[cstack->cs_idx]
                                                          != current_exception)
-                    EMSG(_(e_internal));
+                    EMSG((char *)e_internal);
             }
 
             /*
@@ -2261,7 +2261,7 @@ rewind_conditionals(cstack, idx, cond_type, cond_level)
 ex_endfunction(eap)
     exarg_T     *eap UNUSED;
 {
-    EMSG(_("E193: :endfunction not inside a function"));
+    EMSG((char *)"E193: :endfunction not inside a function");
 }
 
 /*

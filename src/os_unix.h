@@ -53,9 +53,7 @@
 /*
  * Unix system-dependent file names
  */
-#if !defined(SYS_VIMRC_FILE)
 #define SYS_VIMRC_FILE "$VIM/vimrc"
-#endif
 
 #define DFLT_HELPFILE  "$VIMRUNTIME/doc/help.txt"
 #define FILETYPE_FILE  "filetype.vim"
@@ -65,27 +63,13 @@
 #define FTPLUGOF_FILE  "ftplugof.vim"
 #define INDOFF_FILE    "indoff.vim"
 
-#if !defined(USR_EXRC_FILE)
 #define USR_EXRC_FILE "$HOME/.exrc"
-#endif
-
-#if !defined(USR_VIMRC_FILE)
 #define USR_VIMRC_FILE "$HOME/.vimrc"
-#endif
 
-#define USR_VIMRC_FILE2     "~/.vim/vimrc"
-
-#if !defined(EVIM_FILE)
 #define EVIM_FILE      "$VIMRUNTIME/evim.vim"
-#endif
 
-#if !defined(EXRC_FILE)
 #define EXRC_FILE      ".exrc"
-#endif
-
-#if !defined(VIMRC_FILE)
 #define VIMRC_FILE     ".vimrc"
-#endif
 
 #define SYNTAX_FNAME   "$VIMRUNTIME/syntax/%s.vim"
 
@@ -128,11 +112,7 @@
  * works for all */
 #define mch_memmove(to, from, len) memmove((char *)(to), (char *)(from), len)
 
-#if defined(HAVE_RENAME)
 #define mch_rename(src, dst) rename(src, dst)
-#else
-int mch_rename(const char *src, const char *dest);
-#endif
 #define mch_getenv(x) (char_u *)getenv((char *)(x))
 #define mch_setenv(name, val, x) setenv(name, val, x)
 
@@ -164,8 +144,3 @@ int mch_rename(const char *src, const char *dest);
 #define JMP_BUF jmp_buf
 #define SETJMP(x) setjmp(x)
 #define LONGJMP longjmp
-
-#if !defined(HAVE_DUP)
-#define HAVE_DUP               /* have dup() */
-#endif
-#define HAVE_ST_MODE            /* have stat.st_mode */

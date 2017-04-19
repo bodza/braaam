@@ -4083,7 +4083,7 @@ win_redr_status(wp)
             *(p + len++) = ' ';
         if (wp->w_buffer->b_help)
         {
-            STRCPY(p + len, _("[Help]"));
+            STRCPY(p + len, (char *)"[Help]");
             len += (int)STRLEN(p + len);
         }
         if (bufIsChanged(wp->w_buffer))
@@ -4093,7 +4093,7 @@ win_redr_status(wp)
         }
         if (wp->w_buffer->b_p_ro)
         {
-            STRCPY(p + len, _("[RO]"));
+            STRCPY(p + len, (char *)"[RO]");
             len += 4;
         }
 
@@ -6939,33 +6939,32 @@ showmode()
             MSG_PUTS_ATTR("--", attr);
             {
                 if (State & VREPLACE_FLAG)
-                    MSG_PUTS_ATTR(_(" VREPLACE"), attr);
+                    MSG_PUTS_ATTR((char *)" VREPLACE", attr);
                 else
                     if (State & REPLACE_FLAG)
-                    MSG_PUTS_ATTR(_(" REPLACE"), attr);
+                    MSG_PUTS_ATTR((char *)" REPLACE", attr);
                 else if (State & INSERT)
                 {
                     if (p_ri)
-                        MSG_PUTS_ATTR(_(" REVERSE"), attr);
-                    MSG_PUTS_ATTR(_(" INSERT"), attr);
+                        MSG_PUTS_ATTR((char *)" REVERSE", attr);
+                    MSG_PUTS_ATTR((char *)" INSERT", attr);
                 }
                 else if (restart_edit == 'I')
-                    MSG_PUTS_ATTR(_(" (insert)"), attr);
+                    MSG_PUTS_ATTR((char *)" (insert)", attr);
                 else if (restart_edit == 'R')
-                    MSG_PUTS_ATTR(_(" (replace)"), attr);
+                    MSG_PUTS_ATTR((char *)" (replace)", attr);
                 else if (restart_edit == 'V')
-                    MSG_PUTS_ATTR(_(" (vreplace)"), attr);
+                    MSG_PUTS_ATTR((char *)" (vreplace)", attr);
                 if (p_hkmap)
-                    MSG_PUTS_ATTR(_(" Hebrew"), attr);
+                    MSG_PUTS_ATTR((char *)" Hebrew", attr);
                 if ((State & INSERT) && p_paste)
-                    MSG_PUTS_ATTR(_(" (paste)"), attr);
+                    MSG_PUTS_ATTR((char *)" (paste)", attr);
 
                 if (VIsual_active)
                 {
                     char *p;
 
-                    /* Don't concatenate separate words to avoid translation
-                     * problems. */
+                    /* Don't concatenate separate words to avoid translation problems. */
                     switch ((VIsual_select ? 4 : 0)
                             + (VIsual_mode == Ctrl_V) * 2
                             + (VIsual_mode == 'V'))
@@ -6977,7 +6976,7 @@ showmode()
                         case 5: p = " SELECT LINE"; break;
                         default: p = " SELECT BLOCK"; break;
                     }
-                    MSG_PUTS_ATTR(_(p), attr);
+                    MSG_PUTS_ATTR((char *)p, attr);
                 }
                 MSG_PUTS_ATTR(" --", attr);
             }
@@ -6987,7 +6986,7 @@ showmode()
         if (Recording
                 )
         {
-            MSG_PUTS_ATTR(_("recording"), attr);
+            MSG_PUTS_ATTR((char *)"recording", attr);
             need_clear = TRUE;
         }
 
@@ -7045,7 +7044,7 @@ unshowmode(force)
     {
         msg_pos_mode();
         if (Recording)
-            MSG_PUTS_ATTR(_("recording"), hl_attr(HLF_CM));
+            MSG_PUTS_ATTR((char *)"recording", hl_attr(HLF_CM));
         msg_clr_eos();
     }
 }

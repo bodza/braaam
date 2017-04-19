@@ -2857,8 +2857,8 @@ change_warning(col)
         if (msg_row == Rows - 1)
             msg_col = col;
         msg_source(hl_attr(HLF_W));
-        MSG_PUTS_ATTR(_(w_readonly), hl_attr(HLF_W) | MSG_HIST);
-        set_vim_var_string(VV_WARNINGMSG, (char_u *)_(w_readonly), -1);
+        MSG_PUTS_ATTR((char *)w_readonly, hl_attr(HLF_W) | MSG_HIST);
+        set_vim_var_string(VV_WARNINGMSG, (char_u *)w_readonly, -1);
         msg_clr_eos();
         (void)msg_end();
         if (msg_silent == 0 && !silent_mode)
@@ -3154,9 +3154,9 @@ prompt_for_number(mouse_used)
 
     /* When using ":silent" assume that <CR> was entered. */
     if (mouse_used != NULL)
-        MSG_PUTS(_("Type number and <Enter> or click with mouse (empty cancels): "));
+        MSG_PUTS((char *)"Type number and <Enter> or click with mouse (empty cancels): ");
     else
-        MSG_PUTS(_("Type number and <Enter> (empty cancels): "));
+        MSG_PUTS((char *)"Type number and <Enter> (empty cancels): ");
 
     /* Set the state such that text can be selected/copied/pasted and we still
      * get mouse events. */
@@ -3208,19 +3208,19 @@ msgmore(n)
         if (pn == 1)
         {
             if (n > 0)
-                vim_strncpy(msg_buf, (char_u *)_("1 more line"), MSG_BUF_LEN - 1);
+                vim_strncpy(msg_buf, (char_u *)"1 more line", MSG_BUF_LEN - 1);
             else
-                vim_strncpy(msg_buf, (char_u *)_("1 line less"), MSG_BUF_LEN - 1);
+                vim_strncpy(msg_buf, (char_u *)"1 line less", MSG_BUF_LEN - 1);
         }
         else
         {
             if (n > 0)
-                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, _("%ld more lines"), pn);
+                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, (char *)"%ld more lines", pn);
             else
-                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, _("%ld fewer lines"), pn);
+                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, (char *)"%ld fewer lines", pn);
         }
         if (got_int)
-            vim_strcat(msg_buf, (char_u *)_(" (Interrupted)"), MSG_BUF_LEN);
+            vim_strcat(msg_buf, (char_u *)" (Interrupted)", MSG_BUF_LEN);
         if (msg(msg_buf))
         {
             set_keep_msg(msg_buf, 0);
@@ -3264,7 +3264,7 @@ vim_beep()
         if (vim_strchr(p_debug, 'e') != NULL)
         {
             msg_source(hl_attr(HLF_W));
-            msg_attr((char_u *)_("Beep!"), hl_attr(HLF_W));
+            msg_attr((char_u *)"Beep!", hl_attr(HLF_W));
         }
     }
 }
@@ -3305,7 +3305,7 @@ init_homedir()
             if (!mch_chdir((char *)var) && mch_dirname(IObuff, IOSIZE) == OK)
                 var = IObuff;
             if (mch_chdir((char *)NameBuff) != 0)
-                EMSG(_(e_prev_dir));
+                EMSG((char *)e_prev_dir);
         }
         homedir = vim_strsave(var);
     }
@@ -3598,13 +3598,6 @@ vim_getenv(name, mustfree)
     {
         if (p_hf != NULL && vim_strchr(p_hf, '$') == NULL)
             p = p_hf;
-#if defined(USE_EXE_NAME)
-        /*
-         * Use the name of the executable, obtained from argv[0].
-         */
-        else
-            p = exe_name;
-#endif
         if (p != NULL)
         {
             /* remove the file name */
@@ -3613,12 +3606,6 @@ vim_getenv(name, mustfree)
             /* remove "doc/" from 'helpfile', if present */
             if (p == p_hf)
                 pend = remove_tail(p, pend, (char_u *)"doc");
-
-#if defined(USE_EXE_NAME)
-            /* remove "src/" from exe_name, if present */
-            if (p == exe_name)
-                pend = remove_tail(p, pend, (char_u *)"src");
-#endif
 
             /* for $VIM, remove "runtime/" or "vim54/", if present */
             if (!vimruntime)
@@ -3643,14 +3630,6 @@ vim_getenv(name, mustfree)
             }
             else
             {
-#if defined(USE_EXE_NAME)
-                /* may add "/vim54" or "/runtime" if it exists */
-                if (vimruntime && (pend = vim_version_dir(p)) != NULL)
-                {
-                    vim_free(p);
-                    p = pend;
-                }
-#endif
                 *mustfree = TRUE;
             }
         }
@@ -3727,22 +3706,7 @@ vim_setenv(name, val)
     char_u      *name;
     char_u      *val;
 {
-#if defined(HAVE_SETENV)
     mch_setenv((char *)name, (char *)val, 1);
-#else
-    char_u      *envbuf;
-
-    /*
-     * Putenv does not copy the string, it has to remain
-     * valid.  The allocated memory will never be freed.
-     */
-    envbuf = alloc((unsigned)(STRLEN(name) + STRLEN(val) + 2));
-    if (envbuf != NULL)
-    {
-        sprintf((char *)envbuf, "%s=%s", name, val);
-        putenv((char *)envbuf);
-    }
-#endif
 }
 
 /*
@@ -7797,13 +7761,11 @@ term_again:
                  *   bar;
                  */
                 n = 0;
-                if (cin_ends_in(l, (char_u *)",", NULL)
-                             || (*l != NUL && (n = l[STRLEN(l) - 1]) == '\\'))
+                if (cin_ends_in(l, (char_u *)",", NULL) || (*l != NUL && (n = l[STRLEN(l) - 1]) == '\\'))
                 {
                     /* take us back to opening paren */
                     if (find_last_paren(l, '(', ')')
-                            && (trypos = find_match_paren(
-                                             curbuf->b_ind_maxparen)) != NULL)
+                            && (trypos = find_match_paren(curbuf->b_ind_maxparen)) != NULL)
                         curwin->w_cursor = *trypos;
 
                     /* For a line ending in ',' that is a continuation line go
@@ -8345,8 +8307,8 @@ prepare_to_exit()
 {
 #if defined(SIGHUP) && defined(SIG_IGN)
     /* Ignore SIGHUP, because a dropped connection causes a read error, which
-     * makes Vim exit and then handling SIGHUP causes various reentrance
-     * problems. */
+     * makes Vim exit and then handling SIGHUP causes various reentrance problems.
+     */
     signal(SIGHUP, SIG_IGN);
 #endif
 
@@ -8747,18 +8709,15 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
             if (dp == NULL)
                 break;
             if ((dp->d_name[0] != '.' || starts_with_dot)
-                 && ((regmatch.regprog != NULL && vim_regexec(&regmatch,
-                                             (char_u *)dp->d_name, (colnr_T)0))
-                   || ((flags & EW_NOTWILD)
-                     && fnamencmp(path + (s - buf), dp->d_name, e - s) == 0)))
+                && ((regmatch.regprog != NULL && vim_regexec(&regmatch, (char_u *)dp->d_name, (colnr_T)0))
+                   || ((flags & EW_NOTWILD) && fnamencmp(path + (s - buf), dp->d_name, e - s) == 0)))
             {
                 STRCPY(s, dp->d_name);
                 len = STRLEN(buf);
 
                 if (starstar && stardepth < 100)
                 {
-                    /* For "**" in the pattern first go deeper in the tree to
-                     * find matches. */
+                    /* For "**" in the pattern first go deeper in the tree to find matches. */
                     STRCPY(buf + len, "/**");
                     STRCPY(buf + len + 3, path_end);
                     ++stardepth;
@@ -8782,8 +8741,7 @@ unix_expandpath(gap, path, wildoff, flags, didstar)
                     if (*path_end != NUL)
                         backslash_halve(buf + len + 1);
                     /* add existing file or symbolic link */
-                    if ((flags & EW_ALLLINKS) ? mch_lstat((char *)buf, &sb) >= 0
-                                                      : mch_getperm(buf) >= 0)
+                    if ((flags & EW_ALLLINKS) ? mch_lstat((char *)buf, &sb) >= 0 : mch_getperm(buf) >= 0)
                     {
                         addfile(gap, buf, flags);
                     }
@@ -9032,8 +8990,7 @@ expand_backtick(gap, pat, flags)
     if (*cmd == '=')        /* `={expr}`: Expand expression */
         buffer = eval_to_string(cmd + 1, &p, TRUE);
     else
-        buffer = get_cmd_output(cmd, NULL,
-                                (flags & EW_SILENT) ? SHELL_SILENT : 0, NULL);
+        buffer = get_cmd_output(cmd, NULL, (flags & EW_SILENT) ? SHELL_SILENT : 0, NULL);
     vim_free(cmd);
     if (buffer == NULL)
         return 0;
@@ -9151,7 +9108,7 @@ get_cmd_output(cmd, infile, flags, ret_len)
     /* get a name for the temp file */
     if ((tempname = vim_tempname('o', FALSE)) == NULL)
     {
-        EMSG(_(e_notmp));
+        EMSG((char *)e_notmp);
         return NULL;
     }
 
@@ -9177,7 +9134,7 @@ get_cmd_output(cmd, infile, flags, ret_len)
 
     if (fd == NULL)
     {
-        EMSG2(_(e_notopen), tempname);
+        EMSG2((char *)e_notopen, tempname);
         goto done;
     }
 
@@ -9194,7 +9151,7 @@ get_cmd_output(cmd, infile, flags, ret_len)
         goto done;
     if (i != len)
     {
-        EMSG2(_(e_notread), tempname);
+        EMSG2((char *)e_notread, tempname);
         vim_free(buffer);
         buffer = NULL;
     }

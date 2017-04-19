@@ -289,7 +289,7 @@ toggle_Magic(x)
 #define EMSG_RET_FAIL(m) return (EMSG(m), rc_did_emsg = TRUE, FAIL)
 #define EMSG2_RET_NULL(m, c) return (EMSG2((m), (c) ? "" : "\\"), rc_did_emsg = TRUE, (void *)NULL)
 #define EMSG2_RET_FAIL(m, c) return (EMSG2((m), (c) ? "" : "\\"), rc_did_emsg = TRUE, FAIL)
-#define EMSG_ONE_RET_NULL EMSG2_RET_NULL(_("E369: invalid item in %s%%[]"), reg_magic == MAGIC_ALL)
+#define EMSG_ONE_RET_NULL EMSG2_RET_NULL((char *)"E369: invalid item in %s%%[]", reg_magic == MAGIC_ALL)
 
 #define MAX_LIMIT       (32767L << 16L)
 
@@ -1178,7 +1178,7 @@ bt_regcomp(expr, re_flags)
     int         flags;
 
     if (expr == NULL)
-        EMSG_RET_NULL(_(e_null));
+        EMSG_RET_NULL((char *)e_null);
 
     init_class_tab();
 
@@ -1194,7 +1194,7 @@ bt_regcomp(expr, re_flags)
     /* Small enough for pointer-storage convention? */
 #if defined(SMALL_MALLOC) /* 16 bit storage allocation */
     if (regsize >= 65536L - 256L)
-        EMSG_RET_NULL(_("E339: Pattern too long"));
+        EMSG_RET_NULL((char *)"E339: Pattern too long");
 #endif
 
     /* Allocate space. */
@@ -1212,7 +1212,7 @@ bt_regcomp(expr, re_flags)
     {
         vim_free(r);
         if (reg_toolong)
-            EMSG_RET_NULL(_("E339: Pattern too long"));
+            EMSG_RET_NULL((char *)"E339: Pattern too long");
         return NULL;
     }
 
@@ -1364,7 +1364,7 @@ reg(paren, flagp)
     {
         /* Make a ZOPEN node. */
         if (regnzpar >= NSUBEXP)
-            EMSG_RET_NULL(_("E50: Too many \\z("));
+            EMSG_RET_NULL((char *)"E50: Too many \\z(");
         parno = regnzpar;
         regnzpar++;
         ret = regnode(ZOPEN + parno);
@@ -1374,7 +1374,7 @@ reg(paren, flagp)
     {
         /* Make a MOPEN node. */
         if (regnpar >= NSUBEXP)
-            EMSG2_RET_NULL(_("E51: Too many %s("), reg_magic == MAGIC_ALL);
+            EMSG2_RET_NULL((char *)"E51: Too many %s(", reg_magic == MAGIC_ALL);
         parno = regnpar;
         ++regnpar;
         ret = regnode(MOPEN + parno);
@@ -1428,19 +1428,19 @@ reg(paren, flagp)
     if (paren != REG_NOPAREN && getchr() != Magic(')'))
     {
         if (paren == REG_ZPAREN)
-            EMSG_RET_NULL(_("E52: Unmatched \\z("));
+            EMSG_RET_NULL((char *)"E52: Unmatched \\z(");
         else
             if (paren == REG_NPAREN)
-            EMSG2_RET_NULL(_(e_unmatchedpp), reg_magic == MAGIC_ALL);
+            EMSG2_RET_NULL((char *)e_unmatchedpp, reg_magic == MAGIC_ALL);
         else
-            EMSG2_RET_NULL(_(e_unmatchedp), reg_magic == MAGIC_ALL);
+            EMSG2_RET_NULL((char *)e_unmatchedp, reg_magic == MAGIC_ALL);
     }
     else if (paren == REG_NOPAREN && peekchr() != NUL)
     {
         if (curchr == Magic(')'))
-            EMSG2_RET_NULL(_(e_unmatchedpar), reg_magic == MAGIC_ALL);
+            EMSG2_RET_NULL((char *)e_unmatchedpar, reg_magic == MAGIC_ALL);
         else
-            EMSG_RET_NULL(_(e_trailing));       /* "Can't happen". */
+            EMSG_RET_NULL((char *)e_trailing);       /* "Can't happen". */
         /* NOTREACHED */
     }
     /*
@@ -1656,7 +1656,7 @@ regpiece(flagp)
                               }
                 }
                 if (lop == END)
-                    EMSG2_RET_NULL(_("E59: invalid character after %s@"), reg_magic == MAGIC_ALL);
+                    EMSG2_RET_NULL((char *)"E59: invalid character after %s@", reg_magic == MAGIC_ALL);
                 /* Look behind must match with behind_pos. */
                 if (lop == BEHIND || lop == NOBEHIND)
                 {
@@ -1696,7 +1696,7 @@ regpiece(flagp)
             else
             {
                 if (num_complex_braces >= 10)
-                    EMSG2_RET_NULL(_("E60: Too many complex %s{...}s"), reg_magic == MAGIC_ALL);
+                    EMSG2_RET_NULL((char *)"E60: Too many complex %s{...}s", reg_magic == MAGIC_ALL);
                 reginsert(BRACE_COMPLEX + num_complex_braces, ret);
                 regoptail(ret, regnode(BACK));
                 regoptail(ret, ret);
@@ -1711,9 +1711,9 @@ regpiece(flagp)
     {
         /* Can't have a multi follow a multi. */
         if (peekchr() == Magic('*'))
-            sprintf((char *)IObuff, _("E61: Nested %s*"), reg_magic >= MAGIC_ON ? "" : "\\");
+            sprintf((char *)IObuff, (char *)"E61: Nested %s*", reg_magic >= MAGIC_ON ? "" : "\\");
         else
-            sprintf((char *)IObuff, _("E62: Nested %s%c"),
+            sprintf((char *)IObuff, (char *)"E62: Nested %s%c",
                 reg_magic == MAGIC_ALL ? "" : "\\", no_Magic(peekchr()));
         EMSG_RET_NULL(IObuff);
     }
@@ -1828,7 +1828,7 @@ regatom(flagp)
       case Magic('U'):
         p = vim_strchr(classchars, no_Magic(c));
         if (p == NULL)
-            EMSG_RET_NULL(_("E63: invalid use of \\_"));
+            EMSG_RET_NULL((char *)"E63: invalid use of \\_");
         /* When '.' is followed by a composing char ignore the dot, so that
          * the composing char is matched here. */
         if (enc_utf8 && c == Magic('.') && utf_iscomposing(peekchr()))
@@ -1872,7 +1872,7 @@ regatom(flagp)
       case Magic(')'):
         if (one_exactly)
             EMSG_ONE_RET_NULL;
-        EMSG_RET_NULL(_(e_internal));   /* Supposed to be caught earlier. */
+        EMSG_RET_NULL((char *)e_internal);   /* Supposed to be caught earlier. */
         /* NOTREACHED */
 
       case Magic('='):
@@ -1882,7 +1882,7 @@ regatom(flagp)
       case Magic('{'):
       case Magic('*'):
         c = no_Magic(c);
-        sprintf((char *)IObuff, _("E64: %s%c follows nothing"),
+        sprintf((char *)IObuff, (char *)"E64: %s%c follows nothing",
                 (c == '*' ? reg_magic >= MAGIC_ON : reg_magic == MAGIC_ALL)
                 ? "" : "\\", c);
         EMSG_RET_NULL(IObuff);
@@ -1906,7 +1906,7 @@ regatom(flagp)
                 }
             }
             else
-                EMSG_RET_NULL(_(e_nopresub));
+                EMSG_RET_NULL((char *)e_nopresub);
             break;
 
       case Magic('1'):
@@ -1937,7 +1937,7 @@ regatom(flagp)
                         if (p[0] == '@' && p[1] == '<' && (p[2] == '!' || p[2] == '='))
                             break;
                     if (*p == NUL)
-                        EMSG_RET_NULL(_("E65: Illegal back reference"));
+                        EMSG_RET_NULL((char *)"E65: Illegal back reference");
                 }
                 ret = regnode(BACKREF + refnum);
             }
@@ -1949,7 +1949,7 @@ regatom(flagp)
             switch (c)
             {
                 case '(': if (reg_do_extmatch != REX_SET)
-                              EMSG_RET_NULL(_(e_z_not_allowed));
+                              EMSG_RET_NULL((char *)e_z_not_allowed);
                           if (one_exactly)
                               EMSG_ONE_RET_NULL;
                           ret = reg(REG_ZPAREN, &flags);
@@ -1968,7 +1968,7 @@ regatom(flagp)
                 case '7':
                 case '8':
                 case '9': if (reg_do_extmatch != REX_USE)
-                              EMSG_RET_NULL(_(e_z1_not_allowed));
+                              EMSG_RET_NULL((char *)e_z1_not_allowed);
                           ret = regnode(ZREF + c - '0');
                           re_has_z = REX_USE;
                           break;
@@ -1983,7 +1983,7 @@ regatom(flagp)
                               return NULL;
                           break;
 
-                default:  EMSG_RET_NULL(_("E68: Invalid character after \\z"));
+                default:  EMSG_RET_NULL((char *)"E68: Invalid character after \\z");
             }
         }
         break;
@@ -2039,7 +2039,7 @@ regatom(flagp)
                               while ((c = getchr()) != ']')
                               {
                                   if (c == NUL)
-                                      EMSG2_RET_NULL(_(e_missing_sb), reg_magic == MAGIC_ALL);
+                                      EMSG2_RET_NULL((char *)e_missing_sb, reg_magic == MAGIC_ALL);
                                   br = regnode(BRANCH);
                                   if (ret == NULL)
                                       ret = br;
@@ -2054,7 +2054,7 @@ regatom(flagp)
                                       return NULL;
                               }
                               if (ret == NULL)
-                                  EMSG2_RET_NULL(_(e_empty_sb), reg_magic == MAGIC_ALL);
+                                  EMSG2_RET_NULL((char *)e_empty_sb, reg_magic == MAGIC_ALL);
                               lastbranch = regnode(BRANCH);
                               br = regnode(NOTHING);
                               if (ret != JUST_CALC_SIZE)
@@ -2098,7 +2098,7 @@ regatom(flagp)
 
                               if (i < 0)
                                   EMSG2_RET_NULL(
-                                        _("E678: Invalid character after %s%%[dxouU]"),
+                                        (char *)"E678: Invalid character after %s%%[dxouU]",
                                         reg_magic == MAGIC_ALL);
                               if (use_multibytecode(i))
                                   ret = regnode(MULTIBYTECODE);
@@ -2162,7 +2162,7 @@ regatom(flagp)
                               }
                           }
 
-                          EMSG2_RET_NULL(_("E71: Invalid character after %s%%"),
+                          EMSG2_RET_NULL((char *)"E71: Invalid character after %s%%",
                                                       reg_magic == MAGIC_ALL);
             }
         }
@@ -2235,12 +2235,12 @@ collection:
                                 endc = coll_get_char();
 
                             if (startc > endc)
-                                EMSG_RET_NULL(_(e_invrange));
+                                EMSG_RET_NULL((char *)e_invrange);
                             if (has_mbyte && ((*mb_char2len)(startc) > 1 || (*mb_char2len)(endc) > 1))
                             {
                                 /* Limit to a range of 256 chars */
                                 if (endc > startc + 256)
-                                    EMSG_RET_NULL(_(e_invrange));
+                                    EMSG_RET_NULL((char *)e_invrange);
                                 while (++startc <= endc)
                                     regmbc(startc);
                             }
@@ -2427,13 +2427,13 @@ collection:
                 regc(NUL);
                 prevchr_len = 1;        /* last char was the ']' */
                 if (*regparse != ']')
-                    EMSG_RET_NULL(_(e_toomsbra));       /* Cannot happen? */
+                    EMSG_RET_NULL((char *)e_toomsbra);       /* Cannot happen? */
                 skipchr();          /* let's be friends with the lexer again */
                 *flagp |= HASWIDTH | SIMPLE;
                 break;
             }
             else if (reg_strict)
-                EMSG2_RET_NULL(_(e_missingbracket), reg_magic > MAGIC_OFF);
+                EMSG2_RET_NULL((char *)e_missingbracket, reg_magic > MAGIC_OFF);
         }
         /* FALLTHROUGH */
 
@@ -3187,7 +3187,7 @@ read_limits(minval, maxval)
         regparse++;     /* Allow either \{...} or \{...\} */
     if (*regparse != '}')
     {
-        sprintf((char *)IObuff, _("E554: Syntax error in %s{...}"),
+        sprintf((char *)IObuff, (char *)"E554: Syntax error in %s{...}",
                                           reg_magic == MAGIC_ALL ? "" : "\\");
         EMSG_RET_FAIL(IObuff);
     }
@@ -3580,7 +3580,7 @@ bt_regexec_both(line, col, tm)
     /* Be paranoid... */
     if (prog == NULL || line == NULL)
     {
-        EMSG(_(e_null));
+        EMSG((char *)e_null);
         goto theend;
     }
 
@@ -4739,7 +4739,7 @@ regmatch(scan)
                 }
                 else
                 {
-                    EMSG(_(e_internal));            /* Shouldn't happen */
+                    EMSG((char *)e_internal);            /* Shouldn't happen */
                     status = RA_FAIL;
                 }
             }
@@ -4869,7 +4869,7 @@ regmatch(scan)
                      * a regstar_T on the regstack. */
                     if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
                     {
-                        EMSG(_(e_maxmempat));
+                        EMSG((char *)e_maxmempat);
                         status = RA_FAIL;
                     }
                     else if (ga_grow(&regstack, sizeof(regstar_T)) == FAIL)
@@ -4912,7 +4912,7 @@ regmatch(scan)
             /* Need a bit of room to store extra positions. */
             if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
             {
-                EMSG(_(e_maxmempat));
+                EMSG((char *)e_maxmempat);
                 status = RA_FAIL;
             }
             else if (ga_grow(&regstack, sizeof(regbehind_T)) == FAIL)
@@ -4963,7 +4963,7 @@ regmatch(scan)
             break;
 
           default:
-            EMSG(_(e_re_corr));
+            EMSG((char *)e_re_corr);
             status = RA_FAIL;
             break;
           }
@@ -4975,7 +4975,7 @@ regmatch(scan)
 
         /* Continue in inner loop, advance to next item. */
         scan = next;
-    } /* end of inner loop */
+    }
 
     /*
      * If there is something on the regstack execute the code for the state.
@@ -5343,13 +5343,13 @@ regmatch(scan)
              * We get here only if there's trouble -- normally "case END" is
              * the terminating point.
              */
-            EMSG(_(e_re_corr));
+            EMSG((char *)e_re_corr);
         }
         if (status == RA_FAIL)
             got_int = TRUE;
         return (status == RA_MATCH);
     }
-  } /* End of loop until the regstack is empty. */
+  }
 
   /* NOTREACHED */
 }
@@ -5367,7 +5367,7 @@ regstack_push(state, scan)
 
     if ((long)((unsigned)regstack.ga_len >> 10) >= p_mmp)
     {
-        EMSG(_(e_maxmempat));
+        EMSG((char *)e_maxmempat);
         return NULL;
     }
     if (ga_grow(&regstack, sizeof(regitem_T)) == FAIL)
@@ -5760,7 +5760,7 @@ do_class:
         break;
 
       default:                  /* Oh dear.  Called inappropriately. */
-        EMSG(_(e_re_corr));
+        EMSG((char *)e_re_corr);
         break;
     }
 
@@ -5809,7 +5809,7 @@ prog_magic_wrong()
 
     if (UCHARAT(((bt_regprog_T *)prog)->program) != REGMAGIC)
     {
-        EMSG(_(e_re_corr));
+        EMSG((char *)e_re_corr);
         return TRUE;
     }
     return FALSE;
@@ -6109,7 +6109,7 @@ re_mult_next(what)
     char *what;
 {
     if (re_multi_type(peekchr()) == MULTI_MULT)
-        EMSG2_RET_FAIL(_("E888: (NFA regexp) cannot repeat %s"), what);
+        EMSG2_RET_FAIL((char *)"E888: (NFA regexp) cannot repeat %s", what);
     return OK;
 }
 
@@ -6518,7 +6518,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
     /* Be paranoid... */
     if (source == NULL || dest == NULL)
     {
-        EMSG(_(e_null));
+        EMSG((char *)e_null);
         return 0;
     }
     if (prog_magic_wrong())
@@ -6780,7 +6780,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                     else if (*s == NUL) /* we hit NUL. */
                     {
                         if (copy)
-                            EMSG(_(e_re_damg));
+                            EMSG((char *)e_re_damg);
                         goto exit;
                     }
                     else
@@ -7103,7 +7103,7 @@ vim_regcomp(expr_arg, re_flags)
         }
         else
         {
-            EMSG(_("E864: \\%#= can only be followed by 0, 1, or 2. The automatic engine will be used "));
+            EMSG((char *)"E864: \\%#= can only be followed by 0, 1, or 2. The automatic engine will be used ");
             regexp_engine = AUTOMATIC_ENGINE;
         }
     }
@@ -7165,7 +7165,7 @@ report_re_switch(pat)
     if (p_verbose > 0)
     {
         verbose_enter();
-        MSG_PUTS(_("Switching to backtracking RE engine for pattern: "));
+        MSG_PUTS((char *)"Switching to backtracking RE engine for pattern: ");
         MSG_PUTS(pat);
         verbose_leave();
     }

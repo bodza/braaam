@@ -26,22 +26,14 @@ static char *(features[]) =
         "+cursorshape",
         "+dialog_con",
         "+digraphs",
-#if defined(FEAT_DND)
         "+dnd",
-#else
-        "-dnd",
-#endif
         "+eval",
         "+ex_extra",
         "+extra_search",
         "-file_in_path",
         "-find_in_path",
         "+float",
-#if defined(FEAT_FOOTER)
-        "+footer",
-#else
         "-footer",
-#endif
         "+fork()",
 #if defined(USE_ICONV)
         "+iconv",
@@ -312,7 +304,7 @@ list_version()
     /* Print a range when patches are consecutive: "1-10, 12, 15-40, 42-45" */
     if (included_patches[0] != 0)
     {
-        MSG_PUTS(_("\nIncluded patches: "));
+        MSG_PUTS((char *)"\nIncluded patches: ");
         first = -1;
         /* find last one */
         for (i = 0; included_patches[i] != 0; ++i)
@@ -339,7 +331,7 @@ list_version()
     /* Print the list of extra patch descriptions if there is at least one. */
     if (extra_patches[0] != NULL)
     {
-        MSG_PUTS(_("\nExtra patches: "));
+        MSG_PUTS((char *)"\nExtra patches: ");
         s = "";
         for (i = 0; extra_patches[i] != NULL; ++i)
         {
@@ -349,32 +341,21 @@ list_version()
         }
     }
 
-    MSG_PUTS(_("\nNormal version "));
-    MSG_PUTS(_("without GUI."));
-    version_msg(_("  Features included (+) or not (-):\n"));
+    MSG_PUTS((char *)"\nNormal version ");
+    MSG_PUTS((char *)"without GUI.");
+    version_msg((char *)"  Features included (+) or not (-):\n");
 
     list_features();
 
-#if defined(SYS_VIMRC_FILE)
-    version_msg(_("   system vimrc file: \""));
+    version_msg((char *)"   system vimrc file: \"");
     version_msg(SYS_VIMRC_FILE);
     version_msg("\"\n");
-#endif
-#if defined(USR_VIMRC_FILE)
-    version_msg(_("     user vimrc file: \""));
+    version_msg((char *)"     user vimrc file: \"");
     version_msg(USR_VIMRC_FILE);
     version_msg("\"\n");
-#endif
-#if defined(USR_VIMRC_FILE2)
-    version_msg(_(" 2nd user vimrc file: \""));
-    version_msg(USR_VIMRC_FILE2);
-    version_msg("\"\n");
-#endif
-#if defined(USR_EXRC_FILE)
-    version_msg(_("      user exrc file: \""));
+    version_msg((char *)"      user exrc file: \"");
     version_msg(USR_EXRC_FILE);
     version_msg("\"\n");
-#endif
 }
 
 /*
@@ -486,7 +467,7 @@ intro_message(colon)
                     p = "menu  Help->Sponsor/Register  for information    ";
             }
             if (*p != NUL)
-                do_intro_line(row, (char_u *)_(p), i == 2, 0);
+                do_intro_line(row, (char_u *)p, i == 2, 0);
             ++row;
         }
     }

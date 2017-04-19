@@ -118,9 +118,9 @@ search_regcomp(pat, pat_save, pat_use, options, regmatch)
         if (spats[i].pat == NULL)       /* pattern was never defined */
         {
             if (pat_use == RE_SUBST)
-                EMSG(_(e_nopresub));
+                EMSG((char *)e_nopresub);
             else
-                EMSG(_(e_noprevre));
+                EMSG((char *)e_noprevre);
             rc_did_emsg = TRUE;
             return FAIL;
         }
@@ -484,7 +484,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                    (options & (SEARCH_HIS + SEARCH_KEEP)), &regmatch) == FAIL)
     {
         if ((options & SEARCH_MSG) && !rc_did_emsg)
-            EMSG2(_("E383: Invalid search string: %s"), mr_pattern);
+            EMSG2((char *)"E383: Invalid search string: %s", mr_pattern);
         return FAIL;
     }
 
@@ -588,7 +588,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
                          */
                         while (matchpos.lnum == 0
                                 && ((options & SEARCH_END) && first_match
-                                    ?  (nmatched == 1
+                                    ? (nmatched == 1
                                         && (int)endpos.col - 1
                                              < (int)start_pos.col + extra_col)
                                     : ((int)matchpos.col - (ptr[matchpos.col] == NUL)
@@ -826,7 +826,7 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
             else
                 lnum = 1;
             if (!shortmess(SHM_SEARCH) && (options & SEARCH_MSG))
-                give_warning((char_u *)_(dir == BACKWARD ? top_bot_msg : bot_top_msg), TRUE);
+                give_warning((char_u *)(dir == BACKWARD ? top_bot_msg : bot_top_msg), TRUE);
         }
         if (got_int || called_emsg || break_loop)
             break;
@@ -840,15 +840,15 @@ searchit(win, buf, pos, dir, pat, count, options, pat_use, stop_lnum, tm)
     if (!found)             /* did not find it */
     {
         if (got_int)
-            EMSG(_(e_interr));
+            EMSG((char *)e_interr);
         else if ((options & SEARCH_MSG) == SEARCH_MSG)
         {
             if (p_ws)
-                EMSG2(_(e_patnotf2), mr_pattern);
+                EMSG2((char *)e_patnotf2, mr_pattern);
             else if (lnum == 0)
-                EMSG2(_("E384: search hit TOP without match for: %s"), mr_pattern);
+                EMSG2((char *)"E384: search hit TOP without match for: %s", mr_pattern);
             else
-                EMSG2(_("E385: search hit BOTTOM without match for: %s"), mr_pattern);
+                EMSG2((char *)"E385: search hit BOTTOM without match for: %s", mr_pattern);
         }
         return FAIL;
     }
@@ -999,7 +999,7 @@ do_search(oap, dirc, pat, count, options, tm)
                 pat = spats[RE_SUBST].pat;
                 if (pat == NULL)
                 {
-                    EMSG(_(e_noprevre));
+                    EMSG((char *)e_noprevre);
                     retval = 0;
                     goto end_do_search;
                 }
@@ -1246,7 +1246,7 @@ do_search(oap, dirc, pat, count, options, tm)
         if (dirc != '?' && dirc != '/')
         {
             retval = 0;
-            EMSG(_("E386: Expected '?' or '/'  after ';'"));
+            EMSG((char *)"E386: Expected '?' or '/'  after ';'");
             goto end_do_search;
         }
         ++pat;

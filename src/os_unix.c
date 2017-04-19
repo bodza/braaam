@@ -440,96 +440,6 @@ mch_delay(msec, ignoreinput)
         WaitForChar(msec);
 }
 
-#if defined(HAVE_STACK_LIMIT)
-#define HAVE_CHECK_STACK_GROWTH
-/*
- * Support for checking for an almost-out-of-stack-space situation.
- */
-
-/*
- * Return a pointer to an item on the stack.  Used to find out if the stack
- * grows up or down.
- */
-static void check_stack_growth(char *p);
-static int stack_grows_downwards;
-
-/*
- * Find out if the stack grows upwards or downwards.
- * "p" points to a variable on the stack of the caller.
- */
-    static void
-check_stack_growth(p)
-    char        *p;
-{
-    int         i;
-
-    stack_grows_downwards = (p > (char *)&i);
-}
-#endif
-
-#if defined(HAVE_STACK_LIMIT)
-static char *stack_limit = NULL;
-
-/*
- * Find out until how var the stack can grow without getting into trouble.
- * Called when starting up and when switching to the signal stack in
- * deathtrap().
- */
-    static void
-get_stack_limit()
-{
-    struct rlimit       rlp;
-    int                 i;
-    long                lim;
-
-    /* Set the stack limit to 15/16 of the allowable size.  Skip this when the
-     * limit doesn't fit in a long (rlim_cur might be "long long"). */
-    if (getrlimit(RLIMIT_STACK, &rlp) == 0
-            && rlp.rlim_cur < ((rlim_t)1 << (sizeof(long_u) * 8 - 1))
-#if defined(RLIM_INFINITY)
-            && rlp.rlim_cur != RLIM_INFINITY
-#endif
-       )
-    {
-        lim = (long)rlp.rlim_cur;
-        if (stack_grows_downwards)
-        {
-            stack_limit = (char *)((long)&i - (lim / 16L * 15L));
-            if (stack_limit >= (char *)&i)
-                /* overflow, set to 1/16 of current stack position */
-                stack_limit = (char *)((long)&i / 16L);
-        }
-        else
-        {
-            stack_limit = (char *)((long)&i + (lim / 16L * 15L));
-            if (stack_limit <= (char *)&i)
-                stack_limit = NULL;     /* overflow */
-        }
-    }
-}
-
-/*
- * Return FAIL when running out of stack space.
- * "p" must point to any variable local to the caller that's on the stack.
- */
-    int
-mch_stackcheck(p)
-    char        *p;
-{
-    if (stack_limit != NULL)
-    {
-        if (stack_grows_downwards)
-        {
-            if (p < stack_limit)
-                return FAIL;
-        }
-        else if (p > stack_limit)
-            return FAIL;
-    }
-    return OK;
-}
-#endif
-
 /*
  * Support for using the signal stack.
  * This helps when we run out of stack space, which causes a SIGSEGV.  The
@@ -680,12 +590,6 @@ deathtrap SIGDEFARG(sigarg)
 
     /* Set the v:dying variable. */
     set_vim_var_nr(VV_DYING, (long)entered);
-
-#if defined(HAVE_STACK_LIMIT)
-    /* Since we are now using the signal stack, need to reset the stack
-     * limit.  Otherwise using a regexp will fail. */
-    get_stack_limit();
-#endif
 
     /* try to find the name of this signal */
     for (i = 0; signal_info[i].sig != -1; i++)
@@ -1231,24 +1135,6 @@ mch_get_pid()
     return (long)getpid();
 }
 
-#if !defined(HAVE_STRERROR)
-static char *strerror(int);
-
-    static char *
-strerror(err)
-    int err;
-{
-    extern int      sys_nerr;
-    extern char     *sys_errlist[];
-    static char     er[20];
-
-    if (err > 0 && err < sys_nerr)
-        return (sys_errlist[err]);
-    sprintf(er, "Error %d", err);
-    return er;
-}
-#endif
-
 /*
  * Get name of current directory into buffer 'buf' of length 'len' bytes.
  * Return OK for success, FAIL for failure.
@@ -1358,7 +1244,7 @@ mch_FullName(fname, buf, len, force)
             else
                 l = mch_chdir((char *)olddir);
             if (l != 0)
-                EMSG(_(e_prev_dir));
+                EMSG((char *)e_prev_dir);
         }
 
         l = STRLEN(buf);
@@ -1573,17 +1459,6 @@ mch_nodetype(name)
     void
 mch_early_init()
 {
-#if defined(HAVE_CHECK_STACK_GROWTH)
-    int                 i;
-
-    check_stack_growth((char *)&i);
-
-#if defined(HAVE_STACK_LIMIT)
-    get_stack_limit();
-#endif
-
-#endif
-
     /*
      * Setup an alternative stack for signals.  Helps to catch signals when
      * running out of stack space.
@@ -1868,7 +1743,7 @@ check_mouse_termcode()
 mch_screenmode(arg)
     char_u   *arg UNUSED;
 {
-    EMSG(_(e_screenmode));
+    EMSG((char *)e_screenmode);
     return FAIL;
 }
 
@@ -2046,12 +1921,7 @@ mch_call_shell(cmd, options)
     int         fd_toshell[2];          /* for pipes */
     int         fd_fromshell[2];
     int         pipe_error = FALSE;
-#if defined(HAVE_SETENV)
     char        envbuf[50];
-#else
-    static char envbuf_Rows[20];
-    static char envbuf_Columns[20];
-#endif
     int         did_settmode = FALSE;   /* settmode(TMODE_RAW) called */
 
     newcmd = vim_strsave(p_sh);
@@ -2156,7 +2026,7 @@ mch_call_shell(cmd, options)
             }
             if (pipe_error)
             {
-                MSG_PUTS(_("\nCannot create pipes\n"));
+                MSG_PUTS((char *)"\nCannot create pipes\n");
                 out_flush();
             }
         }
@@ -2166,7 +2036,7 @@ mch_call_shell(cmd, options)
     {
         if ((pid = fork()) == -1)       /* maybe we should use vfork() */
         {
-            MSG_PUTS(_("\nCannot fork\n"));
+            MSG_PUTS((char *)"\nCannot fork\n");
             if ((options & (SHELL_READ|SHELL_WRITE)))
             {
                 {
@@ -2235,7 +2105,6 @@ mch_call_shell(cmd, options)
 #endif
                 }
                 /* Simulate to have a dumb terminal (for now) */
-#if defined(HAVE_SETENV)
                 setenv("TERM", "dumb", 1);
                 sprintf((char *)envbuf, "%ld", Rows);
                 setenv("ROWS", (char *)envbuf, 1);
@@ -2243,19 +2112,6 @@ mch_call_shell(cmd, options)
                 setenv("LINES", (char *)envbuf, 1);
                 sprintf((char *)envbuf, "%ld", Columns);
                 setenv("COLUMNS", (char *)envbuf, 1);
-#else
-                /*
-                 * Putenv does not copy the string, it has to remain valid.
-                 * Use a static array to avoid losing allocated memory.
-                 */
-                putenv("TERM=dumb");
-                sprintf(envbuf_Rows, "ROWS=%ld", Rows);
-                putenv(envbuf_Rows);
-                sprintf(envbuf_Rows, "LINES=%ld", Rows);
-                putenv(envbuf_Rows);
-                sprintf(envbuf_Columns, "COLUMNS=%ld", Columns);
-                putenv(envbuf_Columns);
-#endif
 
                 /*
                  * stderr is only redirected when using the GUI, so that a
@@ -2352,7 +2208,7 @@ mch_call_shell(cmd, options)
                      * external program. */
                     if ((wpid = fork()) == -1)
                     {
-                        MSG_PUTS(_("\nCannot fork\n"));
+                        MSG_PUTS((char *)"\nCannot fork\n");
                     }
                     else if (wpid == 0) /* child */
                     {
@@ -2740,20 +2596,20 @@ finished:
                 {
                     if (retval == EXEC_FAILED)
                     {
-                        MSG_PUTS(_("\nCannot execute shell "));
+                        MSG_PUTS((char *)"\nCannot execute shell ");
                         msg_outtrans(p_sh);
                         msg_putchar('\n');
                     }
                     else if (!(options & SHELL_SILENT))
                     {
-                        MSG_PUTS(_("\nshell returned "));
+                        MSG_PUTS((char *)"\nshell returned ");
                         msg_outnum((long)retval);
                         msg_putchar('\n');
                     }
                 }
             }
             else
-                MSG_PUTS(_("\nCommand terminated\n"));
+                MSG_PUTS((char *)"\nCommand terminated\n");
         }
     }
     vim_free(argv);
@@ -2872,16 +2728,8 @@ select_eintr:
         /* We're going to loop around again, find out for how long */
         if (msec > 0)
         {
-#if defined(USE_START_TV)
-            struct timeval  mtv;
-
-            /* Compute remaining wait time. */
-            gettimeofday(&mtv, NULL);
-            msec -= (mtv.tv_sec - start_tv.tv_sec) * 1000L + (mtv.tv_usec - start_tv.tv_usec) / 1000L;
-#else
             /* Guess we got interrupted halfway. */
             msec = msec / 2;
-#endif
             if (msec <= 0)
                 break;  /* waited long enough */
         }
@@ -2988,7 +2836,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
      */
     if ((tempname = vim_tempname('o', FALSE)) == NULL)
     {
-        EMSG(_(e_notmp));
+        EMSG((char *)e_notmp);
         return FAIL;
     }
 
@@ -3175,7 +3023,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
             msg_putchar('\n');          /* clear bottom line quickly */
             cmdline_row = Rows - 1;     /* continue on last line */
             {
-                MSG(_(e_wildexpand));
+                MSG((char *)e_wildexpand);
                 msg_start();            /* don't overwrite this message */
             }
         }
@@ -3195,7 +3043,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
         /* Something went wrong, perhaps a file name with a special char. */
         if (!(flags & EW_SILENT))
         {
-            MSG(_(e_wildexpand));
+            MSG((char *)e_wildexpand);
             msg_start();                /* don't overwrite this message */
         }
         vim_free(tempname);
@@ -3219,7 +3067,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
     if (i != (int)len)
     {
         /* unexpected read error */
-        EMSG2(_(e_notread), tempname);
+        EMSG2((char *)e_notread, tempname);
         vim_free(tempname);
         vim_free(buffer);
         return FAIL;
@@ -3471,25 +3319,3 @@ have_dollars(num, file)
             return TRUE;
     return FALSE;
 }
-
-#if !defined(HAVE_RENAME)
-/*
- * Scaled-down version of rename(), which is missing in Xenix.
- * This version can only move regular files and will fail if the
- * destination exists.
- */
-    int
-mch_rename(src, dest)
-    const char *src, *dest;
-{
-    struct stat     st;
-
-    if (stat(dest, &st) >= 0)       /* fail if destination exists */
-        return -1;
-    if (link(src, dest) != 0)       /* link file to new name */
-        return -1;
-    if (mch_remove(src) == 0)       /* delete link to old name */
-        return 0;
-    return -1;
-}
-#endif

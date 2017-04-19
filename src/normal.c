@@ -126,9 +126,7 @@ static void     nv_halfpage(cmdarg_T *cap);
 static void     nv_join(cmdarg_T *cap);
 static void     nv_put(cmdarg_T *cap);
 static void     nv_open(cmdarg_T *cap);
-#if defined(FEAT_DND)
 static void     nv_drop(cmdarg_T *cap);
-#endif
 static void     nv_cursorhold(cmdarg_T *cap);
 
 static char *e_noident = "E349: No identifier under cursor";
@@ -360,9 +358,7 @@ static const struct nv_cmd
     {K_F1,      nv_help,        NV_NCW,                 0},
     {K_XF1,     nv_help,        NV_NCW,                 0},
     {K_SELECT,  nv_select,      0,                      0},
-#if defined(FEAT_DND)
     {K_DROP,    nv_drop,        NV_STS,                 0},
-#endif
     {K_CURSORHOLD, nv_cursorhold, NV_KEEPREG,           0},
 };
 
@@ -1923,7 +1919,7 @@ op_function(oap)
     int         save_virtual_op = virtual_op;
 
     if (*p_opfunc == NUL)
-        EMSG(_("E774: 'operatorfunc' is empty"));
+        EMSG((char *)"E774: 'operatorfunc' is empty");
     else
     {
         /* Set '[ and '] marks to text to be operated on. */
@@ -2757,7 +2753,7 @@ check_visual_highlight()
     if (full_screen)
     {
         if (!did_check && hl_attr(HLF_V) == 0)
-            MSG(_("Warning: terminal cannot highlight"));
+            MSG((char *)"Warning: terminal cannot highlight");
         did_check = TRUE;
     }
 }
@@ -2950,9 +2946,9 @@ find_ident_at_pos(wp, lnum, startcol, string, find_type)
          * didn't find an identifier or string
          */
         if (find_type & FIND_STRING)
-            EMSG(_("E348: No string under cursor"));
+            EMSG((char *)"E348: No string under cursor");
         else
-            EMSG(_(e_noident));
+            EMSG((char *)e_noident);
         return 0;
     }
     ptr += col;
@@ -4449,7 +4445,7 @@ nv_ident(cap)
                 }
                 if (n == 0)
                 {
-                    EMSG(_(e_noident));  /* found dashes only */
+                    EMSG((char *)e_noident);  /* found dashes only */
                     vim_free(buf);
                     return;
                 }
@@ -5709,7 +5705,7 @@ nv_Replace(cap)
     else if (!checkclearopq(cap->oap))
     {
         if (!curbuf->b_p_ma)
-            EMSG(_(e_modifiable));
+            EMSG((char *)e_modifiable);
         else
         {
             if (virtual_active())
@@ -5735,7 +5731,7 @@ nv_vreplace(cap)
     else if (!checkclearopq(cap->oap))
     {
         if (!curbuf->b_p_ma)
-            EMSG(_(e_modifiable));
+            EMSG((char *)e_modifiable);
         else
         {
             if (cap->extra_char == Ctrl_V)      /* get another character */
@@ -6000,11 +5996,11 @@ nv_pcmark(cap)
         else if (cap->cmdchar == 'g')
         {
             if (curbuf->b_changelistlen == 0)
-                EMSG(_("E664: changelist is empty"));
+                EMSG((char *)"E664: changelist is empty");
             else if (cap->count1 < 0)
-                EMSG(_("E662: At start of changelist"));
+                EMSG((char *)"E662: At start of changelist");
             else
-                EMSG(_("E663: At end of changelist"));
+                EMSG((char *)"E663: At end of changelist");
         }
         else
             clearopbeep(cap->oap);
@@ -7235,7 +7231,7 @@ nv_esc(cap)
                 && cmdwin_type == 0
                 && !VIsual_active
                 && no_reason)
-            MSG(_("Type  :quit<Enter>  to exit Vim"));
+            MSG((char *)"Type  :quit<Enter>  to exit Vim");
 
         /* Don't reset "restart_edit" when 'insertmode' is set, it won't be
          * set again below when halfway a mapping. */
@@ -7290,7 +7286,7 @@ nv_edit(cap)
     else if (!curbuf->b_p_ma && !p_im)
     {
         /* Only give this error when 'insertmode' is off. */
-        EMSG(_(e_modifiable));
+        EMSG((char *)e_modifiable);
         clearop(cap->oap);
     }
     else if (!checkclearopq(cap->oap))
@@ -7682,14 +7678,12 @@ nv_open(cap)
         n_opencmd(cap);
 }
 
-#if defined(FEAT_DND)
     static void
 nv_drop(cap)
     cmdarg_T    *cap UNUSED;
 {
     do_put('~', BACKWARD, 1L, PUT_CURSEND);
 }
-#endif
 
 /*
  * Trigger CursorHold event.

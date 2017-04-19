@@ -94,10 +94,7 @@ mf_open(fname, flags)
 {
     memfile_T           *mfp;
     off_t               size;
-#if defined(STATFS)
-#define USE_FSTATFS
     struct STATFS       stf;
-#endif
 
     if ((mfp = (memfile_T *)alloc((unsigned)sizeof(memfile_T))) == NULL)
         return NULL;
@@ -129,7 +126,6 @@ mf_open(fname, flags)
     mf_hash_init(&mfp->mf_trans);
     mfp->mf_page_size = MEMFILE_PAGE_SIZE;
 
-#if defined(USE_FSTATFS)
     /*
      * Try to set the page size equal to the block size of the device.
      * Speeds up I/O a lot.
@@ -142,7 +138,6 @@ mf_open(fname, flags)
             && stf.F_BSIZE >= MIN_SWAP_PAGE_SIZE
             && stf.F_BSIZE <= MAX_SWAP_PAGE_SIZE)
         mfp->mf_page_size = stf.F_BSIZE;
-#endif
 
     if (mfp->mf_fd < 0 || (flags & (O_TRUNC|O_EXCL))
                       || (size = lseek(mfp->mf_fd, (off_t)0L, SEEK_END)) <= 0)
@@ -214,7 +209,7 @@ mf_close(mfp, del_file)
     if (mfp->mf_fd >= 0)
     {
         if (close(mfp->mf_fd) < 0)
-            EMSG(_(e_swapclose));
+            EMSG((char *)e_swapclose);
     }
     if (del_file && mfp->mf_fname != NULL)
         mch_remove(mfp->mf_fname);
@@ -260,7 +255,7 @@ mf_close_file(buf, getlines)
     }
 
     if (close(mfp->mf_fd) < 0)                  /* close the file */
-        EMSG(_(e_swapclose));
+        EMSG((char *)e_swapclose);
     mfp->mf_fd = -1;
 
     if (mfp->mf_fname != NULL)
@@ -458,7 +453,7 @@ mf_put(mfp, hp, dirty, infile)
     flags = hp->bh_flags;
 
     if ((flags & BH_LOCKED) == 0)
-        EMSG(_("E293: block was not locked"));
+        EMSG((char *)"E293: block was not locked");
     flags &= ~BH_LOCKED;
     if (dirty)
     {
@@ -901,12 +896,12 @@ mf_read(mfp, hp)
     size = page_size * hp->bh_page_count;
     if (lseek(mfp->mf_fd, offset, SEEK_SET) != offset)
     {
-        PERROR(_("E294: Seek error in swap file read"));
+        PERROR((char *)"E294: Seek error in swap file read");
         return FAIL;
     }
     if ((unsigned)read_eintr(mfp->mf_fd, hp->bh_data, size) != size)
     {
-        PERROR(_("E295: Read error in swap file"));
+        PERROR((char *)"E295: Read error in swap file");
         return FAIL;
     }
 
@@ -959,7 +954,7 @@ mf_write(mfp, hp)
         offset = (off_t)page_size * nr;
         if (lseek(mfp->mf_fd, offset, SEEK_SET) != offset)
         {
-            PERROR(_("E296: Seek error in swap file write"));
+            PERROR((char *)"E296: Seek error in swap file write");
             return FAIL;
         }
         if (hp2 == NULL)            /* freed block, fill with dummy data */
@@ -976,7 +971,7 @@ mf_write(mfp, hp)
              * space becomes available.
              */
             if (!did_swapwrite_msg)
-                EMSG(_("E297: Write error in swap file"));
+                EMSG((char *)"E297: Write error in swap file");
             did_swapwrite_msg = TRUE;
             return FAIL;
         }
@@ -1174,7 +1169,7 @@ mf_do_open(mfp, fname, flags)
     if ((flags & O_CREAT) && mch_lstat((char *)mfp->mf_fname, &sb) >= 0)
     {
         mfp->mf_fd = -1;
-        EMSG(_("E300: Swap file already exists (symlink attack?)"));
+        EMSG((char *)"E300: Swap file already exists (symlink attack?)");
     }
     else
     {

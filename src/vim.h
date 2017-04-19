@@ -6,9 +6,6 @@
 /* Define when terminfo support found */
 #define TERMINFO 1
 
-/* Define when termcap.h contains ospeed */
-#define HAVE_OSPEED 1
-
 /* Define when __attribute__((unused)) can be used */
 #define HAVE_ATTRIBUTE_UNUSED 1
 
@@ -27,25 +24,7 @@
 /* Define if tgetent() returns zero for an error */
 #define TGETENT_ZERO_ERR 0
 
-/* Define if you the function: */
-#define HAVE_BCMP 1
-#define HAVE_MEMCMP 1
-#define HAVE_MEMSET 1
-#define HAVE_MKDTEMP 1
-#define HAVE_PUTENV 1
-#define HAVE_QSORT 1
-#define HAVE_RENAME 1
-#define HAVE_SETENV 1
-#define HAVE_STRCASECMP 1
-#define HAVE_STRERROR 1
-#define HAVE_STRFTIME 1
-#define HAVE_STRNCASECMP 1
-#define HAVE_STRPBRK 1
-#define HAVE_STRTOL 1
 #define HAVE_TGETENT 1
-#define HAVE_TOWLOWER 1
-#define HAVE_TOWUPPER 1
-#define HAVE_ISWUPPER 1
 
 /* user ID of root is usually zero, but not for everybody */
 #define ROOT_UID 0
@@ -185,12 +164,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #include <sys/select.h>
 
 /* ================ end of the header file puzzle =============== */
-
-/*
- * The _() stuff is for using gettext().  It is a no-op when libintl.h is not
- * found or the +multilang feature is disabled.
- */
-#define _(x) ((char *)(x))
 
 /*
  * flags for update_screen()
@@ -1069,20 +1042,12 @@ typedef uint32_t UINT32_T;
 #define STRNCPY(d, s, n)    strncpy((char *)(d), (char *)(s), (size_t)(n))
 #define STRCMP(d, s)        strcmp((char *)(d), (char *)(s))
 #define STRNCMP(d, s, n)    strncmp((char *)(d), (char *)(s), (size_t)(n))
-#if defined(HAVE_STRCASECMP)
 #define STRICMP(d, s)      strcasecmp((char *)(d), (char *)(s))
-#else
-#define STRICMP(d, s)     vim_stricmp((char *)(d), (char *)(s))
-#endif
 
 /* Like strcpy() but allows overlapped source and destination. */
 #define STRMOVE(d, s)       mch_memmove((d), (s), STRLEN(s) + 1)
 
-#if defined(HAVE_STRNCASECMP)
 #define STRNICMP(d, s, n)  strncasecmp((char *)(d), (char *)(s), (size_t)(n))
-#else
-#define STRNICMP(d, s, n) vim_strnicmp((char *)(d), (char *)(s), (size_t)(n))
-#endif
 
 /* We need to call mb_stricmp() even when we aren't dealing with a multi-byte
  * encoding because mb_stricmp() takes care of all ascii and non-ascii
@@ -1096,9 +1061,7 @@ typedef uint32_t UINT32_T;
 #define STRCAT(d, s)        strcat((char *)(d), (char *)(s))
 #define STRNCAT(d, s, n)    strncat((char *)(d), (char *)(s), (size_t)(n))
 
-#if defined(HAVE_STRPBRK)
 #define vim_strpbrk(s, cs) (char_u *)strpbrk((char *)(s), (char *)(cs))
-#endif
 
 #define MSG(s)                      msg((char_u *)(s))
 #define MSG_ATTR(s, attr)           msg_attr((char_u *)(s), (attr))
@@ -1117,11 +1080,7 @@ typedef uint32_t UINT32_T;
 
 /* Prefer using emsg3(), because perror() may send the output to the wrong
  * destination and mess up the screen. */
-#if defined(HAVE_STRERROR)
 #define PERROR(msg)                (void)emsg3((char_u *)"%s: %s", (char_u *)msg, (char_u *)strerror(errno))
-#else
-#define PERROR(msg)                perror(msg)
-#endif
 
 typedef long    linenr_T;               /* line number type */
 typedef int     colnr_T;                /* column number type */
@@ -1161,24 +1120,8 @@ typedef void        *vim_acl_T;         /* dummy to pass an ACL to a function */
 #define fnamecmp(x, y) vim_fnamecmp((char_u *)(x), (char_u *)(y))
 #define fnamencmp(x, y, n) vim_fnamencmp((char_u *)(x), (char_u *)(y), (size_t)(n))
 
-#if defined(HAVE_MEMSET)
 #define vim_memset(ptr, c, size)   memset((ptr), (c), (size))
-#else
-void *vim_memset(void *, int, size_t);
-#endif
-
-#if defined(HAVE_MEMCMP)
 #define vim_memcmp(p1, p2, len)   memcmp((p1), (p2), (len))
-#else
-#if defined(HAVE_BCMP)
-#define vim_memcmp(p1, p2, len)   bcmp((p1), (p2), (len))
-#else
-int vim_memcmp(void *, void *, size_t);
-#define VIM_MEMCMP
-#endif
-#endif
-
-#define USE_INPUT_BUF
 
 #if !defined(EINTR)
 #define read_eintr(fd, buf, count) vim_read((fd), (buf), (count))
@@ -1297,8 +1240,6 @@ typedef struct timeval proftime_T;
 #define MOUSE_SETPOS           0x08    /* only set current mouse position */
 #define MOUSE_MAY_STOP_VIS     0x10    /* may stop Visual mode */
 #define MOUSE_RELEASED         0x20    /* button was released */
-
-#define CHECK_DOUBLE_CLICK 1  /* Checking for double clicks ourselves. */
 
 /* defines for eval_vars() */
 #define VALID_PATH              1

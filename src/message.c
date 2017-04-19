@@ -381,7 +381,7 @@ get_emsg_source()
 
     if (sourcing_name != NULL && other_sourcing_name())
     {
-        p = (char_u *)_("Error detected while processing %s:");
+        p = (char_u *)"Error detected while processing %s:";
         Buf = alloc((unsigned)(STRLEN(sourcing_name) + STRLEN(p)));
         if (Buf != NULL)
             sprintf((char *)Buf, (char *)p, sourcing_name);
@@ -406,7 +406,7 @@ get_emsg_lnum()
             && (other_sourcing_name() || sourcing_lnum != last_sourcing_lnum)
             && sourcing_lnum != 0)
     {
-        p = (char_u *)_("line %4ld:");
+        p = (char_u *)"line %4ld:";
         Buf = alloc((unsigned)(STRLEN(p) + 20));
         if (Buf != NULL)
             sprintf((char *)Buf, (char *)p, (long)sourcing_lnum);
@@ -593,7 +593,7 @@ emsg2(s, a1)
 emsg_invreg(name)
     int     name;
 {
-    EMSG2(_("E354: Invalid register name: '%s'"), transchar(name));
+    EMSG2((char *)"E354: Invalid register name: '%s'", transchar(name));
 }
 
 /*
@@ -737,8 +737,7 @@ ex_messages(eap)
 
     s = mch_getenv((char_u *)"LANG");
     if (s != NULL && *s != NUL)
-        msg_attr((char_u *)
-                _("Messages maintainer: Bram Moolenaar <Bram@vim.org>"),
+        msg_attr((char_u *)"Messages maintainer: Bram Moolenaar <Bram@vim.org>",
                 hl_attr(HLF_T));
 
     for (p = first_msg_hist; p != NULL && !got_int; p = p->next)
@@ -1004,9 +1003,9 @@ hit_return_msg()
     if (msg_didout)     /* start on a new line */
         msg_putchar('\n');
     if (got_int)
-        MSG_PUTS(_("Interrupt: "));
+        MSG_PUTS((char *)"Interrupt: ");
 
-    MSG_PUTS_ATTR(_("Press ENTER or type command to continue"), hl_attr(HLF_R));
+    MSG_PUTS_ATTR((char *)"Press ENTER or type command to continue", hl_attr(HLF_R));
     if (!msg_use_printf())
         msg_clr_eos();
     p_more = save_p_more;
@@ -1965,14 +1964,14 @@ inc_msg_scrolled()
         /* v:scrollstart is empty, set it to the script/function name and line
          * number */
         if (p == NULL)
-            p = (char_u *)_("Unknown");
+            p = (char_u *)"Unknown";
         else
         {
             len = (int)STRLEN(p) + 40;
             tofree = alloc(len);
             if (tofree != NULL)
             {
-                vim_snprintf((char *)tofree, len, _("%s line %ld"), p, (long)sourcing_lnum);
+                vim_snprintf((char *)tofree, len, (char *)"%s line %ld", p, (long)sourcing_lnum);
                 p = tofree;
             }
         }
@@ -2466,87 +2465,6 @@ do_more_prompt(typed_char)
     return retval;
 }
 
-#if defined(USE_MCH_ERRMSG)
-
-#if defined(mch_errmsg)
-#undef mch_errmsg
-#endif
-#if defined(mch_msg)
-#undef mch_msg
-#endif
-
-/*
- * Give an error message.  To be used when the screen hasn't been initialized
- * yet.  When stderr can't be used, collect error messages until the GUI has
- * started and they can be displayed in a message box.
- */
-    void
-mch_errmsg(str)
-    char        *str;
-{
-    int         len;
-
-    /* On Unix use stderr if it's a tty.
-     * When not going to start the GUI also use stderr.
-     * On Mac, when started from Finder, stderr is the console. */
-    if (isatty(2))
-    {
-        fprintf(stderr, "%s", str);
-        return;
-    }
-
-    /* avoid a delay for a message that isn't there */
-    emsg_on_display = FALSE;
-
-    len = (int)STRLEN(str) + 1;
-    if (error_ga.ga_growsize == 0)
-    {
-        error_ga.ga_growsize = 80;
-        error_ga.ga_itemsize = 1;
-    }
-    if (ga_grow(&error_ga, len) == OK)
-    {
-        mch_memmove((char_u *)error_ga.ga_data + error_ga.ga_len, (char_u *)str, len);
-        /* remove CR characters, they are displayed */
-        {
-            char_u      *p;
-
-            p = (char_u *)error_ga.ga_data + error_ga.ga_len;
-            for (;;)
-            {
-                p = vim_strchr(p, '\r');
-                if (p == NULL)
-                    break;
-                *p = ' ';
-            }
-        }
-        --len;          /* don't count the NUL at the end */
-        error_ga.ga_len += len;
-    }
-}
-
-/*
- * Give a message.  To be used when the screen hasn't been initialized yet.
- * When there is no tty, collect messages until the GUI has started and they
- * can be displayed in a message box.
- */
-    void
-mch_msg(str)
-    char        *str;
-{
-    /* On Unix use stdout if we have a tty.  This allows "vim -h | more" and
-     * uses mch_errmsg() when started from the desktop.
-     * When not going to start the GUI also use stdout.
-     * On Mac, when started from Finder, stderr is the console. */
-    if (isatty(2))
-    {
-        printf("%s", str);
-        return;
-    }
-    mch_errmsg(str);
-}
-#endif
-
 /*
  * Put a character on the screen at the current message position and advance
  * to the next position.  Only for printable ASCII!
@@ -2581,13 +2499,12 @@ msg_moremsg(full)
     int     full;
 {
     int         attr;
-    char_u      *s = (char_u *)_("-- More --");
+    char_u      *s = (char_u *)"-- More --";
 
     attr = hl_attr(HLF_M);
     screen_puts(s, (int)Rows - 1, 0, attr);
     if (full)
-        screen_puts((char_u *)
-                _(" SPACE/d/j: screen/page/line down, b/u/k: up, q: quit "),
+        screen_puts((char_u *)" SPACE/d/j: screen/page/line down, b/u/k: up, q: quit ",
                 (int)Rows - 1, vim_strsize(s), attr);
 }
 
@@ -2892,7 +2809,7 @@ verbose_open()
         verbose_fd = mch_fopen((char *)p_vfile, "a");
         if (verbose_fd == NULL)
         {
-            EMSG2(_(e_notopen), p_vfile);
+            EMSG2((char *)e_notopen, p_vfile);
             return FAIL;
         }
     }
@@ -2989,11 +2906,9 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
     int         c;
     int         i;
 
-#if !defined(NO_CONSOLE)
     /* Don't output anything in silent mode ("ex -s") */
     if (silent_mode)
         return dfltbutton;   /* return default option */
-#endif
 
     oldState = State;
     State = CONFIRM;
@@ -3287,9 +3202,9 @@ vim_dialog_yesno(type, title, message, dflt)
     int         dflt;
 {
     if (do_dialog(type,
-                title == NULL ? (char_u *)_("Question") : title,
+                title == NULL ? (char_u *)"Question" : title,
                 message,
-                (char_u *)_("&Yes\n&No"), dflt, NULL, FALSE) == 1)
+                (char_u *)"&Yes\n&No", dflt, NULL, FALSE) == 1)
         return VIM_YES;
     return VIM_NO;
 }
@@ -3302,9 +3217,9 @@ vim_dialog_yesnocancel(type, title, message, dflt)
     int         dflt;
 {
     switch (do_dialog(type,
-                title == NULL ? (char_u *)_("Question") : title,
+                title == NULL ? (char_u *)"Question" : title,
                 message,
-                (char_u *)_("&Yes\n&No\n&Cancel"), dflt, NULL, FALSE))
+                (char_u *)"&Yes\n&No\n&Cancel", dflt, NULL, FALSE))
     {
         case 1: return VIM_YES;
         case 2: return VIM_NO;
@@ -3322,7 +3237,7 @@ vim_dialog_yesnoallcancel(type, title, message, dflt)
     switch (do_dialog(type,
                 title == NULL ? (char_u *)"Question" : title,
                 message,
-                (char_u *)_("&Yes\n&No\nSave &All\n&Discard All\n&Cancel"), dflt, NULL, FALSE))
+                (char_u *)"&Yes\n&No\nSave &All\n&Discard All\n&Cancel", dflt, NULL, FALSE))
     {
         case 1: return VIM_YES;
         case 2: return VIM_NO;
@@ -3351,7 +3266,7 @@ tv_nr(tvs, idxp)
     int         err = FALSE;
 
     if (tvs[idx].v_type == VAR_UNKNOWN)
-        EMSG(_(e_printf));
+        EMSG((char *)e_printf);
     else
     {
         ++*idxp;
@@ -3375,7 +3290,7 @@ tv_str(tvs, idxp)
     char        *s = NULL;
 
     if (tvs[idx].v_type == VAR_UNKNOWN)
-        EMSG(_(e_printf));
+        EMSG((char *)e_printf);
     else
     {
         ++*idxp;
@@ -3396,7 +3311,7 @@ tv_float(tvs, idxp)
     double      f = 0;
 
     if (tvs[idx].v_type == VAR_UNKNOWN)
-        EMSG(_(e_printf));
+        EMSG((char *)e_printf);
     else
     {
         ++*idxp;
@@ -3405,7 +3320,7 @@ tv_float(tvs, idxp)
         else if (tvs[idx].v_type == VAR_NUMBER)
             f = tvs[idx].vval.v_number;
         else
-            EMSG(_("E807: Expected Float argument for printf()"));
+            EMSG((char *)"E807: Expected Float argument for printf()");
     }
     return f;
 }
@@ -4195,7 +4110,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
     }
 
     if (tvs != NULL && tvs[arg_idx - 1].v_type != VAR_UNKNOWN)
-        EMSG(_("E767: Too many arguments to printf()"));
+        EMSG((char *)"E767: Too many arguments to printf()");
 
     /* Return the number of characters formatted (excluding trailing nul
      * character), that is, the number of characters that would have been

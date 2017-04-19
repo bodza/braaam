@@ -117,17 +117,13 @@ setmark_pos(c, pos, fnum)
 }
 
 /*
- * Set the previous context mark to the current position and add it to the
- * jump list.
+ * Set the previous context mark to the current position and add it to the jump list.
  */
     void
 setpcmark()
 {
     int         i;
     xfmark_T    *fm;
-#if defined(JUMPLIST_ROTATE)
-    xfmark_T    tempmark;
-#endif
 
     /* for :global the mark is set only once */
     if (global_busy || listcmd_busy || cmdmod.keepjumps)
@@ -135,24 +131,6 @@ setpcmark()
 
     curwin->w_prev_pcmark = curwin->w_pcmark;
     curwin->w_pcmark = curwin->w_cursor;
-
-#if defined(JUMPLIST_ROTATE)
-    /*
-     * If last used entry is not at the top, put it at the top by rotating
-     * the stack until it is (the newer entries will be at the bottom).
-     * Keep one entry (the last used one) at the top.
-     */
-    if (curwin->w_jumplistidx < curwin->w_jumplistlen)
-        ++curwin->w_jumplistidx;
-    while (curwin->w_jumplistidx < curwin->w_jumplistlen)
-    {
-        tempmark = curwin->w_jumplist[curwin->w_jumplistlen - 1];
-        for (i = curwin->w_jumplistlen - 1; i > 0; --i)
-            curwin->w_jumplist[i] = curwin->w_jumplist[i - 1];
-        curwin->w_jumplist[0] = tempmark;
-        ++curwin->w_jumplistidx;
-    }
-#endif
 
     /* If jumplist is full: remove oldest entry */
     if (++curwin->w_jumplistlen > JUMPLISTSIZE)
@@ -573,7 +551,7 @@ check_mark(pos)
 {
     if (pos == NULL)
     {
-        EMSG(_(e_umark));
+        EMSG((char *)e_umark);
         return FAIL;
     }
     if (pos->lnum <= 0)
@@ -581,12 +559,12 @@ check_mark(pos)
         /* lnum is negative if mark is in another file can can't get that
          * file, error message already give then. */
         if (pos->lnum == 0)
-            EMSG(_(e_marknotset));
+            EMSG((char *)e_marknotset);
         return FAIL;
     }
     if (pos->lnum > curbuf->b_ml.ml_line_count)
     {
-        EMSG(_(e_markinval));
+        EMSG((char *)e_markinval);
         return FAIL;
     }
     return OK;
@@ -726,9 +704,9 @@ show_one_mark(c, arg, p, name, current)
         else
         {
             if (arg == NULL)
-                MSG(_("No marks set"));
+                MSG((char *)"No marks set");
             else
-                EMSG2(_("E283: No marks matching \"%s\""), arg);
+                EMSG2((char *)"E283: No marks matching \"%s\"", arg);
         }
     }
     /* don't output anything if 'q' typed at --more-- prompt */
@@ -737,7 +715,7 @@ show_one_mark(c, arg, p, name, current)
         if (!did_title)
         {
             /* Highlight title */
-            MSG_PUTS_TITLE(_("\nmark line  col file/text"));
+            MSG_PUTS_TITLE((char *)"\nmark line  col file/text");
             did_title = TRUE;
         }
         msg_putchar('\n');
@@ -779,9 +757,9 @@ ex_delmarks(eap)
         /* clear all marks */
         clrallmarks(curbuf);
     else if (eap->forceit)
-        EMSG(_(e_invarg));
+        EMSG((char *)e_invarg);
     else if (*eap->arg == NUL)
-        EMSG(_(e_argreq));
+        EMSG((char *)e_argreq);
     else
     {
         /* clear specified marks only */
@@ -801,7 +779,7 @@ ex_delmarks(eap)
                                     : ASCII_ISUPPER(p[2])))
                             || to < from)
                     {
-                        EMSG2(_(e_invarg2), p);
+                        EMSG2((char *)e_invarg2, p);
                         return;
                     }
                     p += 2;
@@ -837,7 +815,7 @@ ex_delmarks(eap)
                     case '<': curbuf->b_visual.vi_start.lnum = 0; break;
                     case '>': curbuf->b_visual.vi_end.lnum   = 0; break;
                     case ' ': break;
-                    default:  EMSG2(_(e_invarg2), p);
+                    default:  EMSG2((char *)e_invarg2, p);
                               return;
                 }
         }
@@ -856,7 +834,7 @@ ex_jumps(eap)
 
     cleanup_jumplist();
     /* Highlight title */
-    MSG_PUTS_TITLE(_("\n jump line  col file/text"));
+    MSG_PUTS_TITLE((char *)"\n jump line  col file/text");
     for (i = 0; i < curwin->w_jumplistlen && !got_int; ++i)
     {
         if (curwin->w_jumplist[i].fmark.mark.lnum != 0)
@@ -902,7 +880,7 @@ ex_changes(eap)
     char_u      *name;
 
     /* Highlight title */
-    MSG_PUTS_TITLE(_("\nchange line  col text"));
+    MSG_PUTS_TITLE((char *)"\nchange line  col text");
 
     for (i = 0; i < curbuf->b_changelistlen && !got_int; ++i)
     {

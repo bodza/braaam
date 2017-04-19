@@ -14,7 +14,6 @@ ui_write(s, len)
     char_u  *s;
     int     len;
 {
-#if !defined(NO_CONSOLE)
     /* Don't output anything in silent mode ("ex -s") unless 'verbose' set */
     if (!(silent_mode && p_verbose == 0))
     {
@@ -33,7 +32,6 @@ ui_write(s, len)
         if (output_conv.vc_type != CONV_NONE)
             vim_free(tofree);
     }
-#endif
 }
 
 /*
@@ -107,11 +105,9 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
             ctrl_c_interrupts = FALSE;
     }
 
-#if !defined(NO_CONSOLE)
     {
         retval = mch_inchar(buf, maxlen, wtime, tb_change_cnt);
     }
-#endif
 
     if (wtime == -1 || wtime > 100L)
         /* block SIGHUP et al. */
@@ -128,11 +124,7 @@ ui_inchar(buf, maxlen, wtime, tb_change_cnt)
     int
 ui_char_avail()
 {
-#if !defined(NO_CONSOLE)
     return mch_char_avail();
-#else
-    return 0;
-#endif
 }
 
 /*
@@ -167,10 +159,10 @@ ui_suspend()
 suspend_shell()
 {
     if (*p_sh == NUL)
-        EMSG(_(e_shellempty));
+        EMSG((char *)e_shellempty);
     else
     {
-        MSG_PUTS(_("new shell started\n"));
+        MSG_PUTS((char *)"new shell started\n");
         do_shell(NULL, 0);
     }
 }
@@ -1200,8 +1192,6 @@ clip_gen_owner_exists(cbd)
  * input buffer.
  */
 
-#if defined(USE_INPUT_BUF)
-
 /*
  * Internal typeahead buffer.  Includes extra space for long key code
  * descriptions which would otherwise overflow.  The buffer is considered full
@@ -1366,13 +1356,9 @@ fill_input_buf(exit_on_error)
              * back to cooked mode, use another descriptor and set the mode to
              * what it was. */
             settmode(TMODE_COOK);
-#if defined(HAVE_DUP)
             /* Use stderr for stdin, also works for shell commands. */
             close(0);
             ignored = dup(2);
-#else
-            read_cmd_fd = 2;    /* read from stderr instead of stdin */
-#endif
             settmode(m);
         }
         if (!exit_on_error)
@@ -1421,7 +1407,6 @@ fill_input_buf(exit_on_error)
         }
     }
 }
-#endif
 
 /*
  * Exit because of an input read error.
@@ -1431,7 +1416,7 @@ read_error_exit()
 {
     if (silent_mode)    /* Normal way to exit for "ex -s" */
         getout(0);
-    STRCPY(IObuff, _("Vim: Error reading input, exiting...\n"));
+    STRCPY(IObuff, (char *)"Vim: Error reading input, exiting...\n");
     preserve_exit();
 }
 
@@ -1537,9 +1522,7 @@ jump_to_mouse(flags, inclusive, which_button)
         did_drag = FALSE;
     }
 
-    if ((flags & MOUSE_DID_MOVE)
-            && prev_row == mouse_row
-            && prev_col == mouse_col)
+    if ((flags & MOUSE_DID_MOVE) && prev_row == mouse_row && prev_col == mouse_col)
     {
 retnomove:
         /* before moving the cursor for a left click which is NOT in a status
@@ -1629,11 +1612,9 @@ retnomove:
          * (MOUSE_FOCUS was set above if we dragged first). */
         if (dragwin == NULL || (flags & MOUSE_RELEASED))
             win_enter(wp, TRUE);                /* can make wp invalid! */
-#if defined(CHECK_DOUBLE_CLICK)
         /* set topline, to be able to check for double click ourselves */
         if (curwin != old_curwin)
             set_mouse_topline(curwin);
-#endif
         if (on_status_line)                     /* In (or below) status line */
         {
             /* Don't use start_arrow() if we're in the same window */

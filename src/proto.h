@@ -176,7 +176,6 @@ int get_digraph(int cmdline);
 int getdigraph(int char1, int char2, int meta_char);
 void putdigraph(char_u *str);
 void listdigraphs(void);
-void ex_loadkeymap(exarg_T *eap);
 
 /* #include "edit.pro" */
 
@@ -376,8 +375,6 @@ void fix_help_buffer(void);
 void ex_exusage(exarg_T *eap);
 void ex_viusage(exarg_T *eap);
 void ex_helptags(exarg_T *eap);
-void ex_sign(exarg_T *eap);
-void ex_drop(exarg_T *eap);
 
 /* #include "ex_cmds2.pro" */
 
@@ -400,7 +397,6 @@ void profile_setlimit(long msec, proftime_T *tm);
 int profile_passed_limit(proftime_T *tm);
 void profile_zero(proftime_T *tm);
 void profile_divide(proftime_T *tm, int count, proftime_T *tm2);
-void ex_profile(exarg_T *eap);
 int autowrite(buf_T *buf, int forceit);
 void autowrite_all(void);
 int check_changed(buf_T *buf, int flags);
@@ -443,7 +439,6 @@ void do_finish(exarg_T *eap, int reanimate);
 int source_finished(char_u *(*fgetline)(int, void *, int), void *cookie);
 void ex_checktime(exarg_T *eap);
 void set_lang_var(void);
-void ex_language(exarg_T *eap);
 void free_locales(void);
 
 /* #include "ex_docmd.pro" */
@@ -1114,14 +1109,6 @@ int put_bytes(FILE *fd, long_u nr, int len);
 void put_time(FILE *fd, time_t the_time);
 void time_to_bytes(time_t the_time, char_u *buf);
 
-#if !defined(HAVE_STRPBRK) /* not generated automatically from misc2.c */
-char_u *vim_strpbrk(char_u *s, char_u *charset);
-#endif
-#if !defined(HAVE_QSORT)
-/* Use our own qsort(), don't define the prototype when not used. */
-void qsort(void *base, size_t elm_count, size_t elm_size, int (*cmp)(const void *, const void *));
-#endif
-
 /* #include "move.pro" */
 
 void update_topline_redraw(void);
@@ -1523,7 +1510,6 @@ int syn_get_id(win_T *wp, long lnum, colnr_T col, int trans, int *spellp, int ke
 int get_syntax_info(int *seqnrp);
 int syn_get_sub_char(void);
 int syn_get_stack_item(int i);
-void ex_syntime(exarg_T *eap);
 void init_highlight(int both, int reset);
 int load_colors(char_u *name);
 void do_highlight(char_u *line, int forceit, int init);
