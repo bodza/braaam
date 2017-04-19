@@ -380,8 +380,7 @@ pum_redraw()
                         {
                             if (st != NULL)
                             {
-                                screen_puts_len(st, (int)STRLEN(st), row, col,
-                                                                        attr);
+                                screen_puts_len(st, (int)STRLEN(st), row, col, attr);
                                 vim_free(st);
                             }
                             col += width;
@@ -394,8 +393,7 @@ pum_redraw()
 #if defined(FEAT_RIGHTLEFT)
                         if (curwin->w_p_rl)
                         {
-                            screen_puts_len((char_u *)"  ", 2, row, col - 1,
-                                                                        attr);
+                            screen_puts_len((char_u *)"  ", 2, row, col - 1, attr);
                             col -= 2;
                         }
                         else

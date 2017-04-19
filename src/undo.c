@@ -99,7 +99,6 @@ static void u_freeentry __ARGS((u_entry_T *, long));
 static void corruption_error __ARGS((char *mesg, char_u *file_name));
 static void u_free_uhp __ARGS((u_header_T *uhp));
 static int undo_write __ARGS((bufinfo_T *bi, char_u *ptr, size_t len));
-static int undo_flush __ARGS((bufinfo_T *bi));
 static int fwrite_crypt __ARGS((bufinfo_T *bi, char_u *ptr, size_t len));
 static int undo_write_bytes __ARGS((bufinfo_T *bi, long_u nr, int len));
 static void put_header_ptr __ARGS((bufinfo_T *bi, u_header_T *uhp));
@@ -1633,10 +1632,8 @@ u_read_undo(name, hash, orig_name)
     version = get2c(fp);
     if (version == UF_VERSION_CRYPT)
     {
-#if (1)
         EMSG2(_("E827: Undo file is encrypted: %s"), file_name);
         goto error;
-#endif
     }
     else if (version != UF_VERSION)
     {

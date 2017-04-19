@@ -1414,7 +1414,6 @@ force_cindent:
             }
         }
 #endif
-
     }   /* for (;;) */
     /* NOTREACHED */
 }
@@ -2047,8 +2046,7 @@ ins_ctrl_x()
 has_compl_option(dict_opt)
     int     dict_opt;
 {
-    if (dict_opt ? (*curbuf->b_p_dict == NUL && *p_dict == NUL
-                                                        )
+    if (dict_opt ? (*curbuf->b_p_dict == NUL && *p_dict == NUL)
                  : (*curbuf->b_p_tsr == NUL && *p_tsr == NUL))
     {
         ctrl_x_mode = 0;
@@ -2674,8 +2672,7 @@ pum_wanted()
         return FALSE;
 
     /* The display looks bad on a B&W display. */
-    if (t_colors < 8
-            )
+    if (t_colors < 8)
         return FALSE;
     return TRUE;
 }
@@ -4137,7 +4134,6 @@ ins_compl_get_exp(ini)
             if (expand_wildcards(1, &compl_pattern, &num_matches, &matches,
                                   EW_FILE|EW_DIR|EW_ADDSLASH|EW_SILENT) == OK)
             {
-
                 /* May change home directory back to "~". */
                 tilde_replace(compl_pattern, num_matches, matches);
                 ins_compl_add_matches(num_matches, matches, p_fic || p_wic);
@@ -6356,11 +6352,6 @@ comp_textwidth(ff)
         if (cmdwin_type != 0)
             textwidth -= 1;
 #endif
-#if defined(FEAT_SIGNS)
-        if (curwin->w_buffer->b_signlist != NULL
-                    )
-            textwidth -= 1;
-#endif
         if (curwin->w_p_nu || curwin->w_p_rnu)
             textwidth -= 8;
     }
@@ -7749,7 +7740,6 @@ ins_reg()
              * did ":stopinsert" then stuff_empty() returns FALSE but we won't
              * insert anything, need to remove the '"' */
             need_redraw = TRUE;
-
     }
     --no_u_sync;
     if (u_sync_once == 1)
@@ -8914,8 +8904,7 @@ ins_up(startcol)
     {
         if (startcol)
             coladvance(getvcol_nolist(&Insstart));
-        if (old_topline != curwin->w_topline
-                )
+        if (old_topline != curwin->w_topline)
             redraw_later(VALID);
         start_arrow(&tpos);
 #if defined(FEAT_CINDENT)
@@ -8971,8 +8960,7 @@ ins_down(startcol)
     {
         if (startcol)
             coladvance(getvcol_nolist(&Insstart));
-        if (old_topline != curwin->w_topline
-                )
+        if (old_topline != curwin->w_topline)
             redraw_later(VALID);
         start_arrow(&tpos);
 #if defined(FEAT_CINDENT)

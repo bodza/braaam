@@ -6,7 +6,7 @@
 
 #include "vim.h"
 
-#if defined(FEAT_FLOAT) && defined(HAVE_MATH_H)
+#if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
 
@@ -2660,8 +2660,7 @@ mch_errmsg(str)
     /* On Unix use stderr if it's a tty.
      * When not going to start the GUI also use stderr.
      * On Mac, when started from Finder, stderr is the console. */
-    if (isatty(2)
-            )
+    if (isatty(2))
     {
         fprintf(stderr, "%s", str);
         return;
@@ -2713,8 +2712,7 @@ mch_msg(str)
      * uses mch_errmsg() when started from the desktop.
      * When not going to start the GUI also use stdout.
      * On Mac, when started from Finder, stderr is the console. */
-    if (isatty(2)
-            )
+    if (isatty(2))
     {
         printf("%s", str);
         return;
@@ -3184,26 +3182,6 @@ do_dialog(type, title, message, buttons, dfltbutton, textfield, ex_cmd)
         return dfltbutton;   /* return default option */
 #endif
 
-#if defined(FEAT_GUI_DIALOG)
-    /* When GUI is running and 'c' not in 'guioptions', use the GUI dialog */
-    if (gui.in_use && vim_strchr(p_go, GO_CONDIALOG) == NULL)
-    {
-        c = gui_mch_dialog(type, title, message, buttons, dfltbutton,
-                                                           textfield, ex_cmd);
-        /* avoid a hit-enter prompt without clearing the cmdline */
-        need_wait_return = FALSE;
-        emsg_on_display = FALSE;
-        cmdline_row = msg_row;
-
-        /* Flush output to avoid that further messages and redrawing is done
-         * in the wrong order. */
-        out_flush();
-        gui_mch_update();
-
-        return c;
-    }
-#endif
-
     oldState = State;
     State = CONFIRM;
 #if defined(FEAT_MOUSE)
@@ -3494,7 +3472,7 @@ display_confirm_msg()
 
 #endif
 
-#if defined(FEAT_CON_DIALOG) || defined(FEAT_GUI_DIALOG)
+#if defined(FEAT_CON_DIALOG)
 
     int
 vim_dialog_yesno(type, title, message, dflt)
@@ -3557,9 +3535,7 @@ static char *e_printf = N_("E766: Insufficient arguments for printf()");
 
 static long tv_nr __ARGS((typval_T *tvs, int *idxp));
 static char *tv_str __ARGS((typval_T *tvs, int *idxp));
-#if defined(FEAT_FLOAT)
 static double tv_float __ARGS((typval_T *tvs, int *idxp));
-#endif
 
 /*
  * Get number argument from "idxp" entry in "tvs".  First entry is 1.
@@ -3607,7 +3583,6 @@ tv_str(tvs, idxp)
     return s;
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * Get float argument from "idxp" entry in "tvs".  First entry is 1.
  */
@@ -3633,7 +3608,6 @@ tv_float(tvs, idxp)
     }
     return f;
 }
-#endif
 #endif
 
 /*
@@ -3677,10 +3651,6 @@ tv_float(tvs, idxp)
  * vim_vsnprintf() can be invoked with either "va_list" or a list of
  * "typval_T".  When the latter is not used it must be NULL.
  */
-
-/* When generating prototypes all of this is skipped, cproto doesn't
- * understand this. */
-#if (1)
 
 #if defined(HAVE_STDARG_H)
 /* Like vim_vsnprintf() but append to the string. */
@@ -3792,13 +3762,9 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
             char    length_modifier = '\0';
 
             /* temporary buffer for simple numeric->string conversion */
-#if defined(FEAT_FLOAT)
 #define TMP_LEN 350    /* On my system 1e308 is the biggest number possible.
                          * That sounds reasonable to use as the maximum
                          * printable. */
-#else
-#define TMP_LEN 32
-#endif
             char    tmp[TMP_LEN];
 
             /* string address in case of string argument */
@@ -3826,8 +3792,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
             p++;  /* skip '%' */
 
             /* parse flags */
-            while (*p == '0' || *p == '-' || *p == '+' || *p == ' '
-                                                   || *p == '#' || *p == '\'')
+            while (*p == '0' || *p == '-' || *p == '+' || *p == ' ' || *p == '#' || *p == '\'')
             {
                 switch (*p)
                 {
@@ -4000,17 +3965,13 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                         /* Don't put the #if inside memchr(), it can be a
                          * macro. */
                         /* memchr on HP does not like n > 2^31  !!! */
-                        char *q = memchr(str_arg, '\0',
-                                  precision <= (size_t)0x7fffffffL ? precision
-                                                       : (size_t)0x7fffffffL);
-                        str_arg_l = (q == NULL) ? precision
-                                                      : (size_t)(q - str_arg);
+                        char *q = memchr(str_arg, '\0', precision <= (size_t)0x7fffffffL ? precision : (size_t)0x7fffffffL);
+                        str_arg_l = (q == NULL) ? precision : (size_t)(q - str_arg);
                     }
                     if (fmt_spec == 'S')
                     {
                         if (min_field_width != 0)
-                            min_field_width += STRLEN(str_arg)
-                                     - mb_string2cells((char_u *)str_arg, -1);
+                            min_field_width += STRLEN(str_arg) - mb_string2cells((char_u *)str_arg, -1);
                         if (precision)
                         {
                             char_u *p1 = (char_u *)str_arg;
@@ -4275,7 +4236,6 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                     break;
                 }
 
-#if defined(FEAT_FLOAT)
             case 'f':
             case 'e':
             case 'E':
@@ -4401,7 +4361,6 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                     str_arg = tmp;
                     break;
                 }
-#endif
 
             default:
                 /* unrecognized conversion specifier, keep format string
@@ -4466,9 +4425,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                     {
                         size_t avail = str_m - str_l;
 
-                        mch_memmove(str + str_l, str_arg,
-                                             (size_t)zn > avail ? avail
-                                                                : (size_t)zn);
+                        mch_memmove(str + str_l, str_arg, (size_t)zn > avail ? avail : (size_t)zn);
                     }
                     str_l += zn;
                 }
@@ -4482,9 +4439,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
                     {
                         size_t avail = str_m-str_l;
 
-                        vim_memset(str + str_l, '0',
-                                             (size_t)zn > avail ? avail
-                                                                : (size_t)zn);
+                        vim_memset(str + str_l, '0', (size_t)zn > avail ? avail : (size_t)zn);
                     }
                     str_l += zn;
                 }
@@ -4513,8 +4468,7 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
             if (justify_left)
             {
                 /* right blank padding to the field width */
-                int pn = (int)(min_field_width
-                                      - (str_arg_l + number_of_zeros_to_pad));
+                int pn = (int)(min_field_width - (str_arg_l + number_of_zeros_to_pad));
 
                 if (pn > 0)
                 {
@@ -4550,5 +4504,3 @@ vim_snprintf(str, str_m, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
      * written to the buffer if it were large enough. */
     return (int)str_l;
 }
-
-#endif

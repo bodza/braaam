@@ -1240,7 +1240,6 @@ win_split_ins(size, flags, new_wp, dir)
         i = p_wiw;
         if (size != 0)
             p_wiw = size;
-
     }
     else
 #endif
@@ -3334,7 +3333,6 @@ close_others(message, forceit)
         nextwp = wp->w_next;
         if (wp != curwin)               /* don't close current window */
         {
-
             /* Check if it's allowed to abandon this window */
             r = can_abandon(wp->w_buffer, forceit);
 #if defined(FEAT_AUTOCMD)
@@ -3346,7 +3344,7 @@ close_others(message, forceit)
 #endif
             if (!r)
             {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
                 if (message && (p_confirm || cmdmod.confirm) && p_write)
                 {
                     dialog_changed(wp->w_buffer, FALSE);
@@ -4327,7 +4325,7 @@ win_enter_ext(wp, undo_sync, curwin_invalid, trigger_enter_autocmds, trigger_lea
 
 #endif
 
-#if defined(FEAT_WINDOWS) || defined(FEAT_SIGNS)
+#if defined(FEAT_WINDOWS)
 /*
  * Jump to the first open window that contains buffer "buf", if one exists.
  * Returns a pointer to the window found, otherwise NULL.

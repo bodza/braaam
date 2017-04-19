@@ -1560,8 +1560,7 @@ vgetc()
         }
 
         /* Get two extra bytes for special keys */
-        if (c == K_SPECIAL
-           )
+        if (c == K_SPECIAL)
         {
             int     save_allow_keys = allow_keys;
 
@@ -1577,7 +1576,6 @@ vgetc()
                 continue;
             }
             c = TO_SPECIAL(c2, c);
-
         }
 
         /* a keypad or special function key was not mapped, use it like
@@ -1647,8 +1645,7 @@ vgetc()
             for (i = 1; i < n; ++i)
             {
                 buf[i] = vgetorpeek(TRUE);
-                if (buf[i] == K_SPECIAL
-                        )
+                if (buf[i] == K_SPECIAL)
                 {
                     /* Must be a K_SPECIAL - KS_SPECIAL - KE_FILLER sequence,
                      * which represents a K_SPECIAL (0x80),
@@ -2752,7 +2749,6 @@ inchar(buf, maxlen, wait_time, tb_change_cnt)
             && !ignore_script
             )
     {
-
         if (got_int || (script_char = getc(scriptin[curscript])) < 0)
         {
             /* Reached EOF.
@@ -3263,7 +3259,6 @@ do_map(maptype, arg, mode, abbrev)
                 mpp = &(map_table[hash]);
             for (mp = *mpp; mp != NULL && !got_int; mp = *mpp)
             {
-
                 if (!(mp->m_mode & mode))   /* skip entries with wrong mode */
                 {
                     mpp = &(mp->m_next);

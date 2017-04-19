@@ -430,10 +430,8 @@ typedef struct expand
     int         xp_scriptID;            /* SID for completion function */
 #endif
     int         xp_backslash;           /* one of the XP_BS_ values */
-#if (1)
     int         xp_shell;               /* TRUE for a shell command, more
                                            characters need to be escaped */
-#endif
     int         xp_numfiles;            /* number of files found by
                                                     file name completion */
     char_u      **xp_files;             /* list of files */
@@ -458,7 +456,7 @@ typedef struct
     int         split;                  /* flags for win_split() */
     int         tab;                    /* > 0 when ":tab" was used */
 #endif
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
     int         confirm;                /* TRUE to invoke yes/no dialog */
 #endif
     int         keepalt;                /* TRUE when ":keepalt" was used */
@@ -556,24 +554,6 @@ typedef struct memline
     int         ml_usedchunks;
 #endif
 } memline_T;
-
-#if defined(FEAT_SIGNS)
-typedef struct signlist signlist_T;
-
-struct signlist
-{
-    int         id;             /* unique identifier for each placed sign */
-    linenr_T    lnum;           /* line number which has this sign */
-    int         typenr;         /* typenr of sign */
-    signlist_T  *next;          /* next signlist entry */
-};
-
-/* type argument for buf_getsigntype() */
-#define SIGN_ANY        0
-#define SIGN_LINEHL     1
-#define SIGN_ICON       2
-#define SIGN_TEXT       3
-#endif
 
 /*
  * Argument list: Array of file names.
@@ -972,9 +952,7 @@ typedef struct
     union
     {
         varnumber_T     v_number;       /* number value */
-#if defined(FEAT_FLOAT)
         float_T         v_float;        /* floating number value */
-#endif
         char_u          *v_string;      /* string value (can be NULL!) */
         list_T          *v_list;        /* list value (can be NULL!) */
         dict_T          *v_dict;        /* dict value (can be NULL!) */
@@ -1095,9 +1073,7 @@ typedef struct list_stack_S
 #define SYNSPL_NOTOP    2       /* don't spell check toplevel text */
 
 /* avoid #ifdefs for when b_spell is not available */
-#if (1)
 #define B_SPELL(buf)  (0)
-#endif
 
 #if defined(FEAT_QUICKFIX)
 typedef struct qf_info_S qf_info_T;
@@ -1525,10 +1501,6 @@ struct file_buffer
     synblock_T  b_s;            /* Info related to syntax highlighting.  w_s
                                  * normally points to this, but some windows
                                  * may use a different synblock_T. */
-#endif
-
-#if defined(FEAT_SIGNS)
-    signlist_T  *b_signlist;    /* list of signs to draw */
 #endif
 
     int         b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
@@ -2093,11 +2065,6 @@ struct VimMenu
     int         mnemonic;           /* mnemonic key (after '&') */
     char_u      *actext;            /* accelerator text (after TAB) */
     int         priority;           /* Menu order priority */
-#if defined(FEAT_TOOLBAR)
-    char_u      *iconfile;          /* name of file for icon or NULL */
-    int         iconidx;            /* icon index (-1 if not set) */
-    int         icon_builtin;       /* icon names is BuiltIn{nr} */
-#endif
     char_u      *strings[MENU_MODES]; /* Mapped string for each mode */
     int         noremap[MENU_MODES]; /* A REMAP_ flag for each mode */
     char        silent[MENU_MODES]; /* A silent flag for each mode */

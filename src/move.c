@@ -274,8 +274,7 @@ update_topline()
     /*
      * Need to redraw when topline changed.
      */
-    if (curwin->w_topline != old_topline
-            )
+    if (curwin->w_topline != old_topline)
     {
         dollar_vcol = -1;
         if (curwin->w_skipcol != 0)
@@ -318,8 +317,7 @@ check_top_offset()
     lineoff_T   loff;
     int         n;
 
-    if (curwin->w_cursor.lnum < curwin->w_topline + p_so
-            )
+    if (curwin->w_cursor.lnum < curwin->w_topline + p_so)
     {
         loff.lnum = curwin->w_cursor.lnum;
         n = 0;
@@ -328,8 +326,7 @@ check_top_offset()
         {
             topline_back(&loff);
             /* Stop when included a line above the window. */
-            if (loff.lnum < curwin->w_topline
-                    )
+            if (loff.lnum < curwin->w_topline)
                 break;
             n += loff.height;
         }
@@ -549,8 +546,7 @@ curs_rows(wp)
             else if (wp->w_lines[i].wl_lnum > lnum)
                 --i;                    /* hold at inserted lines */
         }
-        if (valid
-                )
+        if (valid)
         {
             ++lnum;
             wp->w_cline_row += wp->w_lines[i].wl_size;
@@ -680,10 +676,6 @@ win_col_off(wp)
 #if defined(FEAT_CMDWIN)
             + (cmdwin_type == 0 || wp != curwin ? 0 : 1)
 #endif
-#if defined(FEAT_SIGNS)
-            + (
-                wp->w_buffer->b_signlist != NULL ? 2 : 0)
-#endif
            );
 }
 
@@ -801,8 +793,7 @@ curs_columns(may_scroll)
     /* No line wrapping: compute curwin->w_leftcol if scrolling is on and line
      * is not folded.
      * If scrolling is off, curwin->w_leftcol is assumed to be 0 */
-    else if (may_scroll
-            )
+    else if (may_scroll)
     {
         /*
          * If Cursor is left of the screen, scroll rightwards.
@@ -1050,8 +1041,7 @@ scrolldown_clamp()
 {
     int         end_row;
 
-    if (curwin->w_topline <= 1
-            )
+    if (curwin->w_topline <= 1)
         return;
 
     validate_cursor();      /* w_wrow needs to be valid */
@@ -1091,8 +1081,7 @@ scrollup_clamp()
 {
     int     start_row;
 
-    if (curwin->w_topline == curbuf->b_ml.ml_line_count
-            )
+    if (curwin->w_topline == curbuf->b_ml.ml_line_count)
         return;
 
     validate_cursor();      /* w_wrow needs to be valid */
@@ -1255,8 +1244,7 @@ scroll_cursor_top(min_scroll, always)
             curwin->w_topline = new_topline;
         if (curwin->w_topline > curwin->w_cursor.lnum)
             curwin->w_topline = curwin->w_cursor.lnum;
-        if (curwin->w_topline != old_topline
-                )
+        if (curwin->w_topline != old_topline)
             curwin->w_valid &=
                       ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_BOTLINE_AP);
         curwin->w_valid |= VALID_TOPLINE;
@@ -1321,18 +1309,15 @@ scroll_cursor_bot(min_scroll, set_topbot)
         }
         set_empty_rows(curwin, used);
         curwin->w_valid |= VALID_BOTLINE|VALID_BOTLINE_AP;
-        if (curwin->w_topline != old_topline
-                )
+        if (curwin->w_topline != old_topline)
             curwin->w_valid &= ~(VALID_WROW|VALID_CROW);
     }
     else
         validate_botline();
 
     /* The lines of the cursor line itself are always used. */
-#if (1)
     validate_cheight();
     used = curwin->w_cline_height;
-#endif
 
     /* If the cursor is below botline, we will at least scroll by the height
      * of the cursor line.  Correct for empty lines, which are really part of
@@ -1379,13 +1364,11 @@ scroll_cursor_bot(min_scroll, set_topbot)
             used += loff.height;
         if (used > curwin->w_height)
             break;
-        if (loff.lnum >= curwin->w_botline
-                )
+        if (loff.lnum >= curwin->w_botline)
         {
             /* Count screen lines that are below the window. */
             scrolled += loff.height;
-            if (loff.lnum == curwin->w_botline
-                    )
+            if (loff.lnum == curwin->w_botline)
                 scrolled -= curwin->w_empty_rows;
         }
 
@@ -1403,13 +1386,11 @@ scroll_cursor_bot(min_scroll, set_topbot)
                         p_so) || scrolled < min_scroll)
             {
                 extra += boff.height;
-                if (boff.lnum >= curwin->w_botline
-                   )
+                if (boff.lnum >= curwin->w_botline)
                 {
                     /* Count screen lines that are below the window. */
                     scrolled += boff.height;
-                    if (boff.lnum == curwin->w_botline
-                            )
+                    if (boff.lnum == curwin->w_botline)
                         scrolled -= curwin->w_empty_rows;
                 }
             }
@@ -1593,15 +1574,7 @@ cursor_correct()
         }
         if (above < above_wanted && (above < below || below >= below_wanted))
         {
-#if (1)
                 above += plines(topline);
-#else
-                above += plines_nofill(topline);
-
-            /* Count filler lines below this line as context. */
-            if (topline < botline)
-                above += diff_check_fill(curwin, topline + 1);
-#endif
             ++topline;
         }
     }
@@ -1754,8 +1727,7 @@ onepage(dir, count)
 
                 /* Always scroll at least one line.  Avoid getting stuck on
                  * very long lines. */
-                if (loff.lnum >= curwin->w_topline
-                        )
+                if (loff.lnum >= curwin->w_topline)
                 {
                     {
                         --curwin->w_topline;

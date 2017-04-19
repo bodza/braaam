@@ -358,10 +358,8 @@ static short *copy_id_list __ARGS((short *list));
 static int in_id_list __ARGS((stateitem_T *item, short *cont_list, struct sp_syn *ssp, int contained));
 static int push_current_state __ARGS((int idx));
 static void pop_current_state __ARGS((void));
-#if (1)
 #define IF_SYN_TIME(p) NULL
 typedef int syn_time_T;
-#endif
 
 static void syn_stack_apply_changes_block __ARGS((synblock_T *block, buf_T *buf));
 static void find_endpos __ARGS((int idx, lpos_T *startpos, lpos_T *m_endpos, lpos_T *hl_endpos, long *flagsp, lpos_T *end_endpos, int *end_idx, reg_extmatch_T *start_ext));
@@ -1101,8 +1099,6 @@ syn_stack_free_block(block)
 syn_stack_free_all(block)
     synblock_T  *block;
 {
-    win_T       *wp;
-
     syn_stack_free_block(block);
 
 }
@@ -2236,7 +2232,6 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
             if (!zero_width_next_list)
                 found_match = TRUE;
         }
-
     } while (found_match);
 
     /*
@@ -6444,10 +6439,6 @@ static char *(highlight_init_light[]) =
         CENT("WildMenu term=standout ctermbg=Yellow ctermfg=Black",
              "WildMenu term=standout ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black"),
 #endif
-#if defined(FEAT_SIGNS)
-        CENT("SignColumn term=standout ctermbg=Grey ctermfg=DarkBlue",
-             "SignColumn term=standout ctermbg=Grey ctermfg=DarkBlue guibg=Grey guifg=DarkBlue"),
-#endif
         CENT("Visual term=reverse",
              "Visual term=reverse guibg=LightGrey"),
 #if defined(FEAT_WINDOWS)
@@ -6504,10 +6495,6 @@ static char *(highlight_init_dark[]) =
 #if defined(FEAT_WILDMENU)
         CENT("WildMenu term=standout ctermbg=Yellow ctermfg=Black",
              "WildMenu term=standout ctermbg=Yellow ctermfg=Black guibg=Yellow guifg=Black"),
-#endif
-#if defined(FEAT_SIGNS)
-        CENT("SignColumn term=standout ctermbg=DarkGrey ctermfg=Cyan",
-             "SignColumn term=standout ctermbg=DarkGrey ctermfg=Cyan guibg=Grey guifg=Cyan"),
 #endif
         CENT("Visual term=reverse",
              "Visual term=reverse guibg=DarkGrey"),
@@ -8464,7 +8451,7 @@ highlight_list_two(cnt, attr)
 
 #endif
 
-#if defined(FEAT_CMDL_COMPL) || defined(FEAT_SYN_HL) || defined(FEAT_SIGNS)
+#if defined(FEAT_CMDL_COMPL) || defined(FEAT_SYN_HL)
 /*
  * Function given to ExpandGeneric() to obtain the list of group names.
  * Also used for synIDattr() function.

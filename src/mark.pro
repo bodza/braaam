@@ -22,8 +22,4 @@ void copy_jumplist __ARGS((win_T *from, win_T *to));
 void free_jumplist __ARGS((win_T *wp));
 void set_last_cursor __ARGS((win_T *win));
 void free_all_marks __ARGS((void));
-int read_viminfo_filemark __ARGS((vir_T *virp, int force));
-void write_viminfo_filemarks __ARGS((FILE *fp));
 int removable __ARGS((char_u *name));
-int write_viminfo_marks __ARGS((FILE *fp_out));
-void copy_viminfo_marks __ARGS((vir_T *virp, FILE *fp_out, int count, int eof, int flags));

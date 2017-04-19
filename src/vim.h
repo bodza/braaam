@@ -4,8 +4,203 @@
 /* ============ the header file puzzle (ca. 50-100 pieces) ========= */
 
 #if defined(HAVE_CONFIG_H) /* GNU autoconf (or something else) was here */
-#include "config.h"
-#define HAVE_PATHDEF
+
+/* Define when terminfo support found */
+#define TERMINFO 1
+
+/* Define when termcap.h contains ospeed */
+#define HAVE_OSPEED 1
+
+/* Define when termcap.h contains UP, BC and PC */
+#define HAVE_UP_BC_PC 1
+
+/* Define when __DATE__ " " __TIME__ can be used */
+#define HAVE_DATE_TIME 1
+
+/* Define when __attribute__((unused)) can be used */
+#define HAVE_ATTRIBUTE_UNUSED 1
+
+/* Defined to the size of an int */
+#define VIM_SIZEOF_INT 4
+
+/* Defined to the size of a long */
+#define VIM_SIZEOF_LONG 8
+
+/* Defined to the size of off_t */
+#define SIZEOF_OFF_T 8
+
+/* Defined to the size of time_t */
+#define SIZEOF_TIME_T 8
+
+/*
+ * If we cannot trust one of the following from the libraries, we use our
+ * own safe but probably slower vim_memmove().
+ */
+#define USEMEMMOVE 1
+
+/* Define to empty if the keyword does not work.  */
+/* #undef const */
+
+/* Define to empty if the keyword does not work.  */
+/* #undef volatile */
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+/* #undef mode_t */
+
+/* Define to `long' if <sys/types.h> doesn't define.  */
+/* #undef off_t */
+
+/* Define to `long' if <sys/types.h> doesn't define.  */
+/* #undef pid_t */
+
+/* Define to `unsigned' if <sys/types.h> doesn't define.  */
+/* #undef size_t */
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+/* #undef uid_t */
+
+/* Define to `unsigned int' or other type that is 32 bit.  */
+/* #undef uint32_t */
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+/* #undef gid_t */
+
+/* Define to `long' if <sys/types.h> doesn't define.  */
+/* #undef ino_t */
+
+/* Define to `unsigned' if <sys/types.h> doesn't define.  */
+/* #undef dev_t */
+
+/* Define to `unsigned long' if <sys/types.h> doesn't define.  */
+/* #undef rlim_t */
+
+/* Define to `struct sigaltstack' if <signal.h> doesn't define.  */
+/* #undef stack_t */
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#define TIME_WITH_SYS_TIME 1
+
+/* Define if you can safely include both <sys/time.h> and <sys/select.h>.  */
+#define SYS_SELECT_WITH_SYS_TIME 1
+
+/* Define as the return type of signal handlers (int or void).  */
+#define RETSIGTYPE void
+
+/* Define as the command at the end of signal handlers ("" or "return 0;").  */
+#define SIGRETURN return
+
+/* Define if struct sigcontext is present */
+#define HAVE_SIGCONTEXT 1
+
+/* Define if tgetent() returns zero for an error */
+#define TGETENT_ZERO_ERR 0
+
+/* Define if you the function: */
+#define HAVE_BCMP 1
+#define HAVE_FCHDIR 1
+#define HAVE_FCHOWN 1
+#define HAVE_FSEEKO 1
+#define HAVE_FSYNC 1
+#define HAVE_GETCWD 1
+#define HAVE_GETPWENT 1
+#define HAVE_GETPWNAM 1
+#define HAVE_GETPWUID 1
+#define HAVE_GETRLIMIT 1
+#define HAVE_GETTIMEOFDAY 1
+#define HAVE_GETWD 1
+#define HAVE_ICONV 1
+#define HAVE_NL_LANGINFO_CODESET 1
+#define HAVE_LSTAT 1
+#define HAVE_MEMCMP 1
+#define HAVE_MEMSET 1
+#define HAVE_MKDTEMP 1
+#define HAVE_NANOSLEEP 1
+#define HAVE_OPENDIR 1
+#define HAVE_PUTENV 1
+#define HAVE_QSORT 1
+#define HAVE_READLINK 1
+#define HAVE_RENAME 1
+#define HAVE_SELECT 1
+#define HAVE_SETENV 1
+#define HAVE_SETPGID 1
+#define HAVE_SETSID 1
+#define HAVE_SIGACTION 1
+#define HAVE_SIGALTSTACK 1
+#define HAVE_SIGSET 1
+#define HAVE_SIGSTACK 1
+#define HAVE_SIGVEC 1
+#define HAVE_STRCASECMP 1
+#define HAVE_STRERROR 1
+#define HAVE_STRFTIME 1
+#define HAVE_STRNCASECMP 1
+#define HAVE_STRPBRK 1
+#define HAVE_STRTOL 1
+#define HAVE_ST_BLKSIZE 1
+#define HAVE_SYSCONF 1
+#define HAVE_SYSINFO 1
+#define HAVE_SYSINFO_MEM_UNIT 1
+#define HAVE_TGETENT 1
+#define HAVE_TOWLOWER 1
+#define HAVE_TOWUPPER 1
+#define HAVE_ISWUPPER 1
+#define HAVE_USLEEP 1
+#define HAVE_UTIME 1
+
+/* Define if you do not have utime(), but do have the utimes() function. */
+#define HAVE_UTIMES 1
+
+/* Define if you have the header file: */
+#define HAVE_DIRENT_H 1
+#define HAVE_ERRNO_H 1
+#define HAVE_FCNTL_H 1
+#define HAVE_ICONV_H 1
+#define HAVE_INTTYPES_H 1
+#define HAVE_LANGINFO_H 1
+#define HAVE_LIBGEN_H 1
+#define HAVE_LIBINTL_H 1
+#define HAVE_LOCALE_H 1
+#define HAVE_MATH_H 1
+#define HAVE_POLL_H 1
+#define HAVE_PWD_H 1
+#define HAVE_SETJMP_H 1
+#define HAVE_SGTTY_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_STRINGS_H 1
+#define HAVE_SYS_IOCTL_H 1
+#define HAVE_SYS_PARAM_H 1
+#define HAVE_SYS_POLL_H 1
+#define HAVE_SYS_RESOURCE_H 1
+#define HAVE_SYS_SELECT_H 1
+#define HAVE_SYS_STATFS_H 1
+#define HAVE_SYS_SYSCTL_H 1
+#define HAVE_SYS_SYSINFO_H 1
+#define HAVE_SYS_TIME_H 1
+#define HAVE_SYS_TYPES_H 1
+#define HAVE_SYS_UTSNAME_H 1
+#define HAVE_TERMCAP_H 1
+#define HAVE_TERMIOS_H 1
+#define HAVE_TERMIO_H 1
+#define HAVE_WCHAR_H 1
+#define HAVE_WCTYPE_H 1
+#define HAVE_UNISTD_H 1
+#define HAVE_UTIME_H 1
+
+/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
+#define HAVE_SYS_WAIT_H 1
+
+/* instead, we check a few STDC things ourselves */
+#define HAVE_STDARG_H 1
+#define HAVE_STDLIB_H 1
+#define HAVE_STRING_H 1
+
+/* Define if you want to add support of GPM (Linux console mouse daemon) */
+/* #undef HAVE_GPM */
+
+/* Define if you want to add support of sysmouse (*BSD console mouse) */
+/* #undef HAVE_SYSMOUSE */
+
+/* Define if fcntl()'s F_SETFD command knows about FD_CLOEXEC */
+#define HAVE_FD_CLOEXEC 1
 
 /* We may need to define the uint32_t on non-Unix system, but using the same
  * identifier causes conflicts.  Therefore use UINT32_T. */
@@ -25,9 +220,564 @@
 /* user ID of root is usually zero, but not for everybody */
 #define ROOT_UID 0
 
-/* Check support for rendering options */
+/*
+ * When adding a new feature:
+ * - Add a #define below.
+ * - Add a message in the table above ex_version().
+ * - Add a string to f_has().
+ * - Add a feature to ":help feature-list" in doc/eval.txt.
+ * - Add feature to ":help +feature-list" in doc/various.txt.
+ * - Add comment for the documentation of commands that use the feature.
+ */
 
-#include "feature.h"    /* #defines for optionals and features */
+/*
+ * Optional code (see ":help +feature-list")
+ * =============
+ */
+
+/*
+ * +windows             Multiple windows.  Without this there is no help
+ *                      window and no status lines.
+ */
+#define FEAT_WINDOWS
+
+/*
+ * +listcmds            Vim commands for the buffer list and the argument
+ *                      list.  Without this there is no ":buffer" ":bnext",
+ *                      ":bdel", ":argdelete", etc.
+ */
+#define FEAT_LISTCMDS
+
+/*
+ * +vertsplit           Vertically split windows.
+ */
+#define FEAT_VERTSPLIT
+#if defined(FEAT_VERTSPLIT) && !defined(FEAT_WINDOWS)
+#define FEAT_WINDOWS
+#endif
+
+/*
+ * +cmdhist             Command line history.
+ */
+#define FEAT_CMDHIST
+
+/*
+ * Message history is fixed at 200 message, 20 for the tiny version.
+ */
+#define MAX_MSG_HIST_LEN 200
+
+/*
+ * +jumplist            Jumplist, CTRL-O and CTRL-I commands.
+ */
+#define FEAT_JUMPLIST
+
+/* the cmdline-window requires FEAT_VERTSPLIT and FEAT_CMDHIST */
+#if defined(FEAT_VERTSPLIT) && defined(FEAT_CMDHIST)
+#define FEAT_CMDWIN
+#endif
+
+/*
+ * +digraphs            Digraphs.
+ *                      In insert mode and on the command line you will be
+ *                      able to use digraphs. The CTRL-K command will work.
+ *                      RFC 1345.
+ */
+#define FEAT_DIGRAPHS
+
+/*
+ * +langmap             'langmap' option.  Only useful when you put your
+ *                      keyboard in a special language mode, e.g. for typing
+ *                      greek.
+ */
+#undef FEAT_LANGMAP
+
+/*
+ * +keymap              'keymap' option.  Allows you to map typed keys in
+ *                      Insert mode for a special language.
+ */
+#undef FEAT_KEYMAP
+
+/*
+ * +localmap            Mappings and abbreviations local to a buffer.
+ */
+#define FEAT_LOCALMAP
+
+/*
+ * +insert_expand       CTRL-N/CTRL-P/CTRL-X in insert mode. Takes about
+ *                      4Kbyte of code.
+ */
+#define FEAT_INS_EXPAND
+
+/*
+ * +cmdline_compl       completion of mappings/abbreviations in cmdline mode.
+ *                      Takes a few Kbyte of code.
+ */
+#define FEAT_CMDL_COMPL
+
+#define VIM_BACKTICK           /* internal backtick expansion */
+
+/*
+ * +visual              Visual mode - now always included.
+ * +visualextra         Extra features for Visual mode (mostly block operators).
+ */
+#define FEAT_VISUALEXTRA
+
+/*
+ * +virtualedit         'virtualedit' option and its implementation
+ */
+#define FEAT_VIRTUALEDIT
+
+/*
+ * +vreplace            "gR" and "gr" commands.
+ */
+#define FEAT_VREPLACE
+
+/*
+ * +cmdline_info        'showcmd' and 'ruler' options.
+ */
+#define FEAT_CMDL_INFO
+
+/*
+ * +linebreak           'showbreak', 'breakat'  and 'linebreak' options.
+ *                      Also 'numberwidth'.
+ */
+#define FEAT_LINEBREAK
+
+/*
+ * +ex_extra            ":retab", ":right", ":left", ":center", ":normal".
+ */
+#define FEAT_EX_EXTRA
+
+/*
+ * +extra_search        'hlsearch' and 'incsearch' options.
+ */
+#define FEAT_SEARCH_EXTRA
+
+/*
+ * +quickfix            Quickfix commands.
+ */
+#define FEAT_QUICKFIX
+
+/*
+ * +file_in_path        "gf" and "<cfile>" commands.
+ */
+#define FEAT_SEARCHPATH
+
+/*
+ * +find_in_path        "[I" ":isearch" "^W^I", ":checkpath", etc.
+ */
+#if defined(FEAT_SEARCHPATH) /* FEAT_SEARCHPATH is required */
+#define FEAT_FIND_ID
+#endif
+
+/*
+ * +path_extra          up/downwards searching in 'path' and 'tags'.
+ */
+#define FEAT_PATH_EXTRA
+
+/*
+ * +rightleft           Right-to-left editing/typing support.
+ */
+#undef FEAT_RIGHTLEFT
+
+/*
+ * +tag_binary          Can use a binary search for the tags file.
+ */
+#define FEAT_TAG_BINS
+
+/*
+ * +eval                Built-in script language and expression evaluation,
+ *                      ":let", ":if", etc.
+ */
+
+/*
+ * +reltime             reltime() function
+ */
+#if ((defined(HAVE_GETTIMEOFDAY) && defined(HAVE_SYS_TIME_H)))
+#define FEAT_RELTIME
+#endif
+
+/*
+ * +textobjects         Text objects: "vaw", "das", etc.
+ */
+#define FEAT_TEXTOBJ
+
+/*
+ *                      Insert mode completion with 'completefunc'.
+ */
+#if defined(FEAT_INS_EXPAND)
+#define FEAT_COMPL_FUNC
+#endif
+
+/*
+ * +user_commands       Allow the user to define his own commands.
+ */
+#define FEAT_USR_CMDS
+
+/*
+ * +printer             ":hardcopy" command
+ * +postscript          Printing uses PostScript file output.
+ */
+#define FEAT_PRINTER
+#if defined(FEAT_PRINTER)
+#define FEAT_POSTSCRIPT
+#endif
+
+/*
+ * +modify_fname        modifiers for file name.  E.g., "%:p:h".
+ */
+#define FEAT_MODIFY_FNAME
+
+/*
+ * +autocmd             ":autocmd" command
+ */
+#define FEAT_AUTOCMD
+
+/*
+ * +title               'title' and 'icon' options
+ * +statusline          'statusline', 'rulerformat' and special format of
+ *                      'titlestring' and 'iconstring' options.
+ * +byte_offset         '%o' in 'statusline' and builtin functions line2byte()
+ *                      and byte2line().
+ *                      Note: Required for Macintosh.
+ */
+#define FEAT_TITLE
+
+#define FEAT_STL_OPT
+#if !defined(FEAT_CMDL_INFO)
+#define FEAT_CMDL_INFO        /* 'ruler' is required for 'statusline' */
+#endif
+
+#define FEAT_BYTEOFF
+
+/*
+ * +wildignore          'wildignore' and 'backupskip' options
+ *                      Needed for Unix to make "crontab -e" work.
+ */
+#define FEAT_WILDIGN
+
+/*
+ * +wildmenu            'wildmenu' option
+ */
+#if defined(FEAT_WINDOWS)
+#define FEAT_WILDMENU
+#endif
+
+/*
+ * +viminfo             reading/writing the viminfo file. Takes about 8Kbyte
+ *                      of code.
+ * VIMINFO_FILE         Location of user .viminfo file (should start with $).
+ * VIMINFO_FILE2        Location of alternate user .viminfo file.
+ */
+/* #define VIMINFO_FILE "$HOME/foo/.viminfo" */
+/* #define VIMINFO_FILE2 "~/bar/.viminfo" */
+
+/*
+ * +syntax              syntax highlighting.  When using this, it's a good
+ *                      idea to have +autocmd and +eval too.
+ */
+#define FEAT_SYN_HL
+
+/*
+ * +conceal             'conceal' option.  Needs syntax highlighting
+ *                      as this is how the concealed text is defined.
+ */
+#if defined(FEAT_UNSURE) && defined(FEAT_SYN_HL)
+#define FEAT_CONCEAL
+#endif
+
+/*
+ * +builtin_terms       Choose one out of the following four:
+ *
+ * NO_BUILTIN_TCAPS     Do not include any builtin termcap entries (used only
+ *                      with HAVE_TGETENT defined).
+ *
+ * (nothing)            Machine specific termcap entries will be included.
+ *                      This is default for win16 to save static data.
+ *
+ * SOME_BUILTIN_TCAPS   Include most useful builtin termcap entries (used only
+ *                      with NO_BUILTIN_TCAPS not defined).
+ *                      This is the default.
+ *
+ * ALL_BUILTIN_TCAPS    Include all builtin termcap entries
+ *                      (used only with NO_BUILTIN_TCAPS not defined).
+ */
+#if defined(HAVE_TGETENT)
+/* #define NO_BUILTIN_TCAPS */
+#endif
+
+#if !defined(NO_BUILTIN_TCAPS)
+#if defined(FEAT_UNSURE)
+#define ALL_BUILTIN_TCAPS
+#else
+#define SOME_BUILTIN_TCAPS            /* default */
+#endif
+#endif
+
+/*
+ * +lispindent          lisp indenting (From Eric Fischer).
+ * +cindent             C code indenting (From Eric Fischer).
+ * +smartindent         smart C code indenting when the 'si' option is set.
+ *
+ * These two need to be defined when making prototypes.
+ */
+#define FEAT_LISP
+#define FEAT_CINDENT
+#define FEAT_SMARTINDENT
+
+/*
+ * +comments            'comments' option.
+ */
+#define FEAT_COMMENTS
+
+/* Define this if you want to use 16 bit Unicode only, reduces memory used for
+ * the screen structures. */
+/* #define UNICODE16 */
+
+/* Use iconv() when it's available. */
+#if ((defined(HAVE_ICONV_H) && defined(HAVE_ICONV)))
+#define USE_ICONV
+#endif
+
+/*
+ * +scrollbind          synchronization of split windows
+ */
+#if defined(FEAT_WINDOWS)
+#define FEAT_SCROLLBIND
+#endif
+
+/*
+ * +cursorbind          synchronization of split windows
+ */
+#if defined(FEAT_WINDOWS)
+#define FEAT_CURSORBIND
+#endif
+
+/*
+ * +menu                ":menu" command
+ */
+#define FEAT_MENU
+
+/*
+ * +dialog_con          May use Console dialog.
+ */
+#define FEAT_CON_DIALOG
+
+/*
+ * Preferences:
+ * ============
+ */
+
+/*
+ * +writebackup         'writebackup' is default on:
+ *                      Use a backup file while overwriting a file.  But it's
+ *                      deleted again when 'backup' is not set.  Changing this
+ *                      is strongly discouraged: You can lose all your
+ *                      changes when the computer crashes while writing the
+ *                      file.
+ */
+#define FEAT_WRITEBACKUP
+
+/*
+ * +xterm_save          The t_ti and t_te entries for the builtin xterm will
+ *                      be set to save the screen when starting Vim and
+ *                      restoring it when exiting.
+ */
+/* #define FEAT_XTERM_SAVE */
+
+/*
+ * DEBUG                Output a lot of debugging garbage.
+ */
+/* #define DEBUG */
+
+/*
+ * VIMRC_FILE           Name of the .vimrc file in current dir.
+ */
+/* #define VIMRC_FILE   ".vimrc" */
+
+/*
+ * EXRC_FILE            Name of the .exrc file in current dir.
+ */
+/* #define EXRC_FILE    ".exrc" */
+
+/*
+ * GVIMRC_FILE          Name of the .gvimrc file in current dir.
+ */
+/* #define GVIMRC_FILE  ".gvimrc" */
+
+/*
+ * SESSION_FILE         Name of the default ":mksession" file.
+ */
+#define SESSION_FILE    "Session.vim"
+
+/*
+ * USR_VIMRC_FILE       Name of the user .vimrc file.
+ * USR_VIMRC_FILE2      Name of alternate user .vimrc file.
+ * USR_VIMRC_FILE3      Name of alternate user .vimrc file.
+ */
+/* #define USR_VIMRC_FILE       "~/foo/.vimrc" */
+/* #define USR_VIMRC_FILE2      "~/bar/.vimrc" */
+/* #define USR_VIMRC_FILE3      "$VIM/.vimrc" */
+
+/*
+ * EVIM_FILE            Name of the evim.vim script file
+ */
+/* #define EVIM_FILE            "$VIMRUNTIME/evim.vim" */
+
+/*
+ * USR_EXRC_FILE        Name of the user .exrc file.
+ * USR_EXRC_FILE2       Name of the alternate user .exrc file.
+ */
+/* #define USR_EXRC_FILE        "~/foo/.exrc" */
+/* #define USR_EXRC_FILE2       "~/bar/.exrc" */
+
+/*
+ * SYS_VIMRC_FILE       Name of the system-wide .vimrc file.
+ */
+/* #define SYS_VIMRC_FILE       "/etc/vimrc" */
+
+/*
+ * SYS_GVIMRC_FILE      Name of the system-wide .gvimrc file.
+ */
+/* #define SYS_GVIMRC_FILE      "/etc/gvimrc" */
+
+/*
+ * DFLT_HELPFILE        Name of the help file.
+ */
+/* # define DFLT_HELPFILE       "$VIMRUNTIME/doc/help.txt.gz" */
+
+/*
+ * File names for:
+ * FILETYPE_FILE        switch on file type detection
+ * FTPLUGIN_FILE        switch on loading filetype plugin files
+ * INDENT_FILE          switch on loading indent files
+ * FTOFF_FILE           switch off file type detection
+ * FTPLUGOF_FILE        switch off loading settings files
+ * INDOFF_FILE          switch off loading indent files
+ */
+/* # define FILETYPE_FILE       "filetype.vim" */
+/* # define FTPLUGIN_FILE       "ftplugin.vim" */
+/* # define INDENT_FILE         "indent.vim" */
+/* # define FTOFF_FILE          "ftoff.vim" */
+/* # define FTPLUGOF_FILE       "ftplugof.vim" */
+/* # define INDOFF_FILE         "indoff.vim" */
+
+/*
+ * SYS_MENU_FILE        Name of the default menu.vim file.
+ */
+/* # define SYS_MENU_FILE       "$VIMRUNTIME/menu.vim" */
+
+/*
+ * SYS_OPTWIN_FILE      Name of the default optwin.vim file.
+ */
+#if !defined(SYS_OPTWIN_FILE)
+#define SYS_OPTWIN_FILE        "$VIMRUNTIME/optwin.vim"
+#endif
+
+/*
+ * SYNTAX_FNAME         Name of a syntax file, where %s is the syntax name.
+ */
+/* #define SYNTAX_FNAME "/foo/%s.vim" */
+
+/*
+ * RUNTIME_DIRNAME      Generic name for the directory of the runtime files.
+ */
+#if !defined(RUNTIME_DIRNAME)
+#define RUNTIME_DIRNAME "runtime"
+#endif
+
+/*
+ * Machine dependent:
+ * ==================
+ */
+
+/*
+ * +mouse_xterm         Unix only: Include code for xterm mouse handling.
+ * +mouse_gpm           Unix only: Include code for Linux console mouse handling.
+ * +mouse_sysmouse      Unix only: Include code for FreeBSD and DragonFly console mouse handling.
+ * +mouse               Any mouse support (any of the above enabled).
+ */
+#define FEAT_MOUSE_XTERM
+
+/*
+ * Note: Only one of the following may be defined:
+ * FEAT_MOUSE_GPM
+ * FEAT_SYSMOUSE
+ */
+#if defined(HAVE_GPM)
+#define FEAT_MOUSE_GPM
+#endif
+
+#if defined(HAVE_SYSMOUSE)
+#define FEAT_SYSMOUSE
+#endif
+
+/* urxvt is a small variation of mouse_xterm, and shares its code */
+
+/* sgr is a small variation of mouse_xterm, and shares its code */
+
+/* Define FEAT_MOUSE when any of the above is defined or FEAT_GUI. */
+#if !defined(FEAT_MOUSE_TTY) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE))
+#define FEAT_MOUSE_TTY         /* include non-GUI mouse support */
+#endif
+#if !defined(FEAT_MOUSE) && defined(FEAT_MOUSE_TTY)
+#define FEAT_MOUSE             /* include generic mouse support */
+#endif
+
+/*
+ * +clipboard           Clipboard support.  Always used for the GUI.
+ * +xterm_clipboard     Unix only: Include code for handling the clipboard
+ *                      in an xterm like in the GUI.
+ */
+
+/*
+ * +clientserver        Remote control via the remote_send() function
+ *                      and the --remote argument
+ */
+
+/*
+ * +termresponse        send t_RV to obtain terminal response.  Used for xterm
+ *                      to check if mouse dragging can be used and if term
+ *                      codes can be obtained.
+ */
+#if defined(HAVE_TGETENT)
+#define FEAT_TERMRESPONSE
+#endif
+
+/*
+ * cursor shape         Adjust the shape of the cursor to the mode.
+ * mouse shape          Adjust the shape of the mouse pointer to the mode.
+ */
+
+/* GUI and some consoles can change the shape of the cursor.  The code is also
+ * needed for the 'mouseshape' and 'concealcursor' options. */
+#define CURSOR_SHAPE
+
+/*
+ * These features are automatically detected:
+ * +terminfo
+ * +tgetent
+ */
+
+/*
+ * +signs               Allow signs to be displayed to the left of text lines.
+ *                      Adds the ":sign" command.
+ */
+
+/*
+ * +autochdir           'autochdir' option.
+ */
+
+/*
+ * +persistent_undo     'undofile', 'undodir' options, :wundo and :rundo, and
+ * implementation.
+ */
+#define FEAT_PERSISTENT_UNDO
+
+/*
+ * +filterpipe
+ */
+#define FEAT_FILTERPIPE
 
 /* Can't use "PACKAGE" here, conflicts with a Perl include file. */
 #if !defined(VIMPACKAGE)
@@ -59,10 +809,8 @@
 #include "osdef.h"     /* bring missing declarations in */
 #endif
 
-#if (1)
 #if defined(HAVE_LOCALE_H)
 #include <locale.h>
-#endif
 #endif
 
 /*
@@ -76,10 +824,8 @@
 #define MAXPATHL  256
 #endif
 #endif
-#if (1)
 #define PATH_ESC_CHARS ((char_u *)" \t\n*?[{`$\\%#'\"|!<")
 #define SHELL_ESC_CHARS ((char_u *)" \t\n*?[{`$\\%#'\"|!<>();&")
-#endif
 
 #define NUMBUFLEN 30        /* length of a buffer to store a number in ASCII */
 
@@ -192,7 +938,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
  * The _() stuff is for using gettext().  It is a no-op when libintl.h is not
  * found or the +multilang feature is disabled.
  */
-#if (1)
 #define _(x) ((char *)(x))
 #define N_(x) x
 #if defined(bindtextdomain)
@@ -207,7 +952,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #undef textdomain
 #endif
 #define textdomain(x) /* empty */
-#endif
 
 /*
  * flags for update_screen()
@@ -1121,11 +1865,7 @@ typedef UINT32_TYPEDEF UINT32_T;
 #if defined(HAVE_STRCASECMP)
 #define STRICMP(d, s)      strcasecmp((char *)(d), (char *)(s))
 #else
-#if defined(HAVE_STRICMP)
-#define STRICMP(d, s)     stricmp((char *)(d), (char *)(s))
-#else
 #define STRICMP(d, s)     vim_stricmp((char *)(d), (char *)(s))
-#endif
 #endif
 
 /* Like strcpy() but allows overlapped source and destination. */
@@ -1134,11 +1874,7 @@ typedef UINT32_TYPEDEF UINT32_T;
 #if defined(HAVE_STRNCASECMP)
 #define STRNICMP(d, s, n)  strncasecmp((char *)(d), (char *)(s), (size_t)(n))
 #else
-#if defined(HAVE_STRNICMP)
-#define STRNICMP(d, s, n) strnicmp((char *)(d), (char *)(s), (size_t)(n))
-#else
 #define STRNICMP(d, s, n) vim_strnicmp((char *)(d), (char *)(s), (size_t)(n))
-#endif
 #endif
 
 /* We need to call mb_stricmp() even when we aren't dealing with a multi-byte
@@ -1504,25 +2240,8 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #define virtual_op FALSE
 #endif
 
-/*
- * If console dialog not supported, but GUI dialog is, use the GUI one.
- */
-#if defined(FEAT_GUI_DIALOG) && !defined(FEAT_CON_DIALOG)
-#define do_dialog gui_mch_dialog
-#endif
-
-/*
- * Default filters for gui_mch_browse().
- * The filters are almost system independent.  Except for the difference
- * between "*" and "*.*" for MSDOS-like systems.
- * NOTE: Motif only uses the very first pattern.  Therefore
- * BROWSE_FILTER_DEFAULT should start with a "*" pattern.
- */
-
 /* Note: a NULL argument for vim_realloc() is not portable, don't use it. */
-#if (1)
 #define vim_realloc(ptr, size)  realloc((ptr), (size))
-#endif
 
 /*
  * The following macros stop display/event loop nesting at the wrong time.
@@ -1561,18 +2280,10 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #if !defined(EILSEQ)
 #define EILSEQ 123
 #endif
-#if defined(DYNAMIC_ICONV)
-/* On Win32 iconv.dll is dynamically loaded. */
-#define ICONV_ERRNO (*iconv_errno())
-#define ICONV_E2BIG  7
-#define ICONV_EINVAL 22
-#define ICONV_EILSEQ 42
-#else
 #define ICONV_ERRNO errno
 #define ICONV_E2BIG  E2BIG
 #define ICONV_EINVAL EINVAL
 #define ICONV_EILSEQ EILSEQ
-#endif
 #endif
 
 /* ISSYMLINK(mode) tests if a file is a symbolic link. */
@@ -1587,46 +2298,6 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 
 #define SIGN_BYTE 1         /* byte value used where sign is displayed;
                                attribute value is sign type */
-
-#define X_DISPLAY     xterm_dpy
-
-#if (1)
-#define nbdebug(a)
-#endif
-
-#if defined(IN_PERL_FILE)
-  /*
-   * Avoid clashes between Perl and Vim namespace.
-   */
-#undef NORMAL
-#undef STRLEN
-#undef FF
-#undef OP_DELETE
-#undef OP_JOIN
-  /* remove MAX and MIN, included by glib.h, redefined by sys/param.h */
-#if defined(MAX)
-#undef MAX
-#endif
-#if defined(MIN)
-#undef MIN
-#endif
-  /* We use _() for gettext(), Perl uses it for function prototypes... */
-#if defined(_)
-#undef _
-#endif
-#if defined(DEBUG)
-#undef DEBUG
-#endif
-#if defined(_DEBUG)
-#undef _DEBUG
-#endif
-#if defined(instr)
-#undef instr
-#endif
-  /* bool may cause trouble on MACOS but is required on a few other systems
-   * and for Perl */
-
-#endif
 
 /* values for vim_handle_signal() that are not a signal */
 #define SIGNAL_BLOCK    -1
@@ -1645,12 +2316,6 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #define DOSO_NONE       0
 #define DOSO_VIMRC      1       /* loading vimrc file */
 #define DOSO_GVIMRC     2       /* loading gvimrc file */
-
-/* flags for read_viminfo() and children */
-#define VIF_WANT_INFO           1       /* load non-mark info */
-#define VIF_WANT_MARKS          2       /* load file marks */
-#define VIF_FORCEIT             4       /* overwrite info already read */
-#define VIF_GET_OLDFILES        8       /* load v:oldfiles */
 
 /* flags for buf_freeall() */
 #define BFA_DEL         1       /* buffer is going to be deleted */

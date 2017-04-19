@@ -3576,9 +3576,7 @@ post2nfa(postfix, end, nfa_calc_size)
                 goto theend;
             PUSH(frag(s, list1(&s->out)));
             break;
-
         } /* switch(*p) */
-
     } /* for(p = postfix; *p; ++p) */
 
     if (nfa_calc_size == TRUE)
@@ -6533,7 +6531,6 @@ nfa_regmatch(prog, start, submatch, m)
                 ADD_STATE_IF_MATCH(t->state);
                 break;
               }
-
             } /* switch (t->state->c) */
 
             if (add_state != NULL)
@@ -6631,7 +6628,6 @@ nfa_regmatch(prog, start, submatch, m)
                         nextlist->t[nextlist->n - 1].count = add_count;
                 }
             }
-
         } /* for (thislist = thislist; thislist->state; thislist++) */
 
         /* Look for the start of a match in the current position by adding the
@@ -6987,8 +6983,7 @@ nfa_regexec_both(line, startcol, tm)
         /* If match_text is set it contains the full text that must match.
          * Nothing else to try. Doesn't handle combining chars well. */
         if (prog->match_text != NULL
-                    && !ireg_icombine
-                )
+                    && !ireg_icombine)
             return find_match_text(col, prog->regstart, prog->match_text);
     }
 

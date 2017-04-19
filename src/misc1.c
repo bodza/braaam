@@ -216,7 +216,6 @@ set_indent(size, flags)
          * than old) */
         while (vim_iswhite(*p))
             ++p;
-
     }
     else
     {
@@ -1108,7 +1107,6 @@ open_line(dir, flags, second_line_indent)
                             ;
                         ++p;
 
-#if (1)
                         /* Compute the length of the replaced characters in
                          * screen characters, not bytes. */
                         {
@@ -1129,12 +1127,6 @@ open_line(dir, flags, second_line_indent)
                                         (size_t)((leader + lead_len) - endp));
                             lead_len += l;
                         }
-#else
-                        if (p < leader + lead_repl_len)
-                            p = leader;
-                        else
-                            p -= lead_repl_len;
-#endif
                         mch_memmove(p, lead_repl, (size_t)lead_repl_len);
                         if (p + lead_repl_len > leader + lead_len)
                             p[lead_repl_len] = NUL;
@@ -1286,7 +1278,6 @@ open_line(dir, flags, second_line_indent)
                         ++leader;
                     }
                 }
-
             }
 #if defined(FEAT_SMARTINDENT)
             did_si = can_si = FALSE;
@@ -2222,13 +2213,8 @@ ins_char_bytes(buf, charlen)
                                             (size_t)(linelen - col - oldlen));
 
     /* Insert or overwrite the new character. */
-#if (1)
     mch_memmove(p, buf, charlen);
     i = charlen;
-#else
-    *p = c;
-    i = 1;
-#endif
 
     /* Fill with spaces when necessary. */
     while (i < newlen)
@@ -3421,20 +3407,16 @@ msgmore(n)
         if (pn == 1)
         {
             if (n > 0)
-                vim_strncpy(msg_buf, (char_u *)_("1 more line"),
-                                                             MSG_BUF_LEN - 1);
+                vim_strncpy(msg_buf, (char_u *)_("1 more line"), MSG_BUF_LEN - 1);
             else
-                vim_strncpy(msg_buf, (char_u *)_("1 line less"),
-                                                             MSG_BUF_LEN - 1);
+                vim_strncpy(msg_buf, (char_u *)_("1 line less"), MSG_BUF_LEN - 1);
         }
         else
         {
             if (n > 0)
-                vim_snprintf((char *)msg_buf, MSG_BUF_LEN,
-                                                     _("%ld more lines"), pn);
+                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, _("%ld more lines"), pn);
             else
-                vim_snprintf((char *)msg_buf, MSG_BUF_LEN,
-                                                    _("%ld fewer lines"), pn);
+                vim_snprintf((char *)msg_buf, MSG_BUF_LEN, _("%ld fewer lines"), pn);
         }
         if (got_int)
             vim_strcat(msg_buf, (char_u *)_(" (Interrupted)"), MSG_BUF_LEN);
@@ -3467,8 +3449,7 @@ vim_beep()
 {
     if (emsg_silent == 0)
     {
-        if (p_vb
-                )
+        if (p_vb)
         {
             out_str(T_VB);
         }
@@ -3798,11 +3779,7 @@ vim_getenv(name, mustfree)
      * When expanding $VIMRUNTIME fails, try using $VIM/vim<version> or $VIM.
      * Don't do this when default_vimruntime_dir is non-empty.
      */
-    if (vimruntime
-#if defined(HAVE_PATHDEF)
-            && *default_vimruntime_dir == NUL
-#endif
-       )
+    if (vimruntime)
     {
         p = mch_getenv((char_u *)"VIM");
         if (p != NULL && *p == NUL)         /* empty is the same as not set */
@@ -3883,30 +3860,6 @@ vim_getenv(name, mustfree)
             }
         }
     }
-
-#if defined(HAVE_PATHDEF)
-    /* When there is a pathdef.c file we can use default_vim_dir and
-     * default_vimruntime_dir */
-    if (p == NULL)
-    {
-        /* Only use default_vimruntime_dir when it is not empty */
-        if (vimruntime && *default_vimruntime_dir != NUL)
-        {
-            p = default_vimruntime_dir;
-            *mustfree = FALSE;
-        }
-        else if (*default_vim_dir != NUL)
-        {
-            if (vimruntime && (p = vim_version_dir(default_vim_dir)) != NULL)
-                *mustfree = TRUE;
-            else
-            {
-                p = default_vim_dir;
-                *mustfree = FALSE;
-            }
-        }
-    }
-#endif
 
     /*
      * Set the environment variable, so that the new value can be found fast
@@ -4006,7 +3959,6 @@ get_env_name(xp, idx)
     expand_T    *xp UNUSED;
     int         idx;
 {
-#if (1)
     extern char         **environ;
 #define ENVNAMELEN 100
     static char_u       name[ENVNAMELEN];
@@ -4025,7 +3977,6 @@ get_env_name(xp, idx)
     }
     name[n] = NUL;
     return name;
-#endif
 }
 
 /*
@@ -4509,11 +4460,9 @@ dir_of_file_exists(fname)
 vim_fnamecmp(x, y)
     char_u      *x, *y;
 {
-#if (1)
     if (p_fic)
         return MB_STRICMP(x, y);
     return STRCMP(x, y);
-#endif
 }
 
     int
@@ -4521,11 +4470,9 @@ vim_fnamencmp(x, y, len)
     char_u      *x, *y;
     size_t      len;
 {
-#if (1)
     if (p_fic)
         return MB_STRNICMP(x, y, len);
     return STRNCMP(x, y, len);
-#endif
 }
 
 /*
@@ -7028,7 +6975,6 @@ get_c_indent()
             else if (start_brace == BRACE_AT_START &&
                     lookfor_cpp_namespace)        /* '{' is at start */
             {
-
                 lookfor_cpp_namespace = TRUE;
             }
             else

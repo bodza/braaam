@@ -84,8 +84,6 @@
 #endif
 #endif
 
-#if (1)
-
 static int enc_canon_search __ARGS((char_u *name));
 static int dbcs_char2len __ARGS((int c));
 static int dbcs_char2bytes __ARGS((int c, char_u *buf));
@@ -130,40 +128,6 @@ static char utf8len_tab_zero[256] =
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6,0,0,
 };
 
-/*
- * XIM often causes trouble.  Define XIM_DEBUG to get a log of XIM callbacks
- * in the "xim.log" file.
- */
-/* #define XIM_DEBUG */
-#if defined(XIM_DEBUG)
-    static void
-xim_log(char *s, ...)
-{
-    va_list arglist;
-    static FILE *fd = NULL;
-
-    if (fd == (FILE *)-1)
-        return;
-    if (fd == NULL)
-    {
-        fd = mch_fopen("xim.log", "w");
-        if (fd == NULL)
-        {
-            EMSG("Cannot open xim.log");
-            fd = (FILE *)-1;
-            return;
-        }
-    }
-
-    va_start(arglist, s);
-    vfprintf(fd, s, arglist);
-    va_end(arglist);
-}
-#endif
-
-#endif
-
-#if (1)
 /*
  * Canonical encoding names and their properties.
  * "iso-8859-n" is handled by enc_canonize() directly.
@@ -394,10 +358,6 @@ enc_canon_search(name)
     return -1;
 }
 
-#endif
-
-#if (1)
-
 /*
  * Find canonical encoding "name" in the list and return its properties.
  * Returns 0 if not found.
@@ -578,8 +538,6 @@ mb_init()
             n = 1;
         else
         {
-#if (1)
-#if (1)
             char buf[MB_MAXBYTES + 1];
             if (i == NUL)       /* just in case mblen() can't handle "" */
                 n = 1;
@@ -619,8 +577,6 @@ mb_init()
                         n = 1;
                 }
             }
-#endif
-#endif
         }
 
         mb_bytelen_tab[i] = n;
@@ -3554,16 +3510,14 @@ mb_unescape(pp)
             buf[m++] = K_SPECIAL;
             n += 2;
         }
-        else if ((str[n] == K_SPECIAL
-                 )
+        else if ((str[n] == K_SPECIAL)
                 && str[n + 1] == KS_EXTRA
                 && str[n + 2] == (int)KE_CSI)
         {
             buf[m++] = CSI;
             n += 2;
         }
-        else if (str[n] == K_SPECIAL
-                )
+        else if (str[n] == K_SPECIAL)
             break;              /* a special key can't be a multibyte char */
         else
             buf[m++] = str[n];
@@ -3618,7 +3572,6 @@ mb_fix_col(col, row)
         return col - 1;
     return col;
 }
-#endif
 
 static int enc_alias_search __ARGS((char_u *name));
 
@@ -3731,8 +3684,6 @@ enc_alias_search(name)
     return -1;
 }
 
-#if (1)
-
 #if defined(HAVE_LANGINFO_H)
 #include <langinfo.h>
 #endif
@@ -3822,12 +3773,6 @@ my_iconv_open(to, from)
 
     if (iconv_ok == FALSE)
         return (void *)-1;      /* detected a broken iconv() previously */
-
-#if defined(DYNAMIC_ICONV)
-    /* Check if the iconv.dll can be found. */
-    if (!iconv_enabled(TRUE))
-        return (void *)-1;
-#endif
 
     fd = iconv_open((char *)enc_skip(to), (char *)enc_skip(from));
 
@@ -3960,136 +3905,6 @@ iconv_string(vcp, str, slen, unconvlenp, resultlenp)
         *resultlenp = (int)(to - (char *)result);
     return result;
 }
-
-#if defined(DYNAMIC_ICONV)
-/*
- * Dynamically load the "iconv.dll" on Win32.
- */
-
-#if !defined(DYNAMIC_ICONV) /* just generating prototypes */
-#define HINSTANCE int
-#endif
-static HINSTANCE hIconvDLL = 0;
-static HINSTANCE hMsvcrtDLL = 0;
-
-#if !defined(DYNAMIC_ICONV_DLL)
-#define DYNAMIC_ICONV_DLL "iconv.dll"
-#define DYNAMIC_ICONV_DLL_ALT "libiconv.dll"
-#endif
-#if !defined(DYNAMIC_MSVCRT_DLL)
-#define DYNAMIC_MSVCRT_DLL "msvcrt.dll"
-#endif
-
-/*
- * Get the address of 'funcname' which is imported by 'hInst' DLL.
- */
-    static void *
-get_iconv_import_func(HINSTANCE hInst, const char *funcname)
-{
-    PBYTE                       pImage = (PBYTE)hInst;
-    PIMAGE_DOS_HEADER           pDOS = (PIMAGE_DOS_HEADER)hInst;
-    PIMAGE_NT_HEADERS           pPE;
-    PIMAGE_IMPORT_DESCRIPTOR    pImpDesc;
-    PIMAGE_THUNK_DATA           pIAT;       /* Import Address Table */
-    PIMAGE_THUNK_DATA           pINT;       /* Import Name Table */
-    PIMAGE_IMPORT_BY_NAME       pImpName;
-
-    if (pDOS->e_magic != IMAGE_DOS_SIGNATURE)
-        return NULL;
-    pPE = (PIMAGE_NT_HEADERS)(pImage + pDOS->e_lfanew);
-    if (pPE->Signature != IMAGE_NT_SIGNATURE)
-        return NULL;
-    pImpDesc = (PIMAGE_IMPORT_DESCRIPTOR)(pImage
-            + pPE->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]
-                                                            .VirtualAddress);
-    for (; pImpDesc->FirstThunk; ++pImpDesc)
-    {
-        if (!pImpDesc->OriginalFirstThunk)
-            continue;
-        pIAT = (PIMAGE_THUNK_DATA)(pImage + pImpDesc->FirstThunk);
-        pINT = (PIMAGE_THUNK_DATA)(pImage + pImpDesc->OriginalFirstThunk);
-        for (; pIAT->u1.Function; ++pIAT, ++pINT)
-        {
-            if (IMAGE_SNAP_BY_ORDINAL(pINT->u1.Ordinal))
-                continue;
-            pImpName = (PIMAGE_IMPORT_BY_NAME)(pImage
-                                        + (UINT_PTR)(pINT->u1.AddressOfData));
-            if (strcmp(pImpName->Name, funcname) == 0)
-                return (void *)pIAT->u1.Function;
-        }
-    }
-    return NULL;
-}
-
-/*
- * Try opening the iconv.dll and return TRUE if iconv() can be used.
- */
-    int
-iconv_enabled(verbose)
-    int         verbose;
-{
-    if (hIconvDLL != 0 && hMsvcrtDLL != 0)
-        return TRUE;
-    hIconvDLL = vimLoadLib(DYNAMIC_ICONV_DLL);
-    if (hIconvDLL == 0)         /* sometimes it's called libiconv.dll */
-        hIconvDLL = vimLoadLib(DYNAMIC_ICONV_DLL_ALT);
-    if (hIconvDLL != 0)
-        hMsvcrtDLL = vimLoadLib(DYNAMIC_MSVCRT_DLL);
-    if (hIconvDLL == 0 || hMsvcrtDLL == 0)
-    {
-        /* Only give the message when 'verbose' is set, otherwise it might be
-         * done whenever a conversion is attempted. */
-        if (verbose && p_verbose > 0)
-        {
-            verbose_enter();
-            EMSG2(_(e_loadlib),
-                    hIconvDLL == 0 ? DYNAMIC_ICONV_DLL : DYNAMIC_MSVCRT_DLL);
-            verbose_leave();
-        }
-        iconv_end();
-        return FALSE;
-    }
-
-    iconv       = (void *)GetProcAddress(hIconvDLL, "libiconv");
-    iconv_open  = (void *)GetProcAddress(hIconvDLL, "libiconv_open");
-    iconv_close = (void *)GetProcAddress(hIconvDLL, "libiconv_close");
-    iconvctl    = (void *)GetProcAddress(hIconvDLL, "libiconvctl");
-    iconv_errno = get_iconv_import_func(hIconvDLL, "_errno");
-    if (iconv_errno == NULL)
-        iconv_errno = (void *)GetProcAddress(hMsvcrtDLL, "_errno");
-    if (iconv == NULL || iconv_open == NULL || iconv_close == NULL
-            || iconvctl == NULL || iconv_errno == NULL)
-    {
-        iconv_end();
-        if (verbose && p_verbose > 0)
-        {
-            verbose_enter();
-            EMSG2(_(e_loadfunc), "for libiconv");
-            verbose_leave();
-        }
-        return FALSE;
-    }
-    return TRUE;
-}
-
-    void
-iconv_end()
-{
-    /* Don't use iconv() when inputting or outputting characters. */
-    if (input_conv.vc_type == CONV_ICONV)
-        convert_setup(&input_conv, NULL, NULL);
-    if (output_conv.vc_type == CONV_ICONV)
-        convert_setup(&output_conv, NULL, NULL);
-
-    if (hIconvDLL != 0)
-        FreeLibrary(hIconvDLL);
-    if (hMsvcrtDLL != 0)
-        FreeLibrary(hMsvcrtDLL);
-    hIconvDLL = 0;
-    hMsvcrtDLL = 0;
-}
-#endif
-#endif
 
 #endif
 

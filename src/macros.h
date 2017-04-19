@@ -53,13 +53,8 @@
  * Note: It is often better to use MB_TOLOWER() and MB_TOUPPER(), because many
  * toupper() and tolower() implementations only work for ASCII.
  */
-#if defined(BROKEN_TOUPPER)
-#define TOUPPER_LOC(c)        (islower(c) ? toupper(c) : (c))
-#define TOLOWER_LOC(c)        (isupper(c) ? tolower(c) : (c))
-#else
 #define TOUPPER_LOC           toupper
 #define TOLOWER_LOC           tolower
-#endif
 
 /* toupper() and tolower() for ASCII only and ignore the current locale. */
 #define TOUPPER_ASC(c) (((c) < 'a' || (c) > 'z') ? (c) : (c) - ('a' - 'A'))
@@ -144,9 +139,7 @@
 /* mch_open_rw(): invoke mch_open() with third argument for user R/W. */
 #define mch_open_rw(n, f)      mch_open((n), (f), (mode_t)0600)
 
-#if (1)
 #define TIME_MSG(s)
-#endif
 
 #if defined(FEAT_VREPLACE)
 #define REPLACE_NORMAL(s) (((s) & REPLACE_FLAG) && !((s) & VREPLACE_FLAG))

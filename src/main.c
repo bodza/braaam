@@ -44,13 +44,6 @@ typedef struct
     int         window_layout;          /* 0, WIN_HOR, WIN_VER or WIN_TABS */
 #endif
 
-#if defined(FEAT_CLIENTSERVER)
-    int         serverArg;              /* TRUE when argument for a server */
-    char_u      *serverName_arg;        /* cmdline arg for server name */
-    char_u      *serverStr;             /* remote server command */
-    char_u      *serverStrEnc;          /* encoding of serverStr */
-    char_u      *servername;            /* allocated name for our server */
-#endif
 } mparm_T;
 
 /* Values for edit_type. */
@@ -62,7 +55,6 @@ typedef struct
 
 static int file_owned __ARGS((char *fname));
 static void mainerr __ARGS((int, char_u *));
-#if (1)
 static void main_msg __ARGS((char *s));
 static void usage __ARGS((void));
 static int get_number_arg __ARGS((char_u *p, int *idx, int def));
@@ -84,13 +76,6 @@ static void source_startup_scripts __ARGS((mparm_T *parmp));
 static void main_start_gui __ARGS((void));
 #if defined(HAS_SWAP_EXISTS_ACTION)
 static void check_swap_exists_action __ARGS((void));
-#endif
-#if defined(FEAT_CLIENTSERVER)
-static void exec_on_server __ARGS((mparm_T *parmp));
-static void prepare_server __ARGS((mparm_T *parmp));
-static void cmdsrv_main __ARGS((int *argc, char **argv, char_u *serverName_arg, char_u **serverStr));
-static char_u *serverMakeName __ARGS((char_u *arg, char *cmd));
-#endif
 #endif
 
 /*
@@ -114,7 +99,6 @@ static char *(main_errors[]) =
 
 static char_u *start_dir = NULL;        /* current working dir on startup */
 
-#if (1)
     int
 main
 (argc, argv)
@@ -224,14 +208,6 @@ main
 
     set_lang_var();             /* set v:lang and v:ctype */
 
-#if defined(FEAT_CLIENTSERVER)
-    /*
-     * Do the client-server stuff, unless "--servername ''" was used.
-     * This may exit Vim if the command was sent to the server.
-     */
-    exec_on_server(&params);
-#endif
-
     /*
      * Figure out the way to work from the command name argv[0].
      * "vimdiff" starts diff mode, "rvim" sets "restricted", etc.
@@ -276,8 +252,7 @@ main
      * make sense to try using a terminal.
      */
 #if defined(ALWAYS_USE_GUI)
-    if (gui.starting
-            )
+    if (gui.starting)
         params.want_full_screen = FALSE;
 #endif
 
@@ -331,9 +306,6 @@ main
     /* Set the break level after the terminal is initialized. */
     debug_break_level = params.use_debug_break_level;
 
-#endif
-
-#if (1)
     /* Execute --cmd arguments. */
     exe_pre_commands(&params);
 
@@ -412,11 +384,6 @@ main
     no_wait_return = FALSE;
     if (!exmode_active)
         msg_scroll = FALSE;
-
-#if defined(FEAT_CLIENTSERVER)
-    /* Prepare for being a Vim server. */
-    prepare_server(&params);
-#endif
 
     /*
      * If "-" argument given: Read file from stdin.
@@ -592,7 +559,6 @@ main
 
     return 0;
 }
-#endif
 
 /*
  * Main loop: Execute Normal mode commands until exiting Vim.
@@ -783,7 +749,6 @@ main_loop(cmdwin, noexmode)
             cursor_on();
 
             do_redraw = FALSE;
-
         }
 
         /*
@@ -889,8 +854,7 @@ getout(exitval)
         apply_autocmds(EVENT_VIMLEAVE, NULL, NULL, FALSE, curbuf);
 #endif
 
-    if (did_emsg
-            )
+    if (did_emsg)
     {
         /* give the user a chance to read the (error) message */
         no_wait_return = FALSE;
@@ -902,16 +866,12 @@ getout(exitval)
         windgoto((int)Rows - 1, 0);
 #endif
 
-#if defined(USE_ICONV) && defined(DYNAMIC_ICONV)
-    iconv_end();
-#endif
     if (garbage_collect_at_exit)
         garbage_collect();
 
     mch_exit(exitval);
 }
 
-#if (1)
 /*
  * Get a (optional) count for a Vim argument.
  */
@@ -939,7 +899,7 @@ init_locale()
 {
     setlocale(LC_ALL, "");
 
-#if defined(FEAT_FLOAT) && defined(LC_NUMERIC)
+#if defined(LC_NUMERIC)
     /* Make sure strtod() uses a decimal point, not a comma. */
     setlocale(LC_NUMERIC, "C");
 #endif
@@ -1002,11 +962,9 @@ parse_command_name(parmp)
     /* Catch "[r][g]vimdiff" and "[r][g]viewdiff". */
     if (STRICMP(initstr, "diff") == 0)
     {
-#if (1)
         mch_errmsg(_("This Vim was not compiled with the diff feature."));
         mch_errmsg("\n");
         mch_exit(2);
-#endif
     }
 
     if (STRNICMP(initstr, "ex", 2) == 0)
@@ -1029,7 +987,6 @@ parse_command_name(parmp)
 early_arg_scan(parmp)
     mparm_T     *parmp UNUSED;
 {
-#if (1)
     int         argc = parmp->argc;
     char        **argv = parmp->argv;
     int         i;
@@ -1038,20 +995,6 @@ early_arg_scan(parmp)
     {
         if (STRCMP(argv[i], "--") == 0)
             break;
-#if defined(FEAT_CLIENTSERVER)
-        else if (STRICMP(argv[i], "--servername") == 0)
-        {
-            if (i == argc - 1)
-                mainerr_arg_missing((char_u *)argv[i]);
-            parmp->serverName_arg = (char_u *)argv[++i];
-        }
-        else if (STRICMP(argv[i], "--serverlist") == 0)
-            parmp->serverArg = TRUE;
-        else if (STRNICMP(argv[i], "--remote", 8) == 0)
-        {
-            parmp->serverArg = TRUE;
-        }
-#endif
 
         else if (strncmp(argv[i], "-nb", (size_t)3) == 0)
         {
@@ -1059,7 +1002,6 @@ early_arg_scan(parmp)
             mch_exit(2);
         }
     }
-#endif
 }
 
 /*
@@ -1156,20 +1098,6 @@ command_line_scan(parmp)
                     want_argument = TRUE;
                     argv_idx += 11;
                 }
-#if defined(FEAT_CLIENTSERVER)
-                else if (STRNICMP(argv[0] + argv_idx, "serverlist", 10) == 0)
-                    ; /* already processed -- no arg */
-                else if (STRNICMP(argv[0] + argv_idx, "servername", 10) == 0
-                       || STRNICMP(argv[0] + argv_idx, "serversend", 10) == 0)
-                {
-                    /* already processed -- snatch the following arg */
-                    if (argc > 1)
-                    {
-                        --argc;
-                        ++argv;
-                    }
-                }
-#endif
                 else
                 {
                     if (argv[0][argv_idx])
@@ -1548,7 +1476,6 @@ scripterror:
                         mch_exit(2);
                     }
                     break;
-
                 }
             }
         }
@@ -1623,8 +1550,7 @@ check_tty(parmp)
         if (!input_isatty)
             silent_mode = TRUE;
     }
-    else if (parmp->want_full_screen && (!parmp->stdout_isatty || !input_isatty)
-            )
+    else if (parmp->want_full_screen && (!parmp->stdout_isatty || !input_isatty))
     {
         if (!parmp->stdout_isatty)
             mch_errmsg(_("Vim: Warning: Output is not to a terminal\n"));
@@ -2160,8 +2086,6 @@ main_start_gui()
     mch_exit(2);
 }
 
-#endif
-
 /*
  * Get an environment variable, and execute it as Ex commands.
  * Returns FAIL if the environment variable was not executed, OK otherwise.
@@ -2195,7 +2119,6 @@ process_env(env, is_viminit)
     return FAIL;
 }
 
-#if (1)
 /*
  * Return TRUE if we are certain the user owns the file "fname".
  * Used for ".vimrc" and ".exrc".
@@ -2214,7 +2137,6 @@ file_owned(fname)
 #endif
             );
 }
-#endif
 
 /*
  * Give an error message main_errors["n"] and exit.
@@ -2247,7 +2169,6 @@ mainerr_arg_missing(str)
     mainerr(ME_ARG_MISSING, str);
 }
 
-#if (1)
 /*
  * print a message with three spaces prepended and '\n' appended.
  */
@@ -2332,19 +2253,6 @@ usage()
     main_msg(_("-s <scriptin>\tRead Normal mode commands from file <scriptin>"));
     main_msg(_("-w <scriptout>\tAppend all typed commands to file <scriptout>"));
     main_msg(_("-W <scriptout>\tWrite all typed commands to file <scriptout>"));
-#if defined(FEAT_CLIENTSERVER)
-    main_msg(_("--remote <files>\tEdit <files> in a Vim server if possible"));
-    main_msg(_("--remote-silent <files>  Same, don't complain if there is no server"));
-    main_msg(_("--remote-wait <files>  As --remote but wait for files to have been edited"));
-    main_msg(_("--remote-wait-silent <files>  Same, don't complain if there is no server"));
-#if defined(FEAT_WINDOWS)
-    main_msg(_("--remote-tab[-wait][-silent] <files>  As --remote but use tab page per file"));
-#endif
-    main_msg(_("--remote-send <keys>\tSend <keys> to a Vim server and exit"));
-    main_msg(_("--remote-expr <expr>\tEvaluate <expr> in a Vim server and print result"));
-    main_msg(_("--serverlist\t\tList available Vim server names and exit"));
-    main_msg(_("--servername <name>\tSend to/become the Vim server <name>"));
-#endif
     main_msg(_("-h  or  --help\tPrint Help (this message) and exit"));
     main_msg(_("--version\t\tPrint version information and exit"));
 
@@ -2363,525 +2271,5 @@ check_swap_exists_action()
     if (swap_exists_action == SEA_QUIT)
         getout(1);
     handle_swap_exists(NULL);
-}
-#endif
-
-#endif
-
-#if defined(FEAT_CLIENTSERVER)
-
-/*
- * Common code for the X command server and the Win32 command server.
- */
-
-static char_u *build_drop_cmd __ARGS((int filec, char **filev, int tabs, int sendReply));
-
-/*
- * Do the client-server stuff, unless "--servername ''" was used.
- */
-    static void
-exec_on_server(parmp)
-    mparm_T     *parmp;
-{
-    if (parmp->serverName_arg == NULL || *parmp->serverName_arg != NUL)
-    {
-        /*
-         * When a command server argument was found, execute it.  This may
-         * exit Vim when it was successful.  Otherwise it's executed further
-         * on.  Remember the encoding used here in "serverStrEnc".
-         */
-        if (parmp->serverArg)
-        {
-            cmdsrv_main(&parmp->argc, parmp->argv, parmp->serverName_arg, &parmp->serverStr);
-            parmp->serverStrEnc = vim_strsave(p_enc);
-        }
-
-        /* If we're still running, get the name to register ourselves.
-         * On Win32 can register right now, for X11 need to setup the
-         * clipboard first, it's further down. */
-        parmp->servername = serverMakeName(parmp->serverName_arg, parmp->argv[0]);
-    }
-}
-
-/*
- * Prepare for running as a Vim server.
- */
-    static void
-prepare_server(parmp)
-    mparm_T     *parmp;
-{
-
-    /*
-     * Execute command ourselves if we're here because the send failed (or
-     * else we would have exited above).
-     */
-    if (parmp->serverStr != NULL)
-    {
-        char_u *p;
-
-        server_to_input_buf(serverConvert(parmp->serverStrEnc,
-                                                       parmp->serverStr, &p));
-        vim_free(p);
-    }
-}
-
-    static void
-cmdsrv_main(argc, argv, serverName_arg, serverStr)
-    int         *argc;
-    char        **argv;
-    char_u      *serverName_arg;
-    char_u      **serverStr;
-{
-    char_u      *res;
-    int         i;
-    char_u      *sname;
-    int         ret;
-    int         didone = FALSE;
-    int         exiterr = 0;
-    char        **newArgV = argv + 1;
-    int         newArgC = 1,
-                Argc = *argc;
-    int         argtype;
-#define ARGTYPE_OTHER           0
-#define ARGTYPE_EDIT            1
-#define ARGTYPE_EDIT_WAIT       2
-#define ARGTYPE_SEND            3
-    int         silent = FALSE;
-    int         tabs = FALSE;
-#if (1)
-    HWND        srv;
-#else
-    Window      srv;
-
-    setup_term_clip();
-#endif
-
-    sname = serverMakeName(serverName_arg, argv[0]);
-    if (sname == NULL)
-        return;
-
-    /*
-     * Execute the command server related arguments and remove them
-     * from the argc/argv array; We may have to return into main()
-     */
-    for (i = 1; i < Argc; i++)
-    {
-        res = NULL;
-        if (STRCMP(argv[i], "--") == 0) /* end of option arguments */
-        {
-            for (; i < *argc; i++)
-            {
-                *newArgV++ = argv[i];
-                newArgC++;
-            }
-            break;
-        }
-
-        if (STRICMP(argv[i], "--remote-send") == 0)
-            argtype = ARGTYPE_SEND;
-        else if (STRNICMP(argv[i], "--remote", 8) == 0)
-        {
-            char        *p = argv[i] + 8;
-
-            argtype = ARGTYPE_EDIT;
-            while (*p != NUL)
-            {
-                if (STRNICMP(p, "-wait", 5) == 0)
-                {
-                    argtype = ARGTYPE_EDIT_WAIT;
-                    p += 5;
-                }
-                else if (STRNICMP(p, "-silent", 7) == 0)
-                {
-                    silent = TRUE;
-                    p += 7;
-                }
-                else if (STRNICMP(p, "-tab", 4) == 0)
-                {
-                    tabs = TRUE;
-                    p += 4;
-                }
-                else
-                {
-                    argtype = ARGTYPE_OTHER;
-                    break;
-                }
-            }
-        }
-        else
-            argtype = ARGTYPE_OTHER;
-
-        if (argtype != ARGTYPE_OTHER)
-        {
-            if (i == *argc - 1)
-                mainerr_arg_missing((char_u *)argv[i]);
-            if (argtype == ARGTYPE_SEND)
-            {
-                *serverStr = (char_u *)argv[i + 1];
-                i++;
-            }
-            else
-            {
-                *serverStr = build_drop_cmd(*argc - i - 1, argv + i + 1,
-                                          tabs, argtype == ARGTYPE_EDIT_WAIT);
-                if (*serverStr == NULL)
-                {
-                    /* Probably out of memory, exit. */
-                    didone = TRUE;
-                    exiterr = 1;
-                    break;
-                }
-                Argc = i;
-            }
-#if (1)
-            /* Win32 always works? */
-            ret = serverSendToVim(sname, *serverStr, NULL, &srv, 0, silent);
-#endif
-            if (ret < 0)
-            {
-                if (argtype == ARGTYPE_SEND)
-                {
-                    /* Failed to send, abort. */
-                    mch_errmsg(_(": Send failed.\n"));
-                    didone = TRUE;
-                    exiterr = 1;
-                }
-                else if (!silent)
-                    /* Let vim start normally.  */
-                    mch_errmsg(_(": Send failed. Trying to execute locally\n"));
-                break;
-            }
-
-            /*
-             * For --remote-wait: Wait until the server did edit each
-             * file.  Also detect that the server no longer runs.
-             */
-            if (ret >= 0 && argtype == ARGTYPE_EDIT_WAIT)
-            {
-                int     numFiles = *argc - i - 1;
-                int     j;
-                char_u  *done = alloc(numFiles);
-                char_u  *p;
-
-                if (numFiles > 0 && argv[i + 1][0] == '+')
-                    /* Skip "+cmd" argument, don't wait for it to be edited. */
-                    --numFiles;
-
-                /* Wait for all files to unload in remote */
-                vim_memset(done, 0, numFiles);
-                while (memchr(done, 0, numFiles) != NULL)
-                {
-                    if (serverReadReply(xterm_dpy, srv, &p, TRUE) < 0)
-                        break;
-                    j = atoi((char *)p);
-                    if (j >= 0 && j < numFiles)
-                    {
-                        done[j] = 1;
-                    }
-                }
-            }
-        }
-        else if (STRICMP(argv[i], "--remote-expr") == 0)
-        {
-            if (i == *argc - 1)
-                mainerr_arg_missing((char_u *)argv[i]);
-            if (xterm_dpy == NULL)
-                mch_errmsg(_("No display: Send expression failed.\n"));
-            else if (serverSendToVim(xterm_dpy, sname, (char_u *)argv[i + 1], &res, NULL, 1, 1, FALSE) < 0)
-            {
-                if (res != NULL && *res != NUL)
-                {
-                    /* Output error from remote */
-                    mch_errmsg((char *)res);
-                    vim_free(res);
-                    res = NULL;
-                }
-                mch_errmsg(_(": Send expression failed.\n"));
-            }
-        }
-        else if (STRICMP(argv[i], "--serverlist") == 0)
-        {
-            if (xterm_dpy != NULL)
-                res = serverGetVimNames(xterm_dpy);
-            if (called_emsg)
-                mch_errmsg("\n");
-        }
-        else if (STRICMP(argv[i], "--servername") == 0)
-        {
-            /* Already processed. Take it out of the command line */
-            i++;
-            continue;
-        }
-        else
-        {
-            *newArgV++ = argv[i];
-            newArgC++;
-            continue;
-        }
-        didone = TRUE;
-        if (res != NULL && *res != NUL)
-        {
-            mch_msg((char *)res);
-            if (res[STRLEN(res) - 1] != '\n')
-                mch_msg("\n");
-        }
-        vim_free(res);
-    }
-
-    if (didone)
-    {
-        display_errors();       /* display any collected messages */
-        exit(exiterr);  /* Mission accomplished - get out */
-    }
-
-    /* Return back into main() */
-    *argc = newArgC;
-    vim_free(sname);
-}
-
-/*
- * Build a ":drop" command to send to a Vim server.
- */
-    static char_u *
-build_drop_cmd(filec, filev, tabs, sendReply)
-    int         filec;
-    char        **filev;
-    int         tabs;           /* Use ":tab drop" instead of ":drop". */
-    int         sendReply;
-{
-    garray_T    ga;
-    int         i;
-    char_u      *inicmd = NULL;
-    char_u      *p;
-    char_u      *cdp;
-    char_u      *cwd;
-
-    if (filec > 0 && filev[0][0] == '+')
-    {
-        inicmd = (char_u *)filev[0] + 1;
-        filev++;
-        filec--;
-    }
-    /* Check if we have at least one argument. */
-    if (filec <= 0)
-        mainerr_arg_missing((char_u *)filev[-1]);
-
-    /* Temporarily cd to the current directory to handle relative file names. */
-    cwd = alloc(MAXPATHL);
-    if (cwd == NULL)
-        return NULL;
-    if (mch_dirname(cwd, MAXPATHL) != OK)
-    {
-        vim_free(cwd);
-        return NULL;
-    }
-    cdp = vim_strsave_escaped_ext(cwd,
-                    PATH_ESC_CHARS,
-                    '\\', TRUE);
-    vim_free(cwd);
-    if (cdp == NULL)
-        return NULL;
-    ga_init2(&ga, 1, 100);
-    ga_concat(&ga, (char_u *)"<C-\\><C-N>:cd ");
-    ga_concat(&ga, cdp);
-
-    /* Call inputsave() so that a prompt for an encryption key works. */
-    ga_concat(&ga, (char_u *)"<CR>:if exists('*inputsave')|call inputsave()|endif|");
-    if (tabs)
-        ga_concat(&ga, (char_u *)"tab ");
-    ga_concat(&ga, (char_u *)"drop");
-    for (i = 0; i < filec; i++)
-    {
-        /* On Unix the shell has already expanded the wildcards, don't want to
-         * do it again in the Vim server.  On MS-Windows only escape
-         * non-wildcard characters. */
-        p = vim_strsave_escaped((char_u *)filev[i],
-                PATH_ESC_CHARS
-                );
-        if (p == NULL)
-        {
-            vim_free(ga.ga_data);
-            return NULL;
-        }
-        ga_concat(&ga, (char_u *)" ");
-        ga_concat(&ga, p);
-        vim_free(p);
-    }
-    ga_concat(&ga, (char_u *)"|if exists('*inputrestore')|call inputrestore()|endif<CR>");
-
-    /* The :drop commands goes to Insert mode when 'insertmode' is set, use
-     * CTRL-\ CTRL-N again. */
-    ga_concat(&ga, (char_u *)"<C-\\><C-N>");
-
-    /* Switch back to the correct current directory (prior to temporary path
-     * switch) unless 'autochdir' is set, in which case it will already be
-     * correct after the :drop command. With line breaks and spaces:
-     *  if !exists('+acd') || !&acd
-     *    if haslocaldir()
-     *      cd -
-     *      lcd -
-     *    elseif getcwd() ==# "current path"
-     *      cd -
-     *    endif
-     *  endif
-     */
-    ga_concat(&ga, (char_u *)":if !exists('+acd')||!&acd|if haslocaldir()|");
-    ga_concat(&ga, (char_u *)"cd -|lcd -|elseif getcwd() ==# \"");
-    ga_concat(&ga, cdp);
-    ga_concat(&ga, (char_u *)"\"|cd -|endif|endif<CR>");
-    vim_free(cdp);
-
-    if (sendReply)
-        ga_concat(&ga, (char_u *)":call SetupRemoteReplies()<CR>");
-    ga_concat(&ga, (char_u *)":");
-    if (inicmd != NULL)
-    {
-        /* Can't use <CR> after "inicmd", because an "startinsert" would cause
-         * the following commands to be inserted as text.  Use a "|",
-         * hopefully "inicmd" does allow this... */
-        ga_concat(&ga, inicmd);
-        ga_concat(&ga, (char_u *)"|");
-    }
-    /* Bring the window to the foreground, goto Insert mode when 'im' set and
-     * clear command line. */
-    ga_concat(&ga, (char_u *)"cal foreground()|if &im|star|en|redr|f<CR>");
-    ga_append(&ga, NUL);
-    return ga.ga_data;
-}
-
-/*
- * Make our basic server name: use the specified "arg" if given, otherwise use
- * the tail of the command "cmd" we were started with.
- * Return the name in allocated memory.  This doesn't include a serial number.
- */
-    static char_u *
-serverMakeName(arg, cmd)
-    char_u      *arg;
-    char        *cmd;
-{
-    char_u *p;
-
-    if (arg != NULL && *arg != NUL)
-        p = vim_strsave_up(arg);
-    else
-    {
-        p = vim_strsave_up(gettail((char_u *)cmd));
-        /* Remove .exe or .bat from the name. */
-        if (p != NULL && vim_strchr(p, '.') != NULL)
-            *vim_strchr(p, '.') = NUL;
-    }
-    return p;
-}
-#endif
-
-#if defined(FEAT_CLIENTSERVER)
-/*
- * Replace termcodes such as <CR> and insert as key presses if there is room.
- */
-    void
-server_to_input_buf(str)
-    char_u      *str;
-{
-    char_u      *ptr = NULL;
-    char_u      *cpo_save = p_cpo;
-
-    /* Set 'cpoptions' the way we want it.
-     *    B set - backslashes are *not* treated specially
-     *    k set - keycodes are *not* reverse-engineered
-     *    < unset - <Key> sequences *are* interpreted
-     *  The last but one parameter of replace_termcodes() is TRUE so that the
-     *  <lt> sequence is recognised - needed for a real backslash.
-     */
-    p_cpo = (char_u *)"Bk";
-    str = replace_termcodes((char_u *)str, &ptr, FALSE, TRUE, FALSE);
-    p_cpo = cpo_save;
-
-    if (*ptr != NUL)    /* trailing CTRL-V results in nothing */
-    {
-        /*
-         * Add the string to the input stream.
-         * Can't use add_to_input_buf() here, we now have K_SPECIAL bytes.
-         *
-         * First clear typed characters from the typeahead buffer, there could
-         * be half a mapping there.  Then append to the existing string, so
-         * that multiple commands from a client are concatenated.
-         */
-        if (typebuf.tb_maplen < typebuf.tb_len)
-            del_typebuf(typebuf.tb_len - typebuf.tb_maplen, typebuf.tb_maplen);
-        (void)ins_typebuf(str, REMAP_NONE, typebuf.tb_len, TRUE, FALSE);
-
-        /* Let input_available() know we inserted text in the typeahead
-         * buffer. */
-        typebuf_was_filled = TRUE;
-    }
-    vim_free((char_u *)ptr);
-}
-
-/*
- * Evaluate an expression that the client sent to a string.
- */
-    char_u *
-eval_client_expr_to_string(expr)
-    char_u *expr;
-{
-    char_u      *res;
-    int         save_dbl = debug_break_level;
-    int         save_ro = redir_off;
-
-     /* Disable debugging, otherwise Vim hangs, waiting for "cont" to be
-      * typed. */
-    debug_break_level = -1;
-    redir_off = 0;
-    /* Do not display error message, otherwise Vim hangs, waiting for "cont"
-     * to be typed.  Do generate errors so that try/catch works. */
-    ++emsg_silent;
-
-    res = eval_to_string(expr, NULL, TRUE);
-
-    debug_break_level = save_dbl;
-    redir_off = save_ro;
-    --emsg_silent;
-    if (emsg_silent < 0)
-        emsg_silent = 0;
-
-    /* A client can tell us to redraw, but not to display the cursor, so do
-     * that here. */
-    setcursor();
-    out_flush();
-
-    return res;
-}
-
-/*
- * If conversion is needed, convert "data" from "client_enc" to 'encoding' and
- * return an allocated string.  Otherwise return "data".
- * "*tofree" is set to the result when it needs to be freed later.
- */
-    char_u *
-serverConvert(client_enc, data, tofree)
-    char_u *client_enc UNUSED;
-    char_u *data;
-    char_u **tofree;
-{
-    char_u      *res = data;
-
-    *tofree = NULL;
-    if (client_enc != NULL && p_enc != NULL)
-    {
-        vimconv_T       vimconv;
-
-        vimconv.vc_type = CONV_NONE;
-        if (convert_setup(&vimconv, client_enc, p_enc) != FAIL
-                                              && vimconv.vc_type != CONV_NONE)
-        {
-            res = string_convert(&vimconv, data, NULL);
-            if (res == NULL)
-                res = data;
-            else
-                *tofree = res;
-        }
-        convert_setup(&vimconv, NULL, NULL);
-    }
-    return res;
 }
 #endif

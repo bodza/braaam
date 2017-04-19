@@ -387,10 +387,8 @@ EXTERN int      updating_screen INIT(= FALSE);
 
 #if defined(FEAT_CLIPBOARD)
 EXTERN VimClipboard clip_star;  /* PRIMARY selection in X11 */
-#if (1)
 #define clip_plus clip_star   /* there is only one clipboard */
 #define ONE_CLIPBOARD
-#endif
 
 #define CLIP_UNNAMED      1
 #define CLIP_UNNAMED_PLUS 2
@@ -646,11 +644,6 @@ EXTERN int      vr_lines_changed INIT(= 0); /* #Lines changed by "gR" so far */
  * Used to protect areas where we could crash.
  */
 EXTERN JMP_BUF lc_jump_env;     /* argument to SETJMP() */
-#if defined(SIGHASARG)
-/* volatile because it is used in signal handlers. */
-EXTERN volatile int lc_signal;  /* caught signal number, 0 when no was signal
-                                   caught; used for mch_libcall() */
-#endif
 /* volatile because it is used in signal handler deathtrap(). */
 EXTERN volatile int lc_active INIT(= FALSE); /* TRUE when lc_jump_env is valid. */
 #endif
@@ -709,15 +702,6 @@ EXTERN int (*mb_char2cells) __ARGS((int c)) INIT(= latin_char2cells);
 EXTERN int (*mb_off2cells) __ARGS((unsigned off, unsigned max_off)) INIT(= latin_off2cells);
 EXTERN int (*mb_ptr2char) __ARGS((char_u *p)) INIT(= latin_ptr2char);
 EXTERN int (*mb_head_off) __ARGS((char_u *base, char_u *p)) INIT(= latin_head_off);
-
-#if defined(USE_ICONV) && defined(DYNAMIC_ICONV)
-/* Pointers to functions and variables to be loaded at runtime */
-EXTERN size_t (*iconv) (iconv_t cd, const char **inbuf, size_t *inbytesleft, char **outbuf, size_t *outbytesleft);
-EXTERN iconv_t (*iconv_open) (const char *tocode, const char *fromcode);
-EXTERN int (*iconv_close) (iconv_t cd);
-EXTERN int (*iconvctl) (iconv_t cd, int request, void *argument);
-EXTERN int* (*iconv_errno) (void);
-#endif
 
 /*
  * "State" is the main state of Vim.
@@ -782,7 +766,7 @@ EXTERN int      msg_silent INIT(= 0);   /* don't print messages */
 EXTERN int      emsg_silent INIT(= 0);  /* don't print error messages */
 EXTERN int      cmd_silent INIT(= FALSE); /* don't echo the command line */
 
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG) || defined(FEAT_AUTOCMD)
+#if defined(FEAT_CON_DIALOG) || defined(FEAT_AUTOCMD)
 #define HAS_SWAP_EXISTS_ACTION
 EXTERN int      swap_exists_action INIT(= SEA_NONE);
                                         /* For dialog when swap file already
@@ -937,19 +921,6 @@ EXTERN char     breakat_flags[256];     /* which characters are in 'breakat' */
 extern char *Version;
 extern char *longVersion;
 
-/*
- * Some file names are stored in pathdef.c, which is generated from the
- * Makefile to make their value depend on the Makefile.
- */
-#if defined(HAVE_PATHDEF)
-extern char_u *default_vim_dir;
-extern char_u *default_vimruntime_dir;
-extern char_u *all_cflags;
-extern char_u *all_lflags;
-extern char_u *compiled_user;
-extern char_u *compiled_sys;
-#endif
-
 /* When a window has a local directory, the absolute path of the global
  * current directory is stored here (in allocated memory).  If the current
  * directory is not a local directory, globaldir is NULL. */
@@ -1078,11 +1049,6 @@ EXTERN linenr_T printer_page_num;
 EXTERN int      typebuf_was_filled INIT(= FALSE); /* received text from client
                                                      or from feedkeys() */
 
-#if defined(FEAT_CLIENTSERVER)
-EXTERN char_u   *serverName INIT(= NULL);       /* name of the server */
-EXTERN HWND     clientWindow INIT(= 0);
-#endif
-
 EXTERN int      term_is_xterm INIT(= FALSE);    /* xterm-like 'term' */
 
 #if defined(FEAT_VIRTUALEDIT)
@@ -1146,13 +1112,6 @@ EXTERN char_u e_invexpr2[]      INIT(= N_("E15: Invalid expression: %s"));
 EXTERN char_u e_invrange[]      INIT(= N_("E16: Invalid range"));
 EXTERN char_u e_invcmd[]        INIT(= N_("E476: Invalid command"));
 EXTERN char_u e_isadir2[]       INIT(= N_("E17: \"%s\" is a directory"));
-#if defined(FEAT_LIBCALL)
-EXTERN char_u e_libcall[]       INIT(= N_("E364: Library call failed for \"%s()\""));
-#endif
-#if defined(DYNAMIC_ICONV)
-EXTERN char_u e_loadlib[]       INIT(= N_("E370: Could not load library %s"));
-EXTERN char_u e_loadfunc[]      INIT(= N_("E448: Could not load library function %s"));
-#endif
 EXTERN char_u e_markinval[]     INIT(= N_("E19: Mark has invalid line number"));
 EXTERN char_u e_marknotset[]    INIT(= N_("E20: Mark not set"));
 EXTERN char_u e_modifiable[]    INIT(= N_("E21: Cannot make changes, 'modifiable' is off"));
@@ -1181,9 +1140,6 @@ EXTERN char_u e_noprevre[]      INIT(= N_("E35: No previous regular expression")
 EXTERN char_u e_norange[]       INIT(= N_("E481: No range allowed"));
 #if defined(FEAT_WINDOWS)
 EXTERN char_u e_noroom[]        INIT(= N_("E36: Not enough room"));
-#endif
-#if defined(FEAT_CLIENTSERVER)
-EXTERN char_u e_noserver[]      INIT(= N_("E247: no registered server named \"%s\""));
 #endif
 EXTERN char_u e_notcreate[]     INIT(= N_("E482: Can't create file %s"));
 EXTERN char_u e_notmp[]         INIT(= N_("E483: Can't get temp file name"));
@@ -1246,9 +1202,6 @@ EXTERN char_u e_winwidth[]      INIT(= N_("E592: 'winwidth' cannot be smaller th
 EXTERN char_u e_write[]         INIT(= N_("E80: Error while writing"));
 EXTERN char_u e_zerocount[]     INIT(= N_("Zero count"));
 EXTERN char_u e_usingsid[]      INIT(= N_("E81: Using <SID> not in a script context"));
-#if defined(FEAT_CLIENTSERVER)
-EXTERN char_u e_invexprmsg[]    INIT(= N_("E449: Invalid expression received"));
-#endif
 EXTERN char_u e_intern2[]       INIT(= N_("E685: Internal error: %s"));
 EXTERN char_u e_maxmempat[]     INIT(= N_("E363: pattern uses more memory than 'maxmempattern'"));
 EXTERN char_u e_emptybuf[]      INIT(= N_("E749: empty buffer"));

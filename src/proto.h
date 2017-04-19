@@ -1,11 +1,6 @@
 /*
  * Machine-dependent routines.
  */
-#define Display int
-#define Widget int
-#define GdkEvent int
-#define GdkEventKey int
-
 #include "os_unix.pro"
 
 #include "buffer.pro"

@@ -28,8 +28,6 @@ void *call_func_retstr __ARGS((char_u *func, int argc, char_u **argv, int safe))
 void *call_func_retlist __ARGS((char_u *func, int argc, char_u **argv, int safe));
 void *save_funccal __ARGS((void));
 void restore_funccal __ARGS((void *vfc));
-void prof_child_enter __ARGS((proftime_T *tm));
-void prof_child_exit __ARGS((proftime_T *tm));
 int eval_foldexpr __ARGS((char_u *arg, int *cp));
 void ex_let __ARGS((exarg_T *eap));
 void list_add_watch __ARGS((list_T *l, listwatch_T *lw));
@@ -126,9 +124,6 @@ void func_line_exec __ARGS((void *cookie));
 void func_line_end __ARGS((void *cookie));
 int func_has_ended __ARGS((void *cookie));
 int func_has_abort __ARGS((void *cookie));
-int read_viminfo_varlist __ARGS((vir_T *virp, int writing));
-void write_viminfo_varlist __ARGS((FILE *fp));
-int store_session_globals __ARGS((FILE *fd));
 void last_set_msg __ARGS((scid_T scriptID));
 void ex_oldfiles __ARGS((exarg_T *eap));
 int modify_fname __ARGS((char_u *src, int *usedlen, char_u **fnamep, char_u **bufp, int *fnamelen));

@@ -62,17 +62,6 @@ static RETSIGTYPE sig_sysmouse __ARGS(SIGPROTOARG);
  * end of autoconf section. To be extended...
  */
 
-/* Are the following #ifdefs still required? And why? Is that for X11? */
-
-#if defined(ESIX) || defined(M_UNIX) && !defined(SCO)
-#if defined(SIGWINCH)
-#undef SIGWINCH
-#endif
-#if defined(TIOCGWINSZ)
-#undef TIOCGWINSZ
-#endif
-#endif
-
 #if defined(SIGWINDOW) && !defined(SIGWINCH) /* hpux 9.01 has it */
 #define SIGWINCH SIGWINDOW
 #endif
@@ -89,11 +78,7 @@ static int      did_set_icon = FALSE;
 
 static void may_core_dump __ARGS((void));
 
-#if defined(HAVE_UNION_WAIT)
-typedef union wait waitstatus;
-#else
 typedef int waitstatus;
-#endif
 static pid_t wait4pid __ARGS((pid_t, waitstatus *));
 
 static int  WaitForChar __ARGS((long));
@@ -360,9 +345,6 @@ mch_char_avail()
 #if defined(HAVE_SYS_RESOURCE_H)
 #include <sys/resource.h>
 #endif
-#if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTL)
-#include <sys/sysctl.h>
-#endif
 #if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
 #include <sys/sysinfo.h>
 #endif
@@ -377,18 +359,6 @@ mch_total_mem(special)
 {
     long_u      mem = 0;
     long_u      shiftright = 10;  /* how much to shift "mem" right for Kbyte */
-
-#if defined(HAVE_SYSCTL)
-    int         mib[2], physmem;
-    size_t      len;
-
-    /* BSD way of getting the amount of RAM available. */
-    mib[0] = CTL_HW;
-    mib[1] = HW_USERMEM;
-    len = sizeof(physmem);
-    if (sysctl(mib, 2, &physmem, &len, NULL, 0) == 0)
-        mem = (long_u)physmem;
-#endif
 
 #if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
     if (mem == 0)
@@ -554,11 +524,6 @@ check_stack_growth(p)
 #if defined(HAVE_STACK_LIMIT)
 static char *stack_limit = NULL;
 
-#if defined(_THREAD_SAFE) && defined(HAVE_PTHREAD_NP_H)
-#include <pthread.h>
-#include <pthread_np.h>
-#endif
-
 /*
  * Find out until how var the stack can grow without getting into trouble.
  * Called when starting up and when switching to the signal stack in
@@ -581,23 +546,6 @@ get_stack_limit()
        )
     {
         lim = (long)rlp.rlim_cur;
-#if defined(_THREAD_SAFE) && defined(HAVE_PTHREAD_NP_H)
-        {
-            pthread_attr_t  attr;
-            size_t          size;
-
-            /* On FreeBSD the initial thread always has a fixed stack size, no
-             * matter what the limits are set to.  Normally it's 1 Mbyte. */
-            pthread_attr_init(&attr);
-            if (pthread_attr_get_np(pthread_self(), &attr) == 0)
-            {
-                pthread_attr_getstacksize(&attr, &size);
-                if (lim > (long)size)
-                    lim = (long)size;
-            }
-            pthread_attr_destroy(&attr);
-        }
-#endif
         if (stack_grows_downwards)
         {
             stack_limit = (char *)((long)&i - (lim / 16L * 15L));
@@ -664,11 +612,7 @@ init_signal_stack()
     {
 #if defined(HAVE_SIGALTSTACK)
 
-#if defined(HAVE_SS_BASE)
-        sigstk.ss_base = signal_stack;
-#else
         sigstk.ss_sp = signal_stack;
-#endif
         sigstk.ss_size = SIGSTKSZ;
         sigstk.ss_flags = 0;
         (void)sigaltstack(&sigstk, NULL);
@@ -739,53 +683,6 @@ sig_alarm SIGDEFARG(sigarg)
 }
 #endif
 
-#if defined(HAVE_SETJMP_H) && defined(FEAT_LIBCALL)
-/*
- * A simplistic version of setjmp() that only allows one level of using.
- * Don't call twice before calling mch_endjmp()!.
- * Usage:
- *      mch_startjmp();
- *      if (SETJMP(lc_jump_env) != 0)
- *      {
- *          mch_didjmp();
- *          EMSG("crash!");
- *      }
- *      else
- *      {
- *          do_the_work;
- *          mch_endjmp();
- *      }
- * Note: Can't move SETJMP() here, because a function calling setjmp() must
- * not return before the saved environment is used.
- * Returns OK for normal return, FAIL when the protected code caused a
- * problem and LONGJMP() was used.
- */
-    void
-mch_startjmp()
-{
-#if defined(SIGHASARG)
-    lc_signal = 0;
-#endif
-    lc_active = TRUE;
-}
-
-    void
-mch_endjmp()
-{
-    lc_active = FALSE;
-}
-
-    void
-mch_didjmp()
-{
-#if defined(HAVE_SIGALTSTACK) || defined(HAVE_SIGSTACK)
-    /* On FreeBSD the signal stack has to be reset after using siglongjmp(),
-     * otherwise catching the signal only works once. */
-    init_signal_stack();
-#endif
-}
-#endif
-
 /*
  * This function handles deadly signals.
  * It tries to preserve any swap files and exit properly.
@@ -811,9 +708,6 @@ deathtrap SIGDEFARG(sigarg)
      */
     if (lc_active)
     {
-#if defined(SIGHASARG)
-        lc_signal = sigarg;
-#endif
         lc_active = FALSE;      /* don't jump again */
         LONGJMP(lc_jump_env, 1);
         /* NOTREACHED */
@@ -1217,8 +1111,6 @@ mch_input_isatty()
 
 #if defined(FEAT_TITLE)
 
-#if (1)
-
     static int
 get_x11_title(test_only)
     int     test_only UNUSED;
@@ -1239,8 +1131,6 @@ get_x11_icon(test_only)
     }
     return FALSE;
 }
-
-#endif
 
     int
 mch_can_restore_title()
@@ -1282,8 +1172,7 @@ mch_settitle(title, icon)
      */
     if ((type || *T_TS != NUL) && title != NULL)
     {
-        if (oldtitle == NULL
-                )               /* first call but not in GUI, save title */
+        if (oldtitle == NULL)               /* first call but not in GUI, save title */
             (void)get_x11_title(FALSE);
 
         if (*T_TS != NUL)               /* it's OK if t_fs is empty */
@@ -1293,8 +1182,7 @@ mch_settitle(title, icon)
 
     if ((type || *T_CIS != NUL) && icon != NULL)
     {
-        if (oldicon == NULL
-                )               /* first call, save icon */
+        if (oldicon == NULL)               /* first call, save icon */
             get_x11_icon(FALSE);
 
         if (*T_CIS != NUL)
@@ -1478,10 +1366,6 @@ mch_get_host_name(s, len)
         vim_strncpy(s, (char_u *)vutsname.nodename, len - 1);
 }
 #else
-
-#if defined(HAVE_SYS_SYSTEMINFO_H)
-#define gethostname(nam, len) sysinfo(SI_HOSTNAME, nam, len)
-#endif
 
     void
 mch_get_host_name(s, len)
@@ -2261,8 +2145,7 @@ mch_setmouse(on)
 check_mouse_termcode()
 {
 #if defined(FEAT_MOUSE_XTERM)
-    if (use_xterm_mouse()
-            )
+    if (use_xterm_mouse())
     {
         set_mouse_termcode(KS_MOUSE, (char_u *)(term_is_8bit(T_NAME) ? "\233M" : "\033[M"));
         if (*p_mouse != NUL)
@@ -2278,14 +2161,12 @@ check_mouse_termcode()
 #endif
 
 #if defined(FEAT_MOUSE_GPM)
-    if (!use_xterm_mouse()
-            )
+    if (!use_xterm_mouse())
         set_mouse_termcode(KS_MOUSE, (char_u *)"\033MG");
 #endif
 
 #if defined(FEAT_SYSMOUSE)
-    if (!use_xterm_mouse()
-            )
+    if (!use_xterm_mouse())
         set_mouse_termcode(KS_MOUSE, (char_u *)"\033MS");
 #endif
 
@@ -2302,8 +2183,6 @@ mch_screenmode(arg)
     EMSG(_(e_screenmode));
     return FAIL;
 }
-
-#if (1)
 
 /*
  * Try to get the current window size:
@@ -2410,8 +2289,6 @@ mch_set_shellsize()
     }
 }
 
-#endif
-
 /*
  * Rows and/or Columns has changed.
  */
@@ -2461,7 +2338,6 @@ mch_call_shell(cmd, options)
     int         options;        /* SHELL_*, see vim.h */
 {
     int         tmode = cur_tmode;
-#if (1)
 
 #define EXEC_FAILED 122    /* Exit code when shell didn't execute.  Don't use
                                127, some shells use that already */
@@ -2470,11 +2346,7 @@ mch_call_shell(cmd, options)
     pid_t       pid;
     pid_t       wpid = 0;
     pid_t       wait_pid = 0;
-#if defined(HAVE_UNION_WAIT)
-    union wait  status;
-#else
     int         status = -1;
-#endif
     int         retval = -1;
     char        **argv = NULL;
     int         argc;
@@ -2581,8 +2453,7 @@ mch_call_shell(cmd, options)
      * input from the buffer: Try using a pseudo-tty to get the stdin/stdout
      * of the executed command into the Vim window.  Or use a pipe.
      */
-    if ((options & (SHELL_READ|SHELL_WRITE))
-                    )
+    if ((options & (SHELL_READ|SHELL_WRITE)))
     {
         {
             pipe_error = (pipe(fd_toshell) < 0);
@@ -2608,8 +2479,7 @@ mch_call_shell(cmd, options)
         if ((pid = fork()) == -1)       /* maybe we should use vfork() */
         {
             MSG_PUTS(_("\nCannot fork\n"));
-            if ((options & (SHELL_READ|SHELL_WRITE))
-                    )
+            if ((options & (SHELL_READ|SHELL_WRITE)))
             {
                 {
                     close(fd_toshell[0]);
@@ -2659,10 +2529,8 @@ mch_call_shell(cmd, options)
                     close(fd);
                 }
             }
-            else if ((options & (SHELL_READ|SHELL_WRITE))
-                    )
+            else if ((options & (SHELL_READ|SHELL_WRITE)))
             {
-
 #if defined(HAVE_SETSID)
                 /* Create our own process group, so that the child and all its
                  * children can be kill()ed.  Don't do this when using pipes,
@@ -2720,7 +2588,6 @@ mch_call_shell(cmd, options)
                     close(1);
                     ignored = dup(fd_fromshell[1]);
                     close(fd_fromshell[1]);
-
                 }
             }
 
@@ -2748,8 +2615,7 @@ mch_call_shell(cmd, options)
              * This is also used to pipe stdin/stdout to/from the external
              * command.
              */
-            if ((options & (SHELL_READ|SHELL_WRITE))
-               )
+            if ((options & (SHELL_READ|SHELL_WRITE)))
             {
 #define BUFLEN 100             /* length for buffer, pseudo tty limit is 128 */
                 char_u      buffer[BUFLEN + 1];
@@ -2947,8 +2813,7 @@ mch_call_shell(cmd, options)
                                 c = TERMCAP2KEY(ta_buf[i + 1], ta_buf[i + 2]);
                                 if (c == K_DEL || c == K_KDEL || c == K_BS)
                                 {
-                                    mch_memmove(ta_buf + i + 1, ta_buf + i + 3,
-                                                       (size_t)(len - i - 2));
+                                    mch_memmove(ta_buf + i + 1, ta_buf + i + 3, (size_t)(len - i - 2));
                                     if (c == K_DEL || c == K_KDEL)
                                         ta_buf[i] = DEL;
                                     else
@@ -2959,8 +2824,7 @@ mch_call_shell(cmd, options)
                             else if (ta_buf[i] == '\r')
                                 ta_buf[i] = '\n';
                             if (has_mbyte)
-                                i += (*mb_ptr2len_len)(ta_buf + i,
-                                                        ta_len + len - i) - 1;
+                                i += (*mb_ptr2len_len)(ta_buf + i, ta_len + len - i) - 1;
                         }
 
                         /*
@@ -3012,8 +2876,7 @@ mch_call_shell(cmd, options)
 
                     if (got_int)
                     {
-                        /* CTRL-C sends a signal to the child, we ignore it
-                         * ourselves */
+                        /* CTRL-C sends a signal to the child, we ignore it ourselves */
 #if defined(HAVE_SETSID)
                         kill(-pid, SIGINT);
 #else
@@ -3151,7 +3014,6 @@ mch_call_shell(cmd, options)
                     }
                     else
                         wait_pid = 0;
-
                 }
 finished:
                 p_more = p_more_save;
@@ -3243,8 +3105,6 @@ error:
     vim_free(newcmd);
 
     return retval;
-
-#endif
 }
 
 /*
@@ -3307,7 +3167,6 @@ WaitForChar(msec)
     return avail;
 }
 
-#if (1)
 /*
  * Wait "msec" msec until a character is available from file descriptor "fd".
  * "msec" == 0 will check for characters once.
@@ -3507,7 +3366,6 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
     size_t      len;
     char_u      *p;
     int         dir;
-#if (1)
     /*
      * This is the non-OS/2 implementation (really Unix).
      */
@@ -3959,11 +3817,7 @@ notfound:
     if (flags & EW_NOTFOUND)
         return save_patterns(num_pat, pat, num_file, file);
     return FAIL;
-
-#endif
 }
-
-#endif
 
     static int
 save_patterns(num_pat, pat, num_file, file)
@@ -4299,175 +4153,5 @@ sig_sysmouse SIGDEFARG(sigarg)
         add_to_input_buf(string, 6);
     }
     return;
-}
-#endif
-
-#if defined(FEAT_LIBCALL)
-typedef char_u * (*STRPROCSTR)__ARGS((char_u *));
-typedef char_u * (*INTPROCSTR)__ARGS((int));
-typedef int (*STRPROCINT)__ARGS((char_u *));
-typedef int (*INTPROCINT)__ARGS((int));
-
-/*
- * Call a DLL routine which takes either a string or int param
- * and returns an allocated string.
- */
-    int
-mch_libcall(libname, funcname, argstring, argint, string_result, number_result)
-    char_u      *libname;
-    char_u      *funcname;
-    char_u      *argstring;     /* NULL when using a argint */
-    int         argint;
-    char_u      **string_result;/* NULL when using number_result */
-    int         *number_result;
-{
-#if defined(USE_DLOPEN)
-    void        *hinstLib;
-    char        *dlerr = NULL;
-#else
-    shl_t       hinstLib;
-#endif
-    STRPROCSTR  ProcAdd;
-    INTPROCSTR  ProcAddI;
-    char_u      *retval_str = NULL;
-    int         retval_int = 0;
-    int         success = FALSE;
-
-    /*
-     * Get a handle to the DLL module.
-     */
-#if defined(USE_DLOPEN)
-    /* First clear any error, it's not cleared by the dlopen() call. */
-    (void)dlerror();
-
-    hinstLib = dlopen((char *)libname, RTLD_LAZY
-#if defined(RTLD_LOCAL)
-            | RTLD_LOCAL
-#endif
-            );
-    if (hinstLib == NULL)
-    {
-        /* "dlerr" must be used before dlclose() */
-        dlerr = (char *)dlerror();
-        if (dlerr != NULL)
-            EMSG2(_("dlerror = \"%s\""), dlerr);
-    }
-#else
-    hinstLib = shl_load((const char*)libname, BIND_IMMEDIATE|BIND_VERBOSE, 0L);
-#endif
-
-    /* If the handle is valid, try to get the function address. */
-    if (hinstLib != NULL)
-    {
-#if defined(HAVE_SETJMP_H)
-        /*
-         * Catch a crash when calling the library function.  For example when
-         * using a number where a string pointer is expected.
-         */
-        mch_startjmp();
-        if (SETJMP(lc_jump_env) != 0)
-        {
-            success = FALSE;
-#if defined(USE_DLOPEN)
-            dlerr = NULL;
-#endif
-            mch_didjmp();
-        }
-        else
-#endif
-        {
-            retval_str = NULL;
-            retval_int = 0;
-
-            if (argstring != NULL)
-            {
-#if defined(USE_DLOPEN)
-                ProcAdd = (STRPROCSTR)dlsym(hinstLib, (const char *)funcname);
-                dlerr = (char *)dlerror();
-#else
-                if (shl_findsym(&hinstLib, (const char *)funcname,
-                                        TYPE_PROCEDURE, (void *)&ProcAdd) < 0)
-                    ProcAdd = NULL;
-#endif
-                if ((success = (ProcAdd != NULL
-#if defined(USE_DLOPEN)
-                            && dlerr == NULL
-#endif
-                            )))
-                {
-                    if (string_result == NULL)
-                        retval_int = ((STRPROCINT)ProcAdd)(argstring);
-                    else
-                        retval_str = (ProcAdd)(argstring);
-                }
-            }
-            else
-            {
-#if defined(USE_DLOPEN)
-                ProcAddI = (INTPROCSTR)dlsym(hinstLib, (const char *)funcname);
-                dlerr = (char *)dlerror();
-#else
-                if (shl_findsym(&hinstLib, (const char *)funcname,
-                                       TYPE_PROCEDURE, (void *)&ProcAddI) < 0)
-                    ProcAddI = NULL;
-#endif
-                if ((success = (ProcAddI != NULL
-#if defined(USE_DLOPEN)
-                            && dlerr == NULL
-#endif
-                            )))
-                {
-                    if (string_result == NULL)
-                        retval_int = ((INTPROCINT)ProcAddI)(argint);
-                    else
-                        retval_str = (ProcAddI)(argint);
-                }
-            }
-
-            /* Save the string before we free the library. */
-            /* Assume that a "1" or "-1" result is an illegal pointer. */
-            if (string_result == NULL)
-                *number_result = retval_int;
-            else if (retval_str != NULL
-                    && retval_str != (char_u *)1
-                    && retval_str != (char_u *)-1)
-                *string_result = vim_strsave(retval_str);
-        }
-
-#if defined(HAVE_SETJMP_H)
-        mch_endjmp();
-#if defined(SIGHASARG)
-        if (lc_signal != 0)
-        {
-            int i;
-
-            /* try to find the name of this signal */
-            for (i = 0; signal_info[i].sig != -1; i++)
-                if (lc_signal == signal_info[i].sig)
-                    break;
-            EMSG2("E368: got SIG%s in libcall()", signal_info[i].name);
-        }
-#endif
-#endif
-
-#if defined(USE_DLOPEN)
-        /* "dlerr" must be used before dlclose() */
-        if (dlerr != NULL)
-            EMSG2(_("dlerror = \"%s\""), dlerr);
-
-        /* Free the DLL module. */
-        (void)dlclose(hinstLib);
-#else
-        (void)shl_unload(hinstLib);
-#endif
-    }
-
-    if (!success)
-    {
-        EMSG2(_(e_libcall), funcname);
-        return FAIL;
-    }
-
-    return OK;
 }
 #endif

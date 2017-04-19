@@ -965,13 +965,11 @@ ml_recover()
         goto theend;
     }
 
-#if (1)
     if (b0p->b0_id[1] != BLOCK0_ID1)
     {
         EMSG2(_("E833: %s is encrypted and this version of Vim does not support encryption"), mfp->mf_fname);
         goto theend;
     }
-#endif
 
     /*
      * If we guessed the wrong page size, we have to recalculate the
@@ -1627,7 +1625,7 @@ make_percent_swname(dir, name)
     return d;
 }
 
-#if (defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG))
+#if defined(FEAT_CON_DIALOG)
 static int process_still_running;
 #endif
 
@@ -1716,7 +1714,7 @@ swapfile_info(fname)
                     if (kill((pid_t)char_to_long(b0.b0_pid), 0) == 0)
                     {
                         MSG_PUTS(_(" (still running)"));
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
                         process_still_running = TRUE;
 #endif
                     }
@@ -2698,8 +2696,7 @@ ml_delete_int(buf, lnum, message)
  */
     if (buf->b_ml.ml_line_count == 1)       /* file becomes empty */
     {
-        if (message
-           )
+        if (message)
             set_keep_msg((char_u *)_(no_lines_msg), 0);
 
         /* FEAT_BYTEOFF already handled in there, don't worry 'bout it below */
@@ -3948,7 +3945,7 @@ findswapname(buf, dirp, old_fname)
                     }
 #endif
 
-#if (defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG))
+#if defined(FEAT_CON_DIALOG)
                     process_still_running = FALSE;
 #endif
 #if defined(FEAT_AUTOCMD)
@@ -3972,7 +3969,7 @@ findswapname(buf, dirp, old_fname)
                         got_int = FALSE;
                     }
 
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
                     if (swap_exists_action != SEA_NONE && choice == 0)
                     {
                         char_u  *name;

@@ -522,7 +522,6 @@ init_class_tab()
     done = TRUE;
 }
 
-#if (1)
 #define ri_digit(c)    (c < 0x100 && (class_tab[c] & RI_DIGIT))
 #define ri_hex(c)      (c < 0x100 && (class_tab[c] & RI_HEX))
 #define ri_octal(c)    (c < 0x100 && (class_tab[c] & RI_OCTAL))
@@ -532,17 +531,6 @@ init_class_tab()
 #define ri_lower(c)    (c < 0x100 && (class_tab[c] & RI_LOWER))
 #define ri_upper(c)    (c < 0x100 && (class_tab[c] & RI_UPPER))
 #define ri_white(c)    (c < 0x100 && (class_tab[c] & RI_WHITE))
-#else
-#define ri_digit(c)    (class_tab[c] & RI_DIGIT)
-#define ri_hex(c)      (class_tab[c] & RI_HEX)
-#define ri_octal(c)    (class_tab[c] & RI_OCTAL)
-#define ri_word(c)     (class_tab[c] & RI_WORD)
-#define ri_head(c)     (class_tab[c] & RI_HEAD)
-#define ri_alpha(c)    (class_tab[c] & RI_ALPHA)
-#define ri_lower(c)    (class_tab[c] & RI_LOWER)
-#define ri_upper(c)    (class_tab[c] & RI_UPPER)
-#define ri_white(c)    (class_tab[c] & RI_WHITE)
-#endif
 
 /* flags for regflags */
 #define RF_ICASE    1   /* ignore case */
@@ -661,15 +649,9 @@ static int      use_multibytecode __ARGS((int c));
 static int      prog_magic_wrong __ARGS((void));
 static char_u   *regnext __ARGS((char_u *));
 static void     regc __ARGS((int b));
-#if (1)
 static void     regmbc __ARGS((int c));
 #define REGMBC(x) regmbc(x);
 #define CASEMBC(x) case x:
-#else
-#define regmbc(c) regc(c)
-#define REGMBC(x)
-#define CASEMBC(x)
-#endif
 static void     reginsert __ARGS((int, char_u *));
 static void     reginsert_nr __ARGS((int op, long val, char_u *opnd));
 static void     reginsert_limits __ARGS((int, long, long, char_u *));
@@ -5059,7 +5041,6 @@ regmatch(scan)
                 }
                 else
                     status = RA_NOMATCH;
-
             }
             break;
 
@@ -5149,7 +5130,6 @@ regmatch(scan)
 
         /* Continue in inner loop, advance to next item. */
         scan = next;
-
     } /* end of inner loop */
 
     /*
@@ -5546,7 +5526,6 @@ regmatch(scan)
             got_int = TRUE;
         return (status == RA_MATCH);
     }
-
   } /* End of loop until the regstack is empty. */
 
   /* NOTREACHED */

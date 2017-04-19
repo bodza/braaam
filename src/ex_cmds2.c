@@ -530,10 +530,8 @@ ex_breakdel(eap)
     gap = &dbg_breakp;
     if (eap->cmdidx == CMD_profdel)
     {
-#if (1)
         ex_ni(eap);
         return;
-#endif
     }
 
     if (vim_isdigit(*eap->arg))
@@ -823,7 +821,7 @@ profile_zero(tm)
 
 #endif
 
-#if defined(FEAT_SYN_HL) && defined(FEAT_RELTIME) && defined(FEAT_FLOAT)
+#if defined(FEAT_SYN_HL) && defined(FEAT_RELTIME)
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
@@ -916,7 +914,7 @@ check_changed(buf, flags)
             && ((flags & CCGD_MULTWIN) || buf->b_nwindows <= 1)
             && (!(flags & CCGD_AW) || autowrite(buf, forceit) == FAIL))
     {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
         if ((p_confirm || cmdmod.confirm) && p_write)
         {
             buf_T       *buf2;
@@ -951,7 +949,7 @@ check_changed(buf, flags)
     return FALSE;
 }
 
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
 
 /*
  * Ask the user what to do when abandoning a changed buffer.
@@ -1132,7 +1130,7 @@ check_changed_any(hidden)
 
     ret = TRUE;
     exiting = FALSE;
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
     /*
      * When ":confirm" used, don't give an error message.
      */
@@ -1335,18 +1333,6 @@ get_arglist_exp(str, fcountp, fnamesp, wig)
 
     ga_clear(&ga);
     return i;
-}
-#endif
-
-#if defined(FEAT_CLIENTSERVER)
-/*
- * Redefine the argument list.
- */
-    void
-set_arglist(str)
-    char_u      *str;
-{
-    do_arglist(str, AL_SET, 0);
 }
 #endif
 
@@ -2766,7 +2752,6 @@ free_scriptnames()
 
 #if defined(USE_CR)
 
-#if (1)
 /*
  * Version of fgets() which also works for lines ending in a <CR> only
  * (Macintosh format).
@@ -2805,7 +2790,6 @@ fgets_cr(s, n, stream)
 
     return s;
 }
-#endif
 #endif
 
 /*
@@ -3333,7 +3317,7 @@ ex_language(eap)
 #endif
         {
             loc = setlocale(what, (char *)name);
-#if defined(FEAT_FLOAT) && defined(LC_NUMERIC)
+#if defined(LC_NUMERIC)
             /* Make sure strtod() uses a decimal point, not a comma. */
             setlocale(LC_NUMERIC, "C");
 #endif

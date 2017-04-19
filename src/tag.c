@@ -1303,8 +1303,7 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
         ga_init2(&ga_match[mtt], (int)sizeof(struct match_found *), 100);
 
     /* check for out of memory situation */
-    if (lbuf == NULL || tag_fname == NULL
-                                                        )
+    if (lbuf == NULL || tag_fname == NULL)
         goto findtag_end;
 
     /*
@@ -1362,7 +1361,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
          * single file is found, an error message is given (further on).
          */
         {
-
             if ((fp = mch_fopen((char *)tag_fname, "r")) == NULL)
                 continue;
 
@@ -1635,14 +1633,11 @@ parse_line:
              * For "normal" tags: Do a quick check if the tag matches.
              * This speeds up tag searching a lot!
              */
-            if (orgpat.headlen
-                                        )
+            if (orgpat.headlen)
             {
                 tagp.tagname = lbuf;
-#if (1)
                 tagp.tagname_end = vim_strchr(lbuf, TAB);
                 if (tagp.tagname_end == NULL)
-#endif
                 {
                     if (vim_strchr(lbuf, NL) == NULL)
                     {
@@ -1788,11 +1783,9 @@ parse_line:
                  * Can be a matching tag, isolate the file name and command.
                  */
                     tagp.fname = tagp.tagname_end + 1;
-#if (1)
                 tagp.fname_end = vim_strchr(tagp.fname, TAB);
                 tagp.command = tagp.fname_end + 1;
                 if (tagp.fname_end == NULL)
-#endif
                     i = FAIL;
                 else
                     i = OK;
@@ -2063,7 +2056,6 @@ parse_line:
 
         if (stop_searching)
             break;
-
       } /* end of for-each-file loop */
 
             tagname_free(&tn);
@@ -2315,31 +2307,23 @@ parse_tag_line(lbuf,
 
         /* Isolate the tagname, from lbuf up to the first white */
         tagp->tagname = lbuf;
-#if (1)
         p = vim_strchr(lbuf, TAB);
         if (p == NULL)
             return FAIL;
-#endif
         tagp->tagname_end = p;
 
         /* Isolate file name, from first to second white space */
-#if (1)
         if (*p != NUL)
             ++p;
-#endif
         tagp->fname = p;
-#if (1)
         p = vim_strchr(p, TAB);
         if (p == NULL)
             return FAIL;
-#endif
         tagp->fname_end = p;
 
         /* find start of search command, after second white space */
-#if (1)
         if (*p != NUL)
             ++p;
-#endif
         if (*p == NUL)
             return FAIL;
         tagp->command = p;

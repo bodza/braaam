@@ -4,7 +4,7 @@
 
 #include "vim.h"
 
-#if defined(FEAT_FLOAT) && defined(HAVE_MATH_H)
+#if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
 
@@ -87,9 +87,7 @@ static char *e_dictrange = N_("E719: Cannot use [:] with a Dictionary");
 static char *e_letwrong = N_("E734: Wrong variable type for %s=");
 static char *e_nofunc = N_("E130: Unknown function: %s");
 static char *e_illvar = N_("E461: Illegal variable name: %s");
-#if defined(FEAT_FLOAT)
 static char *e_float_as_string = N_("E806: using Float as a String");
-#endif
 
 static dictitem_T       globvars_var;           /* variable used for g: */
 #define globvarht globvardict.dv_hashtab
@@ -400,9 +398,7 @@ static int get_dict_tv __ARGS((char_u **arg, typval_T *rettv, int evaluate));
 static char_u *echo_string __ARGS((typval_T *tv, char_u **tofree, char_u *numbuf, int copyID));
 static char_u *tv2string __ARGS((typval_T *tv, char_u **tofree, char_u *numbuf, int copyID));
 static char_u *string_quote __ARGS((char_u *str, int function));
-#if defined(FEAT_FLOAT)
 static int string2float __ARGS((char_u *text, float_T *value));
-#endif
 static int get_env_tv __ARGS((char_u **arg, typval_T *rettv, int evaluate));
 static int find_internal_func __ARGS((char_u *name));
 static char_u *deref_func_name __ARGS((char_u *name, int *lenp, int no_autoload));
@@ -411,10 +407,8 @@ static int call_func __ARGS((char_u *funcname, int len, typval_T *rettv, int arg
 static void emsg_funcname __ARGS((char *ermsg, char_u *name));
 static int non_zero_arg __ARGS((typval_T *argvars));
 
-#if defined(FEAT_FLOAT)
 static void f_abs __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_acos __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_add __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_and __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_append __ARGS((typval_T *argvars, typval_T *rettv));
@@ -422,11 +416,9 @@ static void f_argc __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_argidx __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_arglistid __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_argv __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_asin __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_atan __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_atan2 __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_browse __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_browsedir __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_bufexists __ARGS((typval_T *argvars, typval_T *rettv));
@@ -440,9 +432,7 @@ static void byteidx __ARGS((typval_T *argvars, typval_T *rettv, int comp));
 static void f_byteidx __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_byteidxcomp __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_call __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_ceil __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_changenr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_char2nr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_cindent __ARGS((typval_T *argvars, typval_T *rettv));
@@ -455,10 +445,8 @@ static void f_complete_check __ARGS((typval_T *argvars, typval_T *rettv));
 #endif
 static void f_confirm __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_copy __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_cos __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_cosh __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_count __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_cscope_connection __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_cursor __ARGS((typval_T *argsvars, typval_T *rettv));
@@ -474,9 +462,7 @@ static void f_eventhandler __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_executable __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_exepath __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_exists __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_exp __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_expand __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_extend __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_feedkeys __ARGS((typval_T *argvars, typval_T *rettv));
@@ -485,11 +471,9 @@ static void f_filewritable __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_filter __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_finddir __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_findfile __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_float2nr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_floor __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_fmod __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_fnameescape __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_fnamemodify __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_foldclosed __ARGS((typval_T *argvars, typval_T *rettv));
@@ -560,16 +544,12 @@ static void f_join __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_keys __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_last_buffer_nr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_len __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_libcall __ARGS((typval_T *argvars, typval_T *rettv));
-static void f_libcallnr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_line __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_line2byte __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_lispindent __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_localtime __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_log __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_log10 __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_map __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_maparg __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_mapcheck __ARGS((typval_T *argvars, typval_T *rettv));
@@ -591,9 +571,7 @@ static void f_nextnonblank __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_nr2char __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_or __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_pathshorten __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_pow __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_prevnonblank __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_printf __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_pumvisible __ARGS((typval_T *argvars, typval_T *rettv));
@@ -611,9 +589,7 @@ static void f_rename __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_repeat __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_resolve __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_reverse __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_round __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_screenattr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_screenchar __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_screencol __ARGS((typval_T *argvars, typval_T *rettv));
@@ -639,19 +615,15 @@ static void f_setwinvar __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_shellescape __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_shiftwidth __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_simplify __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_sin __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_sinh __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_sort __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_soundfold __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_spellbadword __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_spellsuggest __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_split __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_sqrt __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_str2float __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_str2nr __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_strchars __ARGS((typval_T *argvars, typval_T *rettv));
 #if defined(HAVE_STRFTIME)
@@ -681,16 +653,12 @@ static void f_taglist __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_tagfiles __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_tempname __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_test __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_tan __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_tanh __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_tolower __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_toupper __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_tr __ARGS((typval_T *argvars, typval_T *rettv));
-#if defined(FEAT_FLOAT)
 static void f_trunc __ARGS((typval_T *argvars, typval_T *rettv));
-#endif
 static void f_type __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_undofile __ARGS((typval_T *argvars, typval_T *rettv));
 static void f_undotree __ARGS((typval_T *argvars, typval_T *rettv));
@@ -1234,9 +1202,7 @@ eval_to_string(arg, nextcmd, convert)
     typval_T    tv;
     char_u      *retval;
     garray_T    ga;
-#if defined(FEAT_FLOAT)
     char_u      numbuf[NUMBUFLEN];
-#endif
 
     if (eval0(arg, &tv, nextcmd, TRUE) == FAIL)
         retval = NULL;
@@ -1254,13 +1220,11 @@ eval_to_string(arg, nextcmd, convert)
             ga_append(&ga, NUL);
             retval = (char_u *)ga.ga_data;
         }
-#if defined(FEAT_FLOAT)
         else if (convert && tv.v_type == VAR_FLOAT)
         {
             vim_snprintf((char *)numbuf, NUMBUFLEN, "%g", tv.vval.v_float);
             retval = vim_strsave(numbuf);
         }
-#endif
         else
             retval = vim_strsave(get_tv_string(&tv));
         clear_tv(&tv);
@@ -2302,8 +2266,7 @@ get_lval(name, rettv, lp, unlet, skip, flags, fne_flags)
     if (expr_start != NULL)
     {
         /* Don't expand the name when we already know there is an error. */
-        if (unlet && !vim_iswhite(*p) && !ends_excmd(*p)
-                                                    && *p != '[' && *p != '.')
+        if (unlet && !vim_iswhite(*p) && !ends_excmd(*p) && *p != '[' && *p != '.')
         {
             EMSG(_(e_trailing));
             return NULL;
@@ -2800,7 +2763,6 @@ tv_op(tv1, tv2, op)
                 {
                     /* nr += nr  or  nr -= nr*/
                     n = get_tv_number(tv1);
-#if defined(FEAT_FLOAT)
                     if (tv2->v_type == VAR_FLOAT)
                     {
                         float_T f = n;
@@ -2814,7 +2776,6 @@ tv_op(tv1, tv2, op)
                         tv1->vval.v_float = f;
                     }
                     else
-#endif
                     {
                         if (*op == '+')
                             n += get_tv_number(tv2);
@@ -2839,7 +2800,6 @@ tv_op(tv1, tv2, op)
                 }
                 return OK;
 
-#if defined(FEAT_FLOAT)
             case VAR_FLOAT:
                 {
                     float_T f;
@@ -2858,7 +2818,6 @@ tv_op(tv1, tv2, op)
                         tv1->vval.v_float -= f;
                 }
                 return OK;
-#endif
         }
     }
 
@@ -3074,7 +3033,6 @@ set_context_for_expression(xp, arg, cmdidx)
                 xp->xp_context = EXPAND_SETTINGS;
                 if ((c == 'l' || c == 'g') && xp->xp_pattern[2] == ':')
                     xp->xp_pattern += 2;
-
             }
         }
         else if (c == '$')
@@ -3315,12 +3273,10 @@ ex_unletlock(eap, argstart, deep)
     do
     {
         /* Parse the name and find the end. */
-        name_end = get_lval(arg, NULL, &lv, TRUE, eap->skip || error, 0,
-                                                             FNE_CHECK_START);
+        name_end = get_lval(arg, NULL, &lv, TRUE, eap->skip || error, 0, FNE_CHECK_START);
         if (lv.ll_name == NULL)
             error = TRUE;           /* error but continue parsing */
-        if (name_end == NULL || (!vim_iswhite(*name_end)
-                                                   && !ends_excmd(*name_end)))
+        if (name_end == NULL || (!vim_iswhite(*name_end) && !ends_excmd(*name_end)))
         {
             if (name_end != NULL)
             {
@@ -3341,8 +3297,7 @@ ex_unletlock(eap, argstart, deep)
             }
             else
             {
-                if (do_lock_var(&lv, name_end, deep,
-                                          eap->cmdidx == CMD_lockvar) == FAIL)
+                if (do_lock_var(&lv, name_end, deep, eap->cmdidx == CMD_lockvar) == FAIL)
                     error = TRUE;
             }
         }
@@ -4232,7 +4187,6 @@ eval4(arg, rettv, evaluate)
                 }
             }
 
-#if defined(FEAT_FLOAT)
             /*
              * If one of the two variables is a float, compare as a float.
              * When using "=~" or "!~", always compare as string.
@@ -4264,7 +4218,6 @@ eval4(arg, rettv, evaluate)
                     case TYPE_NOMATCH:  break;  /* avoid gcc warning */
                 }
             }
-#endif
 
             /*
              * If one of the two variables is a number, compare as a number.
@@ -4358,9 +4311,7 @@ eval5(arg, rettv, evaluate)
     typval_T    var3;
     int         op;
     long        n1, n2;
-#if defined(FEAT_FLOAT)
     float_T     f1 = 0, f2 = 0;
-#endif
     char_u      *s1, *s2;
     char_u      buf1[NUMBUFLEN], buf2[NUMBUFLEN];
     char_u      *p;
@@ -4381,9 +4332,7 @@ eval5(arg, rettv, evaluate)
             break;
 
         if ((op != '+' || rettv->v_type != VAR_LIST)
-#if defined(FEAT_FLOAT)
                 && (op == '.' || rettv->v_type != VAR_FLOAT)
-#endif
                 )
         {
             /* For "list + ...", an illegal use of the first operand as
@@ -4448,14 +4397,12 @@ eval5(arg, rettv, evaluate)
             {
                 int         error = FALSE;
 
-#if defined(FEAT_FLOAT)
                 if (rettv->v_type == VAR_FLOAT)
                 {
                     f1 = rettv->vval.v_float;
                     n1 = 0;
                 }
                 else
-#endif
                 {
                     n1 = get_tv_number_chk(rettv, &error);
                     if (error)
@@ -4466,19 +4413,15 @@ eval5(arg, rettv, evaluate)
                         clear_tv(rettv);
                         return FAIL;
                     }
-#if defined(FEAT_FLOAT)
                     if (var2.v_type == VAR_FLOAT)
                         f1 = n1;
-#endif
                 }
-#if defined(FEAT_FLOAT)
                 if (var2.v_type == VAR_FLOAT)
                 {
                     f2 = var2.vval.v_float;
                     n2 = 0;
                 }
                 else
-#endif
                 {
                     n2 = get_tv_number_chk(&var2, &error);
                     if (error)
@@ -4487,14 +4430,11 @@ eval5(arg, rettv, evaluate)
                         clear_tv(&var2);
                         return FAIL;
                     }
-#if defined(FEAT_FLOAT)
                     if (rettv->v_type == VAR_FLOAT)
                         f2 = n2;
-#endif
                 }
                 clear_tv(rettv);
 
-#if defined(FEAT_FLOAT)
                 /* If there is a float on either side the result is a float. */
                 if (rettv->v_type == VAR_FLOAT || var2.v_type == VAR_FLOAT)
                 {
@@ -4506,7 +4446,6 @@ eval5(arg, rettv, evaluate)
                     rettv->vval.v_float = f1;
                 }
                 else
-#endif
                 {
                     if (op == '+')
                         n1 = n1 + n2;
@@ -4543,10 +4482,8 @@ eval6(arg, rettv, evaluate, want_string)
     typval_T    var2;
     int         op;
     long        n1, n2;
-#if defined(FEAT_FLOAT)
     int         use_float = FALSE;
     float_T     f1 = 0, f2;
-#endif
     int         error = FALSE;
 
     /*
@@ -4566,7 +4503,6 @@ eval6(arg, rettv, evaluate, want_string)
 
         if (evaluate)
         {
-#if defined(FEAT_FLOAT)
             if (rettv->v_type == VAR_FLOAT)
             {
                 f1 = rettv->vval.v_float;
@@ -4574,7 +4510,6 @@ eval6(arg, rettv, evaluate, want_string)
                 n1 = 0;
             }
             else
-#endif
                 n1 = get_tv_number_chk(rettv, &error);
             clear_tv(rettv);
             if (error)
@@ -4592,7 +4527,6 @@ eval6(arg, rettv, evaluate, want_string)
 
         if (evaluate)
         {
-#if defined(FEAT_FLOAT)
             if (var2.v_type == VAR_FLOAT)
             {
                 if (!use_float)
@@ -4604,23 +4538,19 @@ eval6(arg, rettv, evaluate, want_string)
                 n2 = 0;
             }
             else
-#endif
             {
                 n2 = get_tv_number_chk(&var2, &error);
                 clear_tv(&var2);
                 if (error)
                     return FAIL;
-#if defined(FEAT_FLOAT)
                 if (use_float)
                     f2 = n2;
-#endif
             }
 
             /*
              * Compute the result.
              * When either side is a float the result is a float.
              */
-#if defined(FEAT_FLOAT)
             if (use_float)
             {
                 if (op == '*')
@@ -4640,7 +4570,6 @@ eval6(arg, rettv, evaluate, want_string)
                 rettv->vval.v_float = f1;
             }
             else
-#endif
             {
                 if (op == '*')
                     n1 = n1 * n2;
@@ -4744,7 +4673,6 @@ eval7(arg, rettv, evaluate, want_string)
     case '8':
     case '9':
         {
-#if defined(FEAT_FLOAT)
                 char_u *p = skipdigits(*arg + 1);
                 int    get_float = FALSE;
 
@@ -4782,7 +4710,6 @@ eval7(arg, rettv, evaluate, want_string)
                     }
                 }
                 else
-#endif
                 {
                     vim_str2nr(*arg, NULL, &len, TRUE, TRUE, &n, NULL);
                     *arg += len;
@@ -4931,13 +4858,11 @@ eval7(arg, rettv, evaluate, want_string)
     {
         int         error = FALSE;
         int         val = 0;
-#if defined(FEAT_FLOAT)
         float_T     f = 0.0;
 
         if (rettv->v_type == VAR_FLOAT)
             f = rettv->vval.v_float;
         else
-#endif
             val = get_tv_number_chk(rettv, &error);
         if (error)
         {
@@ -4951,31 +4876,25 @@ eval7(arg, rettv, evaluate, want_string)
                 --end_leader;
                 if (*end_leader == '!')
                 {
-#if defined(FEAT_FLOAT)
                     if (rettv->v_type == VAR_FLOAT)
                         f = !f;
                     else
-#endif
                         val = !val;
                 }
                 else if (*end_leader == '-')
                 {
-#if defined(FEAT_FLOAT)
                     if (rettv->v_type == VAR_FLOAT)
                         f = -f;
                     else
-#endif
                         val = -val;
                 }
             }
-#if defined(FEAT_FLOAT)
             if (rettv->v_type == VAR_FLOAT)
             {
                 clear_tv(rettv);
                 rettv->vval.v_float = f;
             }
             else
-#endif
             {
                 clear_tv(rettv);
                 rettv->v_type = VAR_NUMBER;
@@ -5013,14 +4932,12 @@ eval_index(arg, rettv, evaluate, verbose)
             EMSG(_("E695: Cannot index a Funcref"));
         return FAIL;
     }
-#if defined(FEAT_FLOAT)
     else if (rettv->v_type == VAR_FLOAT)
     {
         if (verbose)
             EMSG(_(e_float_as_string));
         return FAIL;
     }
-#endif
 
     if (**arg == '.')
     {
@@ -5455,7 +5372,6 @@ get_string_tv(arg, rettv, evaluate)
         }
         else
             MB_COPY_CHAR(p, name);
-
     }
     *name = NUL;
     *arg = p + 1;
@@ -5849,10 +5765,8 @@ tv_equal(tv1, tv2, ic, recursive)
         case VAR_NUMBER:
             return tv1->vval.v_number == tv2->vval.v_number;
 
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             return tv1->vval.v_float == tv2->vval.v_float;
-#endif
 
         case VAR_STRING:
             s1 = get_tv_string_buf(tv1, buf1);
@@ -7257,7 +7171,6 @@ dict2string(tv, copyID)
             if (s == NULL || did_echo_string_emsg)
                 break;
             line_breakcheck();
-
         }
     }
     if (todo > 0)
@@ -7479,13 +7392,11 @@ echo_string(tv, tofree, numbuf, copyID)
             r = get_tv_string_buf(tv, numbuf);
             break;
 
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             *tofree = NULL;
             vim_snprintf((char *)numbuf, NUMBUFLEN, "%g", tv->vval.v_float);
             r = numbuf;
             break;
-#endif
 
         default:
             EMSG2(_(e_intern2), "echo_string()");
@@ -7519,12 +7430,10 @@ tv2string(tv, tofree, numbuf, copyID)
         case VAR_STRING:
             *tofree = string_quote(tv->vval.v_string, FALSE);
             return *tofree;
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             *tofree = NULL;
             vim_snprintf((char *)numbuf, NUMBUFLEN - 1, "%g", tv->vval.v_float);
             return numbuf;
-#endif
         case VAR_NUMBER:
         case VAR_LIST:
         case VAR_DICT:
@@ -7581,7 +7490,6 @@ string_quote(str, function)
     return s;
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * Convert the string "text" to a floating point number.
  * This uses strtod().  setlocale(LC_NUMERIC, "C") has been used to make sure
@@ -7600,7 +7508,6 @@ string2float(text, value)
     *value = f;
     return (int)((char_u *)s - text);
 }
-#endif
 
 /*
  * Get the value of an environment variable.
@@ -7672,10 +7579,8 @@ static struct fst
                                 /* implementation of function */
 } functions[] =
 {
-#if defined(FEAT_FLOAT)
     {"abs",             1, 1, f_abs},
     {"acos",            1, 1, f_acos},  /* WJMc */
-#endif
     {"add",             2, 2, f_add},
     {"and",             2, 2, f_and},
     {"append",          2, 2, f_append},
@@ -7683,11 +7588,9 @@ static struct fst
     {"argidx",          0, 0, f_argidx},
     {"arglistid",       0, 2, f_arglistid},
     {"argv",            0, 1, f_argv},
-#if defined(FEAT_FLOAT)
     {"asin",            1, 1, f_asin},  /* WJMc */
     {"atan",            1, 1, f_atan},
     {"atan2",           2, 2, f_atan2},
-#endif
     {"browse",          4, 4, f_browse},
     {"browsedir",       2, 2, f_browsedir},
     {"bufexists",       1, 1, f_bufexists},
@@ -7703,9 +7606,7 @@ static struct fst
     {"byteidx",         2, 2, f_byteidx},
     {"byteidxcomp",     2, 2, f_byteidxcomp},
     {"call",            2, 3, f_call},
-#if defined(FEAT_FLOAT)
     {"ceil",            1, 1, f_ceil},
-#endif
     {"changenr",        0, 0, f_changenr},
     {"char2nr",         1, 2, f_char2nr},
     {"cindent",         1, 1, f_cindent},
@@ -7718,10 +7619,8 @@ static struct fst
 #endif
     {"confirm",         1, 4, f_confirm},
     {"copy",            1, 1, f_copy},
-#if defined(FEAT_FLOAT)
     {"cos",             1, 1, f_cos},
     {"cosh",            1, 1, f_cosh},
-#endif
     {"count",           2, 4, f_count},
     {"cscope_connection",0,3, f_cscope_connection},
     {"cursor",          1, 3, f_cursor},
@@ -7737,9 +7636,7 @@ static struct fst
     {"executable",      1, 1, f_executable},
     {"exepath",         1, 1, f_exepath},
     {"exists",          1, 1, f_exists},
-#if defined(FEAT_FLOAT)
     {"exp",             1, 1, f_exp},
-#endif
     {"expand",          1, 3, f_expand},
     {"extend",          2, 3, f_extend},
     {"feedkeys",        1, 2, f_feedkeys},
@@ -7749,11 +7646,9 @@ static struct fst
     {"filter",          2, 2, f_filter},
     {"finddir",         1, 3, f_finddir},
     {"findfile",        1, 3, f_findfile},
-#if defined(FEAT_FLOAT)
     {"float2nr",        1, 1, f_float2nr},
     {"floor",           1, 1, f_floor},
     {"fmod",            2, 2, f_fmod},
-#endif
     {"fnameescape",     1, 1, f_fnameescape},
     {"fnamemodify",     2, 2, f_fnamemodify},
     {"foldclosed",      1, 1, f_foldclosed},
@@ -7827,16 +7722,12 @@ static struct fst
     {"keys",            1, 1, f_keys},
     {"last_buffer_nr",  0, 0, f_last_buffer_nr},/* obsolete */
     {"len",             1, 1, f_len},
-    {"libcall",         3, 3, f_libcall},
-    {"libcallnr",       3, 3, f_libcallnr},
     {"line",            1, 1, f_line},
     {"line2byte",       1, 1, f_line2byte},
     {"lispindent",      1, 1, f_lispindent},
     {"localtime",       0, 0, f_localtime},
-#if defined(FEAT_FLOAT)
     {"log",             1, 1, f_log},
     {"log10",           1, 1, f_log10},
-#endif
     {"map",             2, 2, f_map},
     {"maparg",          1, 4, f_maparg},
     {"mapcheck",        1, 3, f_mapcheck},
@@ -7858,9 +7749,7 @@ static struct fst
     {"nr2char",         1, 2, f_nr2char},
     {"or",              2, 2, f_or},
     {"pathshorten",     1, 1, f_pathshorten},
-#if defined(FEAT_FLOAT)
     {"pow",             2, 2, f_pow},
-#endif
     {"prevnonblank",    1, 1, f_prevnonblank},
     {"printf",          2, 19, f_printf},
     {"pumvisible",      0, 0, f_pumvisible},
@@ -7878,9 +7767,7 @@ static struct fst
     {"repeat",          2, 2, f_repeat},
     {"resolve",         1, 1, f_resolve},
     {"reverse",         1, 1, f_reverse},
-#if defined(FEAT_FLOAT)
     {"round",           1, 1, f_round},
-#endif
     {"screenattr",      2, 2, f_screenattr},
     {"screenchar",      2, 2, f_screenchar},
     {"screencol",       0, 0, f_screencol},
@@ -7906,19 +7793,15 @@ static struct fst
     {"shellescape",     1, 2, f_shellescape},
     {"shiftwidth",      0, 0, f_shiftwidth},
     {"simplify",        1, 1, f_simplify},
-#if defined(FEAT_FLOAT)
     {"sin",             1, 1, f_sin},
     {"sinh",            1, 1, f_sinh},
-#endif
     {"sort",            1, 3, f_sort},
     {"soundfold",       1, 1, f_soundfold},
     {"spellbadword",    0, 1, f_spellbadword},
     {"spellsuggest",    1, 3, f_spellsuggest},
     {"split",           1, 3, f_split},
-#if defined(FEAT_FLOAT)
     {"sqrt",            1, 1, f_sqrt},
     {"str2float",       1, 1, f_str2float},
-#endif
     {"str2nr",          1, 2, f_str2nr},
     {"strchars",        1, 1, f_strchars},
     {"strdisplaywidth", 1, 2, f_strdisplaywidth},
@@ -7946,18 +7829,14 @@ static struct fst
     {"tabpagewinnr",    1, 2, f_tabpagewinnr},
     {"tagfiles",        0, 0, f_tagfiles},
     {"taglist",         1, 1, f_taglist},
-#if defined(FEAT_FLOAT)
     {"tan",             1, 1, f_tan},
     {"tanh",            1, 1, f_tanh},
-#endif
     {"tempname",        0, 0, f_tempname},
     {"test",            1, 1, f_test},
     {"tolower",         1, 1, f_tolower},
     {"toupper",         1, 1, f_toupper},
     {"tr",              3, 3, f_tr},
-#if defined(FEAT_FLOAT)
     {"trunc",           1, 1, f_trunc},
-#endif
     {"type",            1, 1, f_type},
     {"undofile",        1, 1, f_undofile},
     {"undotree",        0, 0, f_undotree},
@@ -8437,7 +8316,6 @@ non_zero_arg(argvars)
  * Implementation of the built-in functions
  */
 
-#if defined(FEAT_FLOAT)
 static int get_float_arg __ARGS((typval_T *argvars, float_T *f));
 
 /*
@@ -8507,7 +8385,6 @@ f_acos(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "add(list, item)" function
@@ -8689,7 +8566,6 @@ f_argv(argvars, rettv)
                                                alist_name(&ARGLIST[idx]), -1);
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "asin()" function
  */
@@ -8741,7 +8617,6 @@ f_atan2(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "browse(save, title, initdir, default)" function
@@ -9119,7 +8994,6 @@ f_call(argvars, rettv)
     (void)func_call(func, &argvars[1], selfdict, rettv);
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "ceil({float})" function
  */
@@ -9136,7 +9010,6 @@ f_ceil(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "changenr()" function
@@ -9330,7 +9203,7 @@ f_confirm(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
     char_u      *message;
     char_u      *buttons = NULL;
     char_u      buf[NUMBUFLEN];
@@ -9391,7 +9264,6 @@ f_copy(argvars, rettv)
     item_copy(&argvars[0], rettv, FALSE, 0);
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "cos()" function
  */
@@ -9425,7 +9297,6 @@ f_cosh(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "count()" function
@@ -9670,11 +9541,9 @@ f_empty(argvars, rettv)
         case VAR_NUMBER:
             n = argvars[0].vval.v_number == 0;
             break;
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             n = argvars[0].vval.v_float == 0.0;
             break;
-#endif
         case VAR_LIST:
             n = argvars[0].vval.v_list == NULL
                                   || argvars[0].vval.v_list->lv_first == NULL;
@@ -9855,7 +9724,6 @@ f_exists(argvars, rettv)
     rettv->vval.v_number = n;
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "exp()" function
  */
@@ -9872,7 +9740,6 @@ f_exp(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "expand()" function
@@ -10244,7 +10111,6 @@ findfilendir(argvars, rettv, find_what)
 
             if (fresult != NULL && rettv->v_type == VAR_LIST)
                 list_append_string(rettv->vval.v_list, fresult, -1);
-
         } while ((rettv->v_type == VAR_LIST || --count > 0) && fresult != NULL);
     }
 
@@ -10452,7 +10318,6 @@ f_findfile(argvars, rettv)
     findfilendir(argvars, rettv, FINDFILE_FILE);
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "float2nr({float})" function
  */
@@ -10508,7 +10373,6 @@ f_fmod(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "fnameescape({string})" function
@@ -11873,9 +11737,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_CINDENT)
         "cindent",
 #endif
-#if defined(FEAT_CLIENTSERVER)
-        "clientserver",
-#endif
 #if defined(FEAT_CLIPBOARD)
         "clipboard",
 #endif
@@ -11903,9 +11764,6 @@ f_has(argvars, rettv)
 #if defined(FEAT_CON_DIALOG)
         "dialog_con",
 #endif
-#if defined(FEAT_GUI_DIALOG)
-        "dialog_gui",
-#endif
 #if defined(FEAT_DIGRAPHS)
         "digraphs",
 #endif
@@ -11928,9 +11786,7 @@ f_has(argvars, rettv)
 #if defined(FEAT_FIND_ID)
         "find_in_path",
 #endif
-#if defined(FEAT_FLOAT)
         "float",
-#endif
 #if defined(FEAT_FOOTER)
         "footer",
 #endif
@@ -11949,9 +11805,6 @@ f_has(argvars, rettv)
 #endif
 #if defined(FEAT_LANGMAP)
         "langmap",
-#endif
-#if defined(FEAT_LIBCALL)
-        "libcall",
 #endif
 #if defined(FEAT_LINEBREAK)
         "linebreak",
@@ -12015,9 +11868,6 @@ f_has(argvars, rettv)
         "showcmd",
         "cmdline_info",
 #endif
-#if defined(FEAT_SIGNS)
-        "signs",
-#endif
 #if defined(FEAT_SMARTINDENT)
         "smartindent",
 #endif
@@ -12044,9 +11894,6 @@ f_has(argvars, rettv)
 #endif
 #if defined(FEAT_TITLE)
         "title",
-#endif
-#if defined(FEAT_TOOLBAR)
-        "toolbar",
 #endif
 #if defined(FEAT_USR_CMDS)
         "user-commands",    /* was accidentally included in 5.4 */
@@ -12122,10 +11969,6 @@ f_has(argvars, rettv)
             n = (starting != 0);
         else if (STRICMP(name, "multi_byte_encoding") == 0)
             n = has_mbyte;
-#if defined(USE_ICONV) && defined(DYNAMIC_ICONV)
-        else if (STRICMP(name, "iconv") == 0)
-            n = iconv_enabled(FALSE);
-#endif
 #if defined(FEAT_SYN_HL)
         else if (STRICMP(name, "syntax_items") == 0)
             n = syntax_present(curwin);
@@ -13010,8 +12853,7 @@ f_len(argvars, rettv)
     {
         case VAR_STRING:
         case VAR_NUMBER:
-            rettv->vval.v_number = (varnumber_T)STRLEN(
-                                               get_tv_string(&argvars[0]));
+            rettv->vval.v_number = (varnumber_T)STRLEN(get_tv_string(&argvars[0]));
             break;
         case VAR_LIST:
             rettv->vval.v_number = list_len(argvars[0].vval.v_list);
@@ -13023,72 +12865,6 @@ f_len(argvars, rettv)
             EMSG(_("E701: Invalid type for len()"));
             break;
     }
-}
-
-static void libcall_common __ARGS((typval_T *argvars, typval_T *rettv, int type));
-
-    static void
-libcall_common(argvars, rettv, type)
-    typval_T    *argvars;
-    typval_T    *rettv;
-    int         type;
-{
-#if defined(FEAT_LIBCALL)
-    char_u              *string_in;
-    char_u              **string_result;
-    int                 nr_result;
-#endif
-
-    rettv->v_type = type;
-    if (type != VAR_NUMBER)
-        rettv->vval.v_string = NULL;
-
-    if (check_restricted() || check_secure())
-        return;
-
-#if defined(FEAT_LIBCALL)
-    /* The first two args must be strings, otherwise its meaningless */
-    if (argvars[0].v_type == VAR_STRING && argvars[1].v_type == VAR_STRING)
-    {
-        string_in = NULL;
-        if (argvars[2].v_type == VAR_STRING)
-            string_in = argvars[2].vval.v_string;
-        if (type == VAR_NUMBER)
-            string_result = NULL;
-        else
-            string_result = &rettv->vval.v_string;
-        if (mch_libcall(argvars[0].vval.v_string,
-                             argvars[1].vval.v_string,
-                             string_in,
-                             argvars[2].vval.v_number,
-                             string_result,
-                             &nr_result) == OK
-                && type == VAR_NUMBER)
-            rettv->vval.v_number = nr_result;
-    }
-#endif
-}
-
-/*
- * "libcall()" function
- */
-    static void
-f_libcall(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    libcall_common(argvars, rettv, VAR_STRING);
-}
-
-/*
- * "libcallnr()" function
- */
-    static void
-f_libcallnr(argvars, rettv)
-    typval_T    *argvars;
-    typval_T    *rettv;
-{
-    libcall_common(argvars, rettv, VAR_NUMBER);
 }
 
 /*
@@ -13221,7 +12997,6 @@ get_maparg(argvars, rettv, exact)
         /* Return a string. */
         if (rhs != NULL)
             rettv->vval.v_string = str2special_save(rhs, FALSE);
-
     }
     else if (rettv_dict_alloc(rettv) != FAIL && rhs != NULL)
     {
@@ -13245,7 +13020,6 @@ get_maparg(argvars, rettv, exact)
     }
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "log()" function
  */
@@ -13279,7 +13053,6 @@ f_log10(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "map()" function
@@ -14008,7 +13781,6 @@ f_pathshorten(argvars, rettv)
     }
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "pow()" function
  */
@@ -14026,7 +13798,6 @@ f_pow(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "prevnonblank()" function
@@ -14450,56 +14221,6 @@ f_reltimestr(argvars, rettv)
 #endif
 }
 
-#if defined(FEAT_CLIENTSERVER)
-static void remote_common __ARGS((typval_T *argvars, typval_T *rettv, int expr));
-
-    static void
-remote_common(argvars, rettv, expr)
-    typval_T    *argvars;
-    typval_T    *rettv;
-    int         expr;
-{
-    char_u      *server_name;
-    char_u      *keys;
-    char_u      *r = NULL;
-    char_u      buf[NUMBUFLEN];
-    Window      w;
-
-    if (check_restricted() || check_secure())
-        return;
-
-    server_name = get_tv_string_chk(&argvars[0]);
-    if (server_name == NULL)
-        return;         /* type error; errmsg already given */
-    keys = get_tv_string_buf(&argvars[1], buf);
-    if (serverSendToVim(X_DISPLAY, server_name, keys, &r, &w, expr, 0, TRUE) < 0)
-    {
-        if (r != NULL)
-            EMSG(r);            /* sending worked but evaluation failed */
-        else
-            EMSG2(_("E241: Unable to send to %s"), server_name);
-        return;
-    }
-
-    rettv->vval.v_string = r;
-
-    if (argvars[2].v_type != VAR_UNKNOWN)
-    {
-        dictitem_T      v;
-        char_u          str[30];
-        char_u          *idvar;
-
-        sprintf((char *)str, PRINTF_HEX_LONG_U, (long_u)w);
-        v.di_tv.v_type = VAR_STRING;
-        v.di_tv.vval.v_string = vim_strsave(str);
-        idvar = get_tv_string_chk(&argvars[2]);
-        if (idvar != NULL)
-            set_var(idvar, &v.di_tv, FALSE);
-        vim_free(v.di_tv.vval.v_string);
-    }
-}
-#endif
-
 /*
  * "remote_expr()" function
  */
@@ -14510,9 +14231,6 @@ f_remote_expr(argvars, rettv)
 {
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
-#if defined(FEAT_CLIENTSERVER)
-    remote_common(argvars, rettv, TRUE);
-#endif
 }
 
 /*
@@ -14523,14 +14241,6 @@ f_remote_foreground(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv UNUSED;
 {
-#if defined(FEAT_CLIENTSERVER)
-    /* Send a foreground() expression to the server. */
-    argvars[1].v_type = VAR_STRING;
-    argvars[1].vval.v_string = vim_strsave((char_u *)"foreground()");
-    argvars[2].v_type = VAR_UNKNOWN;
-    remote_common(argvars, rettv, TRUE);
-    vim_free(argvars[1].vval.v_string);
-#endif
 }
 
     static void
@@ -14538,41 +14248,7 @@ f_remote_peek(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_CLIENTSERVER)
-    dictitem_T  v;
-    char_u      *s = NULL;
-    char_u      *serverid;
-
-    if (check_restricted() || check_secure())
-    {
-        rettv->vval.v_number = -1;
-        return;
-    }
-    serverid = get_tv_string_chk(&argvars[0]);
-    if (serverid == NULL)
-    {
-        rettv->vval.v_number = -1;
-        return;         /* type error; errmsg already given */
-    }
-    if (check_connection() == FAIL)
-        return;
-
-    rettv->vval.v_number = serverPeekReply(X_DISPLAY, serverStrToWin(serverid), &s);
-
-    if (argvars[1].v_type != VAR_UNKNOWN && rettv->vval.v_number > 0)
-    {
-        char_u          *retvar;
-
-        v.di_tv.v_type = VAR_STRING;
-        v.di_tv.vval.v_string = vim_strsave(s);
-        retvar = get_tv_string_chk(&argvars[1]);
-        if (retvar != NULL)
-            set_var(retvar, &v.di_tv, FALSE);
-        vim_free(v.di_tv.vval.v_string);
-    }
-#else
     rettv->vval.v_number = -1;
-#endif
 }
 
     static void
@@ -14582,15 +14258,6 @@ f_remote_read(argvars, rettv)
 {
     char_u      *r = NULL;
 
-#if defined(FEAT_CLIENTSERVER)
-    char_u      *serverid = get_tv_string_chk(&argvars[0]);
-
-    if (serverid != NULL && !check_restricted() && !check_secure())
-    {
-        if (check_connection() == FAIL || serverReadReply(X_DISPLAY, serverStrToWin(serverid), &r, FALSE) < 0)
-            EMSG(_("E277: Unable to read a server reply"));
-    }
-#endif
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = r;
 }
@@ -14605,9 +14272,6 @@ f_remote_send(argvars, rettv)
 {
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = NULL;
-#if defined(FEAT_CLIENTSERVER)
-    remote_common(argvars, rettv, FALSE);
-#endif
 }
 
 /*
@@ -15182,8 +14846,6 @@ theend:
     return retval;
 }
 
-#if defined(FEAT_FLOAT)
-
 /*
  * round() is not in C90, use ceil() or floor() instead.
  */
@@ -15210,7 +14872,6 @@ f_round(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "screenattr()" function
@@ -15637,26 +15298,7 @@ f_server2client(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-#if defined(FEAT_CLIENTSERVER)
-    char_u      buf[NUMBUFLEN];
-    char_u      *server = get_tv_string_chk(&argvars[0]);
-    char_u      *reply = get_tv_string_buf_chk(&argvars[1], buf);
-
     rettv->vval.v_number = -1;
-    if (server == NULL || reply == NULL)
-        return;
-    if (check_restricted() || check_secure())
-        return;
-
-    if (serverSendReply(server, reply) < 0)
-    {
-        EMSG(_("E258: Unable to send to client"));
-        return;
-    }
-    rettv->vval.v_number = 0;
-#else
-    rettv->vval.v_number = -1;
-#endif
 }
 
     static void
@@ -15666,11 +15308,6 @@ f_serverlist(argvars, rettv)
 {
     char_u      *r = NULL;
 
-#if defined(FEAT_CLIENTSERVER)
-    make_connection();
-    if (X_DISPLAY != NULL)
-        r = serverGetVimNames(X_DISPLAY);
-#endif
     rettv->v_type = VAR_STRING;
     rettv->vval.v_string = r;
 }
@@ -15900,9 +15537,7 @@ f_setmatches(argvars, rettv)
     }
     if ((l = argvars[0].vval.v_list) != NULL)
     {
-
-        /* To some extent make sure that we are dealing with a list from
-         * "getmatches()". */
+        /* To some extent make sure that we are dealing with a list from "getmatches()". */
         li = l->lv_first;
         while (li != NULL)
         {
@@ -16296,7 +15931,6 @@ f_simplify(argvars, rettv)
     rettv->v_type = VAR_STRING;
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "sin()" function
  */
@@ -16330,7 +15964,6 @@ f_sinh(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 static int
         item_compare __ARGS((const void *s1, const void *s2));
@@ -16782,7 +16415,6 @@ f_split(argvars, rettv)
     p_cpo = save_cpo;
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "sqrt()" function
  */
@@ -16815,7 +16447,6 @@ f_str2float(argvars, rettv)
     (void)string2float(p, &rettv->vval.v_float);
     rettv->v_type = VAR_FLOAT;
 }
-#endif
 
 /*
  * "str2nr()" function
@@ -17850,7 +17481,6 @@ f_test(argvars, rettv)
 #endif
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "tan()" function
  */
@@ -17884,7 +17514,6 @@ f_tanh(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "tolower(string)" function
@@ -18054,7 +17683,6 @@ error:
     rettv->vval.v_string = ga.ga_data;
 }
 
-#if defined(FEAT_FLOAT)
 /*
  * "trunc({float})" function
  */
@@ -18072,7 +17700,6 @@ f_trunc(argvars, rettv)
     else
         rettv->vval.v_float = 0.0;
 }
-#endif
 
 /*
  * "type(expr)" function
@@ -18091,9 +17718,7 @@ f_type(argvars, rettv)
         case VAR_FUNC:   n = 2; break;
         case VAR_LIST:   n = 3; break;
         case VAR_DICT:   n = 4; break;
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:  n = 5; break;
-#endif
         default: EMSG2(_(e_intern2), "f_type()"); n = 0; break;
     }
     rettv->vval.v_number = n;
@@ -19435,9 +19060,7 @@ free_tv(varp)
                 dict_unref(varp->vval.v_dict);
                 break;
             case VAR_NUMBER:
-#if defined(FEAT_FLOAT)
             case VAR_FLOAT:
-#endif
             case VAR_UNKNOWN:
                 break;
             default:
@@ -19477,11 +19100,9 @@ clear_tv(varp)
             case VAR_NUMBER:
                 varp->vval.v_number = 0;
                 break;
-#if defined(FEAT_FLOAT)
             case VAR_FLOAT:
                 varp->vval.v_float = 0.0;
                 break;
-#endif
             case VAR_UNKNOWN:
                 break;
             default:
@@ -19530,11 +19151,9 @@ get_tv_number_chk(varp, denote)
     {
         case VAR_NUMBER:
             return (long)(varp->vval.v_number);
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             EMSG(_("E805: Using a Float as a Number"));
             break;
-#endif
         case VAR_FUNC:
             EMSG(_("E703: Using a Funcref as a Number"));
             break;
@@ -19661,11 +19280,9 @@ get_tv_string_buf_chk(varp, buf)
         case VAR_DICT:
             EMSG(_("E731: using Dictionary as a String"));
             break;
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             EMSG(_(e_float_as_string));
             break;
-#endif
         case VAR_STRING:
             if (varp->vval.v_string != NULL)
                 return varp->vval.v_string;
@@ -20063,12 +19680,10 @@ set_var(name, tv, copy)
                         || v->di_tv.v_type == VAR_NUMBER)
                     && (tv->v_type == VAR_STRING
                         || tv->v_type == VAR_NUMBER))
-#if defined(FEAT_FLOAT)
                 && !((v->di_tv.v_type == VAR_NUMBER
                         || v->di_tv.v_type == VAR_FLOAT)
                     && (tv->v_type == VAR_NUMBER
                         || tv->v_type == VAR_FLOAT))
-#endif
                 )
         {
             EMSG2(_("E706: Variable type mismatch for: %s"), name);
@@ -20281,11 +19896,9 @@ copy_tv(from, to)
         case VAR_NUMBER:
             to->vval.v_number = from->vval.v_number;
             break;
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
             to->vval.v_float = from->vval.v_float;
             break;
-#endif
         case VAR_STRING:
         case VAR_FUNC:
             if (from->vval.v_string == NULL)
@@ -20348,9 +19961,7 @@ item_copy(from, to, deep, copyID)
     switch (from->v_type)
     {
         case VAR_NUMBER:
-#if defined(FEAT_FLOAT)
         case VAR_FLOAT:
-#endif
         case VAR_STRING:
         case VAR_FUNC:
             copy_tv(from, to);
@@ -22643,7 +22254,6 @@ ex_oldfiles(eap)
         }
         /* Assume "got_int" was set to truncate the listing. */
         got_int = FALSE;
-
     }
 }
 

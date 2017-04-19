@@ -16,10 +16,6 @@
 #include <unistd.h>
 #endif
 
-#if defined(HAVE_LIBC_H)
-#include <libc.h>                  /* for NeXT */
-#endif
-
 #if defined(HAVE_SYS_PARAM_H)
 #include <sys/param.h>     /* defines BSD, if it's a BSD system */
 #endif
@@ -30,7 +26,7 @@
  * autoconf check for this.
  * Use getcwd() anyway if getwd() isn't present.
  */
-#if defined(HAVE_GETCWD) && !(defined(BAD_GETCWD) && defined(HAVE_GETWD))
+#if defined(HAVE_GETCWD)
 #define USE_GETCWD
 #endif
 
@@ -72,15 +68,6 @@
 #else
 #define dirent direct
 #define NAMLEN(dirent) (dirent)->d_namlen
-#if HAVE_SYS_NDIR_H
-#include <sys/ndir.h>
-#endif
-#if HAVE_SYS_DIR_H
-#include <sys/dir.h>
-#endif
-#if HAVE_NDIR_H
-#include <ndir.h>
-#endif
 #endif
 
 #if !defined(HAVE_SYS_TIME_H) || defined(TIME_WITH_SYS_TIME)
@@ -119,7 +106,7 @@
 #include <pwd.h>
 #endif
 
-#if (defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)) || (defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)) || defined(HAVE_SYSCTL) || defined(HAVE_SYSCONF)
+#if (defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)) || (defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)) || defined(HAVE_SYSCONF)
 #define HAVE_TOTAL_MEM
 #endif
 
@@ -199,11 +186,7 @@
 
 #define DFLT_ERRORFILE          "errors.err"
 
-#if defined(RUNTIME_GLOBAL)
-#define DFLT_RUNTIMEPATH     "~/.vim," RUNTIME_GLOBAL ",$VIMRUNTIME," RUNTIME_GLOBAL "/after,~/.vim/after"
-#else
 #define DFLT_RUNTIMEPATH     "~/.vim,$VIM/vimfiles,$VIMRUNTIME,$VIM/vimfiles/after,~/.vim/after"
-#endif
 
 #define TEMPDIRNAMES  "$TMPDIR", "/tmp", ".", "$HOME"
 #define TEMPNAMELEN    256
@@ -242,15 +225,7 @@
 #if defined(USEMEMMOVE)
 #define mch_memmove(to, from, len) memmove((char *)(to), (char *)(from), len)
 #else
-#if defined(USEBCOPY)
-#define mch_memmove(to, from, len) bcopy((char *)(from), (char *)(to), len)
-#else
-#if defined(USEMEMCPY)
-#define mch_memmove(to, from, len) memcpy((char *)(to), (char *)(from), len)
-#else
 #define VIM_MEMMOVE      /* found in misc2.c */
-#endif
-#endif
 #endif
 
 #if defined(HAVE_RENAME)
@@ -285,21 +260,15 @@ int mch_rename __ARGS((const char *src, const char *dest));
 #if defined(HAVE_STRING_H)
 #include <string.h>
 #endif
-#if defined(HAVE_STRINGS_H) && !defined(NO_STRINGS_WITH_STRING_H)
+#if defined(HAVE_STRINGS_H)
 #include <strings.h>
 #endif
 
 #if defined(HAVE_SETJMP_H)
 #include <setjmp.h>
-#if defined(HAVE_SIGSETJMP)
-#define JMP_BUF sigjmp_buf
-#define SETJMP(x) sigsetjmp((x), 1)
-#define LONGJMP siglongjmp
-#else
 #define JMP_BUF jmp_buf
 #define SETJMP(x) setjmp(x)
 #define LONGJMP longjmp
-#endif
 #endif
 
 #if !defined(HAVE_DUP)

@@ -20,9 +20,7 @@
 #define DELETION_REGISTER       36
 #if defined(FEAT_CLIPBOARD)
 #define STAR_REGISTER          37
-#if (1)
 #define PLUS_REGISTER        STAR_REGISTER       /* there is only one */
-#endif
 #endif
 #if defined(FEAT_DND)
 #define TILDE_REGISTER         (PLUS_REGISTER + 1)
@@ -2274,7 +2272,6 @@ op_tilde(oap)
             pos.col = bd.textcol;
             one_change = swapchars(oap->op_type, &pos, bd.textlen);
             did_change |= one_change;
-
         }
         if (did_change)
             changed_lines(oap->start.lnum, 0, oap->end.lnum + 1, 0L);
@@ -4246,15 +4243,12 @@ do_join(count, insert_space, save_undo, use_formatoptions, setmark)
              * previous line is not a comment. */
             if (t > 0 && prev_was_comment)
             {
-
-                char_u *new_curr = skip_comment(curr, TRUE, insert_space,
-                                                           &prev_was_comment);
+                char_u *new_curr = skip_comment(curr, TRUE, insert_space, &prev_was_comment);
                 comments[t] = (int)(new_curr - curr);
                 curr = new_curr;
             }
             else
-                curr = skip_comment(curr, FALSE, insert_space,
-                                                           &prev_was_comment);
+                curr = skip_comment(curr, FALSE, insert_space, &prev_was_comment);
         }
 #endif
 

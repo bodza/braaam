@@ -28,11 +28,7 @@
  * A few linux systems define outfuntype in termcap.h to be used as the third
  * argument for tputs().
  */
-#if defined(HAVE_OUTFUNTYPE)
-#define TPUTSFUNCAST (outfuntype)
-#else
 #define TPUTSFUNCAST (int (*)())
-#endif
 #endif
 
 #undef tgetstr
@@ -119,18 +115,10 @@ static int u7_status = U7_GET;
  * BSD, where ospeed is short and speed_t is long.
  */
 #if !defined(HAVE_OSPEED)
-#if defined(OSPEED_EXTERN)
-extern short ospeed;
-#else
 short ospeed;
 #endif
-#endif
 #if !defined(HAVE_UP_BC_PC)
-#if defined(UP_BC_PC_EXTERN)
-extern char *UP, *BC, PC;
-#else
 char *UP, *BC, PC;
-#endif
 #endif
 
 #define TGETSTR(s, p)  vim_tgetstr((s), (p))
@@ -1407,13 +1395,11 @@ set_termname(term)
                         || term_str(KS_CCO) == empty_option)
                     set_color_count(tgetnum("Co"));
 
-#if !defined(hpux)
                 BC = (char *)TGETSTR("bc", &tp);
                 UP = (char *)TGETSTR("up", &tp);
                 p = TGETSTR("pc", &tp);
                 if (p)
                     PC = *p;
-#endif
             }
         }
         else        /* try == 0 || try == 2 */
@@ -1577,8 +1563,7 @@ set_termname(term)
              * "xterm2" in check_termcode(). */
             reset_option_was_set((char_u *)"ttym");
         }
-        if (p == NULL
-                )
+        if (p == NULL)
             check_mouse_termcode();     /* set mouse termcode anyway */
     }
 #endif
@@ -2536,8 +2521,7 @@ shell_resized_check()
     int         old_Rows = Rows;
     int         old_Columns = Columns;
 
-    if (!exiting
-            )
+    if (!exiting)
     {
         (void)ui_get_shellsize();
         check_shellsize();
@@ -3794,8 +3778,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
         /*
          * If it is a mouse click, get the coordinates.
          */
-        if (key_name[0] == KS_MOUSE
-                )
+        if (key_name[0] == KS_MOUSE)
         {
             is_click = is_drag = FALSE;
 
@@ -3849,8 +3832,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 }
             }
 
-        if (key_name[0] == (int)KS_MOUSE
-            )
+        if (key_name[0] == (int)KS_MOUSE)
         {
                 /*
                  * Handle mouse events.
@@ -3930,8 +3912,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                             && orig_num_clicks != 4
                             && orig_mouse_col == mouse_col
                             && orig_mouse_row == mouse_row
-                            && ((orig_topline == curwin->w_topline
-                                )
+                            && ((orig_topline == curwin->w_topline)
 #if defined(FEAT_WINDOWS)
                                 /* Double click in tab pages line also works
                                  * when window contents changes. */

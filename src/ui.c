@@ -361,11 +361,9 @@ clip_own_selection(cbd)
      * Also want to check somehow that we are reading from the keyboard rather
      * than a mapping etc.
      */
-#if (1)
     /* Only own the clipboard when we didn't own it yet. */
     if (!cbd->owned && cbd->available)
         cbd->owned = (clip_gen_own_selection(cbd) == OK);
-#endif
 }
 
     void
@@ -1131,9 +1129,7 @@ clip_get_word_boundaries(cb, row, col)
                    && (mboff = dbcs_screen_head_off(p, p + temp_col - 1)) > 0)
             temp_col -= mboff;
         else
-        if (CHAR_CLASS(p[temp_col - 1]) != start_class
-                && !(enc_utf8 && p[temp_col - 1] == 0)
-                )
+        if (CHAR_CLASS(p[temp_col - 1]) != start_class && !(enc_utf8 && p[temp_col - 1] == 0))
             break;
     cb->word_start_col = temp_col;
 
@@ -1265,16 +1261,7 @@ clip_gen_owner_exists(cbd)
  * descriptions which would otherwise overflow.  The buffer is considered full
  * when only this extra space (or part of it) remains.
  */
-#if defined(FEAT_CLIENTSERVER)
-   /*
-    * Sun WorkShop and NetBeans stuff debugger commands into the input buffer.
-    * This requires a larger buffer...
-    * (Madsen) Go with this for remote input as well ...
-    */
-#define INBUFLEN 4096
-#else
 #define INBUFLEN 250
-#endif
 
 static char_u   inbuf[INBUFLEN + MAX_KEY_CODE_LEN];
 static int      inbufcount = 0;     /* number of chars in inbuf[] */
@@ -1342,7 +1329,7 @@ set_input_buf(p)
     }
 }
 
-#if defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE) || defined(FEAT_CLIENTSERVER)
+#if defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE)
 /*
  * Add the given bytes to the input buffer
  * Special keys start with CSI.  A real CSI must have been translated to
@@ -2044,8 +2031,7 @@ im_save_status(psave)
      * And don't save when the keys were stuffed (e.g., for a "." command).
      * And don't save when the GUI is running but our window doesn't have
      * input focus (e.g., when a find dialog is open). */
-    if (!p_imdisable && KeyTyped && !KeyStuffed
-        )
+    if (!p_imdisable && KeyTyped && !KeyStuffed)
     {
         /* Do save when IM is on, or IM is off and saved status is on. */
         if (vgetc_im_active)

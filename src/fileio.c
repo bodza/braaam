@@ -893,7 +893,6 @@ retry:
     converted = need_conversion(fenc);
     if (converted)
     {
-
         /* "ucs-bom" means we need to check the first bytes of the file
          * for a BOM. */
         if (STRCMP(fenc, ENC_UCSBOM) == 0)
@@ -1203,8 +1202,7 @@ retry:
              * converting with 'charconvert' or when a BOM has already been
              * found.
              */
-            if ((filesize == 0
-                       )
+            if ((filesize == 0)
                     && (fio_flags == FIO_UCSBOM
                         || (!curbuf->b_p_bomb
                             && tmpname == NULL
@@ -4227,10 +4225,8 @@ check_mtime(buf, st)
         msg_scroll = TRUE;          /* don't overwrite messages here */
         msg_silent = 0;             /* must give this prompt */
         /* don't use emsg() here, don't want to flush the buffers */
-        MSG_ATTR(_("WARNING: The file has been changed since reading it!!!"),
-                                                       hl_attr(HLF_E));
-        if (ask_yesno((char_u *)_("Do you really want to write to it"),
-                                                                 TRUE) == 'n')
+        MSG_ATTR(_("WARNING: The file has been changed since reading it!!!"), hl_attr(HLF_E));
+        if (ask_yesno((char_u *)_("Do you really want to write to it"), TRUE) == 'n')
             return FAIL;
         msg_scroll = FALSE;         /* always overwrite the file message now */
     }
@@ -5389,7 +5385,7 @@ buf_check_timestamp(buf, focus)
     char        *mesg2 = "";
     int         helpmesg = FALSE;
     int         reload = FALSE;
-#if defined(FEAT_CON_DIALOG) || defined(FEAT_GUI_DIALOG)
+#if defined(FEAT_CON_DIALOG)
     int         can_reload = FALSE;
 #endif
     off_t       orig_size = buf->b_orig_size;
@@ -5501,7 +5497,7 @@ buf_check_timestamp(buf, focus)
                 else
                 {
                     helpmesg = TRUE;
-#if defined(FEAT_CON_DIALOG) || defined(FEAT_GUI_DIALOG)
+#if defined(FEAT_CON_DIALOG)
                     can_reload = TRUE;
 #endif
                     /*
@@ -5532,7 +5528,6 @@ buf_check_timestamp(buf, focus)
                 }
             }
         }
-
     }
     else if ((buf->b_flags & BF_NEW) && !(buf->b_flags & BF_NEW_W)
                                                 && vim_fexists(buf->b_ffname))
@@ -5540,7 +5535,7 @@ buf_check_timestamp(buf, focus)
         retval = 1;
         mesg = _("W13: Warning: File \"%s\" has been created after editing started");
         buf->b_flags |= BF_NEW_W;
-#if defined(FEAT_CON_DIALOG) || defined(FEAT_GUI_DIALOG)
+#if defined(FEAT_CON_DIALOG)
         can_reload = TRUE;
 #endif
     }
@@ -5558,7 +5553,7 @@ buf_check_timestamp(buf, focus)
             /* Set warningmsg here, before the unimportant and output-specific
              * mesg2 has been appended. */
             set_vim_var_string(VV_WARNINGMSG, tbuf, -1);
-#if defined(FEAT_CON_DIALOG) || defined(FEAT_GUI_DIALOG)
+#if defined(FEAT_CON_DIALOG)
             if (can_reload)
             {
                 if (*mesg2 != NUL)
@@ -5882,11 +5877,7 @@ vim_tempname(extra_char, keep)
     int     extra_char UNUSED;  /* char to use in the name instead of '?' */
     int     keep UNUSED;
 {
-#if defined(USE_TMPNAM)
-    char_u      itmp[L_tmpnam]; /* use tmpnam() */
-#else
     char_u      itmp[TEMPNAMELEN];
-#endif
 
 #if defined(TEMPDIRNAMES)
     static char *(tempdirs[]) = {TEMPDIRNAMES};
@@ -5986,45 +5977,15 @@ vim_tempname(extra_char, keep)
 
 #else
 
-#if (1)
-
-#if defined(USE_TMPNAM)
     char_u      *p;
 
-    /* tmpnam() will make its own name */
-    p = tmpnam((char *)itmp);
-    if (p == NULL || *p == NUL)
-        return NULL;
-#else
-    char_u      *p;
-
-#if defined(VMS_TEMPNAM)
-    /* mktemp() is not working on VMS.  It seems to be
-     * a do-nothing function. Therefore we use tempnam().
-     */
-    sprintf((char *)itmp, "VIM%c", extra_char);
-    p = (char_u *)tempnam("tmp:", (char *)itmp);
-    if (p != NULL)
-    {
-        /* VMS will use '.LIS' if we don't explicitly specify an extension,
-         * and VIM will then be unable to find the file later */
-        STRCPY(itmp, p);
-        STRCAT(itmp, ".txt");
-        free(p);
-    }
-    else
-        return NULL;
-#else
     STRCPY(itmp, TEMPNAME);
     if ((p = vim_strchr(itmp, '?')) != NULL)
         *p = extra_char;
     if (mktemp((char *)itmp) == NULL)
         return NULL;
-#endif
-#endif
 
     return vim_strsave(itmp);
-#endif
 #endif
 }
 
@@ -8597,8 +8558,7 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                  * An escaped { must be unescaped since we use magic not
                  * verymagic.  Use "\\\{n,m\}"" to get "\{n,m}".
                  */
-                if (*++p == '?'
-                        )
+                if (*++p == '?')
                     reg_pat[i++] = '?';
                 else
                     if (*p == ',' || *p == '%' || *p == '#'
@@ -8612,8 +8572,7 @@ file_pat_to_reg_pat(pat, pat_end, allow_dirs, no_bslash)
                     }
                     else
                     {
-                        if (allow_dirs != NULL && vim_ispathsep(*p)
-                                )
+                        if (allow_dirs != NULL && vim_ispathsep(*p))
                             *allow_dirs = TRUE;
                         reg_pat[i++] = '\\';
                         reg_pat[i++] = *p;

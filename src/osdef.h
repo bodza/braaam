@@ -30,12 +30,6 @@ extern int      poll __ARGS((struct pollfd *, long, int));
 extern RETSIGTYPE (*sigset __ARGS((int, RETSIGTYPE (*func) SIGPROTOARG))) __ARGS(SIGPROTOARG);
 #endif
 
-#if defined(HAVE_SETJMP_H)
-#if defined(HAVE_SIGSETJMP)
-extern int      sigsetjmp __ARGS((sigjmp_buf, int));
-#endif
-#endif
-
 /*
  * osdef2.h.in - See osdef1.h.in for a description.
  */

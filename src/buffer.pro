@@ -48,8 +48,6 @@ char_u *alist_name __ARGS((aentry_T *aep));
 void do_arg_all __ARGS((int count, int forceit, int keep_tabs));
 void ex_buffer_all __ARGS((exarg_T *eap));
 void do_modelines __ARGS((int flags));
-int read_viminfo_bufferlist __ARGS((vir_T *virp, int writing));
-void write_viminfo_bufferlist __ARGS((FILE *fp));
 char_u *buf_spname __ARGS((buf_T *buf));
 int find_win_for_buf __ARGS((buf_T *buf, win_T **wp, tabpage_T **tp));
 void buf_addsign __ARGS((buf_T *buf, int id, linenr_T lnum, int typenr));

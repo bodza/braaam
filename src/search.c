@@ -76,13 +76,11 @@ static struct spat spats[2] =
 
 static int last_idx = 0;        /* index in spats[] for RE_LAST */
 
-#if (1)
 /* copy of spats[], for keeping the search patterns while executing autocmds */
 static struct spat  saved_spats[2];
 static int          saved_last_idx = 0;
 #if defined(FEAT_SEARCH_EXTRA)
 static int          saved_no_hlsearch = 0;
-#endif
 #endif
 
 static char_u       *mr_pattern = NULL; /* pattern used by search_regcomp() */
@@ -248,7 +246,6 @@ reverse_text(s)
             }
             else
                 rev[--rev_i] = s[s_i];
-
         }
         rev[len] = NUL;
     }
@@ -278,7 +275,6 @@ save_re_pat(idx, pat, magic)
     }
 }
 
-#if (1)
 /*
  * Save the search patterns, so they can be restored later.
  * Used before/after executing autocommands and user functions.
@@ -319,7 +315,6 @@ restore_search_patterns()
 #endif
     }
 }
-#endif
 
 #if defined(EXITFREE)
     void
@@ -415,7 +410,6 @@ reset_search_dir()
     set_vv_searchforward();
 }
 
-#if (1)
 /*
  * Set the last search pattern.  For ":let @/ =" and viminfo.
  * Also set the saved search pattern, so that this works in an autocommand.
@@ -458,7 +452,6 @@ set_last_search_pat(s, idx, magic, setlast)
         redraw_all_later(SOME_VALID);
 #endif
 }
-#endif
 
 #if defined(FEAT_SEARCH_EXTRA)
 /*
@@ -4441,7 +4434,6 @@ current_search(count, forward)
             else if (!forward && ltoreq(curwin->w_cursor, VIsual))
                 inc(&VIsual);
         }
-
     }
 
     may_start_select('c');
@@ -4842,7 +4834,6 @@ find_pattern_in_path(ptr, dir, len, whole, skip_comments,
                                                            (char *)new_fname);
                         verbose_leave();
                     }
-
                 }
             }
         }

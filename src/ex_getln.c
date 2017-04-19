@@ -564,8 +564,7 @@ getcmdline(firstc, count, indent)
                 {
                     if (has_mbyte)
                         j -= (*mb_head_off)(ccline.cmdbuff, ccline.cmdbuff + j);
-                    if (vim_ispathsep(ccline.cmdbuff[j])
-                       )
+                    if (vim_ispathsep(ccline.cmdbuff[j]))
                     {
                         if (found)
                         {
@@ -3425,7 +3424,6 @@ vim_strsave_fnameescape(fname, shell)
     int    shell;
 {
     char_u      *p;
-#if (1)
     p = vim_strsave_escaped(fname, shell ? SHELL_ESC_CHARS : PATH_ESC_CHARS);
     if (shell && csh_like_shell() && p != NULL)
     {
@@ -3437,7 +3435,6 @@ vim_strsave_fnameescape(fname, shell)
         vim_free(p);
         p = s;
     }
-#endif
 
     /* '>' and '+' are special at the start of some commands, e.g. ":edit" and
      * ":write".  "cd -" has a special meaning. */
@@ -3523,7 +3520,6 @@ showmatches(xp, wildmenu)
         showtail = expand_showtail(xp);
         if (i != EXPAND_OK)
             return i;
-
     }
     else
     {
@@ -3692,8 +3688,7 @@ sm_gettail(s)
 
     for (p = s; *p != NUL; )
     {
-        if (vim_ispathsep(*p)
-           )
+        if (vim_ispathsep(*p))
             had_sep = TRUE;
         else if (had_sep)
         {
@@ -3851,14 +3846,12 @@ addstar(fname, len, context)
              */
             tail = gettail(retval);
             ends_in_star = (len > 0 && retval[len - 1] == '*');
-#if (1)
             for (i = len - 2; i >= 0; --i)
             {
                 if (retval[i] != '\\')
                     break;
                 ends_in_star = !ends_in_star;
             }
-#endif
             if ((*retval != '~' || tail != retval)
                     && !ends_in_star
                     && vim_strchr(tail, '$') == NULL
@@ -4209,9 +4202,6 @@ ExpandFromContext(xp, pat, num_file, file, options)
 #if defined(FEAT_AUTOCMD)
             {EXPAND_EVENTS, get_event_name, TRUE, TRUE},
             {EXPAND_AUGROUP, get_augroup_name, TRUE, TRUE},
-#endif
-#if defined(FEAT_SIGNS)
-            {EXPAND_SIGN, get_sign_name, TRUE, TRUE},
 #endif
 #if defined(HAVE_LOCALE_H)
             {EXPAND_LANGUAGE, get_lang_arg, TRUE, FALSE},

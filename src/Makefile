@@ -1,13 +1,11 @@
-# Makefile for Vim on Unix and Unix-like systems	vim:ts=8:sw=8:tw=78
+VIM = vim
 
-VIM		= vim
-
-CC		= gcc
-DEFS		= -DHAVE_CONFIG_H
-CFLAGS		= -O2 -fno-strength-reduce -Wall -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
-LDFLAGS		= -L/usr/local/lib -Wl,--as-needed
-LIBS		= -lm -ltinfo -ldl
-CPP		= gcc -E
+CC = gcc
+DEFS = -DHAVE_CONFIG_H
+CFLAGS = -O2 -fno-strength-reduce -Wall -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+LDFLAGS = -Wl,--as-needed
+LIBS = -lm -ltinfo
+CPP = gcc -E
 
 VIMMAJOR = 7
 VIMMINOR = 4
@@ -22,9 +20,9 @@ ALL_LIBS = $(LIBS)
 
 BASIC_SRC = buffer.c charset.c digraph.c \
 	edit.c eval.c ex_cmds.c ex_cmds2.c ex_docmd.c ex_eval.c ex_getln.c \
-	fileio.c getchar.c hardcopy.c hashtab.c if_xcmdsrv.c \
+	fileio.c getchar.c hardcopy.c hashtab.c \
 	main.c mark.c memfile.c memline.c menu.c message.c misc1.c misc2.c \
-	move.c mbyte.c normal.c ops.c option.c os_unix.c pathdef.c popupmnu.c \
+	move.c mbyte.c normal.c ops.c option.c os_unix.c popupmnu.c \
 	quickfix.c regexp.c screen.c search.c sha256.c syntax.c tag.c \
 	term.c ui.c undo.c version.c window.c
 
@@ -45,7 +43,6 @@ OBJ_COMMON = \
 	objects/getchar.o \
 	objects/hardcopy.o \
 	objects/hashtab.o \
-	objects/if_xcmdsrv.o \
 	objects/mark.o \
         objects/memline.o \
 	objects/menu.o \
@@ -58,7 +55,6 @@ OBJ_COMMON = \
 	objects/ops.o \
 	objects/option.o \
 	objects/os_unix.o \
-	objects/pathdef.o \
 	objects/popupmnu.o \
 	objects/quickfix.o \
 	objects/regexp.o \
@@ -141,9 +137,6 @@ objects/hardcopy.o: hardcopy.c
 objects/hashtab.o: hashtab.c
 	$(CCC) -o $@ hashtab.c
 
-objects/if_xcmdsrv.o: if_xcmdsrv.c
-	$(CCC) -o $@ if_xcmdsrv.c
-
 objects/main.o: main.c
 	$(CCC) -o $@ main.c
 
@@ -186,12 +179,6 @@ objects/option.o: option.c
 objects/os_unix.o: os_unix.c
 	$(CCC) -o $@ os_unix.c
 
-objects/pathdef.o: pathdef.c
-	$(CCC) -o $@ pathdef.c
-
-objects/pty.o: pty.c
-	$(CCC) -o $@ pty.c
-
 objects/popupmnu.o: popupmnu.c
 	$(CCC) -o $@ popupmnu.c
 
@@ -230,140 +217,132 @@ objects/window.o: window.c
 
 ###############################################################################
 
-objects/buffer.o: buffer.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/buffer.o: buffer.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h version.h
-objects/charset.o: charset.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/charset.o: charset.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/digraph.o: digraph.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/digraph.o: digraph.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/edit.o: edit.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/edit.o: edit.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/eval.o: eval.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/eval.o: eval.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h version.h
-objects/ex_cmds.o: ex_cmds.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/ex_cmds.o: ex_cmds.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h version.h
-objects/ex_cmds2.o: ex_cmds2.c vim.h config.h feature.h os_unix.h \
+objects/ex_cmds2.o: ex_cmds2.c vim.h os_unix.h \
  osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h version.h
-objects/ex_docmd.o: ex_docmd.c vim.h config.h feature.h os_unix.h \
+objects/ex_docmd.o: ex_docmd.c vim.h os_unix.h \
  osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h
-objects/ex_eval.o: ex_eval.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/ex_eval.o: ex_eval.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/ex_getln.o: ex_getln.c vim.h config.h feature.h os_unix.h \
+objects/ex_getln.o: ex_getln.c vim.h os_unix.h \
  osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h
-objects/fileio.o: fileio.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/fileio.o: fileio.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/getchar.o: getchar.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/getchar.o: getchar.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/hardcopy.o: hardcopy.c vim.h config.h feature.h os_unix.h \
+objects/hardcopy.o: hardcopy.c vim.h os_unix.h \
  osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h version.h
-objects/hashtab.o: hashtab.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/hashtab.o: hashtab.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/if_xcmdsrv.o: if_xcmdsrv.c vim.h config.h feature.h os_unix.h \
- osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
- regexp.h ex_cmds.h proto.h \
- globals.h version.h
-objects/main.o: main.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/main.o: main.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/mark.o: mark.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/mark.o: mark.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/memfile.o: memfile.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/memfile.o: memfile.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/memline.o: memline.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/memline.o: memline.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/menu.o: menu.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/menu.o: menu.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/message.o: message.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/message.o: message.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/misc1.o: misc1.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/misc1.o: misc1.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h version.h
-objects/misc2.o: misc2.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/misc2.o: misc2.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/move.o: move.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/move.o: move.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/mbyte.o: mbyte.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/mbyte.o: mbyte.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/normal.o: normal.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/normal.o: normal.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/ops.o: ops.c vim.h config.h feature.h os_unix.h osdef.h ascii.h \
+objects/ops.o: ops.c vim.h os_unix.h osdef.h ascii.h \
  keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/option.o: option.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/option.o: option.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/os_unix.o: os_unix.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/os_unix.o: os_unix.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h os_unixx.h
-objects/pathdef.o: pathdef.c vim.h config.h feature.h os_unix.h \
+objects/popupmnu.o: popupmnu.c vim.h os_unix.h \
  osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h
-objects/popupmnu.o: popupmnu.c vim.h config.h feature.h os_unix.h \
+objects/quickfix.o: quickfix.c vim.h os_unix.h \
  osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h
-objects/quickfix.o: quickfix.c vim.h config.h feature.h os_unix.h \
- osdef.h ascii.h keymap.h term.h macros.h option.h structs.h \
- regexp.h ex_cmds.h proto.h \
- globals.h
-objects/regexp.o: regexp.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/regexp.o: regexp.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h regexp_nfa.c
-objects/screen.o: screen.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/screen.o: screen.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/search.o: search.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/search.o: search.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/sha256.o: sha256.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/sha256.o: sha256.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/syntax.o: syntax.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/syntax.o: syntax.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/tag.o: tag.c vim.h config.h feature.h os_unix.h osdef.h ascii.h \
+objects/tag.o: tag.c vim.h os_unix.h osdef.h ascii.h \
  keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/term.o: term.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/term.o: term.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/ui.o: ui.c vim.h config.h feature.h os_unix.h osdef.h ascii.h \
+objects/ui.o: ui.c vim.h os_unix.h osdef.h ascii.h \
  keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/undo.o: undo.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/undo.o: undo.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/version.o: version.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/version.o: version.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h version.h
-objects/window.o: window.c vim.h config.h feature.h os_unix.h osdef.h \
+objects/window.o: window.c vim.h os_unix.h osdef.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h

@@ -26,10 +26,6 @@ static int menu_is_hidden __ARGS((char_u *name));
 static int menu_is_tearoff __ARGS((char_u *name));
 #endif
 
-#if defined(FEAT_TOOLBAR)
-static char_u *menu_skip_part __ARGS((char_u *p));
-#endif
-
 static char_u *menu_translate_tab_and_shift __ARGS((char_u *arg_start));
 
 /* The character for each menu mode */
@@ -38,20 +34,6 @@ static char_u   menu_mode_chars[] = {'n', 'v', 's', 'o', 'i', 'c', 't'};
 static char_u e_notsubmenu[] = N_("E327: Part of menu-item path is not sub-menu");
 static char_u e_othermode[] = N_("E328: Menu only exists in another mode");
 static char_u e_nomenu[] = N_("E329: No menu \"%s\"");
-
-#if defined(FEAT_TOOLBAR)
-static const char *toolbar_names[] =
-{
-    /*  0 */ "New", "Open", "Save", "Undo", "Redo",
-    /*  5 */ "Cut", "Copy", "Paste", "Print", "Help",
-    /* 10 */ "Find", "SaveAll", "SaveSesn", "NewSesn", "LoadSesn",
-    /* 15 */ "RunScript", "Replace", "WinClose", "WinMax", "WinMin",
-    /* 20 */ "WinSplit", "Shell", "FindPrev", "FindNext", "FindHelp",
-    /* 25 */ "Make", "TagJump", "RunCtags", "WinVSplit", "WinMaxWidth",
-    /* 30 */ "WinMinWidth", "Exit"
-};
-#define TOOLBAR_NAME_COUNT (sizeof(toolbar_names) / sizeof(char *))
-#endif
 
 /*
  * Do the :menu command and relatives.
@@ -74,9 +56,6 @@ ex_menu(eap)
     int         pri_tab[MENUDEPTH + 1];
     int         enable = MAYBE;     /* TRUE for "menu enable", FALSE for "menu
                                      * disable */
-#if defined(FEAT_TOOLBAR)
-    char_u      *icon = NULL;
-#endif
     vimmenu_T   menuarg;
 
     modes = get_menu_cmd_modes(eap->cmd, eap->forceit, &noremap, &unmenu);
@@ -109,9 +88,6 @@ ex_menu(eap)
     if (STRNCMP(arg, "icon=", 5) == 0)
     {
         arg += 5;
-#if defined(FEAT_TOOLBAR)
-        icon = arg;
-#endif
         while (*arg != NUL && *arg != ' ')
         {
             if (*arg == '\\')
@@ -176,43 +152,6 @@ ex_menu(eap)
         show_menus(arg, modes);
         return;
     }
-
-#if defined(FEAT_TOOLBAR)
-    /*
-     * Need to get the toolbar icon index before doing the translation.
-     */
-    menuarg.iconidx = -1;
-    menuarg.icon_builtin = FALSE;
-    if (menu_is_toolbar(arg))
-    {
-        menu_path = menu_skip_part(arg);
-        if (*menu_path == '.')
-        {
-            p = menu_skip_part(++menu_path);
-            if (STRNCMP(menu_path, "BuiltIn", 7) == 0)
-            {
-                if (skipdigits(menu_path + 7) == p)
-                {
-                    menuarg.iconidx = atoi((char *)menu_path + 7);
-                    if (menuarg.iconidx >= (int)TOOLBAR_NAME_COUNT)
-                        menuarg.iconidx = -1;
-                    else
-                        menuarg.icon_builtin = TRUE;
-                }
-            }
-            else
-            {
-                for (i = 0; i < (int)TOOLBAR_NAME_COUNT; ++i)
-                    if (STRNCMP(toolbar_names[i], menu_path, p - menu_path)
-                                                                         == 0)
-                    {
-                        menuarg.iconidx = i;
-                        break;
-                    }
-            }
-        }
-    }
-#endif
 
     menu_path = arg;
     if (*menu_path == '.')
@@ -307,9 +246,6 @@ ex_menu(eap)
         else
             map_to = replace_termcodes(map_to, &map_buf, FALSE, TRUE, special);
         menuarg.modes = modes;
-#if defined(FEAT_TOOLBAR)
-        menuarg.iconfile = icon;
-#endif
         menuarg.noremap[0] = noremap;
         menuarg.silent[0] = silent;
         add_menu_path(menu_path, &menuarg, pri_tab, map_to
@@ -328,11 +264,6 @@ ex_menu(eap)
                     {
                         /* Include all modes, to make ":amenu" work */
                         menuarg.modes = modes;
-#if defined(FEAT_TOOLBAR)
-                        menuarg.iconfile = NULL;
-                        menuarg.iconidx = -1;
-                        menuarg.icon_builtin = FALSE;
-#endif
                         add_menu_path(p, &menuarg, pri_tab, map_to
                                          );
                         vim_free(p);
@@ -411,8 +342,7 @@ add_menu_path(menu_path, menuarg, pri_tab, call_data
                         EMSG(_("E330: Menu path must not lead to a sub-menu"));
                     goto erret;
                 }
-                if (*next_name != NUL && menu->children == NULL
-                        )
+                if (*next_name != NUL && menu->children == NULL)
                 {
                     if (!sys_menu)
                         EMSG(_(e_notsubmenu));
@@ -468,13 +398,6 @@ add_menu_path(menu_path, menuarg, pri_tab, call_data
             *lower_pri = menu;
 
             old_modes = 0;
-
-#if defined(FEAT_TOOLBAR)
-            menu->iconidx = menuarg->iconidx;
-            menu->icon_builtin = menuarg->icon_builtin;
-            if (*next_name == NUL && menuarg->iconfile != NULL)
-                menu->iconfile = vim_strsave(menuarg->iconfile);
-#endif
         }
         else
         {
@@ -527,8 +450,7 @@ add_menu_path(menu_path, menuarg, pri_tab, call_data
                  * Don't do this for "<Nop>". */
                 c = 0;
                 d = 0;
-                if (amenu && call_data != NULL && *call_data != NUL
-                                       )
+                if (amenu && call_data != NULL && *call_data != NUL)
                 {
                     switch (1 << i)
                     {
@@ -772,9 +694,6 @@ free_menu(menup)
     vim_free(menu->name);
     vim_free(menu->dname);
     vim_free(menu->actext);
-#if defined(FEAT_TOOLBAR)
-    vim_free(menu->iconfile);
-#endif
     for (i = 0; i < MENU_MODES; i++)
         free_menu_string(menu, i);
     vim_free(menu);
@@ -1553,24 +1472,6 @@ ex_menutranslate(eap)
     exarg_T     *eap UNUSED;
 {
 }
-
-#if defined(FEAT_TOOLBAR)
-/*
- * Find the character just after one part of a menu name.
- */
-    static char_u *
-menu_skip_part(p)
-    char_u      *p;
-{
-    while (*p != NUL && *p != '.' && !vim_iswhite(*p))
-    {
-        if ((*p == '\\' || *p == Ctrl_V) && p[1] != NUL)
-            ++p;
-        ++p;
-    }
-    return p;
-}
-#endif
 
 /*
  * Isolate the menu name.

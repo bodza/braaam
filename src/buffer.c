@@ -36,10 +36,6 @@ static void     clear_wininfo __ARGS((buf_T *buf));
 
 #define dev_T dev_t
 
-#if defined(FEAT_SIGNS)
-static void insert_sign __ARGS((buf_T *buf, signlist_T *prev, signlist_T *next, int id, linenr_T lnum, int typenr));
-#endif
-
 #if defined(FEAT_WINDOWS) && defined(FEAT_QUICKFIX)
 static char *msg_loclist = N_("[Location List]");
 static char *msg_qflist = N_("[Quickfix List]");
@@ -114,8 +110,7 @@ open_buffer(read_stdin, eap, flags)
     /* mark cursor position as being invalid */
     curwin->w_valid = 0;
 
-    if (curbuf->b_ffname != NULL
-       )
+    if (curbuf->b_ffname != NULL)
     {
         retval = readfile(curbuf->b_ffname, curbuf->b_fname,
                   (linenr_T)0, (linenr_T)0, (linenr_T)MAXLNUM, eap,
@@ -592,9 +587,6 @@ free_buffer_stuff(buf, free_options)
 #if defined(FEAT_USR_CMDS)
     uc_clear(&buf->b_ucmds);            /* clear local user commands */
 #endif
-#if defined(FEAT_SIGNS)
-    buf_delete_signs(buf);              /* delete any signs */
-#endif
 #if defined(FEAT_LOCALMAP)
     map_clear_int(buf, MAP_ALL_MODES, TRUE, FALSE);  /* clear local mappings */
     map_clear_int(buf, MAP_ALL_MODES, TRUE, TRUE);   /* clear local abbrevs */
@@ -1041,7 +1033,7 @@ do_buffer(action, start, dir, count, forceit)
 
         if (!forceit && bufIsChanged(buf))
         {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
             if ((p_confirm || cmdmod.confirm) && p_write)
             {
                 dialog_changed(buf, FALSE);
@@ -1243,7 +1235,7 @@ do_buffer(action, start, dir, count, forceit)
      */
     if (action == DOBUF_GOTO && !can_abandon(curbuf, forceit))
     {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
         if ((p_confirm || cmdmod.confirm) && p_write)
         {
             dialog_changed(curbuf, FALSE);
@@ -2384,8 +2376,7 @@ find_wininfo(buf, skip_diff_buffer)
     wininfo_T   *wip;
 
     for (wip = buf->b_wininfo; wip != NULL; wip = wip->wi_next)
-        if (wip->wi_win == curwin
-           )
+        if (wip->wi_win == curwin)
             break;
 
     /* If no wininfo for curwin, use the first in the list (that doesn't have
@@ -3089,14 +3080,6 @@ maketitle()
 
             append_arg_number(curwin, buf, SPACE_FOR_ARGNR, FALSE);
 
-#if defined(FEAT_CLIENTSERVER)
-            if (serverName != NULL)
-            {
-                STRCAT(buf, " - ");
-                vim_strcat(buf, serverName, IOSIZE);
-            }
-            else
-#endif
                 STRCAT(buf, " - VIM");
 
             if (maxlen > 0)
@@ -4905,300 +4888,6 @@ find_win_for_buf(buf, wp, tp)
     return FAIL;
 win_found:
     return OK;
-}
-#endif
-
-#if defined(FEAT_SIGNS)
-/*
- * Insert the sign into the signlist.
- */
-    static void
-insert_sign(buf, prev, next, id, lnum, typenr)
-    buf_T       *buf;           /* buffer to store sign in */
-    signlist_T  *prev;          /* previous sign entry */
-    signlist_T  *next;          /* next sign entry */
-    int         id;             /* sign ID */
-    linenr_T    lnum;           /* line number which gets the mark */
-    int         typenr;         /* typenr of sign we are adding */
-{
-    signlist_T  *newsign;
-
-    newsign = (signlist_T *)lalloc((long_u)sizeof(signlist_T), FALSE);
-    if (newsign != NULL)
-    {
-        newsign->id = id;
-        newsign->lnum = lnum;
-        newsign->typenr = typenr;
-        newsign->next = next;
-
-        if (prev == NULL)
-        {
-            /* When adding first sign need to redraw the windows to create the
-             * column for signs. */
-            if (buf->b_signlist == NULL)
-            {
-                redraw_buf_later(buf, NOT_VALID);
-                changed_cline_bef_curs();
-            }
-
-            /* first sign in signlist */
-            buf->b_signlist = newsign;
-        }
-        else
-            prev->next = newsign;
-    }
-}
-
-/*
- * Add the sign into the signlist. Find the right spot to do it though.
- */
-    void
-buf_addsign(buf, id, lnum, typenr)
-    buf_T       *buf;           /* buffer to store sign in */
-    int         id;             /* sign ID */
-    linenr_T    lnum;           /* line number which gets the mark */
-    int         typenr;         /* typenr of sign we are adding */
-{
-    signlist_T  *sign;          /* a sign in the signlist */
-    signlist_T  *prev;          /* the previous sign */
-
-    prev = NULL;
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-    {
-        if (lnum == sign->lnum && id == sign->id)
-        {
-            sign->typenr = typenr;
-            return;
-        }
-        else if (id < 0 && lnum < sign->lnum) /* keep signs sorted by lnum */
-        {
-            insert_sign(buf, prev, sign, id, lnum, typenr);
-            return;
-        }
-        prev = sign;
-    }
-    insert_sign(buf, prev, sign, id, lnum, typenr);
-
-    return;
-}
-
-/*
- * For an existing, placed sign "markId" change the type to "typenr".
- * Returns the line number of the sign, or zero if the sign is not found.
- */
-    linenr_T
-buf_change_sign_type(buf, markId, typenr)
-    buf_T       *buf;           /* buffer to store sign in */
-    int         markId;         /* sign ID */
-    int         typenr;         /* typenr of sign we are adding */
-{
-    signlist_T  *sign;          /* a sign in the signlist */
-
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-    {
-        if (sign->id == markId)
-        {
-            sign->typenr = typenr;
-            return sign->lnum;
-        }
-    }
-
-    return (linenr_T)0;
-}
-
-    int
-buf_getsigntype(buf, lnum, type)
-    buf_T       *buf;
-    linenr_T    lnum;
-    int         type;   /* SIGN_ICON, SIGN_TEXT, SIGN_ANY, SIGN_LINEHL */
-{
-    signlist_T  *sign;          /* a sign in a b_signlist */
-
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-        if (sign->lnum == lnum
-                && (type == SIGN_ANY
-#if defined(FEAT_SIGN_ICONS)
-                    || (type == SIGN_ICON
-                        && sign_get_image(sign->typenr) != NULL)
-#endif
-                    || (type == SIGN_TEXT
-                        && sign_get_text(sign->typenr) != NULL)
-                    || (type == SIGN_LINEHL
-                        && sign_get_attr(sign->typenr, TRUE) != 0)))
-            return sign->typenr;
-    return 0;
-}
-
-    linenr_T
-buf_delsign(buf, id)
-    buf_T       *buf;           /* buffer sign is stored in */
-    int         id;             /* sign id */
-{
-    signlist_T  **lastp;        /* pointer to pointer to current sign */
-    signlist_T  *sign;          /* a sign in a b_signlist */
-    signlist_T  *next;          /* the next sign in a b_signlist */
-    linenr_T    lnum;           /* line number whose sign was deleted */
-
-    lastp = &buf->b_signlist;
-    lnum = 0;
-    for (sign = buf->b_signlist; sign != NULL; sign = next)
-    {
-        next = sign->next;
-        if (sign->id == id)
-        {
-            *lastp = next;
-            lnum = sign->lnum;
-            vim_free(sign);
-            break;
-        }
-        else
-            lastp = &sign->next;
-    }
-
-    /* When deleted the last sign need to redraw the windows to remove the
-     * sign column. */
-    if (buf->b_signlist == NULL)
-    {
-        redraw_buf_later(buf, NOT_VALID);
-        changed_cline_bef_curs();
-    }
-
-    return lnum;
-}
-
-/*
- * Find the line number of the sign with the requested id. If the sign does
- * not exist, return 0 as the line number. This will still let the correct file
- * get loaded.
- */
-    int
-buf_findsign(buf, id)
-    buf_T       *buf;           /* buffer to store sign in */
-    int         id;             /* sign ID */
-{
-    signlist_T  *sign;          /* a sign in the signlist */
-
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-        if (sign->id == id)
-            return sign->lnum;
-
-    return 0;
-}
-
-    int
-buf_findsign_id(buf, lnum)
-    buf_T       *buf;           /* buffer whose sign we are searching for */
-    linenr_T    lnum;           /* line number of sign */
-{
-    signlist_T  *sign;          /* a sign in the signlist */
-
-    for (sign = buf->b_signlist; sign != NULL; sign = sign->next)
-        if (sign->lnum == lnum)
-            return sign->id;
-
-    return 0;
-}
-
-/*
- * Delete signs in buffer "buf".
- */
-    void
-buf_delete_signs(buf)
-    buf_T       *buf;
-{
-    signlist_T  *next;
-
-    /* When deleting the last sign need to redraw the windows to remove the
-     * sign column. Not when curwin is NULL (this means we're exiting). */
-    if (buf->b_signlist != NULL && curwin != NULL)
-    {
-        redraw_buf_later(buf, NOT_VALID);
-        changed_cline_bef_curs();
-    }
-
-    while (buf->b_signlist != NULL)
-    {
-        next = buf->b_signlist->next;
-        vim_free(buf->b_signlist);
-        buf->b_signlist = next;
-    }
-}
-
-/*
- * Delete all signs in all buffers.
- */
-    void
-buf_delete_all_signs()
-{
-    buf_T       *buf;           /* buffer we are checking for signs */
-
-    for (buf = firstbuf; buf != NULL; buf = buf->b_next)
-        if (buf->b_signlist != NULL)
-            buf_delete_signs(buf);
-}
-
-/*
- * List placed signs for "rbuf".  If "rbuf" is NULL do it for all buffers.
- */
-    void
-sign_list_placed(rbuf)
-    buf_T       *rbuf;
-{
-    buf_T       *buf;
-    signlist_T  *p;
-    char        lbuf[BUFSIZ];
-
-    MSG_PUTS_TITLE(_("\n--- Signs ---"));
-    msg_putchar('\n');
-    if (rbuf == NULL)
-        buf = firstbuf;
-    else
-        buf = rbuf;
-    while (buf != NULL && !got_int)
-    {
-        if (buf->b_signlist != NULL)
-        {
-            vim_snprintf(lbuf, BUFSIZ, _("Signs for %s:"), buf->b_fname);
-            MSG_PUTS_ATTR(lbuf, hl_attr(HLF_D));
-            msg_putchar('\n');
-        }
-        for (p = buf->b_signlist; p != NULL && !got_int; p = p->next)
-        {
-            vim_snprintf(lbuf, BUFSIZ, _("    line=%ld  id=%d  name=%s"),
-                           (long)p->lnum, p->id, sign_typenr2name(p->typenr));
-            MSG_PUTS(lbuf);
-            msg_putchar('\n');
-        }
-        if (rbuf != NULL)
-            break;
-        buf = buf->b_next;
-    }
-}
-
-/*
- * Adjust a placed sign for inserted/deleted lines.
- */
-    void
-sign_mark_adjust(line1, line2, amount, amount_after)
-    linenr_T    line1;
-    linenr_T    line2;
-    long        amount;
-    long        amount_after;
-{
-    signlist_T  *sign;          /* a sign in a b_signlist */
-
-    for (sign = curbuf->b_signlist; sign != NULL; sign = sign->next)
-    {
-        if (sign->lnum >= line1 && sign->lnum <= line2)
-        {
-            if (amount == MAXLNUM)
-                sign->lnum = line1;
-            else
-                sign->lnum += amount;
-        }
-        else if (sign->lnum > line2)
-            sign->lnum += amount_after;
-    }
 }
 #endif
 

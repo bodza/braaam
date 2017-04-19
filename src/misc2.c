@@ -882,9 +882,6 @@ free_all_mem()
     free_regexp_stuff();
     free_tag_stuff();
     free_cd_dir();
-#if defined(FEAT_SIGNS)
-    free_signs();
-#endif
     set_expr_line(NULL);
     clear_sb_text();          /* free any scrollback text */
 
@@ -1539,7 +1536,7 @@ mch_memmove(dst_arg, src_arg, len)
 }
 #endif
 
-#if (!defined(HAVE_STRCASECMP) && !defined(HAVE_STRICMP))
+#if !defined(HAVE_STRCASECMP)
 /*
  * Compare two strings, ignoring case, using current locale.
  * Doesn't work for multi-byte characters.
@@ -1566,7 +1563,7 @@ vim_stricmp(s1, s2)
 }
 #endif
 
-#if (!defined(HAVE_STRNCASECMP) && !defined(HAVE_STRNICMP))
+#if !defined(HAVE_STRNCASECMP)
 /*
  * Compare two strings, for length "len", ignoring case, using current locale.
  * Doesn't work for multi-byte characters.
@@ -3754,7 +3751,6 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
         search_ctx->ffsc_start_dir = vim_strsave(ff_expand_buffer);
         if (search_ctx->ffsc_start_dir == NULL)
             goto error_return;
-
     }
 
 #if defined(FEAT_PATH_EXTRA)
@@ -3809,7 +3805,6 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
                                                           vim_strsave(helper);
 
                 dircount++;
-
             } while (walker != NULL);
             search_ctx->ffsc_stopdirs_v[dircount-1] = NULL;
         }
@@ -4440,7 +4435,6 @@ vim_findfile(search_ctx_arg)
 
             /* we are done with the current directory */
             ff_free_stack_element(stackp);
-
         }
 
 #if defined(FEAT_PATH_EXTRA)
@@ -5359,8 +5353,7 @@ pathcmp(p, q, maxlen)
             break;
         }
 
-        if ((p_fic ? MB_TOUPPER(c1) != MB_TOUPPER(c2) : c1 != c2)
-                )
+        if ((p_fic ? MB_TOUPPER(c1) != MB_TOUPPER(c2) : c1 != c2))
         {
             if (vim_ispathsep(c1))
                 return -1;

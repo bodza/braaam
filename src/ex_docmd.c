@@ -121,10 +121,8 @@ static int      getargopt __ARGS((exarg_T *eap));
 static int      check_more __ARGS((int, int));
 static linenr_T get_address __ARGS((char_u **, int addr_type, int skip, int to_other_file));
 static void     get_flags __ARGS((exarg_T *eap));
-#if (1)
 #define HAVE_EX_SCRIPT_NI
 static void     ex_script_ni __ARGS((exarg_T *eap));
-#endif
 static char_u   *invalid_range __ARGS((exarg_T *eap));
 static void     correct_range __ARGS((exarg_T *eap));
 #if defined(FEAT_QUICKFIX)
@@ -192,9 +190,7 @@ static void     ex_wrongmodifier __ARGS((exarg_T *eap));
 static void     ex_find __ARGS((exarg_T *eap));
 static void     ex_open __ARGS((exarg_T *eap));
 static void     ex_edit __ARGS((exarg_T *eap));
-#if !defined(FEAT_CLIENTSERVER)
 #define ex_drop                ex_ni
-#endif
 #define ex_gui                 ex_nogui
 static void     ex_nogui __ARGS((exarg_T *eap));
 #define ex_tearoff             ex_ni
@@ -203,65 +199,43 @@ static void     ex_nogui __ARGS((exarg_T *eap));
 #define gui_mch_find_dialog    ex_ni
 #define gui_mch_replace_dialog ex_ni
 #define ex_helpfind            ex_ni
-#if (1)
 #define do_cscope              ex_ni
 #define do_scscope             ex_ni
 #define do_cstag               ex_ni
-#endif
 #if !defined(FEAT_SYN_HL)
 #define ex_syntax              ex_ni
 #define ex_ownsyntax           ex_ni
 #endif
-#if !defined(FEAT_SYN_HL) || (1)
 #define ex_syntime             ex_ni
-#endif
-#if (1)
 #define ex_spell               ex_ni
 #define ex_mkspell             ex_ni
 #define ex_spelldump           ex_ni
 #define ex_spellinfo           ex_ni
 #define ex_spellrepall         ex_ni
-#endif
 #if !defined(FEAT_PERSISTENT_UNDO)
 #define ex_rundo               ex_ni
 #define ex_wundo               ex_ni
 #endif
-#if (1)
 #define ex_lua                 ex_script_ni
 #define ex_luado               ex_ni
 #define ex_luafile             ex_ni
-#endif
-#if (1)
 #define ex_mzscheme            ex_script_ni
 #define ex_mzfile              ex_ni
-#endif
-#if (1)
 #define ex_perl                ex_script_ni
 #define ex_perldo              ex_ni
-#endif
-#if (1)
 #define ex_python              ex_script_ni
 #define ex_pydo                ex_ni
 #define ex_pyfile              ex_ni
-#endif
-#if (1)
 #define ex_py3                 ex_script_ni
 #define ex_py3do               ex_ni
 #define ex_py3file             ex_ni
-#endif
-#if (1)
 #define ex_tcl                 ex_script_ni
 #define ex_tcldo               ex_ni
 #define ex_tclfile             ex_ni
-#endif
-#if (1)
 #define ex_ruby                ex_script_ni
 #define ex_rubydo              ex_ni
 #define ex_rubyfile            ex_ni
-#endif
-#if (1)
 #define ex_sniff               ex_ni
-#endif
 #if !defined(FEAT_KEYMAP)
 #define ex_loadkeymap          ex_ni
 #endif
@@ -331,12 +305,8 @@ static void     ex_psearch __ARGS((exarg_T *eap));
 static void     ex_tag __ARGS((exarg_T *eap));
 static void     ex_tag_cmd __ARGS((exarg_T *eap, char_u *name));
 static char_u   *arg_all __ARGS((void));
-#if (1)
 #define ex_loadview            ex_ni
-#endif
-#if (1)
 #define ex_viminfo             ex_ni
-#endif
 static void     ex_behave __ARGS((exarg_T *eap));
 #if defined(FEAT_AUTOCMD)
 static void     ex_filetype __ARGS((exarg_T *eap));
@@ -345,14 +315,12 @@ static void     ex_setfiletype  __ARGS((exarg_T *eap));
 #define ex_filetype            ex_ni
 #define ex_setfiletype         ex_ni
 #endif
-#if (1)
 #define ex_diffoff             ex_ni
 #define ex_diffpatch           ex_ni
 #define ex_diffgetput          ex_ni
 #define ex_diffsplit           ex_ni
 #define ex_diffthis            ex_ni
 #define ex_diffupdate          ex_ni
-#endif
 static void     ex_digraphs __ARGS((exarg_T *eap));
 static void     ex_set __ARGS((exarg_T *eap));
 #if !defined(FEAT_AUTOCMD)
@@ -365,20 +333,14 @@ static void     ex_match __ARGS((exarg_T *eap));
 #define ex_nohlsearch          ex_ni
 #define ex_match               ex_ni
 #endif
-#if (1)
 #define ex_X                   ex_ni
-#endif
-#if (1)
 #define ex_fold                ex_ni
 #define ex_foldopen            ex_ni
 #define ex_folddo              ex_ni
-#endif
 #if !defined(HAVE_LOCALE_H)
 #define ex_language            ex_ni
 #endif
-#if !defined(FEAT_SIGNS)
 #define ex_sign                ex_ni
-#endif
 #define ex_wsverb              ex_ni
 #define ex_nbclose             ex_ni
 #define ex_nbkey               ex_ni
@@ -392,9 +354,7 @@ static void     ex_match __ARGS((exarg_T *eap));
 #define ex_changes             ex_ni
 #endif
 
-#if (1)
 #define ex_profile             ex_ni
-#endif
 
 /*
  * Declare cmdnames[].
@@ -1121,7 +1081,6 @@ do_cmdline(cmdline, fgetline, cookie, flags)
 
         /* Convert an interrupt to an exception if appropriate. */
         (void)do_intthrow(&cstack);
-
     }
     /*
      * Continue executing command lines when:
@@ -1714,7 +1673,7 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
 
             case 'c':   if (!checkforcmd(&ea.cmd, "confirm", 4))
                             break;
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
                         cmdmod.confirm = TRUE;
 #endif
                         continue;
@@ -3789,11 +3748,6 @@ set_one_cmd_context(xp, buff)
         case CMD_highlight:
             set_context_in_highlight_cmd(xp, arg);
             break;
-#if defined(FEAT_SIGNS)
-        case CMD_sign:
-            set_context_in_sign_cmd(xp, arg);
-            break;
-#endif
 #if defined(FEAT_LISTCMDS)
         case CMD_bdelete:
         case CMD_bwipeout:
@@ -4605,9 +4559,7 @@ expand_filename(eap, cmdlinep, errormsgp)
                 )
         {
             char_u      *l;
-#if (1)
 #define ESCAPE_CHARS escape_chars
-#endif
 
             for (l = repl; *l; ++l)
                 if (vim_strchr(ESCAPE_CHARS, *l) != NULL)
@@ -5279,7 +5231,7 @@ check_more(message, forceit)
     {
         if (message)
         {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
             if ((p_confirm || cmdmod.confirm) && curbuf->b_fname != NULL)
             {
                 char_u  buff[DIALOG_MSG_SIZE];
@@ -5507,9 +5459,6 @@ static struct
     {EXPAND_OWNSYNTAX, "syntax"},
     {EXPAND_SETTINGS, "option"},
     {EXPAND_SHELLCMD, "shellcmd"},
-#if defined(FEAT_SIGNS)
-    {EXPAND_SIGN, "sign"},
-#endif
     {EXPAND_TAGS, "tag"},
     {EXPAND_TAGS_LISTFILES, "tag_listfiles"},
     {EXPAND_USER, "user"},
@@ -6832,7 +6781,7 @@ ex_win_close(forceit, win, tp)
     need_hide = (bufIsChanged(buf) && buf->b_nwindows <= 1);
     if (need_hide && !P_HID(buf) && !forceit)
     {
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
         if ((p_confirm || cmdmod.confirm) && p_write)
         {
             dialog_changed(buf, FALSE);
@@ -7540,8 +7489,7 @@ ex_splitview(eap)
 #if defined(FEAT_SCROLLBIND)
         /* Reset 'scrollbind' when editing another file, but keep it when
          * doing ":split" without arguments. */
-        if (*eap->arg != NUL
-           )
+        if (*eap->arg != NUL)
         {
             RESET_BINDING(curwin);
         }
@@ -8129,7 +8077,6 @@ ex_read(eap)
                 (void)setaltfname(eap->arg, eap->arg, (linenr_T)1);
             i = readfile(eap->arg, NULL,
                           eap->line2, (linenr_T)0, (linenr_T)MAXLNUM, eap, 0);
-
         }
         if (i == FAIL)
         {
@@ -8939,10 +8886,8 @@ ex_mkrc(eap)
 
     if (eap->cmdidx == CMD_mksession || eap->cmdidx == CMD_mkview)
     {
-#if (1)
         ex_ni(eap);
         return;
-#endif
     }
 
         if (*eap->arg != NUL)
@@ -8955,13 +8900,6 @@ ex_mkrc(eap)
     fd = open_exfile(fname, eap->forceit, WRITEBIN);
     if (fd != NULL)
     {
-
-#if defined(MKSESSION_NL)
-        /* "unix" in 'sessionoptions': use NL line separator */
-        if (view_session && (*flagp & SSOP_UNIX))
-            mksession_nl = TRUE;
-#endif
-
         /* Write the version command for :mkvimrc */
         if (eap->cmdidx == CMD_mkvimrc)
             (void)put_line(fd, "version 6.0");
@@ -8985,9 +8923,6 @@ ex_mkrc(eap)
 
         if (failed)
             EMSG(_(e_write));
-#if defined(MKSESSION_NL)
-        mksession_nl = FALSE;
-#endif
     }
 
 }
@@ -9123,8 +9058,7 @@ ex_normal(eap)
         for (p = eap->arg; *p != NUL; ++p)
         {
             for (l = (*mb_ptr2len)(p) - 1; l > 0; --l)
-                if (*++p == K_SPECIAL     /* trailbyte K_SPECIAL or CSI */
-                        )
+                if (*++p == K_SPECIAL     /* trailbyte K_SPECIAL or CSI */)
                     len += 2;
         }
         if (len > 0)
@@ -9509,14 +9443,6 @@ find_cmdline_var(src, usedlen)
                     "<amatch>",         /* autocommand match name */
 #define SPEC_AMATCH 9
 #endif
-#if defined(FEAT_CLIENTSERVER)
-                    "<client>"
-#if defined(FEAT_AUTOCMD)
-#define SPEC_CLIENT 10
-#else
-#define SPEC_CLIENT 7
-#endif
-#endif
     };
 
     for (i = 0; i < (int)(sizeof(spec_str) / sizeof(char *)); ++i)
@@ -9758,13 +9684,6 @@ eval_vars(src, srcstart, usedlen, lnump, errormsg, escaped)
                 sprintf((char *)strbuf, "%ld", (long)sourcing_lnum);
                 result = strbuf;
                 break;
-#if defined(FEAT_CLIENTSERVER)
-        case SPEC_CLIENT:       /* Source of last submitted input */
-                sprintf((char *)strbuf, PRINTF_HEX_LONG_U,
-                                                        (long_u)clientWindow);
-                result = strbuf;
-                break;
-#endif
         }
 
         resultlen = (int)STRLEN(result);        /* length of new string */
@@ -9944,11 +9863,7 @@ put_eol(fd)
 {
     if (
 #if defined(USE_CRNL)
-            (
-#if defined(MKSESSION_NL)
-             !mksession_nl &&
-#endif
-             (putc('\r', fd) < 0)) ||
+            ((putc('\r', fd) < 0)) ||
 #endif
             (putc('\n', fd) < 0))
         return FAIL;
@@ -9969,7 +9884,7 @@ put_line(fd, s)
     return OK;
 }
 
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
 /*
  * Make a dialog message in "buff[DIALOG_MSG_SIZE]".
  * "format" must contain "%s".

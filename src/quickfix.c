@@ -1718,7 +1718,6 @@ win_found:
             }
             else
             {
-
             /*
              * Try to find a window that shows the right buffer.
              * Default to the window just above the quickfix buffer.
@@ -2568,7 +2567,6 @@ qf_update_buffer(qi)
             curwin = win;
             qf_set_title_var(qi);
             curwin = curwin_save;
-
         }
 
         /* restore curwin/curbuf and a few other things */
@@ -3688,7 +3686,6 @@ unload_dummy_buffer(buf, dirname_start)
     }
 }
 
-#if (1)
 /*
  * Add each quickfix error to list "list" as a dictionary.
  */
@@ -3870,7 +3867,6 @@ set_errorlist(wp, list, action, title)
 
     return retval;
 }
-#endif
 
 /*
  * ":[range]cbuffer [bufnr]" command.

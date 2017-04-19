@@ -317,7 +317,7 @@ EXTERN long     p_cwh;          /* 'cmdwinheight' */
 EXTERN char_u   *p_cb;          /* 'clipboard' */
 #endif
 EXTERN long     p_ch;           /* 'cmdheight' */
-#if defined(FEAT_GUI_DIALOG) || defined(FEAT_CON_DIALOG)
+#if defined(FEAT_CON_DIALOG)
 EXTERN int      p_confirm;      /* 'confirm' */
 #endif
 EXTERN int      p_cp;           /* 'compatible' */
@@ -584,17 +584,6 @@ EXTERN int      p_ttimeout;     /* 'ttimeout' */
 EXTERN long     p_ttm;          /* 'ttimeoutlen' */
 EXTERN int      p_tbi;          /* 'ttybuiltin' */
 EXTERN int      p_tf;           /* 'ttyfast' */
-#if defined(FEAT_TOOLBAR)
-EXTERN char_u   *p_toolbar;     /* 'toolbar' */
-EXTERN unsigned toolbar_flags;
-#if defined(IN_OPTION_C)
-static char *(p_toolbar_values[]) = {"text", "icons", "tooltips", "horiz", NULL};
-#endif
-#define TOOLBAR_TEXT           0x01
-#define TOOLBAR_ICONS          0x02
-#define TOOLBAR_TOOLTIPS       0x04
-#define TOOLBAR_HORIZ          0x08
-#endif
 EXTERN long     p_ttyscroll;    /* 'ttyscroll' */
 #if defined(FEAT_MOUSE)
 EXTERN char_u   *p_ttym;        /* 'ttymouse' */

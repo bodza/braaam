@@ -1618,7 +1618,7 @@ skiptowhite(p)
     return p;
 }
 
-#if defined(FEAT_LISTCMDS) || defined(FEAT_SIGNS)
+#if defined(FEAT_LISTCMDS)
 /*
  * skiptowhite_esc: Like skiptowhite(), but also skip escaped chars
  */

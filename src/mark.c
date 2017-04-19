@@ -1064,10 +1064,6 @@ mark_adjust(line1, line2, amount, amount_after)
         FOR_ALL_TAB_WINDOWS(tab, win)
             qf_mark_adjust(win, line1, line2, amount, amount_after);
 #endif
-
-#if defined(FEAT_SIGNS)
-        sign_mark_adjust(line1, line2, amount, amount_after);
-#endif
     }
 
     /* previous context mark */
@@ -1145,7 +1141,6 @@ mark_adjust(line1, line2, amount, amount_after)
                 else if (amount_after && win->w_cursor.lnum > line2)
                     win->w_cursor.lnum += amount_after;
             }
-
         }
     }
 

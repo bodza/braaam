@@ -16,13 +16,11 @@ static void version_msg __ARGS((char *s));
 
 static char *(features[]) =
 {
-        "-acl",
 #if defined(FEAT_AUTOCMD)
         "+autocmd",
 #else
         "-autocmd",
 #endif
-        "-browse",
 #if defined(NO_BUILTIN_TCAPS)
         "-builtin_terms",
 #endif
@@ -41,11 +39,6 @@ static char *(features[]) =
         "+cindent",
 #else
         "-cindent",
-#endif
-#if defined(FEAT_CLIENTSERVER)
-        "+clientserver",
-#else
-        "-clientserver",
 #endif
 #if defined(FEAT_CLIPBOARD)
         "+clipboard",
@@ -77,8 +70,6 @@ static char *(features[]) =
 #else
         "-conceal",
 #endif
-        "-cryptv",
-        "-cscope",
 #if defined(FEAT_CURSORBIND)
         "+cursorbind",
 #else
@@ -89,20 +80,11 @@ static char *(features[]) =
 #else
         "-cursorshape",
 #endif
-#if defined(FEAT_CON_DIALOG) && defined(FEAT_GUI_DIALOG)
-        "+dialog_con_gui",
-#else
 #if defined(FEAT_CON_DIALOG)
         "+dialog_con",
 #else
-#if defined(FEAT_GUI_DIALOG)
-        "+dialog_gui",
-#else
         "-dialog",
 #endif
-#endif
-#endif
-        "-diff",
 #if defined(FEAT_DIGRAPHS)
         "+digraphs",
 #else
@@ -113,7 +95,6 @@ static char *(features[]) =
 #else
         "-dnd",
 #endif
-        "-emacs_tags",
         "+eval",
 #if defined(FEAT_EX_EXTRA)
         "+ex_extra",
@@ -135,26 +116,15 @@ static char *(features[]) =
 #else
         "-find_in_path",
 #endif
-#if defined(FEAT_FLOAT)
         "+float",
-#else
-        "-float",
-#endif
-        "-folding",
 #if defined(FEAT_FOOTER)
         "+footer",
 #else
         "-footer",
 #endif
-            /* only interesting on Unix systems */
         "+fork()",
-        "-gettext",
-#if (defined(HAVE_ICONV_H) && defined(USE_ICONV)) || defined(DYNAMIC_ICONV)
-#if defined(DYNAMIC_ICONV)
-        "+iconv/dyn",
-#else
+#if (defined(HAVE_ICONV_H) && defined(USE_ICONV))
         "+iconv",
-#endif
 #else
         "-iconv",
 #endif
@@ -177,11 +147,6 @@ static char *(features[]) =
         "+langmap",
 #else
         "-langmap",
-#endif
-#if defined(FEAT_LIBCALL)
-        "+libcall",
-#else
-        "-libcall",
 #endif
 #if defined(FEAT_LINEBREAK)
         "+linebreak",
@@ -208,7 +173,6 @@ static char *(features[]) =
 #else
         "-menu",
 #endif
-        "-mksession",
 #if defined(FEAT_MODIFY_FNAME)
         "+modify_fname",
 #else
@@ -224,29 +188,21 @@ static char *(features[]) =
 #else
         "-mouse",
 #endif
-
-        "-mouse_dec",
 #if defined(FEAT_MOUSE_GPM)
         "+mouse_gpm",
 #else
         "-mouse_gpm",
 #endif
-        "-mouse_jsbterm",
-        "-mouse_netterm",
-
-        "-mouse_sgr",
 #if defined(FEAT_SYSMOUSE)
         "+mouse_sysmouse",
 #else
         "-mouse_sysmouse",
 #endif
-        "-mouse_urxvt",
 #if defined(FEAT_MOUSE_XTERM)
         "+mouse_xterm",
 #else
         "-mouse_xterm",
 #endif
-
         "+multi_byte",
 #if defined(FEAT_PATH_EXTRA)
         "+path_extra",
@@ -268,7 +224,6 @@ static char *(features[]) =
 #else
         "-printer",
 #endif
-        "-profile",
 #if defined(FEAT_QUICKFIX)
         "+quickfix",
 #else
@@ -289,17 +244,11 @@ static char *(features[]) =
 #else
         "-scrollbind",
 #endif
-#if defined(FEAT_SIGNS)
-        "+signs",
-#else
-        "-signs",
-#endif
 #if defined(FEAT_SMARTINDENT)
         "+smartindent",
 #else
         "-smartindent",
 #endif
-        "-startuptime",
 #if defined(FEAT_STL_OPT)
         "+statusline",
 #else
@@ -310,14 +259,11 @@ static char *(features[]) =
 #else
         "-syntax",
 #endif
-            /* only interesting on Unix systems */
 #if defined(FEAT_TAG_BINS)
         "+tag_binary",
 #else
         "-tag_binary",
 #endif
-        "-tag_old_static",
-        "-tag_any_white",
 #if defined(TERMINFO)
         "+terminfo",
 #else
@@ -337,11 +283,6 @@ static char *(features[]) =
         "+title",
 #else
         "-title",
-#endif
-#if defined(FEAT_TOOLBAR)
-        "+toolbar",
-#else
-        "-toolbar",
 #endif
 #if defined(FEAT_USR_CMDS)
         "+user_commands",
@@ -364,7 +305,6 @@ static char *(features[]) =
 #else
         "-visualextra",
 #endif
-        "-viminfo",
 #if defined(FEAT_VREPLACE)
         "+vreplace",
 #else
@@ -390,13 +330,11 @@ static char *(features[]) =
 #else
         "-writebackup",
 #endif
-        "-xterm_clipboard",
 #if defined(FEAT_XTERM_SAVE)
         "+xterm_save",
 #else
         "-xterm_save",
 #endif
-        "-xpm",
         NULL
 };
 
@@ -652,23 +590,6 @@ list_version()
         }
     }
 
-#if defined(HAVE_PATHDEF)
-    if (*compiled_user != NUL || *compiled_sys != NUL)
-    {
-        MSG_PUTS(_("\nCompiled "));
-        if (*compiled_user != NUL)
-        {
-            MSG_PUTS(_("by "));
-            MSG_PUTS(compiled_user);
-        }
-        if (*compiled_sys != NUL)
-        {
-            MSG_PUTS("@");
-            MSG_PUTS(compiled_sys);
-        }
-    }
-#endif
-
     MSG_PUTS(_("\nNormal version "));
     MSG_PUTS(_("without GUI."));
     version_msg(_("  Features included (+) or not (-):\n"));
@@ -704,25 +625,6 @@ list_version()
     version_msg(_("  2nd user exrc file: \""));
     version_msg(USR_EXRC_FILE2);
     version_msg("\"\n");
-#endif
-#if defined(HAVE_PATHDEF)
-    if (*default_vim_dir != NUL)
-    {
-        version_msg(_("  fall-back for $VIM: \""));
-        version_msg((char *)default_vim_dir);
-        version_msg("\"\n");
-    }
-    if (*default_vimruntime_dir != NUL)
-    {
-        version_msg(_(" f-b for $VIMRUNTIME: \""));
-        version_msg((char *)default_vimruntime_dir);
-        version_msg("\"\n");
-    }
-    version_msg(_("Compilation: "));
-    version_msg((char *)all_cflags);
-    version_msg("\n");
-    version_msg(_("Linking: "));
-    version_msg((char *)all_lflags);
 #endif
 #if defined(DEBUG)
     version_msg("\n");

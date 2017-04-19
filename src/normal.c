@@ -3663,8 +3663,7 @@ do_check_scrollbind(check)
              * 'scrollbind'.  Don't do this after an ":edit" command, except
              * when 'diff' is set.
              */
-            if ((curwin->w_buffer == old_buf
-                )
+            if ((curwin->w_buffer == old_buf)
                 && (curwin->w_topline != old_topline
                         || curwin->w_leftcol != old_leftcol))
             {
@@ -6850,7 +6849,6 @@ nv_g_cmd(cap)
 
     switch (cap->nchar)
     {
-
 #if defined(FEAT_VREPLACE)
     /*
      * "gR": Enter virtual replace mode.
@@ -6980,8 +6978,7 @@ nv_g_cmd(cap)
     case K_DOWN:
         /* with 'nowrap' it works just like the normal "j" command; also when
          * in a closed fold */
-        if (!curwin->w_p_wrap
-                )
+        if (!curwin->w_p_wrap)
         {
             oap->motion_type = MLINE;
             i = cursor_down(cap->count1, oap->op_type == OP_NOP);
@@ -6996,8 +6993,7 @@ nv_g_cmd(cap)
     case K_UP:
         /* with 'nowrap' it works just like the normal "k" command; also when
          * in a closed fold */
-        if (!curwin->w_p_wrap
-           )
+        if (!curwin->w_p_wrap)
         {
             oap->motion_type = MLINE;
             i = cursor_up(cap->count1, oap->op_type == OP_NOP);
@@ -8234,13 +8230,11 @@ nv_join(cap)
     {
         if (cap->count0 <= 1)
             cap->count0 = 2;        /* default for join is two lines! */
-        if (curwin->w_cursor.lnum + cap->count0 - 1 >
-                                                   curbuf->b_ml.ml_line_count)
+        if (curwin->w_cursor.lnum + cap->count0 - 1 > curbuf->b_ml.ml_line_count)
             clearopbeep(cap->oap);  /* beyond last line */
         else
         {
-            prep_redo(cap->oap->regname, cap->count0,
-                         NUL, cap->cmdchar, NUL, NUL, cap->nchar);
+            prep_redo(cap->oap->regname, cap->count0, NUL, cap->cmdchar, NUL, NUL, cap->nchar);
             (void)do_join(cap->count0, cap->nchar == NUL, TRUE, TRUE, TRUE);
         }
     }
@@ -8267,8 +8261,7 @@ nv_put(cap)
     else
     {
         dir = (cap->cmdchar == 'P'
-                || (cap->cmdchar == 'g' && cap->nchar == 'P'))
-                                                         ? BACKWARD : FORWARD;
+                || (cap->cmdchar == 'g' && cap->nchar == 'P')) ? BACKWARD : FORWARD;
         prep_redo_cmd(cap);
         if (cap->cmdchar == 'g')
             flags |= PUT_CURSEND;
@@ -8285,12 +8278,10 @@ nv_put(cap)
 #if defined(FEAT_CLIPBOARD)
             adjust_clip_reg(&regname);
 #endif
-           if (regname == 0 || regname == '"'
-                                     || VIM_ISDIGIT(regname) || regname == '-'
+           if (regname == 0 || regname == '"' || VIM_ISDIGIT(regname) || regname == '-'
 #if defined(FEAT_CLIPBOARD)
                     || (clip_unnamed && (regname == '*' || regname == '+'))
 #endif
-
                     )
             {
                 /* The delete is going to overwrite the register we want to
