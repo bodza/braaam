@@ -16,24 +16,10 @@
 #define FF_MAC          "mac"
 #define FF_UNIX         "unix"
 
-#if defined(USE_CRNL)
-#define DFLT_FF        "dos"
-#define DFLT_FFS_VIM   "dos,unix"
-#define DFLT_FFS_VI    "dos,unix"      /* also autodetect in compatible mode */
-#define DFLT_TEXTAUTO  TRUE
-#else
-#if defined(USE_CR)
-#define DFLT_FF       "mac"
-#define DFLT_FFS_VIM  "mac,unix,dos"
-#define DFLT_FFS_VI   "mac,unix,dos"
-#define DFLT_TEXTAUTO TRUE
-#else
 #define DFLT_FF       "unix"
 #define DFLT_FFS_VIM  "unix,dos"
 #define DFLT_FFS_VI  ""
 #define DFLT_TEXTAUTO FALSE
-#endif
-#endif
 
 /* Possible values for 'encoding' */
 #define ENC_UCSBOM     "ucs-bom"       /* check for BOM at start of file */
@@ -268,12 +254,7 @@
  * The following are actual variables for the options
  */
 
-#if defined(FEAT_RIGHTLEFT)
 EXTERN long     p_aleph;        /* 'aleph' */
-#endif
-#if defined(FEAT_AUTOCHDIR)
-EXTERN int      p_acd;          /* 'autochdir' */
-#endif
 EXTERN char_u   *p_ambw;        /* 'ambiwidth' */
 EXTERN int      p_ar;           /* 'autoread' */
 EXTERN int      p_aw;           /* 'autowrite' */
@@ -296,9 +277,7 @@ EXTERN char_u   *p_bex;         /* 'backupext' */
 #if defined(FEAT_WILDIGN)
 EXTERN char_u   *p_bsk;         /* 'backupskip' */
 #endif
-#if defined(FEAT_LINEBREAK)
 EXTERN char_u   *p_breakat;     /* 'breakat' */
-#endif
 EXTERN char_u   *p_cmp;         /* 'casemap' */
 EXTERN unsigned cmp_flags;
 #if defined(IN_OPTION_C)
@@ -348,37 +327,15 @@ EXTERN char_u   *p_ead;         /* 'eadirection' */
 EXTERN int      p_ea;           /* 'equalalways' */
 EXTERN char_u   *p_ep;          /* 'equalprg' */
 EXTERN int      p_eb;           /* 'errorbells' */
-#if defined(FEAT_QUICKFIX)
-EXTERN char_u   *p_ef;          /* 'errorfile' */
-EXTERN char_u   *p_efm;         /* 'errorformat' */
-EXTERN char_u   *p_gefm;        /* 'grepformat' */
-EXTERN char_u   *p_gp;          /* 'grepprg' */
-#endif
-#if defined(FEAT_AUTOCMD)
 EXTERN char_u   *p_ei;          /* 'eventignore' */
-#endif
 EXTERN int      p_ek;           /* 'esckeys' */
 EXTERN int      p_exrc;         /* 'exrc' */
 EXTERN char_u   *p_fencs;       /* 'fileencodings' */
 EXTERN char_u   *p_ffs;         /* 'fileformats' */
 EXTERN long     p_fic;          /* 'fileignorecase' */
 EXTERN char_u   *p_fp;          /* 'formatprg' */
-#if defined(HAVE_FSYNC)
 EXTERN int      p_fs;           /* 'fsync' */
-#endif
 EXTERN int      p_gd;           /* 'gdefault' */
-#if defined(FEAT_PRINTER)
-EXTERN char_u   *p_pdev;        /* 'printdevice' */
-#if defined(FEAT_POSTSCRIPT)
-EXTERN char_u   *p_penc;        /* 'printencoding' */
-EXTERN char_u   *p_pexpr;       /* 'printexpr' */
-EXTERN char_u   *p_pmfn;        /* 'printmbfont' */
-EXTERN char_u   *p_pmcs;        /* 'printmbcharset' */
-#endif
-EXTERN char_u   *p_pfn;         /* 'printfont' */
-EXTERN char_u   *p_popt;        /* 'printoptions' */
-EXTERN char_u   *p_header;      /* 'printheader' */
-#endif
 EXTERN int      p_prompt;       /* 'prompt' */
 #if defined(CURSOR_SHAPE)
 EXTERN char_u   *p_guicursor;   /* 'guicursor' */
@@ -391,22 +348,14 @@ EXTERN long     p_hh;           /* 'helpheight' */
 EXTERN int      p_hid;          /* 'hidden' */
 /* Use P_HID to check if a buffer is to be hidden when it is no longer
  * visible in a window. */
-#if !defined(FEAT_QUICKFIX)
 #define P_HID(dummy) (p_hid || cmdmod.hide)
-#else
-#define P_HID(buf) (buf_hide(buf))
-#endif
 EXTERN char_u   *p_hl;          /* 'highlight' */
 EXTERN int      p_hls;          /* 'hlsearch' */
 EXTERN long     p_hi;           /* 'history' */
-#if defined(FEAT_RIGHTLEFT)
 EXTERN int      p_hkmap;        /* 'hkmap' */
 EXTERN int      p_hkmapp;       /* 'hkmapp' */
-#endif
-#if defined(FEAT_TITLE)
 EXTERN int      p_icon;         /* 'icon' */
 EXTERN char_u   *p_iconstring;  /* 'iconstring' */
-#endif
 EXTERN int      p_ic;           /* 'ignorecase' */
 #if defined(USE_IM_CONTROL)
 EXTERN int      p_imcmdline;    /* 'imcmdline' */
@@ -420,9 +369,7 @@ EXTERN char_u   *p_isp;         /* 'isprint' */
 EXTERN int      p_js;           /* 'joinspaces' */
 EXTERN char_u   *p_kp;          /* 'keywordprg' */
 EXTERN char_u   *p_km;          /* 'keymodel' */
-#if defined(FEAT_LISP)
 EXTERN char_u   *p_lispwords;   /* 'lispwords' */
-#endif
 EXTERN long     p_ls;           /* 'laststatus' */
 EXTERN long     p_stal;         /* 'showtabline' */
 EXTERN char_u   *p_lcs;         /* 'listchars' */
@@ -430,14 +377,8 @@ EXTERN char_u   *p_lcs;         /* 'listchars' */
 EXTERN int      p_lz;           /* 'lazyredraw' */
 EXTERN int      p_lpl;          /* 'loadplugins' */
 EXTERN int      p_magic;        /* 'magic' */
-#if defined(FEAT_QUICKFIX)
-EXTERN char_u   *p_mef;         /* 'makeef' */
-EXTERN char_u   *p_mp;          /* 'makeprg' */
-#endif
-#if defined(FEAT_SYN_HL)
 EXTERN char_u   *p_cc;          /* 'colorcolumn' */
 EXTERN int      p_cc_cols[256]; /* array for 'colorcolumn' columns */
-#endif
 EXTERN long     p_mat;          /* 'matchtime' */
 EXTERN long     p_mco;          /* 'maxcombine' */
 EXTERN long     p_mfd;          /* 'maxfuncdepth' */
@@ -462,22 +403,15 @@ EXTERN char_u   *p_path;        /* 'path' */
 #if defined(FEAT_SEARCHPATH)
 EXTERN char_u   *p_cdpath;      /* 'cdpath' */
 #endif
-#if defined(FEAT_RELTIME)
 EXTERN long     p_rdt;          /* 'redrawtime' */
-#endif
 EXTERN int      p_remap;        /* 'remap' */
 EXTERN long     p_re;           /* 'regexpengine' */
 #if defined(FEAT_RENDER_OPTIONS)
 EXTERN char_u   *p_rop;         /* 'renderoptions' */
 #endif
 EXTERN long     p_report;       /* 'report' */
-#if defined(FEAT_QUICKFIX)
-EXTERN long     p_pvh;          /* 'previewheight' */
-#endif
-#if defined(FEAT_RIGHTLEFT)
 EXTERN int      p_ari;          /* 'allowrevins' */
 EXTERN int      p_ri;           /* 'revins' */
-#endif
 #if defined(FEAT_CMDL_INFO)
 EXTERN int      p_ru;           /* 'ruler' */
 #endif
@@ -496,9 +430,6 @@ EXTERN char_u   *p_sel;         /* 'selection' */
 EXTERN char_u   *p_slm;         /* 'selectmode' */
 EXTERN char_u   *p_sh;          /* 'shell' */
 EXTERN char_u   *p_shcf;        /* 'shellcmdflag' */
-#if defined(FEAT_QUICKFIX)
-EXTERN char_u   *p_sp;          /* 'shellpipe' */
-#endif
 EXTERN char_u   *p_shq;         /* 'shellquote' */
 EXTERN char_u   *p_sxq;         /* 'shellxquote' */
 EXTERN char_u   *p_sxe;         /* 'shellxescape' */
@@ -509,9 +440,7 @@ EXTERN char_u   *p_stl;         /* 'statusline' */
 #endif
 EXTERN int      p_sr;           /* 'shiftround' */
 EXTERN char_u   *p_shm;         /* 'shortmess' */
-#if defined(FEAT_LINEBREAK)
 EXTERN char_u   *p_sbr;         /* 'showbreak' */
-#endif
 #if defined(FEAT_CMDL_INFO)
 EXTERN int      p_sc;           /* 'showcmd' */
 #endif
@@ -551,12 +480,10 @@ EXTERN int      p_ta;           /* 'textauto' */
 EXTERN int      p_to;           /* 'tildeop' */
 EXTERN int      p_timeout;      /* 'timeout' */
 EXTERN long     p_tm;           /* 'timeoutlen' */
-#if defined(FEAT_TITLE)
 EXTERN int      p_title;        /* 'title' */
 EXTERN long     p_titlelen;     /* 'titlelen' */
 EXTERN char_u   *p_titleold;    /* 'titleold' */
 EXTERN char_u   *p_titlestring; /* 'titlestring' */
-#endif
 #if defined(FEAT_INS_EXPAND)
 EXTERN char_u   *p_tsr;         /* 'thesaurus' */
 #endif
@@ -587,7 +514,6 @@ EXTERN long     p_uc;           /* 'updatecount' */
 EXTERN long     p_ut;           /* 'updatetime' */
 EXTERN char_u   *p_fcs;         /* 'fillchar' */
 EXTERN int      p_vb;           /* 'visualbell' */
-#if defined(FEAT_VIRTUALEDIT)
 EXTERN char_u   *p_ve;          /* 'virtualedit' */
 EXTERN unsigned ve_flags;
 #if defined(IN_OPTION_C)
@@ -597,7 +523,6 @@ static char *(p_ve_values[]) = {"block", "insert", "all", "onemore", NULL};
 #define VE_INSERT      6       /* includes "all" */
 #define VE_ALL         4
 #define VE_ONEMORE     8
-#endif
 EXTERN long     p_verbose;      /* 'verbose' */
 #if defined(IN_OPTION_C)
 char_u  *p_vfile = (char_u *)""; /* used before options are initialized */
@@ -640,32 +565,17 @@ enum
 {
     BV_AI = 0
     , BV_AR
-#if defined(FEAT_QUICKFIX)
-    , BV_BH
-#endif
     , BV_BKC
-#if defined(FEAT_QUICKFIX)
-    , BV_BT
-    , BV_EFM
-    , BV_GP
-    , BV_MP
-#endif
     , BV_BIN
     , BV_BL
     , BV_BOMB
     , BV_CI
-#if defined(FEAT_CINDENT)
     , BV_CIN
     , BV_CINK
     , BV_CINO
-#endif
-#if defined(FEAT_SMARTINDENT) || defined(FEAT_CINDENT)
     , BV_CINW
-#endif
     , BV_CM
-#if defined(FEAT_COMMENTS)
     , BV_COM
-#endif
 #if defined(FEAT_INS_EXPAND)
     , BV_CPT
     , BV_DICT
@@ -687,25 +597,19 @@ enum
     , BV_FF
     , BV_FLP
     , BV_FO
-#if defined(FEAT_AUTOCMD)
     , BV_FT
-#endif
     , BV_IMI
     , BV_IMS
-#if defined(FEAT_CINDENT)
     , BV_INDE
     , BV_INDK
-#endif
 #if defined(FEAT_FIND_ID)
     , BV_INEX
 #endif
     , BV_INF
     , BV_ISK
     , BV_KP
-#if defined(FEAT_LISP)
     , BV_LISP
     , BV_LW
-#endif
     , BV_MA
     , BV_ML
     , BV_MOD
@@ -720,16 +624,10 @@ enum
     , BV_QE
 #endif
     , BV_RO
-#if defined(FEAT_SMARTINDENT)
     , BV_SI
-#endif
-#if !defined(SHORT_FNAME)
     , BV_SN
-#endif
-#if defined(FEAT_SYN_HL)
     , BV_SMC
     , BV_SYN
-#endif
     , BV_STS
 #if defined(FEAT_SEARCHPATH)
     , BV_SUA
@@ -754,41 +652,26 @@ enum
 enum
 {
     WV_LIST = 0
-#if defined(FEAT_CONCEAL)
     , WV_COCU
     , WV_COLE
-#endif
 #if defined(FEAT_CURSORBIND)
     , WV_CRBIND
 #endif
-#if defined(FEAT_LINEBREAK)
     , WV_BRI
     , WV_BRIOPT
-#endif
-#if defined(FEAT_LINEBREAK)
     , WV_LBR
-#endif
     , WV_NU
     , WV_RNU
-#if defined(FEAT_LINEBREAK)
     , WV_NUW
-#endif
-#if defined(FEAT_QUICKFIX)
-    , WV_PVW
-#endif
-#if defined(FEAT_RIGHTLEFT)
     , WV_RL
     , WV_RLC
-#endif
 #if defined(FEAT_SCROLLBIND)
     , WV_SCBIND
 #endif
     , WV_SCROLL
-#if defined(FEAT_SYN_HL)
     , WV_CUC
     , WV_CUL
     , WV_CC
-#endif
 #if defined(FEAT_STL_OPT)
     , WV_STL
 #endif

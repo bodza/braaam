@@ -813,27 +813,6 @@ char_u *check_map(char_u *keys, int mode, int exact, int ign_mod, int abbr, mapb
 void init_mappings(void);
 void add_map(char_u *map, int mode);
 
-/* #include "hardcopy.pro" */
-
-char_u *parse_printoptions(void);
-char_u *parse_printmbfont(void);
-int prt_header_height(void);
-int prt_use_number(void);
-int prt_get_unit(int idx);
-void ex_hardcopy(exarg_T *eap);
-void mch_print_cleanup(void);
-int mch_print_init(prt_settings_T *psettings, char_u *jobname, int forceit);
-int mch_print_begin(prt_settings_T *psettings);
-void mch_print_end(prt_settings_T *psettings);
-int mch_print_end_page(void);
-int mch_print_begin_page(char_u *str);
-int mch_print_blank_page(void);
-void mch_print_start_line(int margin, int page_line);
-int mch_print_text_out(char_u *p, int len);
-void mch_print_set_font(int iBold, int iItalic, int iUnderline);
-void mch_print_set_bg(long_u bgcol);
-void mch_print_set_fg(long_u fgcol);
-
 /* #include "hashtab.pro" */
 
 void hash_init(hashtab_T *ht);
@@ -1589,39 +1568,6 @@ void pum_undisplay(void);
 void pum_clear(void);
 int pum_visible(void);
 int pum_get_height(void);
-
-#if defined(FEAT_QUICKFIX)
-/* #include "quickfix.pro" */
-
-int qf_init(win_T *wp, char_u *efile, char_u *errorformat, int newlist, char_u *qf_title);
-void qf_free_all(win_T *wp);
-void copy_loclist(win_T *from, win_T *to);
-void qf_jump(qf_info_T *qi, int dir, int errornr, int forceit);
-void qf_list(exarg_T *eap);
-void qf_age(exarg_T *eap);
-void qf_mark_adjust(win_T *wp, linenr_T line1, linenr_T line2, long amount, long amount_after);
-void ex_cwindow(exarg_T *eap);
-void ex_cclose(exarg_T *eap);
-void ex_copen(exarg_T *eap);
-linenr_T qf_current_entry(win_T *wp);
-int bt_quickfix(buf_T *buf);
-int bt_nofile(buf_T *buf);
-int bt_dontwrite(buf_T *buf);
-int bt_dontwrite_msg(buf_T *buf);
-int buf_hide(buf_T *buf);
-int grep_internal(cmdidx_T cmdidx);
-void ex_make(exarg_T *eap);
-void ex_cc(exarg_T *eap);
-void ex_cnext(exarg_T *eap);
-void ex_cfile(exarg_T *eap);
-void ex_vimgrep(exarg_T *eap);
-char_u *skip_vimgrep_pat(char_u *p, char_u **s, int *flags);
-int get_errorlist(win_T *wp, list_T *list);
-int set_errorlist(win_T *wp, list_T *list, int action, char_u *title);
-void ex_cbuffer(exarg_T *eap);
-void ex_cexpr(exarg_T *eap);
-void ex_helpgrep(exarg_T *eap);
-#endif
 
 /* #include "regexp.pro" */
 

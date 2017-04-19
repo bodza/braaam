@@ -9,16 +9,6 @@
 
 #include <sys/param.h>
 
-/*
- * Using getcwd() is preferred, because it checks for a buffer overflow.
- * Don't use getcwd() on systems do use system("sh -c pwd").  There is an
- * autoconf check for this.
- * Use getcwd() anyway if getwd() isn't present.
- */
-#if defined(HAVE_GETCWD)
-#define USE_GETCWD
-#endif
-
 /* always use unlink() to remove files */
 #define vim_mkdir(x, y) mkdir((char *)(x), y)
 #define mch_rmdir(x) rmdir((char *)(x))
@@ -60,10 +50,6 @@
 #define BASENAMELEN     (MAXNAMLEN - 5)
 
 #include <pwd.h>
-
-#if defined(HAVE_GETRLIMIT) || defined(HAVE_SYSINFO) || defined(HAVE_SYSCONF)
-#define HAVE_TOTAL_MEM
-#endif
 
 /*
  * Unix system-dependent file names

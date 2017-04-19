@@ -19,7 +19,7 @@
 /*
  * Stuff for signals
  */
-#if defined(HAVE_SIGSET) && !defined(signal)
+#if !defined(signal)
 #define signal sigset
 #endif
 
@@ -50,40 +50,7 @@
  */
 #undef select
 
-#if defined(HAVE_SELECT)
 extern int   select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-#endif
-
-#if defined(FEAT_MOUSE_GPM)
-#include <gpm.h>
-/* <linux/keyboard.h> contains defines conflicting with "keymap.h",
- * I just copied relevant defines here. A cleaner solution would be to put gpm
- * code into separate file and include there linux/keyboard.h
- */
-/* #include <linux/keyboard.h> */
-#define KG_SHIFT       0
-#define KG_CTRL        2
-#define KG_ALT         3
-#define KG_ALTGR       1
-#define KG_SHIFTL      4
-#define KG_SHIFTR      5
-#define KG_CTRLL       6
-#define KG_CTRLR       7
-#define KG_CAPSSHIFT   8
-
-static void gpm_close(void);
-static int gpm_open(void);
-static int mch_gpm_process(void);
-#endif
-
-#if defined(FEAT_SYSMOUSE)
-#include <sys/consio.h>
-#include <sys/fbio.h>
-
-static int sysmouse_open(void);
-static void sysmouse_close(void);
-static void sig_sysmouse(int);
-#endif
 
 /*
  * end of autoconf section. To be extended...
@@ -93,7 +60,6 @@ static void sig_sysmouse(int);
 #define SIGWINCH SIGWINDOW
 #endif
 
-#if defined(FEAT_TITLE)
 static int get_x11_title(int);
 static int get_x11_icon(int);
 
@@ -101,7 +67,6 @@ static char_u   *oldtitle = NULL;
 static int      did_set_title = FALSE;
 static char_u   *oldicon = NULL;
 static int      did_set_icon = FALSE;
-#endif
 
 static void may_core_dump(void);
 
@@ -220,7 +185,7 @@ static struct signalinfo
 #if defined(SIGUSR1)
     {SIGUSR1,       "USR1",     TRUE},
 #endif
-#if defined(SIGUSR2) && !defined(FEAT_SYSMOUSE)
+#if defined(SIGUSR2)
     /* Used for sysmouse handling */
     {SIGUSR2,       "USR2",     TRUE},
 #endif
@@ -305,7 +270,6 @@ mch_inchar(buf, maxlen, wtime, tb_change_cnt)
          */
         if (WaitForChar(p_ut) == 0)
         {
-#if defined(FEAT_AUTOCMD)
             if (trigger_cursorhold() && maxlen >= 3
                                            && !typebuf_changed(tb_change_cnt))
             {
@@ -314,7 +278,6 @@ mch_inchar(buf, maxlen, wtime, tb_change_cnt)
                 buf[2] = (int)KE_CURSORHOLD;
                 return 3;
             }
-#endif
             before_blocking();
         }
     }
@@ -368,11 +331,8 @@ mch_char_avail()
     return WaitForChar(0L);
 }
 
-#if defined(HAVE_TOTAL_MEM)
 #include <sys/resource.h>
-#if defined(HAVE_SYSINFO)
 #include <sys/sysinfo.h>
-#endif
 
 /*
  * Return total amount of memory available in Kbyte.
@@ -385,7 +345,6 @@ mch_total_mem(special)
     long_u      mem = 0;
     long_u      shiftright = 10;  /* how much to shift "mem" right for Kbyte */
 
-#if defined(HAVE_SYSINFO)
     if (mem == 0)
     {
         struct sysinfo sinfo;
@@ -393,7 +352,6 @@ mch_total_mem(special)
         /* Linux way of getting amount of RAM available */
         if (sysinfo(&sinfo) == 0)
         {
-#if defined(HAVE_SYSINFO_MEM_UNIT)
             /* avoid overflow as much as possible */
             while (shiftright > 0 && (sinfo.mem_unit & 1) == 0)
             {
@@ -401,14 +359,9 @@ mch_total_mem(special)
                 --shiftright;
             }
             mem = sinfo.totalram * sinfo.mem_unit;
-#else
-            mem = sinfo.totalram;
-#endif
         }
     }
-#endif
 
-#if defined(HAVE_SYSCONF)
     if (mem == 0)
     {
         long        pagesize, pagecount;
@@ -427,11 +380,9 @@ mch_total_mem(special)
             mem = (long_u)pagesize * pagecount;
         }
     }
-#endif
 
     /* Return the minimum of the physical memory and the user limit, because
      * using more than the user limit may cause Vim to be terminated. */
-#if defined(HAVE_GETRLIMIT)
     {
         struct rlimit   rlp;
 
@@ -447,13 +398,11 @@ mch_total_mem(special)
             shiftright = 10;
         }
     }
-#endif
 
     if (mem > 0)
         return mem >> shiftright;
     return (long_u)0x1fffff;
 }
-#endif
 
     void
 mch_delay(msec, ignoreinput)
@@ -477,7 +426,6 @@ mch_delay(msec, ignoreinput)
          * Prefer nanosleep(), some versions of usleep() can only sleep up to
          * one second.
          */
-#if defined(HAVE_NANOSLEEP)
         {
             struct timespec ts;
 
@@ -485,32 +433,6 @@ mch_delay(msec, ignoreinput)
             ts.tv_nsec = (msec % 1000) * 1000000;
             (void)nanosleep(&ts, NULL);
         }
-#else
-#if defined(HAVE_USLEEP)
-        while (msec >= 1000)
-        {
-            usleep((unsigned int)(999 * 1000));
-            msec -= 999;
-        }
-        usleep((unsigned int)(msec * 1000));
-#else
-#if !defined(HAVE_SELECT)
-        poll(NULL, 0, (int)msec);
-#else
-        {
-            struct timeval tv;
-
-            tv.tv_sec = msec / 1000;
-            tv.tv_usec = (msec % 1000) * 1000;
-            /*
-             * NOTE: Solaris 2.6 has a bug that makes select() hang here.  Get
-             * a patch from Sun to fix this.  Reported by Gunnar Pedersen.
-             */
-            select(0, NULL, NULL, NULL, &tv);
-        }
-#endif
-#endif
-#endif
 
         settmode(old_tmode);
         in_mch_delay = FALSE;
@@ -519,7 +441,7 @@ mch_delay(msec, ignoreinput)
         WaitForChar(msec);
 }
 
-#if defined(HAVE_STACK_LIMIT) || (!defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGSTACK))
+#if defined(HAVE_STACK_LIMIT)
 #define HAVE_CHECK_STACK_GROWTH
 /*
  * Support for checking for an almost-out-of-stack-space situation.
@@ -609,7 +531,6 @@ mch_stackcheck(p)
 }
 #endif
 
-#if defined(HAVE_SIGALTSTACK) || defined(HAVE_SIGSTACK)
 /*
  * Support for using the signal stack.
  * This helps when we run out of stack space, which causes a SIGSEGV.  The
@@ -621,11 +542,7 @@ mch_stackcheck(p)
 #define SIGSTKSZ 8000    /* just a guess of how much stack is needed... */
 #endif
 
-#if defined(HAVE_SIGALTSTACK)
 static stack_t sigstk;                  /* for sigaltstack() */
-#else
-static struct sigstack sigstk;          /* for sigstack() */
-#endif
 
 static void init_signal_stack(void);
 static char *signal_stack;
@@ -635,22 +552,12 @@ init_signal_stack()
 {
     if (signal_stack != NULL)
     {
-#if defined(HAVE_SIGALTSTACK)
-
         sigstk.ss_sp = signal_stack;
         sigstk.ss_size = SIGSTKSZ;
         sigstk.ss_flags = 0;
         (void)sigaltstack(&sigstk, NULL);
-#else
-        sigstk.ss_sp = signal_stack;
-        if (stack_grows_downwards)
-            sigstk.ss_sp += SIGSTKSZ - 1;
-        sigstk.ss_onstack = 0;
-        (void)sigstack(&sigstk, NULL);
-#endif
     }
 }
-#endif
 
 /*
  * We need correct prototypes for a signal function, otherwise mean compilers
@@ -909,13 +816,11 @@ mch_suspend()
     }
 #endif
 
-#if defined(FEAT_TITLE)
     /*
      * Set oldtitle to NULL, so the current title is obtained again.
      */
     vim_free(oldtitle);
     oldtitle = NULL;
-#endif
     settmode(TMODE_RAW);
     need_check_timestamps = TRUE;
     did_check_timestamps = FALSE;
@@ -1020,7 +925,6 @@ catch_signals(func_deadly, func_other)
     for (i = 0; signal_info[i].sig != -1; i++)
         if (signal_info[i].deadly)
         {
-#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
             struct sigaction sa;
 
             /* Setup to use the alternate stack for the signal function. */
@@ -1037,19 +941,6 @@ catch_signals(func_deadly, func_other)
             sa.sa_flags = SA_ONSTACK;
 #endif
             sigaction(signal_info[i].sig, &sa, NULL);
-#else
-#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGVEC)
-            struct sigvec sv;
-
-            /* Setup to use the alternate stack for the signal function. */
-            sv.sv_handler = func_deadly;
-            sv.sv_mask = 0;
-            sv.sv_flags = SV_ONSTACK;
-            sigvec(signal_info[i].sig, &sv, NULL);
-#else
-            signal(signal_info[i].sig, func_deadly);
-#endif
-#endif
         }
         else if (func_other != SIG_ERR)
             signal(signal_info[i].sig, func_other);
@@ -1119,8 +1010,6 @@ mch_input_isatty()
         return TRUE;
     return FALSE;
 }
-
-#if defined(FEAT_TITLE)
 
     static int
 get_x11_title(test_only)
@@ -1224,8 +1113,6 @@ mch_restore_title(which)
                         (oldtitle ? oldtitle : p_titleold) : NULL,
                               ((which & 2) && did_set_icon) ? oldicon : NULL);
 }
-
-#endif
 
 /*
  * Return TRUE if "name" looks like some xterm name.
@@ -1345,7 +1232,6 @@ mch_get_uname(uid, s, len)
     char_u      *s;
     int         len;
 {
-#if defined(HAVE_GETPWUID)
     struct passwd   *pw;
 
     if ((pw = getpwuid(uid)) != NULL
@@ -1354,7 +1240,6 @@ mch_get_uname(uid, s, len)
         vim_strncpy(s, (char_u *)pw->pw_name, len - 1);
         return OK;
     }
-#endif
     sprintf((char *)s, "%d", (int)uid);     /* assumes s is long enough */
     return FAIL;                            /* a number is not a name */
 }
@@ -1384,7 +1269,7 @@ mch_get_pid()
     return (long)getpid();
 }
 
-#if !defined(HAVE_STRERROR) && defined(USE_GETCWD)
+#if !defined(HAVE_STRERROR)
 static char *strerror(int);
 
     static char *
@@ -1411,16 +1296,12 @@ mch_dirname(buf, len)
     char_u  *buf;
     int     len;
 {
-#if defined(USE_GETCWD)
     if (getcwd((char *)buf, len) == NULL)
     {
         STRCPY(buf, strerror(errno));
         return FAIL;
     }
     return OK;
-#else
-    return (getwd((char *)buf) != NULL ? OK : FAIL);
-#endif
 }
 
 /*
@@ -1435,10 +1316,8 @@ mch_FullName(fname, buf, len, force)
     int         force;          /* also expand when already absolute path */
 {
     int         l;
-#if defined(HAVE_FCHDIR)
     int         fd = -1;
     static int  dont_fchdir = FALSE;    /* TRUE when fchdir() doesn't work */
-#endif
     char_u      olddir[MAXPATHL];
     char_u      *p;
     int         retval = OK;
@@ -1453,7 +1332,6 @@ mch_FullName(fname, buf, len, force)
          */
         if ((p = vim_strrchr(fname, '/')) != NULL)
         {
-#if defined(HAVE_FCHDIR)
             /*
              * Use fchdir() if possible, it's said to be faster and more
              * reliable.  But on SunOS 4 it might not work.  Check this by
@@ -1469,14 +1347,11 @@ mch_FullName(fname, buf, len, force)
                     dont_fchdir = TRUE;     /* don't try again */
                 }
             }
-#endif
 
             /* Only change directory when we are sure we can return to where
              * we are now.  After doing "su" chdir(".") might not work. */
             if (
-#if defined(HAVE_FCHDIR)
                 fd < 0 &&
-#endif
                         (mch_dirname(olddir, MAXPATHL) == FAIL
                                            || mch_chdir((char *)olddir) != 0))
             {
@@ -1508,7 +1383,6 @@ mch_FullName(fname, buf, len, force)
         }
         if (p != NULL)
         {
-#if defined(HAVE_FCHDIR)
             if (fd >= 0)
             {
                 if (p_verbose >= 5)
@@ -1521,7 +1395,6 @@ mch_FullName(fname, buf, len, force)
                 close(fd);
             }
             else
-#endif
                 l = mch_chdir((char *)olddir);
             if (l != 0)
                 EMSG(_(e_prev_dir));
@@ -1603,8 +1476,7 @@ fname_case(name, len)
 
                     /* Verify the inode is equal. */
                     vim_strncpy(newname, name, MAXPATHL);
-                    vim_strncpy(newname + (tail - name), (char_u *)dp->d_name,
-                                                    MAXPATHL - (tail - name));
+                    vim_strncpy(newname + (tail - name), (char_u *)dp->d_name, MAXPATHL - (tail - name));
                     if (lstat((char *)newname, &st2) >= 0
                             && st.st_ino == st2.st_ino
                             && st.st_dev == st2.st_dev)
@@ -1822,24 +1694,18 @@ mch_early_init()
      * Use of sigaltstack() is preferred, it's more portable.
      * Ignore any errors.
      */
-#if defined(HAVE_SIGALTSTACK) || defined(HAVE_SIGSTACK)
     signal_stack = (char *)alloc(SIGSTKSZ);
     init_signal_stack();
-#endif
 }
 
 #if defined(EXITFREE)
     void
 mch_free_mem()
 {
-#if defined(HAVE_SIGALTSTACK) || defined(HAVE_SIGSTACK)
     vim_free(signal_stack);
     signal_stack = NULL;
-#endif
-#if defined(FEAT_TITLE)
     vim_free(oldtitle);
     vim_free(oldicon);
-#endif
 }
 #endif
 
@@ -1882,9 +1748,7 @@ mch_exit(r)
 
     {
         settmode(TMODE_COOK);
-#if defined(FEAT_TITLE)
         mch_restore_title(3);   /* restore xterm title and icon name */
-#endif
         /*
          * When t_ti is not empty but it doesn't cause swapping terminal
          * pages, need to output a newline when msg_didout is set.  But when
@@ -2081,38 +1945,6 @@ mch_setmouse(on)
         ison = on;
     }
 
-#if defined(FEAT_MOUSE_GPM)
-    else
-    {
-        if (on)
-        {
-            if (gpm_open())
-                ison = TRUE;
-        }
-        else
-        {
-            gpm_close();
-            ison = FALSE;
-        }
-    }
-#endif
-
-#if defined(FEAT_SYSMOUSE)
-    else
-    {
-        if (on)
-        {
-            if (sysmouse_open() == OK)
-                ison = TRUE;
-        }
-        else
-        {
-            sysmouse_close();
-            ison = FALSE;
-        }
-    }
-#endif
-
 }
 
 /*
@@ -2135,16 +1967,6 @@ check_mouse_termcode()
     }
     else
         del_mouse_termcode(KS_MOUSE);
-#endif
-
-#if defined(FEAT_MOUSE_GPM)
-    if (!use_xterm_mouse())
-        set_mouse_termcode(KS_MOUSE, (char_u *)"\033MG");
-#endif
-
-#if defined(FEAT_SYSMOUSE)
-    if (!use_xterm_mouse())
-        set_mouse_termcode(KS_MOUSE, (char_u *)"\033MS");
 #endif
 
 }
@@ -2508,7 +2330,6 @@ mch_call_shell(cmd, options)
             }
             else if ((options & (SHELL_READ|SHELL_WRITE)))
             {
-#if defined(HAVE_SETSID)
                 /* Create our own process group, so that the child and all its
                  * children can be kill()ed.  Don't do this when using pipes,
                  * because stdin is not a tty, we would lose /dev/tty. */
@@ -2524,7 +2345,6 @@ mch_call_shell(cmd, options)
                     signal(SIGHUP, SIG_IGN);
 #endif
                 }
-#endif
                 /* Simulate to have a dumb terminal (for now) */
 #if defined(HAVE_SETENV)
                 setenv("TERM", "dumb", 1);
@@ -2607,9 +2427,7 @@ mch_call_shell(cmd, options)
                 int         fromshell_fd;
                 garray_T    ga;
                 int         noread_cnt;
-#if defined(HAVE_GETTIMEOFDAY)
                 struct timeval  start_tv;
-#endif
 
                 {
                     close(fd_toshell[0]);
@@ -2678,11 +2496,9 @@ mch_call_shell(cmd, options)
                                 if (lnum != curbuf->b_op_end.lnum
                                         || !curbuf->b_p_bin
                                         || (lnum != curbuf->b_no_eol_lnum
-                                            && (lnum !=
-                                                    curbuf->b_ml.ml_line_count
+                                            && (lnum != curbuf->b_ml.ml_line_count
                                                     || curbuf->b_p_eol)))
-                                    ignored = write(toshell_fd, "\n",
-                                                                   (size_t)1);
+                                    ignored = write(toshell_fd, "\n", (size_t)1);
                                 ++lnum;
                                 if (lnum > curbuf->b_op_end.lnum)
                                 {
@@ -2710,9 +2526,7 @@ mch_call_shell(cmd, options)
                     ga_init2(&ga, 1, BUFLEN);
 
                 noread_cnt = 0;
-#if defined(HAVE_GETTIMEOFDAY)
                 gettimeofday(&start_tv, NULL);
-#endif
                 for (;;)
                 {
                     /*
@@ -2743,9 +2557,7 @@ mch_call_shell(cmd, options)
                           /* Get extra characters when we don't have any.
                            * Reset the counter and timer. */
                           noread_cnt = 0;
-#if defined(HAVE_GETTIMEOFDAY)
                           gettimeofday(&start_tv, NULL);
-#endif
                           len = ui_inchar(ta_buf, BUFLEN, 10L, 0);
                       }
                       if (ta_len > 0 || len > 0)
@@ -2765,11 +2577,7 @@ mch_call_shell(cmd, options)
                             if (ta_buf[ta_len] == Ctrl_C
                                                || ta_buf[ta_len] == intr_char)
                             {
-#if defined(HAVE_SETSID)
                                 kill(-pid, SIGINT);
-#else
-                                kill(0, SIGINT);
-#endif
                                 if (wpid > 0)
                                     kill(wpid, SIGINT);
                             }
@@ -2854,11 +2662,7 @@ mch_call_shell(cmd, options)
                     if (got_int)
                     {
                         /* CTRL-C sends a signal to the child, we ignore it ourselves */
-#if defined(HAVE_SETSID)
                         kill(-pid, SIGINT);
-#else
-                        kill(0, SIGINT);
-#endif
                         if (wpid > 0)
                             kill(wpid, SIGINT);
                         got_int = FALSE;
@@ -2876,9 +2680,7 @@ mch_call_shell(cmd, options)
                     ++noread_cnt;
                     while (RealWaitForChar(fromshell_fd, 10L, NULL))
                     {
-                        len = read_eintr(fromshell_fd, buffer
-                                + buffer_off, (size_t)(BUFLEN - buffer_off)
-                                );
+                        len = read_eintr(fromshell_fd, buffer + buffer_off, (size_t)(BUFLEN - buffer_off));
                         if (len <= 0)               /* end of file or error */
                             goto finished;
 
@@ -2950,7 +2752,6 @@ mch_call_shell(cmd, options)
                         if (got_int)
                             break;
 
-#if defined(HAVE_GETTIMEOFDAY)
                         {
                             struct timeval  now_tv;
                             long            msec;
@@ -2967,7 +2768,6 @@ mch_call_shell(cmd, options)
                                 break;
                             }
                         }
-#endif
                     }
 
                     /* If we already detected the child has finished break the
@@ -3076,9 +2876,7 @@ error:
     if (!did_settmode)
         if (tmode == TMODE_RAW)
             settmode(TMODE_RAW);        /* set to raw mode */
-#if defined(FEAT_TITLE)
     resettitle();
-#endif
     vim_free(newcmd);
 
     return retval;
@@ -3098,49 +2896,18 @@ mch_breakcheck()
 /*
  * Wait "msec" msec until a character is available from the keyboard or from
  * inbuf[]. msec == -1 will block forever.
- * When a GUI is being used, this will never get called -- webb
  */
     static int
 WaitForChar(msec)
     long        msec;
 {
-#if defined(FEAT_MOUSE_GPM)
-    int         gpm_process_wanted;
-#endif
     int         avail;
 
     if (input_available())          /* something in inbuf[] */
         return 1;
 
-    /*
-     * For FEAT_MOUSE_GPM and FEAT_XCLIPBOARD we loop here to process mouse
-     * events.  This is a bit complicated, because they might both be defined.
-     */
-#if defined(FEAT_MOUSE_GPM)
-    do
-    {
-#if defined(FEAT_MOUSE_GPM)
-        gpm_process_wanted = 0;
-        avail = RealWaitForChar(read_cmd_fd, msec, &gpm_process_wanted);
-#else
-        avail = RealWaitForChar(read_cmd_fd, msec, NULL);
-#endif
-        if (!avail)
-        {
-            if (input_available())
-                return 1;
-                break;
-        }
-    }
-    while (FALSE
-#if defined(FEAT_MOUSE_GPM)
-           || (gpm_process_wanted && mch_gpm_process() == 0)
-#endif
-          );
-
-#else
     avail = RealWaitForChar(read_cmd_fd, msec, NULL);
-#endif
+
     return avail;
 }
 
@@ -3167,38 +2934,6 @@ RealWaitForChar(fd, msec, check_for_gpm)
 #if defined(MAY_LOOP)
         int             finished = TRUE; /* default is to 'loop' just once */
 #endif
-#if !defined(HAVE_SELECT)
-        struct pollfd   fds[6];
-        int             nfd;
-#if defined(FEAT_MOUSE_GPM)
-        int             gpm_idx = -1;
-#endif
-        int             towait = (int)msec;
-
-        fds[0].fd = fd;
-        fds[0].events = POLLIN;
-        nfd = 1;
-
-#if defined(FEAT_MOUSE_GPM)
-        if (check_for_gpm != NULL && gpm_flag && gpm_fd >= 0)
-        {
-            gpm_idx = nfd;
-            fds[nfd].fd = gpm_fd;
-            fds[nfd].events = POLLIN;
-            nfd++;
-        }
-#endif
-
-        ret = poll(fds, nfd, towait);
-
-#if defined(FEAT_MOUSE_GPM)
-        if (gpm_idx >= 0 && (fds[gpm_idx].revents & POLLIN))
-        {
-            *check_for_gpm = 1;
-        }
-#endif
-
-#else
 
         struct timeval  tv;
         struct timeval  *tvp;
@@ -3226,16 +2961,6 @@ select_eintr:
         FD_SET(fd, &efds);
         maxfd = fd;
 
-#if defined(FEAT_MOUSE_GPM)
-        if (check_for_gpm != NULL && gpm_flag && gpm_fd >= 0)
-        {
-            FD_SET(gpm_fd, &rfds);
-            FD_SET(gpm_fd, &efds);
-            if (maxfd < gpm_fd)
-                maxfd = gpm_fd;
-        }
-#endif
-
         ret = select(maxfd + 1, &rfds, NULL, &efds, tvp);
 #if defined(EINTR)
         if (ret == -1 && errno == EINTR)
@@ -3251,18 +2976,6 @@ select_eintr:
              * external command after the process has finished. */
             goto select_eintr;
         }
-#endif
-
-#if defined(FEAT_MOUSE_GPM)
-        if (ret > 0 && gpm_flag && check_for_gpm != NULL && gpm_fd >= 0)
-        {
-            if (FD_ISSET(gpm_fd, &efds))
-                gpm_close();
-            else if (FD_ISSET(gpm_fd, &rfds))
-                *check_for_gpm = 1;
-        }
-#endif
-
 #endif
 
 #if defined(MAY_LOOP)
@@ -3373,11 +3086,9 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
     if (!have_wildcard(num_pat, pat))
         return save_patterns(num_pat, pat, num_file, file);
 
-#if defined(HAVE_SANDBOX)
     /* Don't allow any shell command in the sandbox. */
     if (sandbox != 0 && check_secure())
         return FAIL;
-#endif
 
     /*
      * Don't allow the use of backticks in secure and restricted mode.
@@ -3422,8 +3133,7 @@ mch_expand_wildcards(num_pat, pat, num_file, file, flags)
         else if (STRCMP(p_sh + len - 3, "zsh") == 0)
             shell_style = STYLE_PRINT;
     }
-    if (shell_style == STYLE_ECHO && strstr((char *)gettail(p_sh),
-                                                                "sh") != NULL)
+    if (shell_style == STYLE_ECHO && strstr((char *)gettail(p_sh), "sh") != NULL)
         shell_style = STYLE_VIMGLOB;
 
     /* Compute the length of the command.  We need 2 extra bytes: for the
@@ -3902,232 +3612,5 @@ mch_rename(src, dest)
     if (mch_remove(src) == 0)       /* delete link to old name */
         return 0;
     return -1;
-}
-#endif
-
-#if defined(FEAT_MOUSE_GPM)
-/*
- * Initializes connection with gpm (if it isn't already opened)
- * Return 1 if succeeded (or connection already opened), 0 if failed
- */
-    static int
-gpm_open()
-{
-    static Gpm_Connect gpm_connect; /* Must it be kept till closing ? */
-
-    if (!gpm_flag)
-    {
-        gpm_connect.eventMask = (GPM_UP | GPM_DRAG | GPM_DOWN);
-        gpm_connect.defaultMask = ~GPM_HARD;
-        /* Default handling for mouse move*/
-        gpm_connect.minMod = 0; /* Handle any modifier keys */
-        gpm_connect.maxMod = 0xffff;
-        if (Gpm_Open(&gpm_connect, 0) > 0)
-        {
-            /* gpm library tries to handling TSTP causes
-             * problems. Anyways, we close connection to Gpm whenever
-             * we are going to suspend or starting an external process
-             * so we shouldn't  have problem with this
-             */
-#if defined(SIGTSTP)
-            signal(SIGTSTP, restricted ? SIG_IGN : SIG_DFL);
-#endif
-            return 1; /* succeed */
-        }
-        if (gpm_fd == -2)
-            Gpm_Close(); /* We don't want to talk to xterm via gpm */
-        return 0;
-    }
-    return 1; /* already open */
-}
-
-/*
- * Closes connection to gpm
- */
-    static void
-gpm_close()
-{
-    if (gpm_flag && gpm_fd >= 0) /* if Open */
-        Gpm_Close();
-}
-
-/* Reads gpm event and adds special keys to input buf. Returns length of
- * generated key sequence.
- * This function is styled after gui_send_mouse_event().
- */
-    static int
-mch_gpm_process()
-{
-    int                 button;
-    static Gpm_Event    gpm_event;
-    char_u              string[6];
-    int_u               vim_modifiers;
-    int                 row,col;
-    unsigned char       buttons_mask;
-    unsigned char       gpm_modifiers;
-    static unsigned char old_buttons = 0;
-
-    Gpm_GetEvent(&gpm_event);
-
-    row = gpm_event.y - 1;
-    col = gpm_event.x - 1;
-
-    string[0] = ESC; /* Our termcode */
-    string[1] = 'M';
-    string[2] = 'G';
-    switch (GPM_BARE_EVENTS(gpm_event.type))
-    {
-        case GPM_DRAG:
-            string[3] = MOUSE_DRAG;
-            break;
-        case GPM_DOWN:
-            buttons_mask = gpm_event.buttons & ~old_buttons;
-            old_buttons = gpm_event.buttons;
-            switch (buttons_mask)
-            {
-                case GPM_B_LEFT:
-                    button = MOUSE_LEFT;
-                    break;
-                case GPM_B_MIDDLE:
-                    button = MOUSE_MIDDLE;
-                    break;
-                case GPM_B_RIGHT:
-                    button = MOUSE_RIGHT;
-                    break;
-                default:
-                    return 0;
-                    /*Don't know what to do. Can more than one button be
-                     * reported in one event? */
-            }
-            string[3] = (char_u)(button | 0x20);
-            SET_NUM_MOUSE_CLICKS(string[3], gpm_event.clicks + 1);
-            break;
-        case GPM_UP:
-            string[3] = MOUSE_RELEASE;
-            old_buttons &= ~gpm_event.buttons;
-            break;
-        default:
-            return 0;
-    }
-    /*This code is based on gui_x11_mouse_cb in gui_x11.c */
-    gpm_modifiers = gpm_event.modifiers;
-    vim_modifiers = 0x0;
-    /* I ignore capslock stats. Aren't we all just hate capslock mixing with
-     * Vim commands ? Besides, gpm_event.modifiers is unsigned char, and
-     * K_CAPSSHIFT is defined 8, so it probably isn't even reported
-     */
-    if (gpm_modifiers & ((1 << KG_SHIFT) | (1 << KG_SHIFTR) | (1 << KG_SHIFTL)))
-        vim_modifiers |= MOUSE_SHIFT;
-
-    if (gpm_modifiers & ((1 << KG_CTRL) | (1 << KG_CTRLR) | (1 << KG_CTRLL)))
-        vim_modifiers |= MOUSE_CTRL;
-    if (gpm_modifiers & ((1 << KG_ALT) | (1 << KG_ALTGR)))
-        vim_modifiers |= MOUSE_ALT;
-    string[3] |= vim_modifiers;
-    string[4] = (char_u)(col + ' ' + 1);
-    string[5] = (char_u)(row + ' ' + 1);
-    add_to_input_buf(string, 6);
-    return 6;
-}
-#endif
-
-#if defined(FEAT_SYSMOUSE)
-/*
- * Initialize connection with sysmouse.
- * Let virtual console inform us with SIGUSR2 for pending sysmouse
- * output, any sysmouse output than will be processed via sig_sysmouse().
- * Return OK if succeeded, FAIL if failed.
- */
-    static int
-sysmouse_open()
-{
-    struct mouse_info   mouse;
-
-    mouse.operation = MOUSE_MODE;
-    mouse.u.mode.mode = 0;
-    mouse.u.mode.signal = SIGUSR2;
-    if (ioctl(1, CONS_MOUSECTL, &mouse) != -1)
-    {
-        signal(SIGUSR2, (void (*)())sig_sysmouse);
-        mouse.operation = MOUSE_SHOW;
-        ioctl(1, CONS_MOUSECTL, &mouse);
-        return OK;
-    }
-    return FAIL;
-}
-
-/*
- * Stop processing SIGUSR2 signals, and also make sure that
- * virtual console do not send us any sysmouse related signal.
- */
-    static void
-sysmouse_close()
-{
-    struct mouse_info   mouse;
-
-    signal(SIGUSR2, restricted ? SIG_IGN : SIG_DFL);
-    mouse.operation = MOUSE_MODE;
-    mouse.u.mode.mode = 0;
-    mouse.u.mode.signal = 0;
-    ioctl(1, CONS_MOUSECTL, &mouse);
-}
-
-/*
- * Gets info from sysmouse and adds special keys to input buf.
- */
-    static void
-sig_sysmouse SIGDEFARG(sigarg)
-{
-    struct mouse_info   mouse;
-    struct video_info   video;
-    char_u              string[6];
-    int                 row, col;
-    int                 button;
-    int                 buttons;
-    static int          oldbuttons = 0;
-
-    mouse.operation = MOUSE_GETINFO;
-    if (ioctl(1, FBIO_GETMODE, &video.vi_mode) != -1
-            && ioctl(1, FBIO_MODEINFO, &video) != -1
-            && ioctl(1, CONS_MOUSECTL, &mouse) != -1
-            && video.vi_cheight > 0 && video.vi_cwidth > 0)
-    {
-        row = mouse.u.data.y / video.vi_cheight;
-        col = mouse.u.data.x / video.vi_cwidth;
-        buttons = mouse.u.data.buttons;
-        string[0] = ESC; /* Our termcode */
-        string[1] = 'M';
-        string[2] = 'S';
-        if (oldbuttons == buttons && buttons != 0)
-        {
-            button = MOUSE_DRAG;
-        }
-        else
-        {
-            switch (buttons)
-            {
-                case 0:
-                    button = MOUSE_RELEASE;
-                    break;
-                case 1:
-                    button = MOUSE_LEFT;
-                    break;
-                case 2:
-                    button = MOUSE_MIDDLE;
-                    break;
-                case 4:
-                    button = MOUSE_RIGHT;
-                    break;
-                default:
-                    return;
-            }
-            oldbuttons = buttons;
-        }
-        string[3] = (char_u)(button);
-        string[4] = (char_u)(col + ' ' + 1);
-        string[5] = (char_u)(row + ' ' + 1);
-        add_to_input_buf(string, 6);
-    }
-    return;
 }
 #endif

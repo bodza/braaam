@@ -567,7 +567,6 @@ mf_sync(mfp, flags)
 
     if ((flags & MFS_FLUSH) && *p_sws != NUL)
     {
-#if defined(HAVE_FSYNC)
         /*
          * most Unixes have the very useful fsync() function, just what we need.
          * However, with OS/2 and EMX it is also available, but there are
@@ -583,7 +582,6 @@ mf_sync(mfp, flags)
                 status = FAIL;
         }
         else
-#endif
             sync();
 #if defined(SYNC_DUP_CLOSE)
         /*
@@ -833,8 +831,7 @@ mf_alloc_bhdr(mfp, page_count)
 
     if ((hp = (bhdr_T *)alloc((unsigned)sizeof(bhdr_T))) != NULL)
     {
-        if ((hp->bh_data = (char_u *)alloc(mfp->mf_page_size * page_count))
-                                                                      == NULL)
+        if ((hp->bh_data = (char_u *)alloc(mfp->mf_page_size * page_count)) == NULL)
         {
             vim_free(hp);           /* not enough memory */
             return NULL;
@@ -1159,9 +1156,7 @@ mf_do_open(mfp, fname, flags)
     char_u      *fname;
     int         flags;          /* flags for open() */
 {
-#if defined(HAVE_LSTAT)
     struct stat sb;
-#endif
 
     mfp->mf_fname = fname;
 
@@ -1172,7 +1167,6 @@ mf_do_open(mfp, fname, flags)
      */
     mf_set_ffname(mfp);
 
-#if defined(HAVE_LSTAT)
     /*
      * Extra security check: When creating a swap file it really shouldn't
      * exist yet.  If there is a symbolic link, this is most likely an attack.
@@ -1183,7 +1177,6 @@ mf_do_open(mfp, fname, flags)
         EMSG(_("E300: Swap file already exists (symlink attack?)"));
     }
     else
-#endif
     {
         /*
          * try to open the file
@@ -1204,11 +1197,9 @@ mf_do_open(mfp, fname, flags)
     }
     else
     {
-#if defined(HAVE_FD_CLOEXEC)
         int fdflags = fcntl(mfp->mf_fd, F_GETFD);
         if (fdflags >= 0 && (fdflags & FD_CLOEXEC) == 0)
             fcntl(mfp->mf_fd, F_SETFD, fdflags | FD_CLOEXEC);
-#endif
         mch_hide(mfp->mf_fname);    /* try setting the 'hidden' flag */
     }
 }

@@ -22,9 +22,7 @@ static void fname2fnum(xfmark_T *fm);
 static void fmarks_check_one(xfmark_T *fm, char_u *name, buf_T *buf);
 static char_u *mark_line(pos_T *mp, int lead_len);
 static void show_one_mark(int, char_u *, pos_T *, char_u *, int current);
-#if defined(FEAT_JUMPLIST)
 static void cleanup_jumplist(void);
-#endif
 
 /*
  * Set named mark "c" at current cursor position.
@@ -125,10 +123,8 @@ setmark_pos(c, pos, fnum)
     void
 setpcmark()
 {
-#if defined(FEAT_JUMPLIST)
     int         i;
     xfmark_T    *fm;
-#endif
 #if defined(JUMPLIST_ROTATE)
     xfmark_T    tempmark;
 #endif
@@ -140,7 +136,6 @@ setpcmark()
     curwin->w_prev_pcmark = curwin->w_pcmark;
     curwin->w_pcmark = curwin->w_cursor;
 
-#if defined(FEAT_JUMPLIST)
 #if defined(JUMPLIST_ROTATE)
     /*
      * If last used entry is not at the top, put it at the top by rotating
@@ -173,7 +168,6 @@ setpcmark()
     fm->fmark.mark = curwin->w_pcmark;
     fm->fmark.fnum = curbuf->b_fnum;
     fm->fname = NULL;
-#endif
 }
 
 /*
@@ -194,7 +188,6 @@ checkpcmark()
     }
 }
 
-#if defined(FEAT_JUMPLIST)
 /*
  * move "count" positions in the jump list (count may be negative)
  */
@@ -242,8 +235,7 @@ movemark(count)
                 count += count < 0 ? -1 : 1;
                 continue;
             }
-            if (buflist_getfile(jmp->fmark.fnum, jmp->fmark.mark.lnum,
-                                                            0, FALSE) == FAIL)
+            if (buflist_getfile(jmp->fmark.fnum, jmp->fmark.mark.lnum, 0, FALSE) == FAIL)
                 return (pos_T *)NULL;
             /* Set lnum again, autocommands my have changed it */
             curwin->w_cursor = jmp->fmark.mark;
@@ -285,7 +277,6 @@ movechangelist(count)
     curwin->w_changelistidx = n;
     return curbuf->b_changelist + n;
 }
-#endif
 
 /*
  * Find mark "c" in buffer pointed to by "buf".
@@ -400,9 +391,7 @@ getmark_buf_fnum(buf, c, changefile, fnum)
                 pos_copy.col = 0;
             else
                 pos_copy.col = MAXCOL;
-#if defined(FEAT_VIRTUALEDIT)
             pos_copy.coladd = 0;
-#endif
         }
     }
     else if (ASCII_ISLOWER(c))          /* normal named mark */
@@ -430,8 +419,7 @@ getmark_buf_fnum(buf, c, changefile, fnum)
             if (namedfm[c].fmark.mark.lnum != 0
                                        && changefile && namedfm[c].fmark.fnum)
             {
-                if (buflist_getfile(namedfm[c].fmark.fnum,
-                                      (linenr_T)1, GETF_SETMARK, FALSE) == OK)
+                if (buflist_getfile(namedfm[c].fmark.fnum, (linenr_T)1, GETF_SETMARK, FALSE) == OK)
                 {
                     /* Set the lnum now, autocommands could have changed it */
                     curwin->w_cursor = namedfm[c].fmark.mark;
@@ -544,9 +532,7 @@ fmarks_check_names(buf)
 {
     char_u      *name;
     int         i;
-#if defined(FEAT_JUMPLIST)
     win_T       *wp;
-#endif
 
     if (buf->b_ffname == NULL)
         return;
@@ -558,13 +544,11 @@ fmarks_check_names(buf)
     for (i = 0; i < NMARKS + EXTRA_MARKS; ++i)
         fmarks_check_one(&namedfm[i], name, buf);
 
-#if defined(FEAT_JUMPLIST)
     FOR_ALL_WINDOWS(wp)
     {
         for (i = 0; i < wp->w_jumplistlen; ++i)
             fmarks_check_one(&wp->w_jumplist[i], name, buf);
     }
-#endif
 
     vim_free(name);
 }
@@ -638,14 +622,10 @@ clrallmarks(buf)
     buf->b_op_end.lnum = 0;
     buf->b_last_cursor.lnum = 1;        /* '" mark cleared */
     buf->b_last_cursor.col = 0;
-#if defined(FEAT_VIRTUALEDIT)
     buf->b_last_cursor.coladd = 0;
-#endif
     buf->b_last_insert.lnum = 0;        /* '^ mark cleared */
     buf->b_last_change.lnum = 0;        /* '. mark cleared */
-#if defined(FEAT_JUMPLIST)
     buf->b_changelistlen = 0;
-#endif
 }
 
 /*
@@ -872,7 +852,6 @@ ex_delmarks(eap)
     }
 }
 
-#if defined(FEAT_JUMPLIST)
 /*
  * print the jumplist
  */
@@ -959,7 +938,6 @@ ex_changes(eap)
     if (curwin->w_changelistidx == curbuf->b_changelistlen)
         MSG_PUTS("\n>");
 }
-#endif
 
 #define one_adjust(add) \
     { \
@@ -1043,23 +1021,13 @@ mark_adjust(line1, line2, amount, amount_after)
         if (!equalpos(curbuf->b_last_cursor, initpos))
             one_adjust(&(curbuf->b_last_cursor.lnum));
 
-#if defined(FEAT_JUMPLIST)
         /* list of change positions */
         for (i = 0; i < curbuf->b_changelistlen; ++i)
             one_adjust_nodel(&(curbuf->b_changelist[i].lnum));
-#endif
 
         /* Visual area */
         one_adjust_nodel(&(curbuf->b_visual.vi_start.lnum));
         one_adjust_nodel(&(curbuf->b_visual.vi_end.lnum));
-
-#if defined(FEAT_QUICKFIX)
-        /* quickfix marks */
-        qf_mark_adjust(NULL, line1, line2, amount, amount_after);
-        /* location lists */
-        FOR_ALL_TAB_WINDOWS(tab, win)
-            qf_mark_adjust(win, line1, line2, amount, amount_after);
-#endif
     }
 
     /* previous context mark */
@@ -1077,14 +1045,12 @@ mark_adjust(line1, line2, amount, amount_after)
      */
     FOR_ALL_TAB_WINDOWS(tab, win)
     {
-#if defined(FEAT_JUMPLIST)
         if (!cmdmod.lockmarks)
             /* Marks in the jumplist.  When deleting lines, this may create
              * duplicate marks in the jumplist, they will be removed later. */
             for (i = 0; i < win->w_jumplistlen; ++i)
                 if (win->w_jumplist[i].fmark.fnum == fnum)
                     one_adjust_nodel(&(win->w_jumplist[i].fmark.mark.lnum));
-#endif
 
         if (win->w_buffer == curbuf)
         {
@@ -1195,11 +1161,9 @@ mark_col_adjust(lnum, mincol, lnum_amount, col_amount)
     /* last change position */
     col_adjust(&(curbuf->b_last_change));
 
-#if defined(FEAT_JUMPLIST)
     /* list of change positions */
     for (i = 0; i < curbuf->b_changelistlen; ++i)
         col_adjust(&(curbuf->b_changelist[i]));
-#endif
 
     /* Visual area */
     col_adjust(&(curbuf->b_visual.vi_start));
@@ -1219,12 +1183,10 @@ mark_col_adjust(lnum, mincol, lnum_amount, col_amount)
      */
     FOR_ALL_WINDOWS(win)
     {
-#if defined(FEAT_JUMPLIST)
         /* marks in the jumplist */
         for (i = 0; i < win->w_jumplistlen; ++i)
             if (win->w_jumplist[i].fmark.fnum == fnum)
                 col_adjust(&(win->w_jumplist[i].fmark.mark));
-#endif
 
         if (win->w_buffer == curbuf)
         {
@@ -1240,7 +1202,6 @@ mark_col_adjust(lnum, mincol, lnum_amount, col_amount)
     }
 }
 
-#if defined(FEAT_JUMPLIST)
 /*
  * When deleting lines, this may create duplicate marks in the
  * jumplist. They will be removed here for the current window.
@@ -1257,11 +1218,9 @@ cleanup_jumplist()
         if (curwin->w_jumplistidx == from)
             curwin->w_jumplistidx = to;
         for (i = from + 1; i < curwin->w_jumplistlen; ++i)
-            if (curwin->w_jumplist[i].fmark.fnum
-                                        == curwin->w_jumplist[from].fmark.fnum
+            if (curwin->w_jumplist[i].fmark.fnum == curwin->w_jumplist[from].fmark.fnum
                     && curwin->w_jumplist[from].fmark.fnum != 0
-                    && curwin->w_jumplist[i].fmark.mark.lnum
-                                  == curwin->w_jumplist[from].fmark.mark.lnum)
+                    && curwin->w_jumplist[i].fmark.mark.lnum == curwin->w_jumplist[from].fmark.mark.lnum)
                 break;
         if (i >= curwin->w_jumplistlen)     /* no duplicate */
             curwin->w_jumplist[to++] = curwin->w_jumplist[from];
@@ -1305,7 +1264,6 @@ free_jumplist(wp)
     for (i = 0; i < wp->w_jumplistlen; ++i)
         vim_free(wp->w_jumplist[i].fname);
 }
-#endif
 
     void
 set_last_cursor(win)

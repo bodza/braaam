@@ -3,8 +3,6 @@
 
 /* ============ the header file puzzle (ca. 50-100 pieces) ========= */
 
-#if defined(HAVE_CONFIG_H)
-
 /* Define when terminfo support found */
 #define TERMINFO 1
 
@@ -26,139 +24,33 @@
 /* Defined to the size of time_t */
 #define SIZEOF_TIME_T 8
 
-/* Define to empty if the keyword does not work.  */
-/* #undef const */
-
-/* Define to empty if the keyword does not work.  */
-/* #undef volatile */
-
-/* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef mode_t */
-
-/* Define to `long' if <sys/types.h> doesn't define.  */
-/* #undef off_t */
-
-/* Define to `long' if <sys/types.h> doesn't define.  */
-/* #undef pid_t */
-
-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
-/* #undef size_t */
-
-/* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef uid_t */
-
-/* Define to `unsigned int' or other type that is 32 bit.  */
-/* #undef uint32_t */
-
-/* Define to `int' if <sys/types.h> doesn't define.  */
-/* #undef gid_t */
-
-/* Define to `long' if <sys/types.h> doesn't define.  */
-/* #undef ino_t */
-
-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
-/* #undef dev_t */
-
-/* Define to `unsigned long' if <sys/types.h> doesn't define.  */
-/* #undef rlim_t */
-
-/* Define to `struct sigaltstack' if <signal.h> doesn't define.  */
-/* #undef stack_t */
-
 /* Define if tgetent() returns zero for an error */
 #define TGETENT_ZERO_ERR 0
 
 /* Define if you the function: */
 #define HAVE_BCMP 1
-#define HAVE_FCHDIR 1
-#define HAVE_FCHOWN 1
-#define HAVE_FSEEKO 1
-#define HAVE_FSYNC 1
-#define HAVE_GETCWD 1
-#define HAVE_GETPWENT 1
-#define HAVE_GETPWNAM 1
-#define HAVE_GETPWUID 1
-#define HAVE_GETRLIMIT 1
-#define HAVE_GETTIMEOFDAY 1
-#define HAVE_GETWD 1
 #define HAVE_ICONV 1
-#define HAVE_LSTAT 1
 #define HAVE_MEMCMP 1
 #define HAVE_MEMSET 1
 #define HAVE_MKDTEMP 1
-#define HAVE_NANOSLEEP 1
 #define HAVE_OPENDIR 1
 #define HAVE_PUTENV 1
 #define HAVE_QSORT 1
-#define HAVE_READLINK 1
 #define HAVE_RENAME 1
-#define HAVE_SELECT 1
 #define HAVE_SETENV 1
-#define HAVE_SETPGID 1
-#define HAVE_SETSID 1
-#define HAVE_SIGACTION 1
-#define HAVE_SIGALTSTACK 1
-#define HAVE_SIGSET 1
-#define HAVE_SIGSTACK 1
-#define HAVE_SIGVEC 1
 #define HAVE_STRCASECMP 1
 #define HAVE_STRERROR 1
 #define HAVE_STRFTIME 1
 #define HAVE_STRNCASECMP 1
 #define HAVE_STRPBRK 1
 #define HAVE_STRTOL 1
-#define HAVE_SYSCONF 1
-#define HAVE_SYSINFO 1
-#define HAVE_SYSINFO_MEM_UNIT 1
 #define HAVE_TGETENT 1
 #define HAVE_TOWLOWER 1
 #define HAVE_TOWUPPER 1
 #define HAVE_ISWUPPER 1
-#define HAVE_USLEEP 1
-#define HAVE_UTIME 1
-
-/* Define if you do not have utime(), but do have the utimes() function. */
-#define HAVE_UTIMES 1
-
-/* Define if you have the header file: */
-#define HAVE_LOCALE_H 1
-
-/* Define if you want to add support of GPM (Linux console mouse daemon) */
-/* #undef HAVE_GPM */
-
-/* Define if you want to add support of sysmouse (*BSD console mouse) */
-/* #undef HAVE_SYSMOUSE */
-
-/* Define if fcntl()'s F_SETFD command knows about FD_CLOEXEC */
-#define HAVE_FD_CLOEXEC 1
-
-/* We may need to define the uint32_t on non-Unix system, but using the same
- * identifier causes conflicts.  Therefore use UINT32_T. */
-#define UINT32_TYPEDEF uint32_t
-#endif
-
-#if !defined(UINT32_TYPEDEF)
-#if defined(uint32_t) /* this doesn't catch typedefs, unfortunately */
-#define UINT32_TYPEDEF uint32_t
-#else
-  /* Fall back to assuming unsigned int is 32 bit.  If this is wrong then the
-   * test in blowfish.c will fail. */
-#define UINT32_TYPEDEF unsigned int
-#endif
-#endif
 
 /* user ID of root is usually zero, but not for everybody */
 #define ROOT_UID 0
-
-/*
- * When adding a new feature:
- * - Add a #define below.
- * - Add a message in the table above ex_version().
- * - Add a string to f_has().
- * - Add a feature to ":help feature-list" in doc/eval.txt.
- * - Add feature to ":help +feature-list" in doc/various.txt.
- * - Add comment for the documentation of commands that use the feature.
- */
 
 /*
  * Optional code (see ":help +feature-list")
@@ -182,11 +74,6 @@
  */
 #define MAX_MSG_HIST_LEN 200
 
-/*
- * +jumplist            Jumplist, CTRL-O and CTRL-I commands.
- */
-#define FEAT_JUMPLIST
-
 /* the cmdline-window requires FEAT_CMDHIST */
 #if defined(FEAT_CMDHIST)
 #define FEAT_CMDWIN
@@ -209,49 +96,10 @@
  */
 #define FEAT_CMDL_COMPL
 
-#define VIM_BACKTICK           /* internal backtick expansion */
-
-/*
- * +visual              Visual mode - now always included.
- * +visualextra         Extra features for Visual mode (mostly block operators).
- */
-#define FEAT_VISUALEXTRA
-
-/*
- * +virtualedit         'virtualedit' option and its implementation
- */
-#define FEAT_VIRTUALEDIT
-
-/*
- * +vreplace            "gR" and "gr" commands.
- */
-#define FEAT_VREPLACE
-
 /*
  * +cmdline_info        'showcmd' and 'ruler' options.
  */
 #define FEAT_CMDL_INFO
-
-/*
- * +linebreak           'showbreak', 'breakat'  and 'linebreak' options.
- *                      Also 'numberwidth'.
- */
-#define FEAT_LINEBREAK
-
-/*
- * +ex_extra            ":retab", ":right", ":left", ":center", ":normal".
- */
-#define FEAT_EX_EXTRA
-
-/*
- * +extra_search        'hlsearch' and 'incsearch' options.
- */
-#define FEAT_SEARCH_EXTRA
-
-/*
- * +quickfix            Quickfix commands.
- */
-#define FEAT_QUICKFIX
 
 /*
  * +file_in_path        "gf" and "<cfile>" commands.
@@ -261,7 +109,7 @@
 /*
  * +find_in_path        "[I" ":isearch" "^W^I", ":checkpath", etc.
  */
-#if defined(FEAT_SEARCHPATH) /* FEAT_SEARCHPATH is required */
+#if defined(FEAT_SEARCHPATH)
 #define FEAT_FIND_ID
 #endif
 
@@ -271,26 +119,9 @@
 #define FEAT_PATH_EXTRA
 
 /*
- * +rightleft           Right-to-left editing/typing support.
- */
-#undef FEAT_RIGHTLEFT
-
-/*
  * +tag_binary          Can use a binary search for the tags file.
  */
 #define FEAT_TAG_BINS
-
-/*
- * +eval                Built-in script language and expression evaluation,
- *                      ":let", ":if", etc.
- */
-
-/*
- * +reltime             reltime() function
- */
-#if defined(HAVE_GETTIMEOFDAY)
-#define FEAT_RELTIME
-#endif
 
 /*
  * +textobjects         Text objects: "vaw", "das", etc.
@@ -310,40 +141,19 @@
 #define FEAT_USR_CMDS
 
 /*
- * +printer             ":hardcopy" command
- * +postscript          Printing uses PostScript file output.
- */
-#define FEAT_PRINTER
-#if defined(FEAT_PRINTER)
-#define FEAT_POSTSCRIPT
-#endif
-
-/*
  * +modify_fname        modifiers for file name.  E.g., "%:p:h".
  */
 #define FEAT_MODIFY_FNAME
 
 /*
- * +autocmd             ":autocmd" command
- */
-#define FEAT_AUTOCMD
-
-/*
- * +title               'title' and 'icon' options
  * +statusline          'statusline', 'rulerformat' and special format of
  *                      'titlestring' and 'iconstring' options.
- * +byte_offset         '%o' in 'statusline' and builtin functions line2byte()
- *                      and byte2line().
- *                      Note: Required for Macintosh.
  */
-#define FEAT_TITLE
 
 #define FEAT_STL_OPT
 #if !defined(FEAT_CMDL_INFO)
 #define FEAT_CMDL_INFO        /* 'ruler' is required for 'statusline' */
 #endif
-
-#define FEAT_BYTEOFF
 
 /*
  * +wildignore          'wildignore' and 'backupskip' options
@@ -355,29 +165,6 @@
  * +wildmenu            'wildmenu' option
  */
 #define FEAT_WILDMENU
-
-/*
- * +viminfo             reading/writing the viminfo file. Takes about 8Kbyte
- *                      of code.
- * VIMINFO_FILE         Location of user .viminfo file (should start with $).
- * VIMINFO_FILE2        Location of alternate user .viminfo file.
- */
-/* #define VIMINFO_FILE "$HOME/foo/.viminfo" */
-/* #define VIMINFO_FILE2 "~/bar/.viminfo" */
-
-/*
- * +syntax              syntax highlighting.  When using this, it's a good
- *                      idea to have +autocmd and +eval too.
- */
-#define FEAT_SYN_HL
-
-/*
- * +conceal             'conceal' option.  Needs syntax highlighting
- *                      as this is how the concealed text is defined.
- */
-#if defined(FEAT_UNSURE) && defined(FEAT_SYN_HL)
-#define FEAT_CONCEAL
-#endif
 
 /*
  * +builtin_terms       Choose one out of the following four:
@@ -406,22 +193,6 @@
 #define SOME_BUILTIN_TCAPS            /* default */
 #endif
 #endif
-
-/*
- * +lispindent          lisp indenting (From Eric Fischer).
- * +cindent             C code indenting (From Eric Fischer).
- * +smartindent         smart C code indenting when the 'si' option is set.
- *
- * These two need to be defined when making prototypes.
- */
-#define FEAT_LISP
-#define FEAT_CINDENT
-#define FEAT_SMARTINDENT
-
-/*
- * +comments            'comments' option.
- */
-#define FEAT_COMMENTS
 
 /* Define this if you want to use 16 bit Unicode only, reduces memory used for
  * the screen structures. */
@@ -582,27 +353,12 @@
 
 /*
  * +mouse_xterm         Unix only: Include code for xterm mouse handling.
- * +mouse_gpm           Unix only: Include code for Linux console mouse handling.
- * +mouse_sysmouse      Unix only: Include code for FreeBSD and DragonFly console mouse handling.
  * +mouse               Any mouse support (any of the above enabled).
  */
 #define FEAT_MOUSE_XTERM
 
-/*
- * Note: Only one of the following may be defined:
- * FEAT_MOUSE_GPM
- * FEAT_SYSMOUSE
- */
-#if defined(HAVE_GPM)
-#define FEAT_MOUSE_GPM
-#endif
-
-#if defined(HAVE_SYSMOUSE)
-#define FEAT_SYSMOUSE
-#endif
-
 /* Define FEAT_MOUSE when any of the above is defined or FEAT_GUI. */
-#if !defined(FEAT_MOUSE_TTY) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE))
+#if !defined(FEAT_MOUSE_TTY) && defined(FEAT_MOUSE_XTERM)
 #define FEAT_MOUSE_TTY         /* include non-GUI mouse support */
 #endif
 #if !defined(FEAT_MOUSE) && defined(FEAT_MOUSE_TTY)
@@ -648,18 +404,7 @@
 #define UNUSED
 #endif
 
-#if !defined(HAVE_SELECT)
-struct pollfd;                  /* for poll __ARGS */
-extern int      poll(struct pollfd *, long, int);
-#endif
-
-#if defined(HAVE_SIGSET)
 extern void (*sigset(int, void (*func)(int)))(int);
-#endif
-
-#if defined(HAVE_LOCALE_H)
-#include <locale.h>
-#endif
 
 /*
  * Maximum length of a path (for non-unix systems) Make it a bit long, to stay
@@ -716,13 +461,8 @@ typedef          long __w64     long_i;
  * The characters and attributes cached for the screen.
  */
 typedef char_u schar_T;
-#if defined(FEAT_SYN_HL)
 typedef unsigned short sattr_T;
 #define MAX_TYPENR 65535
-#else
-typedef unsigned char sattr_T;
-#define MAX_TYPENR 255
-#endif
 
 /*
  * The u8char_T can hold one decoded UTF-8 character.
@@ -749,11 +489,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #include <stdarg.h>
 
 #include <sys/select.h>
-
-#if !defined(HAVE_SELECT)
-#include <sys/poll.h>
-#define HAVE_POLL
-#endif
 
 /* ================ end of the header file puzzle =============== */
 
@@ -839,10 +574,8 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 
 #define REPLACE_FLAG    0x40    /* Replace mode flag */
 #define REPLACE         (REPLACE_FLAG + INSERT)
-#if defined(FEAT_VREPLACE)
 #define VREPLACE_FLAG  0x80    /* Virtual-replace mode flag */
 #define VREPLACE       (REPLACE_FLAG + VREPLACE_FLAG + INSERT)
-#endif
 #define LREPLACE        (REPLACE_FLAG + LANGMAP)
 
 #define NORMAL_BUSY     (0x100 + NORMAL) /* Normal mode, busy with a command */
@@ -1015,7 +748,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define ACTION_EXPAND  5
 #endif
 
-#if defined(FEAT_SYN_HL)
 #define SST_MIN_ENTRIES 150    /* minimal size for state stack array */
 #define SST_MAX_ENTRIES 1000  /* maximal size for state stack array */
 #define SST_FIX_STATES  7      /* size of sst_stack[]. */
@@ -1041,7 +773,6 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define HL_TRANS_CONT  0x10000 /* transparent item without contains arg */
 #define HL_CONCEAL     0x20000 /* can be concealed */
 #define HL_CONCEALENDS 0x40000 /* can be concealed */
-#endif
 
 /* Values for 'options' argument in do_search() and searchit() */
 #define SEARCH_REV    0x01  /* go in reverse of previous dir. */
@@ -1153,11 +884,9 @@ typedef unsigned int u8char_T;      /* int is 32 bits */
 #define RE_STRICT       4       /* don't allow [abc] without ] */
 #define RE_AUTO         8       /* automatic engine selection */
 
-#if defined(FEAT_SYN_HL)
 /* values for reg_do_extmatch */
 #define REX_SET        1       /* to allow \z\(...\), */
 #define REX_USE        2       /* to allow \z\1 et al. */
-#endif
 
 /* Return values for fullpathcmp() */
 /* Note: can use (fullpathcmp() & FPC_SAME) to check for equal files */
@@ -1536,7 +1265,7 @@ typedef enum
 #define MAYBE   2           /* sometimes used for a variant on TRUE */
 
 #if !defined(UINT32_T)
-typedef UINT32_TYPEDEF UINT32_T;
+typedef uint32_t UINT32_T;
 #endif
 
 /*
@@ -1810,11 +1539,7 @@ int vim_memcmp(void *, void *, size_t);
  * plus six following composing characters of three bytes each. */
 #define MB_MAXBYTES    21
 
-#if defined(FEAT_RELTIME)
 typedef struct timeval proftime_T;
-#else
-typedef int proftime_T;     /* dummy for function prototypes */
-#endif
 
 /* Include option.h before structs.h, because the number of window-local and
  * buffer-local options is used there. */
@@ -1895,9 +1620,7 @@ typedef int proftime_T;     /* dummy for function prototypes */
 #define MOUSE_MAY_STOP_VIS     0x10    /* may stop Visual mode */
 #define MOUSE_RELEASED         0x20    /* button was released */
 
-#if defined(HAVE_GETTIMEOFDAY)
 #define CHECK_DOUBLE_CLICK 1  /* Checking for double clicks ourselves. */
-#endif
 
 #endif
 
@@ -2019,18 +1742,7 @@ typedef int VimClipboard;       /* This is required for the prototypes. */
 #define display_errors()       fflush(stderr)
 #define mch_msg(str)           printf("%s", (str))
 
-#if !defined(FEAT_LINEBREAK)
-/* Without the 'numberwidth' option line numbers are always 7 chars. */
-#define number_width(x) 7
-#endif
-
 #include "globals.h"        /* global variables and messages */
-
-#if !defined(FEAT_VIRTUALEDIT)
-#define getvvcol(w, p, s, c, e) getvcol(w, p, s, c, e)
-#define virtual_active() FALSE
-#define virtual_op FALSE
-#endif
 
 /* Note: a NULL argument for vim_realloc() is not portable, don't use it. */
 #define vim_realloc(ptr, size)  realloc((ptr), (size))

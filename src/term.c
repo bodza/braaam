@@ -63,7 +63,7 @@ static void req_more_codes_from_term(void);
 static void got_code_from_term(char_u *code, int len);
 static void check_for_codes_from_term(void);
 #endif
-#if (defined(FEAT_MOUSE) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE)))
+#if (defined(FEAT_MOUSE) && defined(FEAT_MOUSE_XTERM))
 static int get_bytes_from_buf(char_u *, char_u *, int);
 #endif
 static void del_termcode_idx(int idx);
@@ -858,8 +858,7 @@ set_termname(term)
                 mch_errmsg((char *)term);
                 mch_errmsg(_("' not known. Available builtin terminals are:"));
                 mch_errmsg("\r\n");
-                for (termp = &(builtin_termcaps[0]); termp->bt_string != NULL;
-                                                                      ++termp)
+                for (termp = &(builtin_termcaps[0]); termp->bt_string != NULL; ++termp)
                 {
                     if (termp->bt_entry == (int)KS_NAME)
                     {
@@ -1025,9 +1024,7 @@ set_termname(term)
 #if defined(FEAT_MOUSE)
         setmouse();             /* may start using the mouse */
 #endif
-#if defined(FEAT_TITLE)
         maketitle();            /* may display window title */
-#endif
     }
 
         /* display initial screen after ttest() checking. jw. */
@@ -1045,7 +1042,6 @@ set_termname(term)
             scroll_region_reset();              /* In case Rows changed */
         check_map_keycodes();   /* check mappings for terminal codes used */
 
-#if defined(FEAT_AUTOCMD)
         {
             buf_T       *old_curbuf;
 
@@ -1057,13 +1053,11 @@ set_termname(term)
             for (curbuf = firstbuf; curbuf != NULL; curbuf = curbuf->b_next)
             {
                 if (curbuf->b_ml.ml_mfp != NULL)
-                    apply_autocmds(EVENT_TERMCHANGED, NULL, NULL, FALSE,
-                                                                      curbuf);
+                    apply_autocmds(EVENT_TERMCHANGED, NULL, NULL, FALSE, curbuf);
             }
             if (buf_valid(old_curbuf))
                 curbuf = old_curbuf;
         }
-#endif
     }
 
 #if defined(FEAT_TERMRESPONSE)
@@ -1268,8 +1262,7 @@ add_termcap_entry(name, force)
                 {
                     if ((int)termp->bt_entry == key)
                     {
-                        add_termcode(name, (char_u *)termp->bt_string,
-                                                          term_is_8bit(term));
+                        add_termcode(name, (char_u *)termp->bt_string, term_is_8bit(term));
                         return OK;
                     }
                     ++termp;
@@ -1535,7 +1528,6 @@ out_char_nf(c)
         out_flush();
 }
 
-#if defined(FEAT_TITLE) || defined(FEAT_MOUSE_TTY) || defined(FEAT_TERMRESPONSE)
 /*
  * A never-padding out_str.
  * use this whenever you don't want to run the string through tputs.
@@ -1558,7 +1550,6 @@ out_str_nf(s)
     if (p_wd)
         out_flush();
 }
-#endif
 
 /*
  * out_str(s): Put a character string a byte at a time into the output buffer.
@@ -1694,7 +1685,6 @@ term_color(s, n)
         OUT_STR(tgoto((char *)s, 0, n));
 }
 
-#if defined(FEAT_TITLE)
 /*
  * Generic function to set window title, using t_ts and t_fs.
  */
@@ -1708,7 +1698,6 @@ term_settitle(title)
     out_str(T_FS);                      /* set title end */
     out_flush();
 }
-#endif
 
 /*
  * Make sure we have a valid set or terminal options.
@@ -1808,7 +1797,7 @@ ttest(pairs)
     t_colors = atoi((char *)T_CCO);
 }
 
-#if (defined(FEAT_MOUSE) && (defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE)))
+#if (defined(FEAT_MOUSE) && defined(FEAT_MOUSE_XTERM))
 /*
  * Read the next num_bytes bytes from buf, and store them in bytes.  Assume
  * that buf has been through inchar().  Returns the actual number of bytes used
@@ -1993,9 +1982,7 @@ set_shellsize(width, height, mustset)
 
     if (starting != NO_SCREEN)
     {
-#if defined(FEAT_TITLE)
         maketitle();
-#endif
         changed_line_abv_curs();
         invalidate_botline();
 
@@ -2252,9 +2239,7 @@ log_tr(char *msg)
     profile_end(&now);
     fprintf(fd_tr, "%s: %s %s\n",
             profile_msg(&now),
-            must_redraw == NOT_VALID ? "NV"
-                                         : must_redraw == CLEAR ? "CL" : "  ",
-            msg);
+            must_redraw == NOT_VALID ? "NV" : must_redraw == CLEAR ? "CL" : "  ", msg);
 }
 #endif
 #endif
@@ -2454,11 +2439,9 @@ scroll_region_set(wp, off)
     win_T       *wp;
     int         off;
 {
-    OUT_STR(tgoto((char *)T_CS, W_WINROW(wp) + wp->w_height - 1,
-                                                         W_WINROW(wp) + off));
+    OUT_STR(tgoto((char *)T_CS, W_WINROW(wp) + wp->w_height - 1, W_WINROW(wp) + off));
     if (*T_CSV != NUL && wp->w_width != Columns)
-        OUT_STR(tgoto((char *)T_CSV, W_WINCOL(wp) + wp->w_width - 1,
-                                                               W_WINCOL(wp)));
+        OUT_STR(tgoto((char *)T_CSV, W_WINCOL(wp) + wp->w_width - 1, W_WINCOL(wp)));
     screen_start();                 /* don't know where cursor is now */
 }
 
@@ -2594,8 +2577,7 @@ add_termcode(name, string, flags)
                      * invoked from got_code_from_term(). */
                     if (len == termcodes[i].len - j
                             && STRNCMP(s, termcodes[i].code, len - 1) == 0
-                            && s[len - 1]
-                                   == termcodes[i].code[termcodes[i].len - 1])
+                            && s[len - 1] == termcodes[i].code[termcodes[i].len - 1])
                     {
                         /* They are equal but for the ";*": don't add it. */
                         vim_free(s);
@@ -2796,7 +2778,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
     int         i, j;
     int         idx = 0;
 #if defined(FEAT_MOUSE)
-#if defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE)
+#if defined(FEAT_MOUSE_XTERM)
     char_u      bytes[6];
     int         num_bytes;
 #endif
@@ -2817,9 +2799,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
 #endif
 #endif
     int         cpo_koffset;
-#if defined(FEAT_MOUSE_GPM)
-    extern int  gpm_flag; /* gpm library variable */
-#endif
 
     cpo_koffset = (vim_strchr(p_cpo, CPO_KOFFSET) != NULL);
 
@@ -2898,8 +2877,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 slen = termcodes[idx].len;
                 if (cpo_koffset && offset && len < slen)
                     continue;
-                if (STRNCMP(termcodes[idx].code, tp,
-                                     (size_t)(slen > len ? len : slen)) == 0)
+                if (STRNCMP(termcodes[idx].code, tp, (size_t)(slen > len ? len : slen)) == 0)
                 {
                     if (len < slen)             /* got a partial sequence */
                         return -1;              /* need to get more chars */
@@ -2915,8 +2893,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     {
                         for (j = idx + 1; j < tc_len; ++j)
                             if (termcodes[j].len == slen &&
-                                    STRNCMP(termcodes[idx].code,
-                                            termcodes[j].code, slen) == 0)
+                                    STRNCMP(termcodes[idx].code, termcodes[j].code, slen) == 0)
                             {
                                 idx = j;
                                 break;
@@ -2986,11 +2963,10 @@ check_termcode(max_offset, buf, bufsize, buflen)
         }
 
 #if defined(FEAT_TERMRESPONSE)
-        if (key_name[0] == NUL
-            /* Mouse codes of DEC, pterm, and URXVT start with <ESC>[.  When
-             * detecting the start of these mouse codes they might as well be
-             * another key code or terminal response. */
-           )
+        /* Mouse codes of DEC, pterm, and URXVT start with <ESC>[.  When
+         * detecting the start of these mouse codes they might as well be
+         * another key code or terminal response. */
+        if (key_name[0] == NUL)
         {
             /* Check for some responses from the terminal starting with
              * "<Esc>[" or CSI:
@@ -3045,9 +3021,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
 
                         LOG_TR("Received U7 status");
                         u7_status = U7_GOT;
-#if defined(FEAT_AUTOCMD)
                         did_cursorhold = TRUE;
-#endif
                         if (col == 2)
                             aw = "single";
                         else if (col == 3)
@@ -3057,16 +3031,13 @@ check_termcode(max_offset, buf, bufsize, buflen)
                             /* Setting the option causes a screen redraw. Do
                              * that right away if possible, keeping any
                              * messages. */
-                            set_option_value((char_u *)"ambw", 0L,
-                                             (char_u *)aw, 0);
+                            set_option_value((char_u *)"ambw", 0L, (char_u *)aw, 0);
 #if defined(DEBUG_TERMRESPONSE)
                             {
                                 char buf[100];
                                 int  r = redraw_asap(CLEAR);
 
-                                sprintf(buf,
-                                        "set 'ambiwidth', redraw_asap(): %d",
-                                        r);
+                                sprintf(buf, "set 'ambiwidth', redraw_asap(): %d", r);
                                 log_tr(buf);
                             }
 #else
@@ -3084,9 +3055,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                 {
                     LOG_TR("Received CRV");
                     crv_status = CRV_GOT;
-#if defined(FEAT_AUTOCMD)
                     did_cursorhold = TRUE;
-#endif
 
                     /* If this code starts with CSI, you can bet that the
                      * terminal uses 8-bit codes. */
@@ -3109,14 +3078,12 @@ check_termcode(max_offset, buf, bufsize, buflen)
                         {
 #if defined(TTYM_SGR)
                             if (extra >= 277)
-                                set_option_value((char_u *)"ttym", 0L,
-                                                          (char_u *)"sgr", 0);
+                                set_option_value((char_u *)"ttym", 0L, (char_u *)"sgr", 0);
                             else
 #endif
                             /* if xterm version >= 95 use mouse dragging */
                             if (extra >= 95)
-                                set_option_value((char_u *)"ttym", 0L,
-                                                       (char_u *)"xterm2", 0);
+                                set_option_value((char_u *)"ttym", 0L, (char_u *)"xterm2", 0);
                         }
 
                         /* if xterm version >= 141 try to get termcap codes */
@@ -3129,10 +3096,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                         }
                     }
                     set_vim_var_string(VV_TERMRESPONSE, tp, i + 1);
-#if defined(FEAT_AUTOCMD)
-                    apply_autocmds(EVENT_TERMRESPONSE,
-                                                   NULL, NULL, FALSE, curbuf);
-#endif
+                    apply_autocmds(EVENT_TERMRESPONSE, NULL, NULL, FALSE, curbuf);
                     key_name[0] = (int)KS_EXTRA;
                     key_name[1] = (int)KE_IGNORE;
                     slen = i + 1;
@@ -3180,7 +3144,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
         {
             is_click = is_drag = FALSE;
 
-#if defined(FEAT_MOUSE_XTERM) || defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE)
+#if defined(FEAT_MOUSE_XTERM)
             if (key_name[0] == (int)KS_MOUSE)
             {
                 /*
@@ -3238,11 +3202,7 @@ check_termcode(max_offset, buf, bufsize, buflen)
                  * Linux console with GPM and the MS-DOS or Win32 console
                  * (multi-clicks use >= 0x60).
                  */
-                if (mouse_code >= MOUSEWHEEL_LOW
-#if defined(FEAT_MOUSE_GPM)
-                        && gpm_flag == 0
-#endif
-                        )
+                if (mouse_code >= MOUSEWHEEL_LOW)
                 {
                     /* Keep the mouse_code before it's changed, so that we
                      * remember that it was a mouse wheel click. */
@@ -3290,9 +3250,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
             else if (wheel_code == 0)
             {
 #if defined(CHECK_DOUBLE_CLICK)
-#if defined(FEAT_MOUSE_GPM)
-                if (gpm_flag == 0)
-#endif
                 {
                     /*
                      * Compute the time elapsed since the previous mouse click.
@@ -3321,10 +3278,6 @@ check_termcode(max_offset, buf, bufsize, buflen)
                     orig_mouse_row = mouse_row;
                     orig_topline = curwin->w_topline;
                 }
-#if defined(FEAT_MOUSE_GPM)
-                else
-                    orig_num_clicks = NUM_MOUSE_CLICKS(mouse_code);
-#endif
 #else
                 orig_num_clicks = NUM_MOUSE_CLICKS(mouse_code);
 #endif
@@ -3427,23 +3380,20 @@ check_termcode(max_offset, buf, bufsize, buflen)
              * Careful: del_typebuf() and ins_typebuf() may have reallocated
              * typebuf.tb_buf[]!
              */
-            mch_memmove(typebuf.tb_buf + typebuf.tb_off + offset, string,
-                                                            (size_t)new_slen);
+            mch_memmove(typebuf.tb_buf + typebuf.tb_off + offset, string, (size_t)new_slen);
         }
         else
         {
             if (extra < 0)
                 /* remove matched characters */
-                mch_memmove(buf + offset, buf + offset - extra,
-                                           (size_t)(*buflen + offset + extra));
+                mch_memmove(buf + offset, buf + offset - extra, (size_t)(*buflen + offset + extra));
             else if (extra > 0)
             {
                 /* Insert the extra space we need.  If there is insufficient
                  * space return -1. */
                 if (*buflen + extra + new_slen >= bufsize)
                     return -1;
-                mch_memmove(buf + offset + extra, buf + offset,
-                                                   (size_t)(*buflen - offset));
+                mch_memmove(buf + offset + extra, buf + offset, (size_t)(*buflen - offset));
             }
             mch_memmove(buf + offset, string, (size_t)new_slen);
             *buflen = *buflen + extra + new_slen;
@@ -3762,8 +3712,7 @@ show_termcodes()
         item_count = 0;
         for (i = 0; i < tc_len; i++)
         {
-            len = show_one_termcode(termcodes[i].name,
-                                                    termcodes[i].code, FALSE);
+            len = show_one_termcode(termcodes[i].name, termcodes[i].code, FALSE);
             if (len <= INC3 - GAP ? run == 1
                         : len <= INC2 - GAP ? run == 2
                         : run == 3)
@@ -3791,8 +3740,7 @@ show_termcodes()
             for (i = row; i < item_count; i += rows)
             {
                 msg_col = col;                  /* make columns */
-                show_one_termcode(termcodes[items[i]].name,
-                                              termcodes[items[i]].code, TRUE);
+                show_one_termcode(termcodes[items[i]].name, termcodes[items[i]].code, TRUE);
                 if (run == 2)
                     col += INC2;
                 else
@@ -3894,12 +3842,10 @@ req_more_codes_from_term()
 #if defined(DEBUG_TERMRESPONSE)
         char dbuf[100];
 
-        sprintf(dbuf, "Requesting XT %d: %s",
-                                       xt_index_out, key_names[xt_index_out]);
+        sprintf(dbuf, "Requesting XT %d: %s", xt_index_out, key_names[xt_index_out]);
         log_tr(dbuf);
 #endif
-        sprintf(buf, "\033P+q%02x%02x\033\\",
-                      key_names[xt_index_out][0], key_names[xt_index_out][1]);
+        sprintf(buf, "\033P+q%02x%02x\033\\", key_names[xt_index_out][0], key_names[xt_index_out][1]);
         out_str_nf((char_u *)buf);
         ++xt_index_out;
     }

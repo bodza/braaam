@@ -258,8 +258,7 @@ add_buff(buf, s, slen)
             len = MINIMAL_SIZE;
         else
             len = slen;
-        p = (buffblock_T *)lalloc((long_u)(sizeof(buffblock_T) + len),
-                                                                        TRUE);
+        p = (buffblock_T *)lalloc((long_u)(sizeof(buffblock_T) + len), TRUE);
         if (p == NULL)
             return; /* no space, just forget it */
         buf->bh_space = (int)(len - slen);
@@ -446,8 +445,7 @@ flush_buffers(flush_typeahead)
          * of an escape sequence.
          * In an xterm we get one char at a time and we have to get them all.
          */
-        while (inchar(typebuf.tb_buf, typebuf.tb_buflen - 1, 10L,
-                                                  typebuf.tb_change_cnt) != 0)
+        while (inchar(typebuf.tb_buf, typebuf.tb_buflen - 1, 10L, typebuf.tb_change_cnt) != 0)
             ;
         typebuf.tb_off = MAXMAPLEN;
         typebuf.tb_len = 0;
@@ -982,8 +980,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
         typebuf.tb_buflen = newlen;
 
         /* copy the old chars, before the insertion point */
-        mch_memmove(s1 + newoff, typebuf.tb_buf + typebuf.tb_off,
-                                                              (size_t)offset);
+        mch_memmove(s1 + newoff, typebuf.tb_buf + typebuf.tb_off, (size_t)offset);
         /* copy the new chars */
         mch_memmove(s1 + newoff + offset, str, (size_t)addlen);
         /* copy the old chars, after the insertion point, including the NUL at
@@ -995,8 +992,7 @@ ins_typebuf(str, noremap, offset, nottyped, silent)
             vim_free(typebuf.tb_buf);
         typebuf.tb_buf = s1;
 
-        mch_memmove(s2 + newoff, typebuf.tb_noremap + typebuf.tb_off,
-                                                              (size_t)offset);
+        mch_memmove(s2 + newoff, typebuf.tb_noremap + typebuf.tb_off, (size_t)offset);
         mch_memmove(s2 + newoff + offset + addlen,
                    typebuf.tb_noremap + typebuf.tb_off + offset,
                                            (size_t)(typebuf.tb_len - offset));
@@ -1088,9 +1084,7 @@ ins_char_typebuf(c)
 typebuf_changed(tb_change_cnt)
     int         tb_change_cnt;  /* old value of typebuf.tb_change_cnt */
 {
-    return (tb_change_cnt != 0 && (typebuf.tb_change_cnt != tb_change_cnt
-            || typebuf_was_filled
-           ));
+    return (tb_change_cnt != 0 && (typebuf.tb_change_cnt != tb_change_cnt || typebuf_was_filled));
 }
 
 /*
@@ -1843,11 +1837,7 @@ vgetorpeek(advance)
      * Using ":normal" can also do this, but it saves the typeahead buffer,
      * thus it should be OK.  But don't get a key from the user then.
      */
-    if (vgetc_busy > 0
-#if defined(FEAT_EX_EXTRA)
-            && ex_normal_busy == 0
-#endif
-            )
+    if (vgetc_busy > 0 && ex_normal_busy == 0)
         return NUL;
 
     local_State = get_real_state();
@@ -1909,8 +1899,7 @@ vgetorpeek(advance)
                 if (got_int)
                 {
                     /* flush all input */
-                    c = inchar(typebuf.tb_buf, typebuf.tb_buflen - 1, 0L,
-                                                       typebuf.tb_change_cnt);
+                    c = inchar(typebuf.tb_buf, typebuf.tb_buflen - 1, 0L, typebuf.tb_change_cnt);
                     /*
                      * If inchar() returns TRUE (script file was active) or we
                      * are inside a mapping, get out of insert mode.
@@ -2112,8 +2101,7 @@ vgetorpeek(advance)
                                                     mlen - typebuf.tb_maplen);
 
                             del_typebuf(mlen, 0); /* remove the chars */
-                            set_option_value((char_u *)"paste",
-                                                     (long)!p_paste, NULL, 0);
+                            set_option_value((char_u *)"paste", (long)!p_paste, NULL, 0);
                             if (!(State & INSERT))
                             {
                                 msg_col = 0;
@@ -2157,8 +2145,7 @@ vgetorpeek(advance)
                                                    typebuf.tb_off] == RM_YES))
                                 && !timedout)
                         {
-                            keylen = check_termcode(max_mlen + 1,
-                                                               NULL, 0, NULL);
+                            keylen = check_termcode(max_mlen + 1, NULL, 0, NULL);
 
                             /* If no termcode matched but 'pastetoggle'
                              * matched partially it's like an incomplete key
@@ -2266,8 +2253,7 @@ vgetorpeek(advance)
                                                      && (mp->m_mode & VISUAL))
                         {
                             VIsual_select = FALSE;
-                            (void)ins_typebuf(K_SELECT_STRING, REMAP_NONE,
-                                                              0, TRUE, FALSE);
+                            (void)ins_typebuf(K_SELECT_STRING, REMAP_NONE, 0, TRUE, FALSE);
                         }
 
                         /* Copy the values from *mp that are used, because
@@ -2316,14 +2302,11 @@ vgetorpeek(advance)
                                 noremap = save_m_noremap;
                             else if (
                                 STRNCMP(s, save_m_keys != NULL
-                                                   ? save_m_keys : mp->m_keys,
-                                                         (size_t)keylen)
-                                   != 0)
+                                                   ? save_m_keys : mp->m_keys, (size_t)keylen) != 0)
                                 noremap = REMAP_YES;
                             else
                                 noremap = REMAP_SKIP;
-                            i = ins_typebuf(s, noremap,
-                                        0, TRUE, cmd_silent || save_m_silent);
+                            i = ins_typebuf(s, noremap, 0, TRUE, cmd_silent || save_m_silent);
                             if (save_m_expr)
                                 vim_free(s);
                         }
@@ -2358,15 +2341,12 @@ vgetorpeek(advance)
                         && typebuf.tb_len == 1
                         && typebuf.tb_buf[typebuf.tb_off] == ESC
                         && !no_mapping
-#if defined(FEAT_EX_EXTRA)
                         && ex_normal_busy == 0
-#endif
                         && typebuf.tb_maplen == 0
                         && (State & INSERT)
                         && (p_timeout
                             || (keylen == KEYLEN_PART_KEY && p_ttimeout))
-                        && (c = inchar(typebuf.tb_buf + typebuf.tb_off
-                                                     + typebuf.tb_len, 3, 25L,
+                        && (c = inchar(typebuf.tb_buf + typebuf.tb_off + typebuf.tb_len, 3, 25L,
                                                  typebuf.tb_change_cnt)) == 0)
                 {
                     colnr_T     col = 0, vcol;
@@ -2399,8 +2379,7 @@ vgetorpeek(advance)
                                 {
                                     if (!vim_iswhite(ptr[col]))
                                         curwin->w_wcol = vcol;
-                                    vcol += lbr_chartabsize(ptr, ptr + col,
-                                                               (colnr_T)vcol);
+                                    vcol += lbr_chartabsize(ptr, ptr + col, (colnr_T)vcol);
                                     if (has_mbyte)
                                         col += (*mb_ptr2len)(ptr + col);
                                     else
@@ -2458,7 +2437,6 @@ vgetorpeek(advance)
                     continue;
                 }
 
-#if defined(FEAT_EX_EXTRA)
                 if (ex_normal_busy > 0)
                 {
 #if defined(FEAT_CMDWIN)
@@ -2494,7 +2472,6 @@ vgetorpeek(advance)
 #endif
                     break;
                 }
-#endif
 
 /*
  * get a character: 3. from the user - update display
@@ -2704,9 +2681,7 @@ inchar(buf, maxlen, wait_time, tb_change_cnt)
      * If interrupted: Stop reading script files, close them all.
      */
     script_char = -1;
-    while (scriptin[curscript] != NULL && script_char < 0
-            && !ignore_script
-            )
+    while (scriptin[curscript] != NULL && script_char < 0 && !ignore_script)
     {
         if (got_int || (script_char = getc(scriptin[curscript])) < 0)
         {
@@ -2799,10 +2774,8 @@ fix_input_buffer(buf, len, script)
     for (i = len; --i >= 0; ++p)
     {
         if (p[0] == NUL || (p[0] == K_SPECIAL && !script
-#if defined(FEAT_AUTOCMD)
                     /* timeout may generate K_CURSORHOLD */
                     && (i < 2 || p[1] != KS_EXTRA || p[2] != (int)KE_CURSORHOLD)
-#endif
                     ))
         {
             mch_memmove(p + 3, p + 1, (size_t)i);
@@ -2827,9 +2800,7 @@ fix_input_buffer(buf, len, script)
     int
 input_available()
 {
-    return (!vim_is_input_buf_empty()
-            || typebuf_was_filled
-            );
+    return (!vim_is_input_buf_empty() || typebuf_was_filled);
 }
 #endif
 
@@ -3140,11 +3111,9 @@ do_map(maptype, arg, mode, abbrev)
                         && STRNCMP(mp->m_keys, keys, (size_t)len) == 0)
                 {
                     if (abbrev)
-                        EMSG2(_("E224: global abbreviation already exists for %s"),
-                                mp->m_keys);
+                        EMSG2(_("E224: global abbreviation already exists for %s"), mp->m_keys);
                     else
-                        EMSG2(_("E225: global mapping already exists for %s"),
-                                mp->m_keys);
+                        EMSG2(_("E225: global mapping already exists for %s"), mp->m_keys);
                     retval = 5;
                     goto theend;
                 }
@@ -3181,8 +3150,7 @@ do_map(maptype, arg, mode, abbrev)
                     else
                     {
                         n = mp->m_keylen;
-                        if (STRNCMP(mp->m_keys, keys,
-                                            (size_t)(n < len ? n : len)) == 0)
+                        if (STRNCMP(mp->m_keys, keys, (size_t)(n < len ? n : len)) == 0)
                         {
                             showmap(mp, TRUE);
                             did_local = TRUE;
@@ -3274,8 +3242,7 @@ do_map(maptype, arg, mode, abbrev)
                         else if (unique)
                         {
                             if (abbrev)
-                                EMSG2(_("E226: abbreviation already exists for %s"),
-                                                                           p);
+                                EMSG2(_("E226: abbreviation already exists for %s"), p);
                             else
                                 EMSG2(_("E227: mapping already exists for %s"), p);
                             retval = 5;
@@ -3629,8 +3596,7 @@ map_mode_to_chars(mode)
         ga_append(&mapmode, 'l');                       /* :lmap */
     else if (mode & CMDLINE)
         ga_append(&mapmode, 'c');                       /* :cmap */
-    else if ((mode & (NORMAL + VISUAL + SELECTMODE + OP_PENDING))
-                                 == NORMAL + VISUAL + SELECTMODE + OP_PENDING)
+    else if ((mode & (NORMAL + VISUAL + SELECTMODE + OP_PENDING)) == NORMAL + VISUAL + SELECTMODE + OP_PENDING)
         ga_append(&mapmode, ' ');                       /* :map */
     else
     {
@@ -4280,18 +4246,14 @@ eval_map_expr(str, c)
     /* Forbid changing text or using ":normal" to avoid most of the bad side
      * effects.  Also restore the cursor position. */
     ++textlock;
-#if defined(FEAT_EX_EXTRA)
     ++ex_normal_lock;
-#endif
     set_vim_var_char(c);  /* set v:char to the typed character */
     save_cursor = curwin->w_cursor;
     save_msg_col = msg_col;
     save_msg_row = msg_row;
     p = eval_to_string(expr, NULL, FALSE);
     --textlock;
-#if defined(FEAT_EX_EXTRA)
     --ex_normal_lock;
-#endif
     curwin->w_cursor = save_cursor;
     msg_col = save_msg_col;
     msg_row = save_msg_row;

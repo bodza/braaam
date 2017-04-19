@@ -183,12 +183,10 @@
                                  *       end of match. */
 #define BACKREF         100 /* -109 node Match same string again \1-\9 */
 
-#if defined(FEAT_SYN_HL)
 #define ZOPEN          110 /* -119      Mark this point in input as start of
                                  *       \z( subexpr. */
 #define ZCLOSE         120 /* -129      Analogous to ZOPEN. */
 #define ZREF           130 /* -139 node Match external submatch \z1-\z9 */
-#endif
 
 #define BRACE_COMPLEX   140 /* -149 node Match nodes between m & n times */
 
@@ -327,10 +325,8 @@ static char_u e_missingbracket[] = "E769: Missing ] after %s[";
 static char_u e_unmatchedpp[] = "E53: Unmatched %s%%(";
 static char_u e_unmatchedp[] = "E54: Unmatched %s(";
 static char_u e_unmatchedpar[] = "E55: Unmatched %s)";
-#if defined(FEAT_SYN_HL)
 static char_u e_z_not_allowed[] = "E66: \\z( not allowed here";
 static char_u e_z1_not_allowed[] = "E67: \\z1 et al. not allowed here";
-#endif
 static char_u e_missing_sb[] = "E69: Missing ] after %s%%[";
 static char_u e_empty_sb[]  = "E70: Empty %s%%[]";
 #define NOT_MULTI       0
@@ -547,10 +543,8 @@ static char_u   *regparse;      /* Input-scan pointer. */
 static int      prevchr_len;    /* byte length of previous char */
 static int      num_complex_braces; /* Complex \{...} count */
 static int      regnpar;        /* () count. */
-#if defined(FEAT_SYN_HL)
 static int      regnzpar;       /* \z() count. */
 static int      re_has_z;       /* \z item detected */
-#endif
 static char_u   *regcode;       /* Code-emit pointer, or JUST_CALC_SIZE */
 static long     regsize;        /* Code size. */
 static int      reg_toolong;    /* TRUE when offset out of range */
@@ -559,9 +553,7 @@ static unsigned regflags;       /* RF_ flags for prog */
 static long     brace_min[10];  /* Minimums for complex brace repeats */
 static long     brace_max[10];  /* Maximums for complex brace repeats */
 static int      brace_count[10]; /* Current counts for complex brace repeats */
-#if defined(FEAT_SYN_HL)
 static int      had_eol;        /* TRUE when EOL found by vim_regcomp() */
-#endif
 static int      one_exactly = FALSE;    /* only do one char for EXACTLY */
 
 static int      reg_magic;      /* magicness of the pattern: */
@@ -1257,10 +1249,8 @@ bt_regcomp(expr, re_flags)
         r->regflags |= RF_HASNL;
     if (flags & HASLOOKBH)
         r->regflags |= RF_LOOKBH;
-#if defined(FEAT_SYN_HL)
     /* Remember whether this pattern has any \z specials in it. */
     r->reghasz = re_has_z;
-#endif
     scan = r->program + 1;      /* First BRANCH. */
     if (OP(regnext(scan)) == END)   /* Only one top-level choice. */
     {
@@ -1357,19 +1347,14 @@ regcomp_start(expr, re_flags)
     num_complex_braces = 0;
     regnpar = 1;
     vim_memset(had_endbrace, 0, sizeof(had_endbrace));
-#if defined(FEAT_SYN_HL)
     regnzpar = 1;
     re_has_z = 0;
-#endif
     regsize = 0L;
     reg_toolong = FALSE;
     regflags = 0;
-#if defined(FEAT_SYN_HL)
     had_eol = FALSE;
-#endif
 }
 
-#if defined(FEAT_SYN_HL)
 /*
  * Check if during the previous call to vim_regcomp the EOL item "$" has been
  * found.  This is messy, but it works fine.
@@ -1379,7 +1364,6 @@ vim_regcomp_had_eol()
 {
     return had_eol;
 }
-#endif
 
 /*
  * Parse regular expression, i.e. main body or parenthesized thing.
@@ -1403,7 +1387,6 @@ reg(paren, flagp)
 
     *flagp = HASWIDTH;          /* Tentatively. */
 
-#if defined(FEAT_SYN_HL)
     if (paren == REG_ZPAREN)
     {
         /* Make a ZOPEN node. */
@@ -1414,7 +1397,6 @@ reg(paren, flagp)
         ret = regnode(ZOPEN + parno);
     }
     else
-#endif
         if (paren == REG_PAREN)
     {
         /* Make a MOPEN node. */
@@ -1460,9 +1442,7 @@ reg(paren, flagp)
 
     /* Make a closing node, and hook it on the end. */
     ender = regnode(
-#if defined(FEAT_SYN_HL)
             paren == REG_ZPAREN ? ZCLOSE + parno :
-#endif
             paren == REG_PAREN ? MCLOSE + parno :
             paren == REG_NPAREN ? NCLOSE : END);
     regtail(ret, ender);
@@ -1474,11 +1454,9 @@ reg(paren, flagp)
     /* Check for proper termination. */
     if (paren != REG_NOPAREN && getchr() != Magic(')'))
     {
-#if defined(FEAT_SYN_HL)
         if (paren == REG_ZPAREN)
             EMSG_RET_NULL(_("E52: Unmatched \\z("));
         else
-#endif
             if (paren == REG_NPAREN)
             EMSG2_RET_NULL(_(e_unmatchedpp), reg_magic == MAGIC_ALL);
         else
@@ -1705,8 +1683,7 @@ regpiece(flagp)
                               }
                 }
                 if (lop == END)
-                    EMSG2_RET_NULL(_("E59: invalid character after %s@"),
-                                                      reg_magic == MAGIC_ALL);
+                    EMSG2_RET_NULL(_("E59: invalid character after %s@"), reg_magic == MAGIC_ALL);
                 /* Look behind must match with behind_pos. */
                 if (lop == BEHIND || lop == NOBEHIND)
                 {
@@ -1746,8 +1723,7 @@ regpiece(flagp)
             else
             {
                 if (num_complex_braces >= 10)
-                    EMSG2_RET_NULL(_("E60: Too many complex %s{...}s"),
-                                                      reg_magic == MAGIC_ALL);
+                    EMSG2_RET_NULL(_("E60: Too many complex %s{...}s"), reg_magic == MAGIC_ALL);
                 reginsert(BRACE_COMPLEX + num_complex_braces, ret);
                 regoptail(ret, regnode(BACK));
                 regoptail(ret, ret);
@@ -1762,8 +1738,7 @@ regpiece(flagp)
     {
         /* Can't have a multi follow a multi. */
         if (peekchr() == Magic('*'))
-            sprintf((char *)IObuff, _("E61: Nested %s*"),
-                                            reg_magic >= MAGIC_ON ? "" : "\\");
+            sprintf((char *)IObuff, _("E61: Nested %s*"), reg_magic >= MAGIC_ON ? "" : "\\");
         else
             sprintf((char *)IObuff, _("E62: Nested %s%c"),
                 reg_magic == MAGIC_ALL ? "" : "\\", no_Magic(peekchr()));
@@ -1813,9 +1788,7 @@ regatom(flagp)
 
       case Magic('$'):
         ret = regnode(EOL);
-#if defined(FEAT_SYN_HL)
         had_eol = TRUE;
-#endif
         break;
 
       case Magic('<'):
@@ -1836,9 +1809,7 @@ regatom(flagp)
         if (c == '$')           /* "\_$" is end-of-line */
         {
             ret = regnode(EOL);
-#if defined(FEAT_SYN_HL)
             had_eol = TRUE;
-#endif
             break;
         }
 
@@ -2005,7 +1976,6 @@ regatom(flagp)
             c = no_Magic(getchr());
             switch (c)
             {
-#if defined(FEAT_SYN_HL)
                 case '(': if (reg_do_extmatch != REX_SET)
                               EMSG_RET_NULL(_(e_z_not_allowed));
                           if (one_exactly)
@@ -2030,7 +2000,6 @@ regatom(flagp)
                           ret = regnode(ZREF + c - '0');
                           re_has_z = REX_USE;
                           break;
-#endif
 
                 case 's': ret = regnode(MOPEN + 0);
                           if (re_mult_next("\\zs") == FAIL)
@@ -2098,8 +2067,7 @@ regatom(flagp)
                               while ((c = getchr()) != ']')
                               {
                                   if (c == NUL)
-                                      EMSG2_RET_NULL(_(e_missing_sb),
-                                                      reg_magic == MAGIC_ALL);
+                                      EMSG2_RET_NULL(_(e_missing_sb), reg_magic == MAGIC_ALL);
                                   br = regnode(BRANCH);
                                   if (ret == NULL)
                                       ret = br;
@@ -2114,8 +2082,7 @@ regatom(flagp)
                                       return NULL;
                               }
                               if (ret == NULL)
-                                  EMSG2_RET_NULL(_(e_empty_sb),
-                                                      reg_magic == MAGIC_ALL);
+                                  EMSG2_RET_NULL(_(e_empty_sb), reg_magic == MAGIC_ALL);
                               lastbranch = regnode(BRANCH);
                               br = regnode(NOTHING);
                               if (ret != JUST_CALC_SIZE)
@@ -2324,8 +2291,7 @@ collection:
                             && !reg_cpo_bsl
                             && (vim_strchr(REGEXP_INRANGE, regparse[1]) != NULL
                                 || (!reg_cpo_lit
-                                    && vim_strchr(REGEXP_ABBR,
-                                                       regparse[1]) != NULL)))
+                                    && vim_strchr(REGEXP_ABBR, regparse[1]) != NULL)))
                     {
                         regparse++;
                         if (*regparse == 'n')
@@ -3288,10 +3254,8 @@ static char_u   *reginput;      /* current input, points into "regline" */
 
 static int      need_clear_subexpr;     /* subexpressions still need to be
                                          * cleared */
-#if defined(FEAT_SYN_HL)
 static int      need_clear_zsubexpr = FALSE;    /* extmatch subexpressions
                                                  * still need to be cleared */
-#endif
 
 /*
  * Structure used to save the current input state, when it needs to be
@@ -3332,9 +3296,7 @@ static char_u   *reg_getline(linenr_T lnum);
 static long     bt_regexec_both(char_u *line, colnr_T col, proftime_T *tm);
 static long     regtry(bt_regprog_T *prog, colnr_T col);
 static void     cleanup_subexpr(void);
-#if defined(FEAT_SYN_HL)
 static void     cleanup_zsubexpr(void);
-#endif
 static void     save_subexpr(regbehind_T *bp);
 static void     restore_subexpr(regbehind_T *bp);
 static void     reg_nextline(void);
@@ -3426,10 +3388,8 @@ typedef enum regstate_E
     RS_NOPEN = 0        /* NOPEN and NCLOSE */
     , RS_MOPEN          /* MOPEN + [0-9] */
     , RS_MCLOSE         /* MCLOSE + [0-9] */
-#if defined(FEAT_SYN_HL)
     , RS_ZOPEN          /* ZOPEN + [0-9] */
     , RS_ZCLOSE         /* ZCLOSE + [0-9] */
-#endif
     , RS_BRANCH         /* BRANCH */
     , RS_BRCPLX_MORE    /* BRACE_COMPLEX and trying one more match */
     , RS_BRCPLX_LONG    /* BRACE_COMPLEX and trying longest match */
@@ -3534,12 +3494,10 @@ reg_getline(lnum)
 
 static regsave_T behind_pos;
 
-#if defined(FEAT_SYN_HL)
 static char_u   *reg_startzp[NSUBEXP];  /* Workspace to mark beginning */
 static char_u   *reg_endzp[NSUBEXP];    /*   and end of \z(...\) matches */
 static lpos_T   reg_startzpos[NSUBEXP]; /* idem, beginning pos */
 static lpos_T   reg_endzpos[NSUBEXP];   /* idem, end pos */
-#endif
 
 /* TRUE if using multi-line regexp. */
 #define REG_MULTI       (reg_match == NULL)
@@ -3696,9 +3654,7 @@ bt_regexec_both(line, col, tm)
          * This is used very often, esp. for ":global".  Use three versions of
          * the loop to avoid overhead of conditions.
          */
-        if (!ireg_ic
-                && !has_mbyte
-                )
+        if (!ireg_ic && !has_mbyte)
             while ((s = vim_strbyte(s, c)) != NULL)
             {
                 if (cstrncmp(s, prog->regmust, &prog->regmlen) == 0)
@@ -3748,9 +3704,7 @@ bt_regexec_both(line, col, tm)
     }
     else
     {
-#if defined(FEAT_RELTIME)
         int tm_count = 0;
-#endif
         /* Messy cases:  unanchored match. */
         while (!got_int)
         {
@@ -3758,9 +3712,7 @@ bt_regexec_both(line, col, tm)
             {
                 /* Skip until the char we know it must start with.
                  * Used often, do some work to avoid call overhead. */
-                if (!ireg_ic
-                            && !has_mbyte
-                            )
+                if (!ireg_ic && !has_mbyte)
                     s = vim_strbyte(regline + col, prog->regstart);
                 else
                     s = cstrchr(regline + col, prog->regstart);
@@ -3795,7 +3747,6 @@ bt_regexec_both(line, col, tm)
                 col += (*mb_ptr2len)(regline + col);
             else
                 ++col;
-#if defined(FEAT_RELTIME)
             /* Check for timeout once in a twenty times to avoid overhead. */
             if (tm != NULL && ++tm_count == 20)
             {
@@ -3803,7 +3754,6 @@ bt_regexec_both(line, col, tm)
                 if (profile_passed_limit(tm))
                     break;
             }
-#endif
         }
     }
 
@@ -3823,7 +3773,6 @@ theend:
     return retval;
 }
 
-#if defined(FEAT_SYN_HL)
 static reg_extmatch_T *make_extmatch(void);
 
 /*
@@ -3869,7 +3818,6 @@ unref_extmatch(em)
         vim_free(em);
     }
 }
-#endif
 
 /*
  * regtry - try match of "prog" with at regline["col"].
@@ -3882,11 +3830,9 @@ regtry(prog, col)
 {
     reginput = regline + col;
     need_clear_subexpr = TRUE;
-#if defined(FEAT_SYN_HL)
     /* Clear the external match subpointers if necessary. */
     if (prog->reghasz == REX_SET)
         need_clear_zsubexpr = TRUE;
-#endif
 
     if (regmatch(prog->program + 1) == 0)
         return 0;
@@ -3915,7 +3861,6 @@ regtry(prog, col)
         if (reg_endp[0] == NULL)
             reg_endp[0] = reginput;
     }
-#if defined(FEAT_SYN_HL)
     /* Package any found \z(...\) matches for export. Default is none. */
     unref_extmatch(re_extmatch_out);
     re_extmatch_out = NULL;
@@ -3942,12 +3887,10 @@ regtry(prog, col)
             {
                 if (reg_startzp[i] != NULL && reg_endzp[i] != NULL)
                     re_extmatch_out->matches[i] =
-                            vim_strnsave(reg_startzp[i],
-                                        (int)(reg_endzp[i] - reg_startzp[i]));
+                            vim_strnsave(reg_startzp[i], (int)(reg_endzp[i] - reg_startzp[i]));
             }
         }
     }
-#endif
     return 1 + reglnum;
 }
 
@@ -4122,7 +4065,6 @@ regmatch(scan)
         {
             mch_errmsg((char *)regprop(scan));
             mch_errmsg("...\n");
-#if defined(FEAT_SYN_HL)
             if (re_extmatch_in != NULL)
             {
                 int i;
@@ -4136,7 +4078,6 @@ regmatch(scan)
                     mch_errmsg("\"\n");
                 }
             }
-#endif
         }
 #endif
         next = regnext(scan);
@@ -4224,8 +4165,7 @@ regmatch(scan)
             break;
 
           case RE_LNUM:
-            if (!REG_MULTI || !re_num_cmp((long_u)(reglnum + reg_firstlnum),
-                                                                        scan))
+            if (!REG_MULTI || !re_num_cmp((long_u)(reglnum + reg_firstlnum), scan))
                 status = RA_NOMATCH;
             break;
 
@@ -4494,9 +4434,7 @@ regmatch(scan)
                 }
                 else
                 {
-                    if (opnd[1] == NUL
-                            && !(enc_utf8 && ireg_ic)
-                        )
+                    if (opnd[1] == NUL && !(enc_utf8 && ireg_ic))
                     {
                         len = 1;        /* matched a single byte above */
                     }
@@ -4558,8 +4496,7 @@ regmatch(scan)
                     /* When only a composing char is given match at any
                      * position where that composing char appears. */
                     status = RA_NOMATCH;
-                    for (i = 0; reginput[i] != NUL;
-                                                i += utf_ptr2len(reginput + i))
+                    for (i = 0; reginput[i] != NUL; i += utf_ptr2len(reginput + i))
                     {
                         inpc = mb_ptr2char(reginput + i);
                         if (!utf_iscomposing(inpc))
@@ -4658,8 +4595,7 @@ regmatch(scan)
                 else
                 {
                     rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_startpos[no],
-                                                             &reg_startp[no]);
+                    save_se(&rp->rs_un.sesave, &reg_startpos[no], &reg_startp[no]);
                     /* We simply continue and handle the result when done. */
                 }
             }
@@ -4672,7 +4608,6 @@ regmatch(scan)
                 /* We simply continue and handle the result when done. */
                 break;
 
-#if defined(FEAT_SYN_HL)
           case ZOPEN + 1:
           case ZOPEN + 2:
           case ZOPEN + 3:
@@ -4691,13 +4626,11 @@ regmatch(scan)
                 else
                 {
                     rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_startzpos[no],
-                                                             &reg_startzp[no]);
+                    save_se(&rp->rs_un.sesave, &reg_startzpos[no], &reg_startzp[no]);
                     /* We simply continue and handle the result when done. */
                 }
             }
             break;
-#endif
 
           case MCLOSE + 0:  /* Match end: \ze */
           case MCLOSE + 1:  /* \) */
@@ -4724,7 +4657,6 @@ regmatch(scan)
             }
             break;
 
-#if defined(FEAT_SYN_HL)
           case ZCLOSE + 1:  /* \) after \z( */
           case ZCLOSE + 2:
           case ZCLOSE + 3:
@@ -4743,13 +4675,11 @@ regmatch(scan)
                 else
                 {
                     rp->rs_no = no;
-                    save_se(&rp->rs_un.sesave, &reg_endzpos[no],
-                                                              &reg_endzp[no]);
+                    save_se(&rp->rs_un.sesave, &reg_endzpos[no], &reg_endzp[no]);
                     /* We simply continue and handle the result when done. */
                 }
             }
             break;
-#endif
 
           case BACKREF + 1:
           case BACKREF + 2:
@@ -4795,8 +4725,7 @@ regmatch(scan)
                         {
                             /* Compare back-ref within the current line. */
                             len = reg_endpos[no].col - reg_startpos[no].col;
-                            if (cstrncmp(regline + reg_startpos[no].col,
-                                                          reginput, &len) != 0)
+                            if (cstrncmp(regline + reg_startpos[no].col, reginput, &len) != 0)
                                 status = RA_NOMATCH;
                         }
                         else
@@ -4821,7 +4750,6 @@ regmatch(scan)
             }
             break;
 
-#if defined(FEAT_SYN_HL)
           case ZREF + 1:
           case ZREF + 2:
           case ZREF + 3:
@@ -4840,8 +4768,7 @@ regmatch(scan)
                         && re_extmatch_in->matches[no] != NULL)
                 {
                     len = (int)STRLEN(re_extmatch_in->matches[no]);
-                    if (cstrncmp(re_extmatch_in->matches[no],
-                                                          reginput, &len) != 0)
+                    if (cstrncmp(re_extmatch_in->matches[no], reginput, &len) != 0)
                         status = RA_NOMATCH;
                     else
                         reginput += len;
@@ -4852,7 +4779,6 @@ regmatch(scan)
                 }
             }
             break;
-#endif
 
           case BRANCH:
             {
@@ -5144,38 +5070,30 @@ regmatch(scan)
           case RS_MOPEN:
             /* Pop the state.  Restore pointers when there is no match. */
             if (status == RA_NOMATCH)
-                restore_se(&rp->rs_un.sesave, &reg_startpos[rp->rs_no],
-                                                  &reg_startp[rp->rs_no]);
+                restore_se(&rp->rs_un.sesave, &reg_startpos[rp->rs_no], &reg_startp[rp->rs_no]);
             regstack_pop(&scan);
             break;
 
-#if defined(FEAT_SYN_HL)
           case RS_ZOPEN:
             /* Pop the state.  Restore pointers when there is no match. */
             if (status == RA_NOMATCH)
-                restore_se(&rp->rs_un.sesave, &reg_startzpos[rp->rs_no],
-                                                 &reg_startzp[rp->rs_no]);
+                restore_se(&rp->rs_un.sesave, &reg_startzpos[rp->rs_no], &reg_startzp[rp->rs_no]);
             regstack_pop(&scan);
             break;
-#endif
 
           case RS_MCLOSE:
             /* Pop the state.  Restore pointers when there is no match. */
             if (status == RA_NOMATCH)
-                restore_se(&rp->rs_un.sesave, &reg_endpos[rp->rs_no],
-                                                    &reg_endp[rp->rs_no]);
+                restore_se(&rp->rs_un.sesave, &reg_endpos[rp->rs_no], &reg_endp[rp->rs_no]);
             regstack_pop(&scan);
             break;
 
-#if defined(FEAT_SYN_HL)
           case RS_ZCLOSE:
             /* Pop the state.  Restore pointers when there is no match. */
             if (status == RA_NOMATCH)
-                restore_se(&rp->rs_un.sesave, &reg_endzpos[rp->rs_no],
-                                                   &reg_endzp[rp->rs_no]);
+                restore_se(&rp->rs_un.sesave, &reg_endzpos[rp->rs_no], &reg_endzp[rp->rs_no]);
             regstack_pop(&scan);
             break;
-#endif
 
           case RS_BRANCH:
             if (status == RA_MATCH)
@@ -5302,8 +5220,7 @@ regmatch(scan)
                 /* found a match that ends where "next" started */
                 behind_pos = (((regbehind_T *)rp) - 1)->save_behind;
                 if (rp->rs_no == BEHIND)
-                    reg_restore(&(((regbehind_T *)rp) - 1)->save_after,
-                                                                    &backpos);
+                    reg_restore(&(((regbehind_T *)rp) - 1)->save_after, &backpos);
                 else
                 {
                     /* But we didn't want a match.  Need to restore the
@@ -5384,8 +5301,7 @@ regmatch(scan)
                     behind_pos = (((regbehind_T *)rp) - 1)->save_behind;
                     if (rp->rs_no == NOBEHIND)
                     {
-                        reg_restore(&(((regbehind_T *)rp) - 1)->save_after,
-                                                                    &backpos);
+                        reg_restore(&(((regbehind_T *)rp) - 1)->save_after, &backpos);
                         status = RA_MATCH;
                     }
                     else
@@ -6021,7 +5937,6 @@ cleanup_subexpr()
     }
 }
 
-#if defined(FEAT_SYN_HL)
     static void
 cleanup_zsubexpr()
 {
@@ -6041,7 +5956,6 @@ cleanup_zsubexpr()
         need_clear_zsubexpr = FALSE;
     }
 }
-#endif
 
 /*
  * Save the current subexpr to "bp", so that they can be restored
@@ -6664,7 +6578,6 @@ regprop(op)
       case NCLOSE:
         p = "NCLOSE";
         break;
-#if defined(FEAT_SYN_HL)
       case ZOPEN + 1:
       case ZOPEN + 2:
       case ZOPEN + 3:
@@ -6701,7 +6614,6 @@ regprop(op)
         sprintf(buf + STRLEN(buf), "ZREF%d", OP(op) - ZREF);
         p = NULL;
         break;
-#endif
       case STAR:
         p = "STAR";
         break;
@@ -6918,9 +6830,7 @@ cstrchr(s, c)
     char_u      *p;
     int         cc;
 
-    if (!ireg_ic
-            || (!enc_utf8 && mb_char2len(c) > 1)
-            )
+    if (!ireg_ic || (!enc_utf8 && mb_char2len(c) > 1))
         return vim_strchr(s, c);
 
     /* tolower() and toupper() can be slow, comparing twice should be a lot
@@ -7189,9 +7099,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
     /*
      * When the substitute part starts with "\=" evaluate it as an expression.
      */
-    if (source[0] == '\\' && source[1] == '='
-            && !can_f_submatch      /* can't do this recursively */
-            )
+    if (source[0] == '\\' && source[1] == '=' && !can_f_submatch)   /* can't do this recursively */
     {
         /* To make sure that the length doesn't change between checking the
          * length and copying the string, and to speed up things, the
@@ -7382,8 +7290,7 @@ vim_regsub_both(source, dest, copy, magic, backslash)
                     if (clen < totlen)
                     {
                         if (copy)
-                            mch_memmove(dst + 1, src - 1 + clen,
-                                                     (size_t)(totlen - clen));
+                            mch_memmove(dst + 1, src - 1 + clen, (size_t)(totlen - clen));
                         dst += totlen - clen;
                     }
                 }
@@ -7606,8 +7513,7 @@ reg_submatch(no)
                     ++len;
                 }
                 if (round == 2)
-                    STRNCPY(retval + len, reg_getline_submatch(lnum),
-                                             submatch_mmatch->endpos[no].col);
+                    STRNCPY(retval + len, reg_getline_submatch(lnum), submatch_mmatch->endpos[no].col);
                 len += submatch_mmatch->endpos[no].col;
                 if (round == 2)
                     retval[len] = NUL;
@@ -7773,8 +7679,7 @@ vim_regcomp(expr_arg, re_flags)
             regexp_engine = expr[4] - '0';
             expr += 5;
 #if defined(DEBUG)
-            smsg((char_u *)"New regexp mode selected (%d): %s",
-                                           regexp_engine, regname[newengine]);
+            smsg((char_u *)"New regexp mode selected (%d): %s", regexp_engine, regname[newengine]);
 #endif
         }
         else
@@ -7809,8 +7714,7 @@ vim_regcomp(expr_arg, re_flags)
                 fclose(f);
             }
             else
-                EMSG2("(NFA) Could not open \"%s\" to write !!!",
-                        BT_REGEXP_DEBUG_LOG_NAME);
+                EMSG2("(NFA) Could not open \"%s\" to write !!!", BT_REGEXP_DEBUG_LOG_NAME);
         }
 #endif
         /*

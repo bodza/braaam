@@ -1438,9 +1438,7 @@ get_digraph(cmdline)
             return c;
         if (cmdline)
         {
-            if (char2cells(c) == 1
-                    && cmdline_star == 0
-                    )
+            if (char2cells(c) == 1 && cmdline_star == 0)
                 putcmdline(c, TRUE);
         }
 #if defined(FEAT_CMDL_INFO)
@@ -1670,9 +1668,7 @@ printdigraph(dp)
 
     int         list_width;
 
-    if ((dy_flags & DY_UHEX)
-            || has_mbyte
-            )
+    if ((dy_flags & DY_UHEX) || has_mbyte)
         list_width = 13;
     else
         list_width = 11;

@@ -1,7 +1,6 @@
 VIM = vim
 
 CC = gcc
-DEFS = -DHAVE_CONFIG_H
 CFLAGS = -O2 -fno-strength-reduce -Wall -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
 LDFLAGS = -Wl,--as-needed
 LIBS = -lm -ltinfo
@@ -15,15 +14,15 @@ SHELL = /bin/sh
 .SUFFIXES:
 .SUFFIXES: .c .o .pro
 
-ALL_CFLAGS = $(DEFS) $(CFLAGS)
+ALL_CFLAGS = $(CFLAGS)
 ALL_LIBS = $(LIBS)
 
 BASIC_SRC = buffer.c charset.c digraph.c \
 	edit.c eval.c ex_cmds.c ex_cmds2.c ex_docmd.c ex_eval.c ex_getln.c \
-	fileio.c getchar.c hardcopy.c hashtab.c \
+	fileio.c getchar.c hashtab.c \
 	main.c mark.c memfile.c memline.c menu.c message.c misc1.c misc2.c \
 	move.c mbyte.c normal.c ops.c option.c os_unix.c popupmnu.c \
-	quickfix.c regexp.c screen.c search.c sha256.c syntax.c tag.c \
+	regexp.c screen.c search.c sha256.c syntax.c tag.c \
 	term.c ui.c undo.c version.c window.c
 
 SRC = $(BASIC_SRC)
@@ -41,7 +40,6 @@ OBJ_COMMON = \
 	objects/ex_getln.o \
 	objects/fileio.o \
 	objects/getchar.o \
-	objects/hardcopy.o \
 	objects/hashtab.o \
 	objects/mark.o \
         objects/memline.o \
@@ -56,7 +54,6 @@ OBJ_COMMON = \
 	objects/option.o \
 	objects/os_unix.o \
 	objects/popupmnu.o \
-	objects/quickfix.o \
 	objects/regexp.o \
 	objects/screen.o \
 	objects/search.o \
@@ -131,9 +128,6 @@ objects/fileio.o: fileio.c
 objects/getchar.o: getchar.c
 	$(CCC) -o $@ getchar.c
 
-objects/hardcopy.o: hardcopy.c
-	$(CCC) -o $@ hardcopy.c
-
 objects/hashtab.o: hashtab.c
 	$(CCC) -o $@ hashtab.c
 
@@ -181,9 +175,6 @@ objects/os_unix.o: os_unix.c
 
 objects/popupmnu.o: popupmnu.c
 	$(CCC) -o $@ popupmnu.c
-
-objects/quickfix.o: quickfix.c
-	$(CCC) -o $@ quickfix.c
 
 objects/regexp.o: regexp.c regexp_nfa.c
 	$(CCC) -o $@ regexp.c
@@ -256,10 +247,6 @@ objects/fileio.o: fileio.c vim.h os_unix.h \
 objects/getchar.o: getchar.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
-objects/hardcopy.o: hardcopy.c vim.h os_unix.h \
- ascii.h keymap.h term.h macros.h option.h structs.h \
- regexp.h ex_cmds.h proto.h \
- globals.h version.h
 objects/hashtab.o: hashtab.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
@@ -306,10 +293,6 @@ objects/os_unix.o: os_unix.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h regexp.h \
  ex_cmds.h proto.h globals.h
 objects/popupmnu.o: popupmnu.c vim.h os_unix.h \
- ascii.h keymap.h term.h macros.h option.h structs.h \
- regexp.h ex_cmds.h proto.h \
- globals.h
-objects/quickfix.o: quickfix.c vim.h os_unix.h \
  ascii.h keymap.h term.h macros.h option.h structs.h \
  regexp.h ex_cmds.h proto.h \
  globals.h

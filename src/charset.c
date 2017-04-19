@@ -1,8 +1,6 @@
 #include "vim.h"
 
-#if defined(FEAT_LINEBREAK)
 static int win_chartabsize(win_T *wp, char_u *p, colnr_T col);
-#endif
 
 #include <wchar.h>        /* for towupper() and towlower() */
 static int win_nolbr_chartabsize(win_T *wp, char_u *s, colnr_T col, int *headp);
@@ -109,13 +107,11 @@ buf_init_chartab(buf, global)
                 SET_CHARTAB(buf, c);
         }
 
-#if defined(FEAT_LISP)
     /*
      * In lisp mode the '-' character is included in keywords.
      */
     if (buf->b_p_lisp)
         SET_CHARTAB(buf, '-');
-#endif
 
     /* Walk through the 'isident', 'iskeyword', 'isfname' and 'isprint'
      * options Each option is a list of characters, character numbers or
@@ -353,7 +349,6 @@ transstr(s)
     return res;
 }
 
-#if defined(FEAT_SYN_HL) || defined(FEAT_INS_EXPAND)
 /*
  * Convert the string "str[orglen]" to do ignore-case comparing.  Uses the
  * current locale.
@@ -464,7 +459,6 @@ str_foldcase(str, orglen, buf, buflen)
         return (char_u *)ga.ga_data;
     return buf;
 }
-#endif
 
 /*
  * Catch 22: chartab[] can't be initialized before the options are
@@ -709,7 +703,6 @@ vim_strnsize(s, len)
     else \
         return ptr2cells(p);
 
-#if defined(FEAT_VREPLACE) || defined(FEAT_EX_EXTRA) || defined(FEAT_VIRTUALEDIT)
     int
 chartabsize(p, col)
     char_u      *p;
@@ -717,9 +710,7 @@ chartabsize(p, col)
 {
     RET_WIN_BUF_CHARTABSIZE(curwin, curbuf, p, col)
 }
-#endif
 
-#if defined(FEAT_LINEBREAK)
     static int
 win_chartabsize(wp, p, col)
     win_T       *wp;
@@ -728,7 +719,6 @@ win_chartabsize(wp, p, col)
 {
     RET_WIN_BUF_CHARTABSIZE(wp, wp->w_buffer, p, col)
 }
-#endif
 
 /*
  * Return the number of characters the string 's' will take on the screen,
@@ -769,8 +759,7 @@ win_linetabsize(wp, line, len)
     colnr_T     col = 0;
     char_u      *s;
 
-    for (s = line; *s != NUL && (len == MAXCOL || s < line + len);
-                                                                mb_ptr_adv(s))
+    for (s = line; *s != NUL && (len == MAXCOL || s < line + len); mb_ptr_adv(s))
         col += win_lbr_chartabsize(wp, line, s, col, NULL);
     return (int)col;
 }
@@ -901,17 +890,13 @@ lbr_chartabsize(line, s, col)
     unsigned char       *s;
     colnr_T             col;
 {
-#if defined(FEAT_LINEBREAK)
     if (!curwin->w_p_lbr && *p_sbr == NUL && !curwin->w_p_bri)
     {
-#endif
         if (curwin->w_p_wrap)
             return win_nolbr_chartabsize(curwin, s, col, NULL);
         RET_WIN_BUF_CHARTABSIZE(curwin, curbuf, s, col)
-#if defined(FEAT_LINEBREAK)
     }
     return win_lbr_chartabsize(curwin, line == NULL ? s : line, s, col, NULL);
-#endif
 }
 
 /*
@@ -945,7 +930,6 @@ win_lbr_chartabsize(wp, line, s, col, headp)
     colnr_T     col;
     int         *headp UNUSED;
 {
-#if defined(FEAT_LINEBREAK)
     int         c;
     int         size;
     colnr_T     col2;
@@ -962,14 +946,12 @@ win_lbr_chartabsize(wp, line, s, col, headp)
      * No 'linebreak', 'showbreak' and 'breakindent': return quickly.
      */
     if (!wp->w_p_lbr && !wp->w_p_bri && *p_sbr == NUL)
-#endif
     {
         if (wp->w_p_wrap)
             return win_nolbr_chartabsize(wp, s, col, headp);
         RET_WIN_BUF_CHARTABSIZE(wp, wp->w_buffer, s, col)
     }
 
-#if defined(FEAT_LINEBREAK)
     /*
      * First get normal size, without 'linebreak'
      */
@@ -982,12 +964,7 @@ win_lbr_chartabsize(wp, line, s, col, headp)
      * If 'linebreak' set check at a blank before a non-blank if the line
      * needs a break here
      */
-    if (wp->w_p_lbr
-            && vim_isbreak(c)
-            && !vim_isbreak(s[1])
-            && wp->w_p_wrap
-            && wp->w_width != 0
-       )
+    if (wp->w_p_lbr && vim_isbreak(c) && !vim_isbreak(s[1]) && wp->w_p_wrap && wp->w_width != 0)
     {
         /*
          * Count all characters from first non-blank after a blank up to next
@@ -1094,7 +1071,6 @@ win_lbr_chartabsize(wp, line, s, col, headp)
     if (headp != NULL)
         *headp = added + mb_added;
     return size;
-#endif
 }
 
 /*
@@ -1191,11 +1167,7 @@ getvcol(wp, pos, start, cursor, end)
      * use a simple loop.
      * Also use this when 'list' is set but tabs take their normal size.
      */
-    if ((!wp->w_p_list || lcs_tab1 != NUL)
-#if defined(FEAT_LINEBREAK)
-            && !wp->w_p_lbr && *p_sbr == NUL && !wp->w_p_bri
-#endif
-       )
+    if ((!wp->w_p_list || lcs_tab1 != NUL) && !wp->w_p_lbr && *p_sbr == NUL && !wp->w_p_bri)
     {
         for (;;)
         {
@@ -1297,7 +1269,6 @@ getvcol_nolist(posp)
     return vcol;
 }
 
-#if defined(FEAT_VIRTUALEDIT)
 /*
  * Get virtual column in virtual mode.
  */
@@ -1347,7 +1318,6 @@ getvvcol(wp, pos, start, cursor, end)
     else
         getvcol(wp, pos, start, cursor, end);
 }
-#endif
 
 /*
  * Get the leftmost and rightmost virtual column of pos1 and pos2.
@@ -1414,7 +1384,6 @@ skipdigits(q)
     return p;
 }
 
-#if defined(FEAT_SYN_HL)
 /*
  * skip over digits and hex characters
  */
@@ -1428,9 +1397,7 @@ skiphex(q)
         ++p;
     return p;
 }
-#endif
 
-#if defined(FEAT_EX_EXTRA)
 /*
  * skip to digit (or NUL after the string)
  */
@@ -1458,7 +1425,6 @@ skiptohex(q)
         ++p;
     return p;
 }
-#endif
 
 /*
  * Variant of isdigit() that can handle characters > 0x100.

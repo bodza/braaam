@@ -12,11 +12,7 @@ static void version_msg(char *s);
 
 static char *(features[]) =
 {
-#if defined(FEAT_AUTOCMD)
         "+autocmd",
-#else
-        "-autocmd",
-#endif
 #if defined(NO_BUILTIN_TCAPS)
         "-builtin_terms",
 #endif
@@ -26,16 +22,8 @@ static char *(features[]) =
 #if defined(ALL_BUILTIN_TCAPS)
         "++builtin_terms",
 #endif
-#if defined(FEAT_BYTEOFF)
         "+byte_offset",
-#else
-        "-byte_offset",
-#endif
-#if defined(FEAT_CINDENT)
         "+cindent",
-#else
-        "-cindent",
-#endif
 #if defined(FEAT_CLIPBOARD)
         "+clipboard",
 #else
@@ -56,16 +44,8 @@ static char *(features[]) =
 #else
         "-cmdline_info",
 #endif
-#if defined(FEAT_COMMENTS)
         "+comments",
-#else
-        "-comments",
-#endif
-#if defined(FEAT_CONCEAL)
         "+conceal",
-#else
-        "-conceal",
-#endif
 #if defined(FEAT_CURSORBIND)
         "+cursorbind",
 #else
@@ -88,16 +68,8 @@ static char *(features[]) =
         "-dnd",
 #endif
         "+eval",
-#if defined(FEAT_EX_EXTRA)
         "+ex_extra",
-#else
-        "-ex_extra",
-#endif
-#if defined(FEAT_SEARCH_EXTRA)
         "+extra_search",
-#else
-        "-extra_search",
-#endif
 #if defined(FEAT_SEARCHPATH)
         "+file_in_path",
 #else
@@ -125,23 +97,11 @@ static char *(features[]) =
 #else
         "-insert_expand",
 #endif
-#if defined(FEAT_JUMPLIST)
         "+jumplist",
-#else
-        "-jumplist",
-#endif
         "-keymap",
         "-langmap",
-#if defined(FEAT_LINEBREAK)
         "+linebreak",
-#else
-        "-linebreak",
-#endif
-#if defined(FEAT_LISP)
         "+lispindent",
-#else
-        "-lispindent",
-#endif
 #if defined(FEAT_LISTCMDS)
         "+listcmds",
 #else
@@ -172,16 +132,8 @@ static char *(features[]) =
 #else
         "-mouse",
 #endif
-#if defined(FEAT_MOUSE_GPM)
-        "+mouse_gpm",
-#else
         "-mouse_gpm",
-#endif
-#if defined(FEAT_SYSMOUSE)
-        "+mouse_sysmouse",
-#else
         "-mouse_sysmouse",
-#endif
 #if defined(FEAT_MOUSE_XTERM)
         "+mouse_xterm",
 #else
@@ -198,51 +150,20 @@ static char *(features[]) =
 #else
         "-persistent_undo",
 #endif
-#if defined(FEAT_PRINTER)
-#if defined(FEAT_POSTSCRIPT)
-        "+postscript",
-#else
-        "-postscript",
-#endif
-        "+printer",
-#else
-        "-printer",
-#endif
-#if defined(FEAT_QUICKFIX)
-        "+quickfix",
-#else
-        "-quickfix",
-#endif
-#if defined(FEAT_RELTIME)
         "+reltime",
-#else
-        "-reltime",
-#endif
-#if defined(FEAT_RIGHTLEFT)
         "+rightleft",
-#else
-        "-rightleft",
-#endif
 #if defined(FEAT_SCROLLBIND)
         "+scrollbind",
 #else
         "-scrollbind",
 #endif
-#if defined(FEAT_SMARTINDENT)
         "+smartindent",
-#else
-        "-smartindent",
-#endif
 #if defined(FEAT_STL_OPT)
         "+statusline",
 #else
         "-statusline",
 #endif
-#if defined(FEAT_SYN_HL)
         "+syntax",
-#else
-        "-syntax",
-#endif
 #if defined(FEAT_TAG_BINS)
         "+tag_binary",
 #else
@@ -259,33 +180,17 @@ static char *(features[]) =
 #else
         "-textobjects",
 #endif
-#if defined(FEAT_TITLE)
         "+title",
-#else
-        "-title",
-#endif
 #if defined(FEAT_USR_CMDS)
         "+user_commands",
 #else
         "-user_commands",
 #endif
         "+vertsplit",
-#if defined(FEAT_VIRTUALEDIT)
         "+virtualedit",
-#else
-        "-virtualedit",
-#endif
         "+visual",
-#if defined(FEAT_VISUALEXTRA)
         "+visualextra",
-#else
-        "-visualextra",
-#endif
-#if defined(FEAT_VREPLACE)
         "+vreplace",
-#else
-        "-vreplace",
-#endif
 #if defined(FEAT_WILDIGN)
         "+wildignore",
 #else

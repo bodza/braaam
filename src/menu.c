@@ -194,8 +194,7 @@ ex_menu(eap)
                     p = popup_mode_name(menu_path, i);
                     if (p != NULL)
                     {
-                        menu_nable_recurse(root_menu, p, MENU_ALL_MODES,
-                                                                      enable);
+                        menu_nable_recurse(root_menu, p, MENU_ALL_MODES, enable);
                         vim_free(p);
                     }
                 }
@@ -248,8 +247,7 @@ ex_menu(eap)
         menuarg.modes = modes;
         menuarg.noremap[0] = noremap;
         menuarg.silent[0] = silent;
-        add_menu_path(menu_path, &menuarg, pri_tab, map_to
-                );
+        add_menu_path(menu_path, &menuarg, pri_tab, map_to);
 
         /*
          * For the PopUp menu, add a menu for each mode separately.
@@ -264,8 +262,7 @@ ex_menu(eap)
                     {
                         /* Include all modes, to make ":amenu" work */
                         menuarg.modes = modes;
-                        add_menu_path(p, &menuarg, pri_tab, map_to
-                                         );
+                        add_menu_path(p, &menuarg, pri_tab, map_to);
                         vim_free(p);
                     }
                 }
@@ -553,8 +550,7 @@ menu_nable_recurse(menu, name, modes, enable)
                     EMSG(_(e_notsubmenu));
                     return FAIL;
                 }
-                if (menu_nable_recurse(menu->children, p, modes, enable)
-                                                                      == FAIL)
+                if (menu_nable_recurse(menu->children, p, modes, enable) == FAIL)
                     return FAIL;
             }
             else
@@ -1387,9 +1383,7 @@ ex_emenu(eap)
 
     /* Found the menu, so execute.
      * Use the Insert mode entry when returning to Insert mode. */
-    if (restart_edit
-            && !current_SID
-            )
+    if (restart_edit && !current_SID)
     {
         mode = (char_u *)"Insert";
         idx = MENU_INDEX_INSERT;
@@ -1422,9 +1416,7 @@ ex_emenu(eap)
             curwin->w_cursor.col = 1;
             tpos.lnum = eap->line2;
             tpos.col = MAXCOL;
-#if defined(FEAT_VIRTUALEDIT)
             tpos.coladd = 0;
-#endif
         }
 
         /* Activate visual mode */
@@ -1452,11 +1444,9 @@ ex_emenu(eap)
         /* When executing a script or function execute the commands right now.
          * Otherwise put them in the typeahead buffer. */
         if (current_SID != 0)
-            exec_normal_cmd(menu->strings[idx], menu->noremap[idx],
-                                                           menu->silent[idx]);
+            exec_normal_cmd(menu->strings[idx], menu->noremap[idx], menu->silent[idx]);
         else
-            ins_typebuf(menu->strings[idx], menu->noremap[idx], 0,
-                                                     TRUE, menu->silent[idx]);
+            ins_typebuf(menu->strings[idx], menu->noremap[idx], 0, TRUE, menu->silent[idx]);
     }
     else
         EMSG2(_("E335: Menu not defined for %s mode"), mode);

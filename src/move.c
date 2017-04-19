@@ -85,11 +85,7 @@ comp_botline(wp)
 redraw_for_cursorline(wp)
     win_T *wp;
 {
-    if ((wp->w_p_rnu
-#if defined(FEAT_SYN_HL)
-                || wp->w_p_cul
-#endif
-                )
+    if ((wp->w_p_rnu || wp->w_p_cul)
             && (wp->w_valid & VALID_CROW) == 0
 #if defined(FEAT_INS_EXPAND)
             && !pum_visible()
@@ -357,17 +353,13 @@ check_cursor_moved(wp)
     }
     else if (wp->w_cursor.col != wp->w_valid_cursor.col
              || wp->w_leftcol != wp->w_valid_leftcol
-#if defined(FEAT_VIRTUALEDIT)
              || wp->w_cursor.coladd != wp->w_valid_cursor.coladd
-#endif
              )
     {
         wp->w_valid &= ~(VALID_WROW|VALID_WCOL|VALID_VIRTCOL);
         wp->w_valid_cursor.col = wp->w_cursor.col;
         wp->w_valid_leftcol = wp->w_leftcol;
-#if defined(FEAT_VIRTUALEDIT)
         wp->w_valid_cursor.coladd = wp->w_cursor.coladd;
-#endif
     }
 }
 
@@ -403,9 +395,7 @@ set_topline(wp, lnum)
     /* Approximate the value of w_botline */
     wp->w_botline += lnum - wp->w_topline;
     wp->w_topline = lnum;
-#if defined(FEAT_AUTOCMD)
     wp->w_topline_was_set = TRUE;
-#endif
     wp->w_valid &= ~(VALID_WROW|VALID_CROW|VALID_BOTLINE|VALID_TOPLINE);
     /* Don't set VALID_TOPLINE here, 'scrolloff' needs to be checked. */
     redraw_later(VALID);
@@ -487,8 +477,7 @@ approximate_botline_win(wp)
 cursor_valid()
 {
     check_cursor_moved(curwin);
-    return ((curwin->w_valid & (VALID_WROW|VALID_WCOL)) ==
-                                                      (VALID_WROW|VALID_WCOL));
+    return ((curwin->w_valid & (VALID_WROW|VALID_WCOL)) == (VALID_WROW|VALID_WCOL));
 }
 
 /*
@@ -595,14 +584,12 @@ validate_virtcol_win(wp)
     {
         getvvcol(wp, &wp->w_cursor, NULL, &(wp->w_virtcol), NULL);
         wp->w_valid |= VALID_VIRTCOL;
-#if defined(FEAT_SYN_HL)
         if (wp->w_p_cuc
 #if defined(FEAT_INS_EXPAND)
                 && !pum_visible()
 #endif
                 )
             redraw_win_later(wp, SOME_VALID);
-#endif
     }
 }
 
@@ -730,8 +717,7 @@ curs_columns(may_scroll)
     /*
      * Compute the number of virtual columns.
      */
-        getvvcol(curwin, &curwin->w_cursor,
-                                &startcol, &(curwin->w_virtcol), &endcol);
+        getvvcol(curwin, &curwin->w_cursor, &startcol, &(curwin->w_virtcol), &endcol);
 
     /* remove '$' from change command when cursor moves onto it */
     if (startcol > dollar_vcol)
@@ -753,9 +739,7 @@ curs_columns(may_scroll)
         curwin->w_wcol = W_WIDTH(curwin) - 1;
         curwin->w_wrow = curwin->w_height - 1;
     }
-    else if (curwin->w_p_wrap
-            && curwin->w_width != 0
-            )
+    else if (curwin->w_p_wrap && curwin->w_width != 0)
     {
         width = textwidth + curwin_col_off2();
 
@@ -767,14 +751,12 @@ curs_columns(may_scroll)
             curwin->w_wcol -= n * width;
             curwin->w_wrow += n;
 
-#if defined(FEAT_LINEBREAK)
             /* When cursor wraps to first char of next line in Insert
              * mode, the 'showbreak' string isn't shown, backup to first
              * column */
             if (*p_sbr && *ml_get_cursor() == NUL
                     && curwin->w_wcol == (int)vim_strsize(p_sbr))
                 curwin->w_wcol = 0;
-#endif
         }
     }
 
@@ -917,7 +899,6 @@ curs_columns(may_scroll)
     if (prev_skipcol != curwin->w_skipcol)
         redraw_later(NOT_VALID);
 
-#if defined(FEAT_SYN_HL)
     /* Redraw when w_virtcol changes and 'cursorcolumn' is set */
     if (curwin->w_p_cuc && (curwin->w_valid & VALID_VIRTCOL) == 0
 #if defined(FEAT_INS_EXPAND)
@@ -925,7 +906,6 @@ curs_columns(may_scroll)
 #endif
         )
         redraw_later(SOME_VALID);
-#endif
 
     curwin->w_valid |= VALID_WCOL|VALID_WROW|VALID_VIRTCOL;
 }
@@ -962,9 +942,7 @@ scrolldown(line_count, byfold)
      * and move the cursor onto the displayed part of the window.
      */
     wrow = curwin->w_wrow;
-    if (curwin->w_p_wrap
-                && curwin->w_width != 0
-            )
+    if (curwin->w_p_wrap && curwin->w_width != 0)
     {
         validate_virtcol();
         validate_cheight();
@@ -1033,9 +1011,7 @@ scrolldown_clamp()
      */
     end_row = curwin->w_wrow;
     end_row += plines(curwin->w_topline - 1);
-    if (curwin->w_p_wrap
-                && curwin->w_width != 0
-            )
+    if (curwin->w_p_wrap && curwin->w_width != 0)
     {
         validate_cheight();
         validate_virtcol();
@@ -1070,9 +1046,7 @@ scrollup_clamp()
      * doesn't go before 'scrolloff' lines from the screen start.
      */
     start_row = curwin->w_wrow - plines(curwin->w_topline);
-    if (curwin->w_p_wrap
-                && curwin->w_width != 0
-            )
+    if (curwin->w_p_wrap && curwin->w_width != 0)
     {
         validate_virtcol();
         start_row -= curwin->w_virtcol / W_WIDTH(curwin);
@@ -1528,9 +1502,7 @@ cursor_correct()
      * return now.
      */
     cln = curwin->w_cursor.lnum;
-    if (cln >= curwin->w_topline + above_wanted
-            && cln < curwin->w_botline - below_wanted
-            )
+    if (cln >= curwin->w_topline + above_wanted && cln < curwin->w_botline - below_wanted)
         return;
 
     /*
@@ -1952,9 +1924,7 @@ do_check_cursorbind()
 {
     linenr_T    line = curwin->w_cursor.lnum;
     colnr_T     col = curwin->w_cursor.col;
-#if defined(FEAT_VIRTUALEDIT)
     colnr_T     coladd = curwin->w_cursor.coladd;
-#endif
     colnr_T     curswant = curwin->w_curswant;
     int         set_curswant = curwin->w_set_curswant;
     win_T       *old_curwin = curwin;
@@ -1975,9 +1945,7 @@ do_check_cursorbind()
         {
             curwin->w_cursor.lnum = line;
             curwin->w_cursor.col = col;
-#if defined(FEAT_VIRTUALEDIT)
             curwin->w_cursor.coladd = coladd;
-#endif
             curwin->w_curswant = curswant;
             curwin->w_set_curswant = set_curswant;
 

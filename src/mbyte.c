@@ -595,11 +595,9 @@ mb_init()
         set_string_option_direct((char_u *)"fencs", -1,
                        (char_u *)"ucs-bom,utf-8,default,latin1", OPT_FREE, 0);
 
-#if defined(FEAT_AUTOCMD)
     /* Fire an autocommand to let people do custom font setup. This must be
      * after Vim has been setup for the new encoding. */
     apply_autocmds(EVENT_ENCODINGCHANGED, NULL, (char_u *)"", FALSE, curbuf);
-#endif
 
     return NULL;
 }
@@ -3350,9 +3348,7 @@ utf_find_illegal()
         convert_setup(&vimconv, p_enc, curbuf->b_p_fenc);
     }
 
-#if defined(FEAT_VIRTUALEDIT)
     curwin->w_cursor.coladd = 0;
-#endif
     for (;;)
     {
         p = ml_get_cursor();
@@ -3427,15 +3423,10 @@ mb_adjustpos(buf, lp)
 {
     char_u      *p;
 
-    if (lp->col > 0
-#if defined(FEAT_VIRTUALEDIT)
-            || lp->coladd > 1
-#endif
-            )
+    if (lp->col > 0 || lp->coladd > 1)
     {
         p = ml_get_buf(buf, lp->lnum, FALSE);
         lp->col -= (*mb_head_off)(p, p + lp->col);
-#if defined(FEAT_VIRTUALEDIT)
         /* Reset "coladd" when the cursor would be on the right half of a
          * double-wide character. */
         if (lp->coladd == 1
@@ -3443,7 +3434,6 @@ mb_adjustpos(buf, lp)
                 && vim_isprintc((*mb_ptr2char)(p + lp->col))
                 && ptr2cells(p + lp->col) > 1)
             lp->coladd = 0;
-#endif
     }
 }
 
@@ -3546,8 +3536,7 @@ mb_lefthalve(row, col)
     int     row;
     int     col;
 {
-    return (*mb_off2cells)(LineOffset[row] + col,
-                                        LineOffset[row] + screen_Columns) > 1;
+    return (*mb_off2cells)(LineOffset[row] + col, LineOffset[row] + screen_Columns) > 1;
 }
 
 /*
@@ -3682,8 +3671,6 @@ enc_alias_search(name)
     return -1;
 }
 
-#include <langinfo.h>
-
 /*
  * Get the canonicalized encoding of the current locale.
  * Returns an allocated string when successful, NULL when not.
@@ -3695,13 +3682,9 @@ enc_locale()
     char        *p;
     int         i;
     char        buf[50];
-    if ((s = nl_langinfo(CODESET)) == NULL || *s == NUL)
-#if defined(HAVE_LOCALE_H)
-        if ((s = setlocale(LC_CTYPE, NULL)) == NULL || *s == NUL)
-#endif
-            if ((s = getenv("LC_ALL")) == NULL || *s == NUL)
-                if ((s = getenv("LC_CTYPE")) == NULL || *s == NUL)
-                    s = getenv("LANG");
+    if ((s = getenv("LC_ALL")) == NULL || *s == NUL)
+        if ((s = getenv("LC_CTYPE")) == NULL || *s == NUL)
+            s = getenv("LANG");
 
     if (s == NULL || *s == NUL)
         return FAIL;
@@ -4020,8 +4003,7 @@ convert_input_safe(ptr, len, maxlen, restp, restlenp)
     int         dlen = len;
     int         unconvertlen = 0;
 
-    d = string_convert_ext(&input_conv, ptr, &dlen,
-                                        restp == NULL ? NULL : &unconvertlen);
+    d = string_convert_ext(&input_conv, ptr, &dlen, restp == NULL ? NULL : &unconvertlen);
     if (d != NULL)
     {
         if (dlen <= maxlen)

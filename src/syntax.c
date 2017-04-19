@@ -57,8 +57,7 @@ static int include_link = 0;    /* when 2 include "link" and "clear" */
  * following names, separated by commas (but no spaces!).
  */
 static char *(hl_name_table[]) =
-    {"bold", "standout", "underline", "undercurl",
-                                      "italic", "reverse", "inverse", "NONE"};
+    {"bold", "standout", "underline", "undercurl", "italic", "reverse", "inverse", "NONE"};
 static int hl_attr_table[] =
     {HL_BOLD, HL_STANDOUT, HL_UNDERLINE, HL_UNDERCURL, HL_ITALIC, HL_INVERSE, HL_INVERSE, 0};
 
@@ -76,8 +75,6 @@ static void highlight_clear(int idx);
  * An attribute number is the index in attr_table plus ATTR_OFF.
  */
 #define ATTR_OFF (HL_ALL + 1)
-
-#if defined(FEAT_SYN_HL)
 
 #define SYN_NAMELEN     50              /* maximum length of a syntax name */
 
@@ -109,9 +106,7 @@ typedef struct syn_pattern
     char         sp_type;               /* see SPTYPE_ defines below */
     char         sp_syncing;            /* this item used for syncing */
     int          sp_flags;              /* see HL_ defines below */
-#if defined(FEAT_CONCEAL)
     int          sp_cchar;              /* conceal substitute character */
-#endif
     struct sp_syn sp_syn;               /* struct passed to in_id_list() */
     short        sp_syn_match_id;       /* highlight group ID of pattern */
     char_u      *sp_pattern;            /* regexp to match, pattern */
@@ -157,11 +152,9 @@ typedef struct syn_pattern
 static int current_attr = 0;        /* attr of current syntax word */
 static int current_id = 0;          /* ID of current char for syn_get_id() */
 static int current_trans_id = 0;    /* idem, transparency removed */
-#if defined(FEAT_CONCEAL)
 static int current_flags = 0;
 static int current_seqnr = 0;
 static int current_sub_char = 0;
-#endif
 
 typedef struct syn_cluster_S
 {
@@ -253,10 +246,8 @@ typedef struct state_item
     int         si_attr;                /* attributes in this state */
     long        si_flags;               /* HL_HAS_EOL flag in this state, and
                                          * HL_SKIP* for si_next_list */
-#if defined(FEAT_CONCEAL)
     int         si_seqnr;               /* sequence number */
     int         si_cchar;               /* substitution character for conceal */
-#endif
     short       *si_cont_list;          /* list of contained groups */
     short       *si_next_list;          /* nextgroup IDs after this item ends */
     reg_extmatch_T *si_extmatch;        /* \z(...\) matches from start
@@ -267,9 +258,7 @@ typedef struct state_item
 #define ID_LIST_ALL     (short *)-1 /* valid of si_cont_list for containing all
                                        but contained groups */
 
-#if defined(FEAT_CONCEAL)
 static int next_seqnr = 1;              /* value to use for si_seqnr */
-#endif
 
 /*
  * Struct to reduce the number of arguments to get_syn_options(), it's used
@@ -439,9 +428,7 @@ syntax_start(wp, lnum)
     int         dist;
     static int  changedtick = 0;        /* remember the last change ID */
 
-#if defined(FEAT_CONCEAL)
     current_sub_char = NUL;
-#endif
 
     /*
      * After switching buffers, invalidate current_state.
@@ -742,8 +729,7 @@ syn_sync(wp, start_lnum, last_valid)
         if (find_start_comment((int)syn_block->b_syn_sync_maxlines) != NULL)
         {
             for (idx = syn_block->b_syn_patterns.ga_len; --idx >= 0; )
-                if (SYN_ITEMS(syn_block)[idx].sp_syn.id
-                                                   == syn_block->b_syn_sync_id
+                if (SYN_ITEMS(syn_block)[idx].sp_syn.id == syn_block->b_syn_sync_id
                         && SYN_ITEMS(syn_block)[idx].sp_type == SPTYPE_START)
                 {
                     validate_current_state();
@@ -990,8 +976,7 @@ syn_update_ends(startofline)
         {
             cur_si = &CUR_STATE(i);
             if (cur_si->si_idx >= 0
-                    && (SYN_ITEMS(syn_block)[cur_si->si_idx]).sp_type
-                                                               == SPTYPE_MATCH
+                    && (SYN_ITEMS(syn_block)[cur_si->si_idx]).sp_type == SPTYPE_MATCH
                     && cur_si->si_m_endpos.lnum < current_lnum)
             {
                 cur_si->si_flags |= HL_MATCHCONT;
@@ -1149,8 +1134,7 @@ syn_stack_alloc()
         if (syn_block->b_sst_array != NULL)
         {
             /* Move the states from the old array to the new one. */
-            for (from = syn_block->b_sst_first; from != NULL;
-                                                        from = from->sst_next)
+            for (from = syn_block->b_sst_first; from != NULL; from = from->sst_next)
             {
                 ++to;
                 *to = *from;
@@ -1461,10 +1445,8 @@ store_current_state()
         {
             bp[i].bs_idx = CUR_STATE(i).si_idx;
             bp[i].bs_flags = CUR_STATE(i).si_flags;
-#if defined(FEAT_CONCEAL)
             bp[i].bs_seqnr = CUR_STATE(i).si_seqnr;
             bp[i].bs_cchar = CUR_STATE(i).si_cchar;
-#endif
             bp[i].bs_extmatch = ref_extmatch(CUR_STATE(i).si_extmatch);
         }
         sp->sst_next_flags = current_next_flags;
@@ -1500,10 +1482,8 @@ load_current_state(from)
         {
             CUR_STATE(i).si_idx = bp[i].bs_idx;
             CUR_STATE(i).si_flags = bp[i].bs_flags;
-#if defined(FEAT_CONCEAL)
             CUR_STATE(i).si_seqnr = bp[i].bs_seqnr;
             CUR_STATE(i).si_cchar = bp[i].bs_cchar;
-#endif
             CUR_STATE(i).si_extmatch = ref_extmatch(bp[i].bs_extmatch);
             if (keepend_level < 0 && (CUR_STATE(i).si_flags & HL_KEEPEND))
                 keepend_level = i;
@@ -1762,9 +1742,7 @@ get_syntax_attr(col, can_spell, keep_state)
         clear_current_state();
         current_id = 0;
         current_trans_id = 0;
-#if defined(FEAT_CONCEAL)
         current_flags = 0;
-#endif
         return 0;
     }
 
@@ -1777,8 +1755,7 @@ get_syntax_attr(col, can_spell, keep_state)
      */
     while (current_col <= col)
     {
-        attr = syn_current_attr(FALSE, TRUE, can_spell,
-                                     current_col == col ? keep_state : FALSE);
+        attr = syn_current_attr(FALSE, TRUE, can_spell, current_col == col ? keep_state : FALSE);
         ++current_col;
     }
 
@@ -1930,14 +1907,12 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                         cur_si->si_ends = TRUE;
                         cur_si->si_end_idx = 0;
                         cur_si->si_flags = flags;
-#if defined(FEAT_CONCEAL)
                         cur_si->si_seqnr = next_seqnr++;
                         cur_si->si_cchar = cchar;
                         if (current_state.ga_len > 1)
                             cur_si->si_flags |=
                                   CUR_STATE(current_state.ga_len - 2).si_flags
                                                                  & HL_CONCEAL;
-#endif
                         cur_si->si_id = syn_id;
                         cur_si->si_trans_id = syn_id;
                         if (flags & HL_TRANSP)
@@ -2032,8 +2007,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                             /*
                              * Compute the first column of the match.
                              */
-                            syn_add_start_off(&pos, &regmatch,
-                                                         spp, SPO_MS_OFF, -1);
+                            syn_add_start_off(&pos, &regmatch, spp, SPO_MS_OFF, -1);
                             if (pos.lnum > current_lnum)
                             {
                                 /* must have used end of match in a next line,
@@ -2069,13 +2043,11 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                             endpos.col = regmatch.endpos[0].col;
 
                             /* Compute the highlight start. */
-                            syn_add_start_off(&hl_startpos, &regmatch,
-                                                         spp, SPO_HS_OFF, -1);
+                            syn_add_start_off(&hl_startpos, &regmatch, spp, SPO_HS_OFF, -1);
 
                             /* Compute the region start. */
                             /* Default is to use the end of the match. */
-                            syn_add_end_off(&eos_pos, &regmatch,
-                                                         spp, SPO_RS_OFF, 0);
+                            syn_add_end_off(&eos_pos, &regmatch, spp, SPO_RS_OFF, 0);
 
                             /*
                              * Grab the external submatches before they get
@@ -2116,10 +2088,8 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                              */
                             else if (spp->sp_type == SPTYPE_MATCH)
                             {
-                                syn_add_end_off(&hl_endpos, &regmatch, spp,
-                                                               SPO_HE_OFF, 0);
-                                syn_add_end_off(&endpos, &regmatch, spp,
-                                                               SPO_ME_OFF, 0);
+                                syn_add_end_off(&hl_endpos, &regmatch, spp, SPO_HE_OFF, 0);
+                                syn_add_end_off(&endpos, &regmatch, spp, SPO_ME_OFF, 0);
                                 if (endpos.lnum == current_lnum
                                       && (int)endpos.col + syncing < startcol)
                                 {
@@ -2127,8 +2097,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                                      * If an empty string is matched, may need
                                      * to try matching again at next column.
                                      */
-                                    if (regmatch.startpos[0].col
-                                                    == regmatch.endpos[0].col)
+                                    if (regmatch.startpos[0].col == regmatch.endpos[0].col)
                                         try_next_column = TRUE;
                                     continue;
                                 }
@@ -2238,9 +2207,7 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
     current_attr = 0;
     current_id = 0;
     current_trans_id = 0;
-#if defined(FEAT_CONCEAL)
     current_flags = 0;
-#endif
     if (cur_si != NULL)
     {
         for (idx = current_state.ga_len - 1; idx >= 0; --idx)
@@ -2257,11 +2224,9 @@ syn_current_attr(syncing, displaying, can_spell, keep_state)
                 current_attr = sip->si_attr;
                 current_id = sip->si_id;
                 current_trans_id = sip->si_trans_id;
-#if defined(FEAT_CONCEAL)
                 current_flags = sip->si_flags;
                 current_seqnr = sip->si_seqnr;
                 current_sub_char = sip->si_cchar;
-#endif
                 break;
             }
         }
@@ -2391,9 +2356,7 @@ push_next_match(cur_si)
     stateitem_T *cur_si;
 {
     synpat_T    *spp;
-#if defined(FEAT_CONCEAL)
     int          save_flags;
-#endif
 
     spp = &(SYN_ITEMS(syn_block)[next_match_idx]);
 
@@ -2411,13 +2374,11 @@ push_next_match(cur_si)
         cur_si->si_m_startcol = current_col;
         cur_si->si_m_lnum = current_lnum;
         cur_si->si_flags = spp->sp_flags;
-#if defined(FEAT_CONCEAL)
         cur_si->si_seqnr = next_seqnr++;
         cur_si->si_cchar = spp->sp_cchar;
         if (current_state.ga_len > 1)
             cur_si->si_flags |=
                     CUR_STATE(current_state.ga_len - 2).si_flags & HL_CONCEAL;
-#endif
         cur_si->si_next_list = spp->sp_next_list;
         cur_si->si_extmatch = ref_extmatch(next_match_extmatch);
         if (spp->sp_type == SPTYPE_START && !(spp->sp_flags & HL_ONELINE))
@@ -2440,9 +2401,7 @@ push_next_match(cur_si)
         check_keepend();
         update_si_attr(current_state.ga_len - 1);
 
-#if defined(FEAT_CONCEAL)
         save_flags = cur_si->si_flags & (HL_CONCEAL | HL_CONCEALENDS);
-#endif
         /*
          * If the start pattern has another highlight group, push another item
          * on the stack for the start pattern.
@@ -2460,12 +2419,10 @@ push_next_match(cur_si)
             cur_si->si_ends = TRUE;
             cur_si->si_end_idx = 0;
             cur_si->si_flags = HL_MATCH;
-#if defined(FEAT_CONCEAL)
             cur_si->si_seqnr = next_seqnr++;
             cur_si->si_flags |= save_flags;
             if (cur_si->si_flags & HL_CONCEALENDS)
                 cur_si->si_flags |= HL_CONCEAL;
-#endif
             cur_si->si_next_list = NULL;
             check_keepend();
             update_si_attr(current_state.ga_len - 1);
@@ -2510,11 +2467,9 @@ check_state_ends()
                 cur_si->si_m_endpos = cur_si->si_eoe_pos;
                 cur_si->si_h_endpos = cur_si->si_eoe_pos;
                 cur_si->si_flags |= HL_MATCH;
-#if defined(FEAT_CONCEAL)
                 cur_si->si_seqnr = next_seqnr++;
                 if (cur_si->si_flags & HL_CONCEALENDS)
                     cur_si->si_flags |= HL_CONCEAL;
-#endif
                 update_si_attr(current_state.ga_len - 1);
 
                 /* nextgroup= should not match in the end pattern */
@@ -2563,8 +2518,7 @@ check_state_ends()
                  * - "excludenl" is used (HL_HAS_EOL won't be set)
                  */
                 if (cur_si->si_idx >= 0
-                        && SYN_ITEMS(syn_block)[cur_si->si_idx].sp_type
-                                                               == SPTYPE_START
+                        && SYN_ITEMS(syn_block)[cur_si->si_idx].sp_type == SPTYPE_START
                         && !(cur_si->si_flags & (HL_MATCH | HL_KEEPEND)))
                 {
                     update_si_end(cur_si, (int)current_col, TRUE);
@@ -2808,8 +2762,7 @@ pop_current_state()
  * computed.
  */
     static void
-find_endpos(idx, startpos, m_endpos, hl_endpos, flagsp, end_endpos,
-                                                           end_idx, start_ext)
+find_endpos(idx, startpos, m_endpos, hl_endpos, flagsp, end_endpos, end_idx, start_ext)
     int         idx;            /* index of the pattern */
     lpos_T      *startpos;      /* where to start looking for an END match */
     lpos_T      *m_endpos;      /* return: end of match */
@@ -2894,13 +2847,11 @@ find_endpos(idx, startpos, m_endpos, hl_endpos, flagsp, end_endpos,
 
             regmatch.rmm_ic = spp->sp_ic;
             regmatch.regprog = spp->sp_prog;
-            r = syn_regexec(&regmatch, startpos->lnum, lc_col,
-                                                  IF_SYN_TIME(&spp->sp_time));
+            r = syn_regexec(&regmatch, startpos->lnum, lc_col, IF_SYN_TIME(&spp->sp_time));
             spp->sp_prog = regmatch.regprog;
             if (r)
             {
-                if (best_idx == -1 || regmatch.startpos[0].col
-                                              < best_regmatch.startpos[0].col)
+                if (best_idx == -1 || regmatch.startpos[0].col < best_regmatch.startpos[0].col)
                 {
                     best_idx = idx;
                     best_regmatch.startpos[0] = regmatch.startpos[0];
@@ -2929,11 +2880,9 @@ find_endpos(idx, startpos, m_endpos, hl_endpos, flagsp, end_endpos,
                 lc_col = 0;
             regmatch.rmm_ic = spp_skip->sp_ic;
             regmatch.regprog = spp_skip->sp_prog;
-            r = syn_regexec(&regmatch, startpos->lnum, lc_col,
-                                              IF_SYN_TIME(&spp_skip->sp_time));
+            r = syn_regexec(&regmatch, startpos->lnum, lc_col, IF_SYN_TIME(&spp_skip->sp_time));
             spp_skip->sp_prog = regmatch.regprog;
-            if (r && regmatch.startpos[0].col
-                                             <= best_regmatch.startpos[0].col)
+            if (r && regmatch.startpos[0].col <= best_regmatch.startpos[0].col)
             {
                 /* Add offset to skip pattern match */
                 syn_add_end_off(&pos, &regmatch, spp_skip, SPO_ME_OFF, 1);
@@ -3278,9 +3227,7 @@ check_keyword_id(line, startcol, endcolp, flagsp, next_listp, cur_si, ccharp)
                     *endcolp = startcol + kwlen;
                     *flagsp = kp->flags;
                     *next_listp = kp->next_list;
-#if defined(FEAT_CONCEAL)
                     *ccharp = kp->k_char;
-#endif
                     return kp->k_syn.id;
                 }
             }
@@ -3296,7 +3243,6 @@ syn_cmd_conceal(eap, syncing)
     exarg_T     *eap UNUSED;
     int         syncing UNUSED;
 {
-#if defined(FEAT_CONCEAL)
     char_u      *arg = eap->arg;
     char_u      *next;
 
@@ -3311,7 +3257,6 @@ syn_cmd_conceal(eap, syncing)
         curwin->w_s->b_syn_conceal = FALSE;
     else
         EMSG2(_("E390: Illegal argument: %s"), arg);
-#endif
 }
 
 /*
@@ -3860,10 +3805,8 @@ syn_list_one(id, syncing, link_only)
                     {HL_EXCLUDENL, "excludenl"},
                     {HL_TRANSP, "transparent"},
                     {HL_FOLD, "fold"},
-#if defined(FEAT_CONCEAL)
                     {HL_CONCEAL, "conceal"},
                     {HL_CONCEALENDS, "concealends"},
-#endif
                     {0, NULL}
                 };
     static struct name_list namelist2[] =
@@ -3880,8 +3823,7 @@ syn_list_one(id, syncing, link_only)
     if (!syncing)
     {
         did_header = syn_list_keywords(id, &curwin->w_s->b_keywtab, FALSE, attr);
-        did_header = syn_list_keywords(id, &curwin->w_s->b_keywtab_ic,
-                                                            did_header, attr);
+        did_header = syn_list_keywords(id, &curwin->w_s->b_keywtab_ic, did_header, attr);
     }
 
     /* list the patterns for "id" */
@@ -3917,8 +3859,7 @@ syn_list_one(id, syncing, link_only)
             put_id_list((char_u *)"contains", spp->sp_cont_list, attr);
 
         if (spp->sp_syn.cont_in_list != NULL)
-            put_id_list((char_u *)"containedin",
-                                              spp->sp_syn.cont_in_list, attr);
+            put_id_list((char_u *)"containedin", spp->sp_syn.cont_in_list, attr);
 
         if (spp->sp_next_list != NULL)
         {
@@ -3988,8 +3929,7 @@ syn_list_cluster(id)
     msg_advance(endcol);
     if (SYN_CLSTR(curwin->w_s)[id].scl_list != NULL)
     {
-        put_id_list((char_u *)"cluster", SYN_CLSTR(curwin->w_s)[id].scl_list,
-                    hl_attr(HLF_D));
+        put_id_list((char_u *)"cluster", SYN_CLSTR(curwin->w_s)[id].scl_list, hl_attr(HLF_D));
     }
     else
     {
@@ -4173,8 +4113,7 @@ syn_list_keywords(id, ht, did_header, attr)
                     }
                     if (kp->k_syn.cont_in_list != prev_cont_in_list)
                     {
-                        put_id_list((char_u *)"containedin",
-                                                kp->k_syn.cont_in_list, attr);
+                        put_id_list((char_u *)"containedin", kp->k_syn.cont_in_list, attr);
                         msg_putchar(' ');
                         prev_cont_in_list = kp->k_syn.cont_in_list;
                     }
@@ -4311,8 +4250,7 @@ add_keyword(name, id, flags, cont_in_list, next_list, conceal_char)
     char_u      name_folded[MAXKEYWLEN + 1];
 
     if (curwin->w_s->b_syn_ic)
-        name_ic = str_foldcase(name, (int)STRLEN(name),
-                                                 name_folded, MAXKEYWLEN + 1);
+        name_ic = str_foldcase(name, (int)STRLEN(name), name_folded, MAXKEYWLEN + 1);
     else
         name_ic = name;
     kp = (keyentry_T *)alloc((int)(sizeof(keyentry_T) + STRLEN(name_ic)));
@@ -4423,10 +4361,8 @@ get_syn_options(arg, opt, conceal_char)
     if (arg == NULL)            /* already detected error */
         return NULL;
 
-#if defined(FEAT_CONCEAL)
     if (curwin->w_s->b_syn_conceal)
         opt->flags |= HL_CONCEAL;
-#endif
 
     for (;;)
     {
@@ -4486,26 +4422,18 @@ get_syn_options(arg, opt, conceal_char)
             /* cchar=? */
             if (has_mbyte)
             {
-#if defined(FEAT_CONCEAL)
                 *conceal_char = mb_ptr2char(arg + 6);
-#endif
                 arg += mb_ptr2len(arg + 6) - 1;
             }
             else
             {
-#if defined(FEAT_CONCEAL)
                 *conceal_char = arg[6];
-#else
-                ;
-#endif
             }
-#if defined(FEAT_CONCEAL)
             if (!vim_isprintc_strict(*conceal_char))
             {
                 EMSG(_("E844: invalid cchar value"));
                 return NULL;
             }
-#endif
             arg = skipwhite(arg + 7);
         }
         else
@@ -4580,8 +4508,7 @@ syn_incl_toplevel(id, flagsp)
         {
             grp_list[0] = id;
             grp_list[1] = 0;
-            syn_combine_list(&SYN_CLSTR(curwin->w_s)[tlg_id].scl_list, &grp_list,
-                         CLUSTER_ADD);
+            syn_combine_list(&SYN_CLSTR(curwin->w_s)[tlg_id].scl_list, &grp_list, CLUSTER_ADD);
         }
     }
 }
@@ -4835,8 +4762,7 @@ syn_cmd_match(eap, syncing)
         if (!ends_excmd(*rest) || eap->skip)
             rest = NULL;
         else if (ga_grow(&curwin->w_s->b_syn_patterns, 1) != FAIL
-                && (syn_id = syn_check_group(arg,
-                                           (int)(group_name_end - arg))) != 0)
+                && (syn_id = syn_check_group(arg, (int)(group_name_end - arg))) != 0)
         {
             syn_incl_toplevel(syn_id, &syn_opt_arg.flags);
             /*
@@ -4853,9 +4779,7 @@ syn_cmd_match(eap, syncing)
             SYN_ITEMS(curwin->w_s)[idx].sp_cont_list = syn_opt_arg.cont_list;
             SYN_ITEMS(curwin->w_s)[idx].sp_syn.cont_in_list =
                                                      syn_opt_arg.cont_in_list;
-#if defined(FEAT_CONCEAL)
             SYN_ITEMS(curwin->w_s)[idx].sp_cchar = conceal_char;
-#endif
             if (syn_opt_arg.cont_in_list != NULL)
                 curwin->w_s->b_syn_containedin = TRUE;
             SYN_ITEMS(curwin->w_s)[idx].sp_next_list = syn_opt_arg.next_list;
@@ -5071,8 +4995,7 @@ syn_cmd_region(eap, syncing)
         if (!ends_excmd(*rest) || eap->skip)
             rest = NULL;
         else if (ga_grow(&(curwin->w_s->b_syn_patterns), pat_count) != FAIL
-                && (syn_id = syn_check_group(arg,
-                                           (int)(group_name_end - arg))) != 0)
+                && (syn_id = syn_check_group(arg, (int)(group_name_end - arg))) != 0)
         {
             syn_incl_toplevel(syn_id, &syn_opt_arg.flags);
             /*
@@ -5094,9 +5017,7 @@ syn_cmd_region(eap, syncing)
                                                           current_syn_inc_tag;
                     SYN_ITEMS(curwin->w_s)[idx].sp_syn_match_id =
                                                         ppp->pp_matchgroup_id;
-#if defined(FEAT_CONCEAL)
                     SYN_ITEMS(curwin->w_s)[idx].sp_cchar = conceal_char;
-#endif
                     if (item == ITEM_START)
                     {
                         SYN_ITEMS(curwin->w_s)[idx].sp_cont_list =
@@ -5468,8 +5389,7 @@ syn_cmd_cluster(eap, syncing)
                 EMSG2(_(e_invarg2), rest);
                 break;
             }
-            syn_combine_list(&SYN_CLSTR(curwin->w_s)[scl_id].scl_list,
-                             &clstr_list, list_op);
+            syn_combine_list(&SYN_CLSTR(curwin->w_s)[scl_id].scl_list, &clstr_list, list_op);
             got_clstr = TRUE;
         }
 
@@ -5636,8 +5556,7 @@ syn_cmd_sync(eap, syncing)
             {
                 arg_end = skiptowhite(next_arg);
                 if (!eap->skip)
-                    curwin->w_s->b_syn_sync_id = syn_check_group(next_arg,
-                                                   (int)(arg_end - next_arg));
+                    curwin->w_s->b_syn_sync_id = syn_check_group(next_arg, (int)(arg_end - next_arg));
                 next_arg = skipwhite(arg_end);
             }
             else if (!eap->skip)
@@ -5871,8 +5790,7 @@ get_id_list(arg, keylen, list)
                     id = 0;
                     for (i = highlight_ga.ga_len; --i >= 0; )
                     {
-                        if (vim_regexec(&regmatch, HL_TABLE()[i].sg_name,
-                                                                  (colnr_T)0))
+                        if (vim_regexec(&regmatch, HL_TABLE()[i].sg_name, (colnr_T)0))
                         {
                             if (round == 2)
                             {
@@ -6310,7 +6228,6 @@ syn_get_id(wp, lnum, col, trans, spellp, keep_state)
     return (trans ? current_trans_id : current_id);
 }
 
-#if defined(FEAT_CONCEAL)
 /*
  * Get extra information about the syntax item.  Must be called right after
  * get_syntax_attr().
@@ -6333,7 +6250,6 @@ syn_get_sub_char()
 {
     return current_sub_char;
 }
-#endif
 
 /*
  * Return the syntax ID at position "i" in the current stack.
@@ -6354,8 +6270,6 @@ syn_get_stack_item(i)
     }
     return CUR_STATE(i).si_id;
 }
-
-#endif
 
 /**************************************
  *  Highlighting stuff                *
@@ -6436,22 +6350,16 @@ static char *(highlight_init_light[]) =
              "Visual term=reverse guibg=LightGrey"),
         CENT("TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey",
              "TabLine term=underline cterm=underline ctermfg=black ctermbg=LightGrey gui=underline guibg=LightGrey"),
-#if defined(FEAT_SYN_HL)
         CENT("CursorColumn term=reverse ctermbg=LightGrey",
              "CursorColumn term=reverse ctermbg=LightGrey guibg=Grey90"),
         CENT("CursorLine term=underline cterm=underline",
              "CursorLine term=underline cterm=underline guibg=Grey90"),
         CENT("ColorColumn term=reverse ctermbg=LightRed",
              "ColorColumn term=reverse ctermbg=LightRed guibg=LightRed"),
-#endif
-#if defined(FEAT_CONCEAL)
         CENT("Conceal ctermbg=DarkGrey ctermfg=LightGrey",
              "Conceal ctermbg=DarkGrey ctermfg=LightGrey guibg=DarkGrey guifg=LightGrey"),
-#endif
-#if defined(FEAT_AUTOCMD)
         CENT("MatchParen term=reverse ctermbg=Cyan",
              "MatchParen term=reverse ctermbg=Cyan guibg=Cyan"),
-#endif
         NULL
     };
 
@@ -6491,22 +6399,16 @@ static char *(highlight_init_dark[]) =
              "Visual term=reverse guibg=DarkGrey"),
         CENT("TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey",
              "TabLine term=underline cterm=underline ctermfg=white ctermbg=DarkGrey gui=underline guibg=DarkGrey"),
-#if defined(FEAT_SYN_HL)
         CENT("CursorColumn term=reverse ctermbg=DarkGrey",
              "CursorColumn term=reverse ctermbg=DarkGrey guibg=Grey40"),
         CENT("CursorLine term=underline cterm=underline",
              "CursorLine term=underline cterm=underline guibg=Grey40"),
         CENT("ColorColumn term=reverse ctermbg=DarkRed",
              "ColorColumn term=reverse ctermbg=DarkRed guibg=DarkRed"),
-#endif
-#if defined(FEAT_AUTOCMD)
         CENT("MatchParen term=reverse ctermbg=DarkCyan",
              "MatchParen term=reverse ctermbg=DarkCyan guibg=DarkCyan"),
-#endif
-#if defined(FEAT_CONCEAL)
         CENT("Conceal ctermbg=DarkGrey ctermfg=LightGrey",
              "Conceal ctermbg=DarkGrey ctermfg=LightGrey guibg=DarkGrey guifg=LightGrey"),
-#endif
         NULL
     };
 
@@ -6580,7 +6482,6 @@ init_highlight(both, reset)
             do_highlight((char_u *)"Search ctermfg=black", FALSE, TRUE);
     }
 
-#if defined(FEAT_SYN_HL)
     /*
      * If syntax highlighting is enabled load the highlighting for it.
      */
@@ -6597,7 +6498,6 @@ init_highlight(both, reset)
             --recursive;
         }
     }
-#endif
 }
 
 /*
@@ -6625,9 +6525,7 @@ load_colors(name)
         sprintf((char *)buf, "colors/%s.vim", name);
         retval = source_runtime(buf, FALSE);
         vim_free(buf);
-#if defined(FEAT_AUTOCMD)
         apply_autocmds(EVENT_COLORSCHEME, name, curbuf->b_fname, FALSE, curbuf);
-#endif
     }
     recursive = FALSE;
 
@@ -6733,8 +6631,7 @@ do_highlight(line, forceit, init)
 
         if (ends_excmd(*from_start) || ends_excmd(*to_start))
         {
-            EMSG2(_("E412: Not enough arguments: \":highlight link %s\""),
-                                                                  from_start);
+            EMSG2(_("E412: Not enough arguments: \":highlight link %s\""), from_start);
             return;
         }
 
@@ -7445,24 +7342,17 @@ get_attr_entry(table, aep)
     for (i = 0; i < table->ga_len; ++i)
     {
         taep = &(((attrentry_T *)table->ga_data)[i]);
-        if (       aep->ae_attr == taep->ae_attr
-                && (
-                       (table == &term_attr_table
-                        && (aep->ae_u.term.start == NULL)
-                                            == (taep->ae_u.term.start == NULL)
+        if (aep->ae_attr == taep->ae_attr
+                && ((table == &term_attr_table
+                        && (aep->ae_u.term.start == NULL) == (taep->ae_u.term.start == NULL)
                         && (aep->ae_u.term.start == NULL
-                            || STRCMP(aep->ae_u.term.start,
-                                                  taep->ae_u.term.start) == 0)
-                        && (aep->ae_u.term.stop == NULL)
-                                             == (taep->ae_u.term.stop == NULL)
+                            || STRCMP(aep->ae_u.term.start, taep->ae_u.term.start) == 0)
+                        && (aep->ae_u.term.stop == NULL) == (taep->ae_u.term.stop == NULL)
                         && (aep->ae_u.term.stop == NULL
-                            || STRCMP(aep->ae_u.term.stop,
-                                                  taep->ae_u.term.stop) == 0))
+                            || STRCMP(aep->ae_u.term.stop, taep->ae_u.term.stop) == 0))
                     || (table == &cterm_attr_table
-                            && aep->ae_u.cterm.fg_color
-                                                  == taep->ae_u.cterm.fg_color
-                            && aep->ae_u.cterm.bg_color
-                                                 == taep->ae_u.cterm.bg_color)
+                            && aep->ae_u.cterm.fg_color == taep->ae_u.cterm.fg_color
+                            && aep->ae_u.cterm.bg_color == taep->ae_u.cterm.bg_color)
                      ))
 
         return i + ATTR_OFF;
@@ -7540,7 +7430,6 @@ clear_hl_tables()
     ga_clear(&cterm_attr_table);
 }
 
-#if defined(FEAT_SYN_HL)
 /*
  * Combine special attributes (e.g., for spelling) with other attributes
  * (e.g., for syntax highlighting).
@@ -7622,7 +7511,6 @@ hl_combine_attr(char_attr, prim_attr)
     }
     return get_attr_entry(&term_attr_table, &new_en);
 }
-#endif
 
 /*
  * Get the highlight attributes (HL_BOLD etc.) from an attribute nr.
@@ -7677,28 +7565,18 @@ highlight_list_one(id)
 
     sgp = &HL_TABLE()[id - 1];      /* index is ID minus one */
 
-    didh = highlight_list_arg(id, didh, LIST_ATTR,
-                                    sgp->sg_term, NULL, "term");
-    didh = highlight_list_arg(id, didh, LIST_STRING,
-                                    0, sgp->sg_start, "start");
-    didh = highlight_list_arg(id, didh, LIST_STRING,
-                                    0, sgp->sg_stop, "stop");
+    didh = highlight_list_arg(id, didh, LIST_ATTR, sgp->sg_term, NULL, "term");
+    didh = highlight_list_arg(id, didh, LIST_STRING, 0, sgp->sg_start, "start");
+    didh = highlight_list_arg(id, didh, LIST_STRING, 0, sgp->sg_stop, "stop");
 
-    didh = highlight_list_arg(id, didh, LIST_ATTR,
-                                    sgp->sg_cterm, NULL, "cterm");
-    didh = highlight_list_arg(id, didh, LIST_INT,
-                                    sgp->sg_cterm_fg, NULL, "ctermfg");
-    didh = highlight_list_arg(id, didh, LIST_INT,
-                                    sgp->sg_cterm_bg, NULL, "ctermbg");
+    didh = highlight_list_arg(id, didh, LIST_ATTR, sgp->sg_cterm, NULL, "cterm");
+    didh = highlight_list_arg(id, didh, LIST_INT, sgp->sg_cterm_fg, NULL, "ctermfg");
+    didh = highlight_list_arg(id, didh, LIST_INT, sgp->sg_cterm_bg, NULL, "ctermbg");
 
-    didh = highlight_list_arg(id, didh, LIST_ATTR,
-                                    sgp->sg_gui, NULL, "gui");
-    didh = highlight_list_arg(id, didh, LIST_STRING,
-                                    0, sgp->sg_gui_fg_name, "guifg");
-    didh = highlight_list_arg(id, didh, LIST_STRING,
-                                    0, sgp->sg_gui_bg_name, "guibg");
-    didh = highlight_list_arg(id, didh, LIST_STRING,
-                                    0, sgp->sg_gui_sp_name, "guisp");
+    didh = highlight_list_arg(id, didh, LIST_ATTR, sgp->sg_gui, NULL, "gui");
+    didh = highlight_list_arg(id, didh, LIST_STRING, 0, sgp->sg_gui_fg_name, "guifg");
+    didh = highlight_list_arg(id, didh, LIST_STRING, 0, sgp->sg_gui_bg_name, "guibg");
+    didh = highlight_list_arg(id, didh, LIST_STRING, 0, sgp->sg_gui_sp_name, "guisp");
 
     if (sgp->sg_link && !got_int)
     {
@@ -7768,7 +7646,6 @@ highlight_list_arg(id, didh, type, iarg, sarg, name)
     return didh;
 }
 
-#if defined(FEAT_SYN_HL)
 /*
  * Return "1" if highlight group "id" has attribute "flag".
  * Return NULL otherwise.
@@ -7796,9 +7673,7 @@ highlight_has_attr(id, flag, modec)
         return (char_u *)"1";
     return NULL;
 }
-#endif
 
-#if defined(FEAT_SYN_HL)
 /*
  * Return color name of highlight group "id".
  */
@@ -7848,7 +7723,6 @@ highlight_color(id, what, modec)
     /* term doesn't have color */
     return NULL;
 }
-#endif
 
 /*
  * Output the syntax list header.
@@ -7977,7 +7851,6 @@ highlight_exists(name)
     return (syn_name2id(name) > 0);
 }
 
-#if defined(FEAT_SEARCH_EXTRA)
 /*
  * Return the name of highlight group "id".
  * When not a valid ID return an empty string.
@@ -7990,7 +7863,6 @@ syn_id2name(id)
         return (char_u *)"";
     return HL_TABLE()[id - 1].sg_name;
 }
-#endif
 
 /*
  * Like syn_name2id(), but take a pointer + length argument.
@@ -8439,7 +8311,6 @@ highlight_list_two(cnt, attr)
 
 #endif
 
-#if defined(FEAT_CMDL_COMPL) || defined(FEAT_SYN_HL)
 /*
  * Function given to ExpandGeneric() to obtain the list of group names.
  * Also used for synIDattr() function.
@@ -8465,4 +8336,3 @@ get_highlight_name(xp, idx)
         return NULL;
     return HL_TABLE()[idx].sg_name;
 }
-#endif

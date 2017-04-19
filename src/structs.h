@@ -14,16 +14,10 @@ typedef struct
 {
     linenr_T    lnum;   /* line number */
     colnr_T     col;    /* column number */
-#if defined(FEAT_VIRTUALEDIT)
     colnr_T     coladd;
-#endif
 } pos_T;
 
-#if defined(FEAT_VIRTUALEDIT)
 #define INIT_POS_T(l, c, ca) {l, c, ca}
-#else
-#define INIT_POS_T(l, c, ca) {l, c}
-#endif
 
 /*
  * Same, but without coladd.
@@ -107,50 +101,36 @@ typedef struct taggy
  */
 typedef struct
 {
-#if defined(FEAT_LINEBREAK)
     int         wo_bri;
 #define w_p_bri w_onebuf_opt.wo_bri    /* 'breakindent' */
     char_u      *wo_briopt;
 #define w_p_briopt w_onebuf_opt.wo_briopt /* 'breakindentopt' */
-#endif
-#if defined(FEAT_LINEBREAK)
     int         wo_lbr;
 #define w_p_lbr w_onebuf_opt.wo_lbr    /* 'linebreak' */
-#endif
     int         wo_list;
 #define w_p_list w_onebuf_opt.wo_list   /* 'list' */
     int         wo_nu;
 #define w_p_nu w_onebuf_opt.wo_nu       /* 'number' */
     int         wo_rnu;
 #define w_p_rnu w_onebuf_opt.wo_rnu     /* 'relativenumber' */
-#if defined(FEAT_LINEBREAK)
     long        wo_nuw;
 #define w_p_nuw w_onebuf_opt.wo_nuw    /* 'numberwidth' */
-#endif
     int         wo_wfh;
 #define w_p_wfh w_onebuf_opt.wo_wfh    /* 'winfixheight' */
     int         wo_wfw;
 #define w_p_wfw w_onebuf_opt.wo_wfw    /* 'winfixwidth' */
-#if defined(FEAT_QUICKFIX)
-    int         wo_pvw;
-#define w_p_pvw w_onebuf_opt.wo_pvw    /* 'previewwindow' */
-#endif
-#if defined(FEAT_RIGHTLEFT)
     int         wo_rl;
 #define w_p_rl w_onebuf_opt.wo_rl      /* 'rightleft' */
     char_u      *wo_rlc;
 #define w_p_rlc w_onebuf_opt.wo_rlc    /* 'rightleftcmd' */
-#endif
     long        wo_scr;
 #define w_p_scr w_onebuf_opt.wo_scr     /* 'scroll' */
-#if defined(FEAT_SYN_HL)
     int         wo_cuc;
 #define w_p_cuc w_onebuf_opt.wo_cuc    /* 'cursorcolumn' */
     int         wo_cul;
 #define w_p_cul w_onebuf_opt.wo_cul    /* 'cursorline' */
     char_u      *wo_cc;
 #define w_p_cc w_onebuf_opt.wo_cc      /* 'colorcolumn' */
-#endif
 #if defined(FEAT_STL_OPT)
     char_u      *wo_stl;
 #define w_p_stl w_onebuf_opt.wo_stl     /* 'statusline' */
@@ -165,12 +145,10 @@ typedef struct
 #endif
     int         wo_wrap;
 #define w_p_wrap w_onebuf_opt.wo_wrap   /* 'wrap' */
-#if defined(FEAT_CONCEAL)
     char_u      *wo_cocu;               /* 'concealcursor' */
 #define w_p_cocu w_onebuf_opt.wo_cocu
     long        wo_cole;                /* 'conceallevel' */
 #define w_p_cole w_onebuf_opt.wo_cole
-#endif
 #if defined(FEAT_CURSORBIND)
     int         wo_crb;
 #define w_p_crb w_onebuf_opt.wo_crb    /* 'cursorbind' */
@@ -268,9 +246,7 @@ struct u_header
     u_entry_T   *uh_entry;      /* pointer to first entry */
     u_entry_T   *uh_getbot_entry; /* pointer to where ue_bot must be set */
     pos_T       uh_cursor;      /* cursor position before saving */
-#if defined(FEAT_VIRTUALEDIT)
     long        uh_cursor_vcol;
-#endif
     int         uh_flags;       /* see below */
     pos_T       uh_namedm[NMARKS];      /* marks before undo/after redo */
     visualinfo_T uh_visual;     /* Visual areas before undo/after redo */
@@ -461,9 +437,7 @@ typedef struct
     int         lockmarks;              /* TRUE when ":lockmarks" was used */
     int         keeppatterns;           /* TRUE when ":keeppatterns" was used */
     int         noswapfile;             /* TRUE when ":noswapfile" was used */
-#if defined(FEAT_AUTOCMD)
     char_u      *save_ei;               /* saved value of 'eventignore' */
-#endif
 } cmdmod_T;
 
 #define MF_SEED_LEN     8
@@ -504,7 +478,6 @@ typedef struct info_pointer
     int         ip_index;       /* index for block with current lnum */
 } infoptr_T;    /* block/index pair */
 
-#if defined(FEAT_BYTEOFF)
 typedef struct ml_chunksize
 {
     int         mlcs_numlines;
@@ -516,7 +489,6 @@ typedef struct ml_chunksize
 #define ML_CHNK_ADDLINE 1
 #define ML_CHNK_DELLINE 2
 #define ML_CHNK_UPDLINE 3
-#endif
 
 /*
  * the memline structure holds all the information about a memline
@@ -544,11 +516,9 @@ typedef struct memline
     linenr_T    ml_locked_low;  /* first line in ml_locked */
     linenr_T    ml_locked_high; /* last line in ml_locked */
     int         ml_locked_lineadd;  /* number of lines inserted in ml_locked */
-#if defined(FEAT_BYTEOFF)
     chunksize_T *ml_chunksize;
     int         ml_numchunks;
     int         ml_usedchunks;
-#endif
 } memline_T;
 
 /*
@@ -704,7 +674,6 @@ struct cleanup_stuff
     except_T *exception;        /* exception value */
 };
 
-#if defined(FEAT_SYN_HL)
 /* struct passed to in_id_list() */
 struct sp_syn
 {
@@ -735,10 +704,8 @@ typedef struct buf_state
 {
     int             bs_idx;      /* index of pattern */
     int             bs_flags;    /* flags for pattern */
-#if defined(FEAT_CONCEAL)
     int             bs_seqnr;    /* stores si_seqnr */
     int             bs_cchar;    /* stores si_cchar */
-#endif
     reg_extmatch_T *bs_extmatch; /* external matches from start pattern */
 } bufstate_T;
 
@@ -765,7 +732,6 @@ struct syn_state
     linenr_T    sst_change_lnum;/* when non-zero, change in this line
                                  * may have made the state invalid */
 };
-#endif
 
 /*
  * Structure shared between syntax.c, screen.c and gui_x11.c.
@@ -1062,16 +1028,11 @@ typedef struct list_stack_S
 /* avoid #ifdefs for when b_spell is not available */
 #define B_SPELL(buf)  (0)
 
-#if defined(FEAT_QUICKFIX)
-typedef struct qf_info_S qf_info_T;
-#endif
-
 /*
  * These are items normally related to a buffer.  But when using ":ownsyntax"
  * a window may have its own instance.
  */
 typedef struct {
-#if defined(FEAT_SYN_HL)
     hashtab_T   b_keywtab;              /* syntax keywords hash table */
     hashtab_T   b_keywtab_ic;           /* idem, ignore case */
     int         b_syn_error;            /* TRUE when error occurred in HL */
@@ -1092,9 +1053,7 @@ typedef struct {
     regprog_T   *b_syn_linecont_prog;   /* line continuation program */
     int         b_syn_linecont_ic;      /* ignore-case flag for above */
     int         b_syn_topgrp;           /* for ":syntax include" */
-#if defined(FEAT_CONCEAL)
     int         b_syn_conceal;          /* auto-conceal for :syn cmds */
-#endif
     /*
      * b_sst_array[] contains the state stack for a number of lines, for the
      * start of that line (col == 0).  This avoids having to recompute the
@@ -1116,11 +1075,7 @@ typedef struct {
     int         b_sst_freecount;
     linenr_T    b_sst_check_lnum;
     short_u     b_sst_lasttick; /* last display tick */
-#endif
 
-#if !defined(FEAT_SYN_HL)
-    int         dummy;
-#endif
 } synblock_T;
 
 /*
@@ -1142,10 +1097,8 @@ struct file_buffer
     int         b_nwindows;     /* nr of windows open on this buffer */
 
     int         b_flags;        /* various BF_ flags */
-#if defined(FEAT_AUTOCMD)
     int         b_closing;      /* buffer is being closed, don't let
                                    autocommands close it too. */
-#endif
 
     /*
      * b_ffname has the full path of the file (NULL for no name).
@@ -1203,14 +1156,12 @@ struct file_buffer
     pos_T       b_last_insert;  /* where Insert mode was left */
     pos_T       b_last_change;  /* position of last change: '. mark */
 
-#if defined(FEAT_JUMPLIST)
     /*
      * the changelist contains old change positions
      */
     pos_T       b_changelist[JUMPLISTSIZE];
     int         b_changelistlen;        /* number of active entries */
     int         b_new_change;           /* set by u_savecommon() */
-#endif
 
     /*
      * Character table, only used in charset.c for 'iskeyword'
@@ -1291,22 +1242,12 @@ struct file_buffer
     int         b_p_ci;         /* 'copyindent' */
     int         b_p_bin;        /* 'binary' */
     int         b_p_bomb;       /* 'bomb' */
-#if defined(FEAT_QUICKFIX)
-    char_u      *b_p_bh;        /* 'bufhidden' */
-    char_u      *b_p_bt;        /* 'buftype' */
-#endif
     int         b_p_bl;         /* 'buflisted' */
-#if defined(FEAT_CINDENT)
     int         b_p_cin;        /* 'cindent' */
     char_u      *b_p_cino;      /* 'cinoptions' */
     char_u      *b_p_cink;      /* 'cinkeys' */
-#endif
-#if defined(FEAT_CINDENT) || defined(FEAT_SMARTINDENT)
     char_u      *b_p_cinw;      /* 'cinwords' */
-#endif
-#if defined(FEAT_COMMENTS)
     char_u      *b_p_com;       /* 'comments' */
-#endif
 #if defined(FEAT_INS_EXPAND)
     char_u      *b_p_cpt;       /* 'complete' */
 #endif
@@ -1319,9 +1260,7 @@ struct file_buffer
     int         b_p_et_nobin;   /* b_p_et saved for binary mode */
     char_u      *b_p_fenc;      /* 'fileencoding' */
     char_u      *b_p_ff;        /* 'fileformat' */
-#if defined(FEAT_AUTOCMD)
     char_u      *b_p_ft;        /* 'filetype' */
-#endif
     char_u      *b_p_fo;        /* 'formatoptions' */
     char_u      *b_p_flp;       /* 'formatlistpat' */
     int         b_p_inf;        /* 'infercase' */
@@ -1332,17 +1271,13 @@ struct file_buffer
     char_u      *b_p_inex;      /* 'includeexpr' */
     long_u      b_p_inex_flags; /* flags for 'includeexpr' */
 #endif
-#if defined(FEAT_CINDENT)
     char_u      *b_p_inde;      /* 'indentexpr' */
     long_u      b_p_inde_flags; /* flags for 'indentexpr' */
     char_u      *b_p_indk;      /* 'indentkeys' */
-#endif
     char_u      *b_p_fex;       /* 'formatexpr' */
     long_u      b_p_fex_flags;  /* flags for 'formatexpr' */
     char_u      *b_p_kp;        /* 'keywordprg' */
-#if defined(FEAT_LISP)
     int         b_p_lisp;       /* 'lisp' */
-#endif
     char_u      *b_p_mps;       /* 'matchpairs' */
     int         b_p_ml;         /* 'modeline' */
     int         b_p_ml_nobin;   /* b_p_ml saved for binary mode */
@@ -1354,22 +1289,16 @@ struct file_buffer
 #endif
     int         b_p_ro;         /* 'readonly' */
     long        b_p_sw;         /* 'shiftwidth' */
-#if !defined(SHORT_FNAME)
     int         b_p_sn;         /* 'shortname' */
-#endif
-#if defined(FEAT_SMARTINDENT)
     int         b_p_si;         /* 'smartindent' */
-#endif
     long        b_p_sts;        /* 'softtabstop' */
     long        b_p_sts_nopaste; /* b_p_sts saved for paste mode */
 #if defined(FEAT_SEARCHPATH)
     char_u      *b_p_sua;       /* 'suffixesadd' */
 #endif
     int         b_p_swf;        /* 'swapfile' */
-#if defined(FEAT_SYN_HL)
     long        b_p_smc;        /* 'synmaxcol' */
     char_u      *b_p_syn;       /* 'syntax' */
-#endif
     long        b_p_ts;         /* 'tabstop' */
     int         b_p_tx;         /* 'textmode' */
     long        b_p_tw;         /* 'textwidth' */
@@ -1380,11 +1309,6 @@ struct file_buffer
     long        b_p_wm_nopaste; /* b_p_wm saved for paste mode */
 
     /* local values for options which are normally global */
-#if defined(FEAT_QUICKFIX)
-    char_u      *b_p_gp;        /* 'grepprg' local value */
-    char_u      *b_p_mp;        /* 'makeprg' local value */
-    char_u      *b_p_efm;       /* 'errorformat' local value */
-#endif
     char_u      *b_p_ep;        /* 'equalprg' local value */
     char_u      *b_p_path;      /* 'path' local value */
     int         b_p_ar;         /* 'autoread' local value */
@@ -1397,13 +1321,10 @@ struct file_buffer
 #if defined(FEAT_PERSISTENT_UNDO)
     int         b_p_udf;        /* 'undofile' */
 #endif
-#if defined(FEAT_LISP)
     char_u      *b_p_lw;        /* 'lispwords' local value */
-#endif
 
     /* end of buffer options */
 
-#if defined(FEAT_CINDENT)
     /* values set from b_p_cino */
     int         b_ind_level;
     int         b_ind_open_imag;
@@ -1440,7 +1361,6 @@ struct file_buffer
     int         b_ind_hash_comment;
     int         b_ind_cpp_namespace;
     int         b_ind_if_for_while;
-#endif
 
     linenr_T    b_no_eol_lnum;  /* non-zero lnum when last line of next binary
                                  * write should not have an end-of-line */
@@ -1470,27 +1390,19 @@ struct file_buffer
     int         b_help;         /* TRUE for help file buffer (when set b_p_bt
                                    is "help") */
 
-#if !defined(SHORT_FNAME)
     int         b_shortname;    /* this file has an 8.3 file name */
-#endif
 
-#if defined(FEAT_SYN_HL)
     synblock_T  b_s;            /* Info related to syntax highlighting.  w_s
                                  * normally points to this, but some windows
                                  * may use a different synblock_T. */
-#endif
 
     int         b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
 
 }; /* file_buffer */
 
 #define SNAP_HELP_IDX   0
-#if defined(FEAT_AUTOCMD)
 #define SNAP_AUCMD_IDX 1
 #define SNAP_COUNT     2
-#else
-#define SNAP_COUNT     1
-#endif
 
 /*
  * Tab pages point to the top frame of each tab page.
@@ -1578,9 +1490,7 @@ typedef struct
     linenr_T    first_lnum;     /* first lnum to search for multi-line pat */
     colnr_T     startcol; /* in win_line() points to char where HL starts */
     colnr_T     endcol;  /* in win_line() points to char where HL ends */
-#if defined(FEAT_RELTIME)
     proftime_T  tm;     /* for a time limit */
-#endif
 } match_T;
 
 /* number of positions supported by matchaddpos() */
@@ -1636,16 +1546,12 @@ struct window_S
     buf_T       *w_buffer;          /* buffer we are a window into (used
                                        often, keep it the first item!) */
 
-#if defined(FEAT_SYN_HL)
     synblock_T  *w_s;               /* for :ownsyntax */
-#endif
 
     win_T       *w_prev;            /* link to previous window */
     win_T       *w_next;            /* link to next window */
-#if defined(FEAT_AUTOCMD)
     int         w_closing;          /* window is being closed, don't let
                                        autocommands close it too. */
-#endif
 
     frame_T     *w_frame;           /* frame containing this window */
 
@@ -1676,10 +1582,8 @@ struct window_S
      */
     linenr_T    w_topline;          /* buffer line number of the line at the
                                        top of the window */
-#if defined(FEAT_AUTOCMD)
     char        w_topline_was_set;  /* flag set to TRUE when topline is set,
                                        e.g. by winrestview() */
-#endif
     colnr_T     w_leftcol;          /* window column number of the left most
                                        character in the window; used when
                                        'wrap' is off */
@@ -1754,10 +1658,8 @@ struct window_S
     int         w_lines_valid;      /* number of valid entries */
     wline_T     *w_lines;
 
-#if defined(FEAT_LINEBREAK)
     int         w_nrwidth;          /* width of 'number' and 'relativenumber'
                                        column being used */
-#endif
 
     /*
      * === end of cached values ===
@@ -1804,14 +1706,10 @@ struct window_S
 #endif
     long_u      w_p_fde_flags;      /* flags for 'foldexpr' */
     long_u      w_p_fdt_flags;      /* flags for 'foldtext' */
-#if defined(FEAT_SYN_HL)
     int         *w_p_cc_cols;       /* array of columns to highlight or NULL */
-#endif
-#if defined(FEAT_LINEBREAK)
     int         w_p_brimin;         /* minimum width for breakindent */
     int         w_p_brishift;       /* additional shift for breakindent */
     int         w_p_brisbr;         /* sbr in 'briopt' */
-#endif
 
     /* transform a pointer to a "onebuf" option into a "allbuf" option */
 #define GLOBAL_WO(p)    ((char *)p + sizeof(winopt_T))
@@ -1831,7 +1729,6 @@ struct window_S
     pos_T       w_pcmark;       /* previous context mark */
     pos_T       w_prev_pcmark;  /* previous w_pcmark */
 
-#if defined(FEAT_JUMPLIST)
     /*
      * the jumplist contains old cursor positions
      */
@@ -1840,12 +1737,9 @@ struct window_S
     int         w_jumplistidx;          /* current position */
 
     int         w_changelistidx;        /* current position in b_changelist */
-#endif
 
-#if defined(FEAT_SEARCH_EXTRA)
     matchitem_T *w_match_head;          /* head of match list */
     int         w_next_match_id;        /* next match ID */
-#endif
 
     /*
      * the tagstack grows from 0 upwards:
@@ -1866,21 +1760,10 @@ struct window_S
     int         w_fraction;
     int         w_prev_fraction_row;
 
-#if defined(FEAT_LINEBREAK)
     linenr_T    w_nrwidth_line_count;   /* line count when ml_nrwidth_width
                                          * was computed. */
     long        w_nuw_cached;           /* 'numberwidth' option cached */
     int         w_nrwidth_width;        /* nr of chars to print line count. */
-#endif
-
-#if defined(FEAT_QUICKFIX)
-    qf_info_T   *w_llist;               /* Location list for this window */
-    /*
-     * Location list reference used in the location list window.
-     * In a non-location list window, w_llist_ref is NULL.
-     */
-    qf_info_T   *w_llist_ref;
-#endif
 
 };
 
@@ -1911,10 +1794,8 @@ typedef struct oparg_S
     int         block_mode;     /* current operator is Visual block mode */
     colnr_T     start_vcol;     /* start col for block mode operator */
     colnr_T     end_vcol;       /* end col for block mode operator */
-#if defined(FEAT_AUTOCMD)
     long        prev_opcount;   /* ca.opcount saved for K_CURSORHOLD */
     long        prev_count0;    /* ca.count0 saved for K_CURSORHOLD */
-#endif
 } oparg_T;
 
 /*
@@ -2048,13 +1929,11 @@ typedef int vimmenu_T;
 typedef struct
 {
     buf_T       *save_curbuf;   /* saved curbuf */
-#if defined(FEAT_AUTOCMD)
     int         use_aucmd_win;  /* using aucmd_win */
     win_T       *save_curwin;   /* saved curwin */
     win_T       *new_curwin;    /* new curwin */
     buf_T       *new_curbuf;    /* new curbuf */
     char_u      *globaldir;     /* saved value of globaldir */
-#endif
 } aco_save_T;
 
 /*
@@ -2095,16 +1974,10 @@ typedef struct
     int         lines_per_page;
     int         has_color;
     prt_text_attr_T number;
-#if defined(FEAT_SYN_HL)
     int         modec;
     int         do_syntax;
-#endif
     int         user_abort;
     char_u      *jobname;
-#if defined(FEAT_POSTSCRIPT)
-    char_u      *outfile;
-    char_u      *arguments;
-#endif
 } prt_settings_T;
 
 #define PRINT_NUMBER_WIDTH 8

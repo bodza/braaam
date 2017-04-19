@@ -431,8 +431,7 @@ get_exception_string(value, type, cmdname, should_free)
         if (cmdname != NULL && *cmdname != NUL)
         {
             cmdlen = (int)STRLEN(cmdname);
-            ret = vim_strnsave((char_u *)"Vim(",
-                                           4 + cmdlen + 2 + (int)STRLEN(mesg));
+            ret = vim_strnsave((char_u *)"Vim(", 4 + cmdlen + 2 + (int)STRLEN(mesg));
             if (ret == NULL)
                 return ret;
             STRCPY(&ret[4], cmdname);
@@ -790,8 +789,7 @@ report_pending(action, pending, value)
         default:
             if (pending & CSTP_THROW)
             {
-                vim_snprintf((char *)IObuff, IOSIZE,
-                                                (char *)mesg, _("Exception"));
+                vim_snprintf((char *)IObuff, IOSIZE, (char *)mesg, _("Exception"));
                 mesg = vim_strnsave(IObuff, (int)STRLEN(IObuff) + 4);
                 STRCAT(mesg, ": %s");
                 s = (char *)((except_T *)value)->value;
@@ -1519,8 +1517,7 @@ ex_catch(eap)
             give_up = TRUE;
         }
         else
-            rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR,
-                                                       &cstack->cs_looplevel);
+            rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR, &cstack->cs_looplevel);
     }
 
     if (ends_excmd(*eap->arg))  /* no argument, catch all errors */
@@ -1593,8 +1590,7 @@ ex_catch(eap)
                      */
                     prev_got_int = got_int;
                     got_int = FALSE;
-                    caught = vim_regexec_nl(&regmatch, current_exception->value,
-                            (colnr_T)0);
+                    caught = vim_regexec_nl(&regmatch, current_exception->value, (colnr_T)0);
                     got_int |= prev_got_int;
                     vim_regfree(regmatch.regprog);
                 }
@@ -1672,8 +1668,7 @@ ex_finally(eap)
             eap->errmsg = (char_u *)"E607: multiple :finally";
             return;
         }
-        rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR,
-                                                       &cstack->cs_looplevel);
+        rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR, &cstack->cs_looplevel);
 
         /*
          * Don't do something when the corresponding try block never got active
@@ -1728,8 +1723,7 @@ ex_finally(eap)
             {
                 if (cstack->cs_pending[cstack->cs_idx] == CSTP_RETURN)
                 {
-                    report_discard_pending(CSTP_RETURN,
-                                           cstack->cs_rettv[cstack->cs_idx]);
+                    report_discard_pending(CSTP_RETURN, cstack->cs_rettv[cstack->cs_idx]);
                     discard_pending_return(cstack->cs_rettv[cstack->cs_idx]);
                 }
                 if (pending == CSTP_ERROR && !did_emsg)
@@ -1804,8 +1798,7 @@ ex_endtry(eap)
             do
                 --idx;
             while (idx > 0 && !(cstack->cs_flags[idx] & CSF_TRY));
-            rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR,
-                                                       &cstack->cs_looplevel);
+            rewind_conditionals(cstack, idx, CSF_WHILE | CSF_FOR, &cstack->cs_looplevel);
             skip = TRUE;
 
             /*
@@ -2148,8 +2141,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
                         break;
 
                     case CSTP_RETURN:
-                        report_discard_pending(CSTP_RETURN,
-                                                      cstack->cs_rettv[idx]);
+                        report_discard_pending(CSTP_RETURN, cstack->cs_rettv[idx]);
                         discard_pending_return(cstack->cs_rettv[idx]);
                         cstack->cs_pending[idx] = CSTP_NONE;
                         break;
@@ -2167,8 +2159,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
                                         FALSE);
                             }
                             else
-                                report_discard_pending(cstack->cs_pending[idx],
-                                        NULL);
+                                report_discard_pending(cstack->cs_pending[idx], NULL);
                             cstack->cs_pending[idx] = CSTP_NONE;
                         }
                         break;

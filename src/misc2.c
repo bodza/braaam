@@ -7,7 +7,6 @@ static char_u   *username = NULL; /* cached result of mch_get_user_name() */
 
 static char_u   *ff_expand_buffer = NULL; /* used for expanding filenames */
 
-#if defined(FEAT_VIRTUALEDIT)
 static int coladvance2(pos_T *pos, int addspaces, int finetune, colnr_T wcol);
 
 /*
@@ -77,7 +76,6 @@ coladvance_force(wcol)
     }
     return rc;
 }
-#endif
 
 /*
  * Try to advance the Cursor to the specified screen column.
@@ -114,7 +112,6 @@ getvpos(pos, wcol)
     pos_T   *pos;
     colnr_T wcol;
 {
-#if defined(FEAT_VIRTUALEDIT)
     return coladvance2(pos, FALSE, virtual_active(), wcol);
 }
 
@@ -125,23 +122,18 @@ coladvance2(pos, addspaces, finetune, wcol)
     int         finetune;       /* change char offset for the exact column */
     colnr_T     wcol;           /* column to move to */
 {
-#endif
     int         idx;
     char_u      *ptr;
     char_u      *line;
     colnr_T     col = 0;
     int         csize = 0;
     int         one_more;
-#if defined(FEAT_LINEBREAK)
     int         head = 0;
-#endif
 
     one_more = (State & INSERT)
                     || restart_edit != NUL
                     || (VIsual_active && *p_sel != 'o')
-#if defined(FEAT_VIRTUALEDIT)
                     || ((ve_flags & VE_ONEMORE) && wcol < MAXCOL)
-#endif
                     ;
     line = ml_get_buf(curbuf, pos->lnum, FALSE);
 
@@ -150,18 +142,15 @@ coladvance2(pos, addspaces, finetune, wcol)
         idx = (int)STRLEN(line) - 1 + one_more;
         col = wcol;
 
-#if defined(FEAT_VIRTUALEDIT)
         if ((addspaces || finetune) && !VIsual_active)
         {
             curwin->w_curswant = linetabsize(line) + one_more;
             if (curwin->w_curswant > 0)
                 --curwin->w_curswant;
         }
-#endif
     }
     else
     {
-#if defined(FEAT_VIRTUALEDIT)
         int width = W_WIDTH(curwin) - win_col_off(curwin);
 
         if (finetune
@@ -183,18 +172,13 @@ coladvance2(pos, addspaces, finetune, wcol)
                 wcol = (csize / width + 1) * width - 1;
             }
         }
-#endif
 
         ptr = line;
         while (col <= wcol && *ptr != NUL)
         {
             /* Count a tab for what it's worth (if list mode not on) */
-#if defined(FEAT_LINEBREAK)
             csize = win_lbr_chartabsize(curwin, line, ptr, col, &head);
             mb_ptr_adv(ptr);
-#else
-            csize = lbr_chartabsize_adv(line, &ptr, col);
-#endif
             col += csize;
         }
         idx = (int)(ptr - line);
@@ -207,14 +191,11 @@ coladvance2(pos, addspaces, finetune, wcol)
         if (col > wcol || (!virtual_active() && one_more == 0))
         {
             idx -= 1;
-#if defined(FEAT_LINEBREAK)
             /* Don't count the chars from 'showbreak'. */
             csize -= head;
-#endif
             col -= csize;
         }
 
-#if defined(FEAT_VIRTUALEDIT)
         if (virtual_active()
                 && addspaces
                 && ((col != wcol && col != wcol + 1) || csize > 1))
@@ -278,7 +259,6 @@ coladvance2(pos, addspaces, finetune, wcol)
                 col += correct;
             }
         }
-#endif
     }
 
     if (idx < 0)
@@ -286,7 +266,6 @@ coladvance2(pos, addspaces, finetune, wcol)
     else
         pos->col = idx;
 
-#if defined(FEAT_VIRTUALEDIT)
     pos->coladd = 0;
 
     if (finetune)
@@ -313,7 +292,6 @@ coladvance2(pos, addspaces, finetune, wcol)
             col += b;
         }
     }
-#endif
 
     /* prevent from moving onto a trail byte */
     if (has_mbyte)
@@ -356,18 +334,14 @@ inc(lp)
             return ((p[l] != NUL) ? 0 : 2);
         }
         lp->col++;
-#if defined(FEAT_VIRTUALEDIT)
         lp->coladd = 0;
-#endif
         return ((p[1] != NUL) ? 0 : 2);
     }
     if (lp->lnum != curbuf->b_ml.ml_line_count)     /* there is a next line */
     {
         lp->col = 0;
         lp->lnum++;
-#if defined(FEAT_VIRTUALEDIT)
         lp->coladd = 0;
-#endif
         return 1;
     }
     return -1;
@@ -405,9 +379,7 @@ dec(lp)
 {
     char_u      *p;
 
-#if defined(FEAT_VIRTUALEDIT)
     lp->coladd = 0;
-#endif
     if (lp->col > 0)            /* still within line */
     {
         lp->col--;
@@ -493,10 +465,8 @@ check_cursor_col_win(win)
     win_T *win;
 {
     colnr_T len;
-#if defined(FEAT_VIRTUALEDIT)
     colnr_T oldcol = win->w_cursor.col;
     colnr_T oldcoladd = win->w_cursor.col + win->w_cursor.coladd;
-#endif
 
     len = (colnr_T)STRLEN(ml_get_buf(win->w_buffer, win->w_cursor.lnum, FALSE));
     if (len == 0)
@@ -509,9 +479,7 @@ check_cursor_col_win(win)
          * - 'virtualedit' is set */
         if ((State & INSERT) || restart_edit
                 || (VIsual_active && *p_sel != 'o')
-#if defined(FEAT_VIRTUALEDIT)
                 || (ve_flags & VE_ONEMORE)
-#endif
                 || virtual_active())
             win->w_cursor.col = len;
         else
@@ -525,7 +493,6 @@ check_cursor_col_win(win)
     else if (win->w_cursor.col < 0)
         win->w_cursor.col = 0;
 
-#if defined(FEAT_VIRTUALEDIT)
     /* If virtual editing is on, we can leave the cursor on the old position,
      * only we must set it to virtual.  But don't do it when at the end of the
      * line. */
@@ -539,7 +506,6 @@ check_cursor_col_win(win)
             /* avoid weird number when there is a miscalculation or overflow */
             win->w_cursor.coladd = 0;
     }
-#endif
 }
 
 /*
@@ -699,9 +665,6 @@ lalloc(size, message)
     char_u      *p;                 /* pointer to new storage space */
     static int  releasing = FALSE;  /* don't do mf_release_all() recursive */
     int         try_again;
-#if defined(HAVE_AVAIL_MEM) && !defined(SMALL_MEM)
-    static long_u allocated = 0;    /* allocated since last avail check */
-#endif
 
     /* Safety check for allocating zero bytes */
     if (size == 0)
@@ -727,27 +690,8 @@ lalloc(size, message)
          */
         if ((p = (char_u *)malloc((size_t)size)) != NULL)
         {
-#if !defined(HAVE_AVAIL_MEM)
             /* 1. No check for available memory: Just return. */
             goto theend;
-#else
-#if !defined(SMALL_MEM)
-            /* 2. Slow check for available memory: call mch_avail_mem() after
-             *    allocating (KEEP_ROOM / 2) amount of memory. */
-            allocated += size;
-            if (allocated < KEEP_ROOM / 2)
-                goto theend;
-            allocated = 0;
-#endif
-            /* 3. check for available memory: call mch_avail_mem() */
-            if (mch_avail_mem(TRUE) < KEEP_ROOM_KB && !releasing)
-            {
-                free((char *)p);        /* System is low... no go! */
-                p = NULL;
-            }
-            else
-                goto theend;
-#endif
         }
         /*
          * Remember that mf_release_all() is being called to avoid an endless
@@ -819,10 +763,8 @@ free_all_mem()
         return;
     entered = TRUE;
 
-#if defined(FEAT_AUTOCMD)
     /* Don't want to trigger autocommands from here on. */
     block_autocmds();
-#endif
 
     /* Close all tabs and windows.  Reset 'equalalways' to avoid redraws. */
     p_ea = FALSE;
@@ -849,17 +791,13 @@ free_all_mem()
     do_cmdline_cmd((char_u *)"abclear");
     do_cmdline_cmd((char_u *)"breakdel *");
 
-#if defined(FEAT_TITLE)
     free_titles();
-#endif
 #if defined(FEAT_SEARCHPATH)
     free_findfile();
 #endif
 
     /* Obviously named calls. */
-#if defined(FEAT_AUTOCMD)
     free_all_autocmds();
-#endif
     clear_termcodes();
     free_all_options();
     free_all_marks();
@@ -896,18 +834,6 @@ free_all_mem()
     init_history();
 #endif
 
-#if defined(FEAT_QUICKFIX)
-    {
-        win_T       *win;
-        tabpage_T   *tab;
-
-        qf_free_all(NULL);
-        /* Free all location lists */
-        FOR_ALL_TAB_WINDOWS(tab, win)
-            qf_free_all(win);
-    }
-#endif
-
     /* Close all script inputs. */
     close_all_scripts();
 
@@ -916,9 +842,6 @@ free_all_mem()
 
     /* Free all buffers.  Reset 'autochdir' to avoid accessing things that
      * were freed already. */
-#if defined(FEAT_AUTOCHDIR)
-    p_acd = FALSE;
-#endif
     for (buf = firstbuf; buf != NULL; )
     {
         nextbuf = buf->b_next;
@@ -1332,7 +1255,6 @@ copy_spaces(ptr, count)
         *p++ = ' ';
 }
 
-#if defined(FEAT_VISUALEXTRA)
 /*
  * Copy a character a number of times.
  * Does not work for multi-byte characters!
@@ -1349,7 +1271,6 @@ copy_chars(ptr, count, c)
     while (i--)
         *p++ = c;
 }
-#endif
 
 /*
  * delete spaces at the end of a string
@@ -2210,8 +2131,7 @@ simplify_key(key, modifiers)
                     && (*modifiers & modifier_keys_table[i]))
             {
                 *modifiers &= ~modifier_keys_table[i];
-                return TERMCAP2KEY(modifier_keys_table[i + 1],
-                                                   modifier_keys_table[i + 2]);
+                return TERMCAP2KEY(modifier_keys_table[i + 1], modifier_keys_table[i + 2]);
             }
     }
     return key;
@@ -2279,8 +2199,7 @@ get_special_key_name(c, modifiers)
                     && (int)KEY2TERMCAP1(c) == (int)modifier_keys_table[i + 2])
             {
                 modifiers |= modifier_keys_table[i];
-                c = TERMCAP2KEY(modifier_keys_table[i + 3],
-                                                   modifier_keys_table[i + 4]);
+                c = TERMCAP2KEY(modifier_keys_table[i + 3], modifier_keys_table[i + 4]);
                 break;
             }
     }
@@ -2292,9 +2211,7 @@ get_special_key_name(c, modifiers)
      * When not a known special key, and not a printable character, try to
      * extract modifiers.
      */
-    if (c > 0
-            && (*mb_char2len)(c) == 1
-       )
+    if (c > 0 && (*mb_char2len)(c) == 1)
     {
         if (table_idx < 0
                 && (!vim_isprintc(c) || (c & 0x7f) == ' ')
@@ -2314,8 +2231,7 @@ get_special_key_name(c, modifiers)
 
     /* translate the modifier into a string */
     for (i = 0; mod_mask_table[i].name != 'A'; i++)
-        if ((modifiers & mod_mask_table[i].mod_mask)
-                                                == mod_mask_table[i].mod_flag)
+        if ((modifiers & mod_mask_table[i].mod_mask) == mod_mask_table[i].mod_flag)
         {
             string[idx++] = mod_mask_table[i].name;
             string[idx++] = (char_u)'-';
@@ -2561,9 +2477,7 @@ extract_modifiers(key, modp)
         if (key == 0)
             key = K_ZERO;
     }
-    if ((modifiers & MOD_MASK_ALT) && key < 0x80
-            && !enc_dbcs                /* avoid creating a lead byte */
-            )
+    if ((modifiers & MOD_MASK_ALT) && key < 0x80 && !enc_dbcs)    /* avoid creating a lead byte */
     {
         key |= 0x80;
         modifiers &= ~MOD_MASK_ALT;     /* remove the META modifier */
@@ -2758,15 +2672,12 @@ set_fileformat(t, opt_flags)
         break;
     }
     if (p != NULL)
-        set_string_option_direct((char_u *)"ff", -1, (char_u *)p,
-                                                     OPT_FREE | opt_flags, 0);
+        set_string_option_direct((char_u *)"ff", -1, (char_u *)p, OPT_FREE | opt_flags, 0);
 
     /* This may cause the buffer to become (un)modified. */
     check_status(curbuf);
     redraw_tabline = TRUE;
-#if defined(FEAT_TITLE)
     need_maketitle = TRUE;          /* set window title later */
-#endif
 }
 
 /*
@@ -2797,8 +2708,7 @@ call_shell(cmd, opt)
     if (p_verbose > 3)
     {
         verbose_enter();
-        smsg((char_u *)_("Calling shell to execute: \"%s\""),
-                                                    cmd == NULL ? p_sh : cmd);
+        smsg((char_u *)_("Calling shell to execute: \"%s\""), cmd == NULL ? p_sh : cmd);
         out_char('\n');
         cursor_on();
         verbose_leave();
@@ -3036,8 +2946,7 @@ parse_shape_opt(what)
                     else
                     {
                         for (idx = 0; idx < SHAPE_IDX_COUNT; ++idx)
-                            if (STRNICMP(modep, shape_table[idx].name, len)
-                                                                         == 0)
+                            if (STRNICMP(modep, shape_table[idx].name, len) == 0)
                                 break;
                         if (idx == SHAPE_IDX_COUNT
                                    || (shape_table[idx].used_for & what) == 0)
@@ -3170,8 +3079,7 @@ parse_shape_opt(what)
                             }
                             if (round == 2)
                             {
-                                shape_table[idx].id = syn_check_group(p,
-                                                             (int)(endp - p));
+                                shape_table[idx].id = syn_check_group(p, (int)(endp - p));
                                 shape_table[idx].id_lm = shape_table[idx].id;
                                 if (slashp != NULL && slashp < endp)
                                     shape_table[idx].id = i;
@@ -3239,10 +3147,8 @@ get_shape_idx(mouse)
 #endif
     if (!mouse && State == SHOWMATCH)
         return SHAPE_IDX_SM;
-#if defined(FEAT_VREPLACE)
     if (State & VREPLACE_FLAG)
         return SHAPE_IDX_R;
-#endif
     if (State & REPLACE_FLAG)
         return SHAPE_IDX_R;
     if (State & INSERT)
@@ -3539,8 +3445,7 @@ vim_findfirst(path, filename, level)
     int         level;
 {
     ff_fn_search_context =
-        vim_findfile_init(path, filename, NULL, level, TRUE, FALSE,
-                ff_fn_search_context, rel_fname);
+        vim_findfile_init(path, filename, NULL, level, TRUE, FALSE, ff_fn_search_context, rel_fname);
     if (NULL == ff_fn_search_context)
         return NULL;
     else
@@ -3614,8 +3519,7 @@ vim_findnext()
  * limited functionality then.
  */
     void *
-vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
-                                           search_ctx_arg, tagfile, rel_fname)
+vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what, search_ctx_arg, tagfile, rel_fname)
     char_u      *path;
     char_u      *filename;
     char_u      *stopdirs UNUSED;
@@ -3737,8 +3641,7 @@ vim_findfile_init(path, filename, stopdirs, level, free_visited, find_what,
                 void    *ptr;
 
                 helper = walker;
-                ptr = vim_realloc(search_ctx->ffsc_stopdirs_v,
-                                           (dircount + 1) * sizeof(char_u *));
+                ptr = vim_realloc(search_ctx->ffsc_stopdirs_v, (dircount + 1) * sizeof(char_u *));
                 if (ptr)
                     search_ctx->ffsc_stopdirs_v = ptr;
                 else
@@ -4196,11 +4099,9 @@ vim_findfile(search_ctx_arg)
                  */
                 if (path_with_url(dirptrs[0]))
                 {
-                    stackp->ffs_filearray = (char_u **)
-                                              alloc((unsigned)sizeof(char *));
+                    stackp->ffs_filearray = (char_u **)alloc((unsigned)sizeof(char *));
                     if (stackp->ffs_filearray != NULL
-                            && (stackp->ffs_filearray[0]
-                                = vim_strsave(dirptrs[0])) != NULL)
+                            && (stackp->ffs_filearray[0] = vim_strsave(dirptrs[0])) != NULL)
                         stackp->ffs_filearray_size = 1;
                     else
                         stackp->ffs_filearray_size = 0;
@@ -4219,8 +4120,7 @@ vim_findfile(search_ctx_arg)
             }
 #if defined(FEAT_PATH_EXTRA)
             else
-                rest_of_wildcards = &stackp->ffs_wc_path[
-                                                 STRLEN(stackp->ffs_wc_path)];
+                rest_of_wildcards = &stackp->ffs_wc_path[STRLEN(stackp->ffs_wc_path)];
 #endif
 
             if (stackp->ffs_stage == 0)
@@ -4234,8 +4134,7 @@ vim_findfile(search_ctx_arg)
                      * We don't have further wildcards to expand, so we have to
                      * check for the final file now.
                      */
-                    for (i = stackp->ffs_filearray_cur;
-                                          i < stackp->ffs_filearray_size; ++i)
+                    for (i = stackp->ffs_filearray_cur; i < stackp->ffs_filearray_size; ++i)
                     {
                         if (!path_with_url(stackp->ffs_filearray[i])
                                       && !mch_isdir(stackp->ffs_filearray[i]))
@@ -4263,10 +4162,8 @@ vim_findfile(search_ctx_arg)
                             /* if file exists and we didn't already find it */
                             if ((path_with_url(file_path)
                                   || (mch_getperm(file_path) >= 0
-                                      && (search_ctx->ffsc_find_what
-                                                              == FINDFILE_BOTH
-                                          || ((search_ctx->ffsc_find_what
-                                                              == FINDFILE_DIR)
+                                      && (search_ctx->ffsc_find_what == FINDFILE_BOTH
+                                          || ((search_ctx->ffsc_find_what == FINDFILE_DIR)
                                                    == mch_isdir(file_path)))))
 #if !defined(FF_VERBOSE)
                                     && (ff_check_visited(
@@ -4291,8 +4188,7 @@ vim_findfile(search_ctx_arg)
                                     if (p_verbose >= 5)
                                     {
                                         verbose_enter_scroll();
-                                        smsg((char_u *)"Already: %s",
-                                                                   file_path);
+                                        smsg((char_u *)"Already: %s", file_path);
                                         /* don't overwrite this either */
                                         msg_puts((char_u *)"\n");
                                         verbose_leave_scroll();
@@ -4307,11 +4203,9 @@ vim_findfile(search_ctx_arg)
 
                                 if (!path_with_url(file_path))
                                     simplify_filename(file_path);
-                                if (mch_dirname(ff_expand_buffer, MAXPATHL)
-                                                                        == OK)
+                                if (mch_dirname(ff_expand_buffer, MAXPATHL) == OK)
                                 {
-                                    p = shorten_fname(file_path,
-                                                            ff_expand_buffer);
+                                    p = shorten_fname(file_path, ff_expand_buffer);
                                     if (p != NULL)
                                         STRMOVE(file_path, p);
                                 }
@@ -4332,8 +4226,7 @@ vim_findfile(search_ctx_arg)
                             /* Not found or found already, try next suffix. */
                             if (*suf == NUL)
                                 break;
-                            copy_option_part(&suf, file_path + len,
-                                                         MAXPATHL - len, ",");
+                            copy_option_part(&suf, file_path + len, MAXPATHL - len, ",");
 #endif
                         }
                     }
@@ -4345,8 +4238,7 @@ vim_findfile(search_ctx_arg)
                      * still wildcards left, push the directories for further
                      * search
                      */
-                    for (i = stackp->ffs_filearray_cur;
-                                          i < stackp->ffs_filearray_size; ++i)
+                    for (i = stackp->ffs_filearray_cur; i < stackp->ffs_filearray_size; ++i)
                     {
                         if (!mch_isdir(stackp->ffs_filearray[i]))
                             continue;   /* not a directory */
@@ -4370,11 +4262,9 @@ vim_findfile(search_ctx_arg)
              */
             if (STRNCMP(stackp->ffs_wc_path, "**", 2) == 0)
             {
-                for (i = stackp->ffs_filearray_cur;
-                                          i < stackp->ffs_filearray_size; ++i)
+                for (i = stackp->ffs_filearray_cur; i < stackp->ffs_filearray_size; ++i)
                 {
-                    if (fnamecmp(stackp->ffs_filearray[i],
-                                                   stackp->ffs_fix_path) == 0)
+                    if (fnamecmp(stackp->ffs_filearray[i], stackp->ffs_fix_path) == 0)
                         continue; /* don't repush same directory */
                     if (!mch_isdir(stackp->ffs_filearray[i]))
                         continue;   /* not a directory */
@@ -4405,11 +4295,9 @@ vim_findfile(search_ctx_arg)
                 break;
 
             /* cut of last dir */
-            while (path_end > search_ctx->ffsc_start_dir
-                                                  && vim_ispathsep(*path_end))
+            while (path_end > search_ctx->ffsc_start_dir && vim_ispathsep(*path_end))
                 path_end--;
-            while (path_end > search_ctx->ffsc_start_dir
-                                              && !vim_ispathsep(path_end[-1]))
+            while (path_end > search_ctx->ffsc_start_dir && !vim_ispathsep(path_end[-1]))
                 path_end--;
             *path_end = 0;
             path_end--;
@@ -4514,8 +4402,7 @@ ff_get_visited_list(filename, list_headp)
                 if (p_verbose >= 5)
                 {
                     verbose_enter_scroll();
-                    smsg((char_u *)"ff_get_visited_list: FOUND list for %s",
-                                                                    filename);
+                    smsg((char_u *)"ff_get_visited_list: FOUND list for %s", filename);
                     /* don't overwrite this either */
                     msg_puts((char_u *)"\n");
                     verbose_leave_scroll();
@@ -4643,12 +4530,8 @@ ff_check_visited(visited_list, fname
     /* check against list of already visited files */
     for (vp = *visited_list; vp != NULL; vp = vp->ffv_next)
     {
-        if (
-                !url ? (vp->ffv_dev_valid && vp->ffv_dev == st.st_dev
-                                                  && vp->ffv_ino == st.st_ino)
-                     :
-                fnamecmp(vp->ffv_fname, ff_expand_buffer) == 0
-           )
+        if (!url ? (vp->ffv_dev_valid && vp->ffv_dev == st.st_dev && vp->ffv_ino == st.st_ino)
+                 : fnamecmp(vp->ffv_fname, ff_expand_buffer) == 0)
         {
 #if defined(FEAT_PATH_EXTRA)
             /* are the wildcard parts equal */
@@ -4960,8 +4843,7 @@ find_directory_in_path(ptr, len, options, rel_fname)
 }
 
     char_u *
-find_file_in_path_option(ptr, len, options, first, path_option,
-                         find_what, rel_fname, suffixes)
+find_file_in_path_option(ptr, len, options, first, path_option, find_what, rel_fname, suffixes)
     char_u      *ptr;           /* file name */
     int         len;            /* length of file name */
     int         options;
@@ -5057,8 +4939,7 @@ find_file_in_path_option(ptr, len, options, first, path_option,
                     if (
                             (mch_getperm(NameBuff) >= 0
                              && (find_what == FINDFILE_BOTH
-                                 || ((find_what == FINDFILE_DIR)
-                                                    == mch_isdir(NameBuff)))))
+                                 || ((find_what == FINDFILE_DIR) == mch_isdir(NameBuff)))))
                     {
                         file_name = vim_strsave(NameBuff);
                         goto theend;
@@ -5135,20 +5016,16 @@ find_file_in_path_option(ptr, len, options, first, path_option,
         if (first == TRUE)
         {
             if (find_what == FINDFILE_DIR)
-                EMSG2(_("E344: Can't find directory \"%s\" in cdpath"),
-                        ff_file_to_find);
+                EMSG2(_("E344: Can't find directory \"%s\" in cdpath"), ff_file_to_find);
             else
-                EMSG2(_("E345: Can't find file \"%s\" in path"),
-                        ff_file_to_find);
+                EMSG2(_("E345: Can't find file \"%s\" in path"), ff_file_to_find);
         }
         else
         {
             if (find_what == FINDFILE_DIR)
-                EMSG2(_("E346: No more directory \"%s\" found in cdpath"),
-                        ff_file_to_find);
+                EMSG2(_("E346: No more directory \"%s\" found in cdpath"), ff_file_to_find);
             else
-                EMSG2(_("E347: No more file \"%s\" found in path"),
-                        ff_file_to_find);
+                EMSG2(_("E347: No more file \"%s\" found in path"), ff_file_to_find);
         }
     }
 
@@ -5172,8 +5049,7 @@ vim_chdir(new_dir)
     char_u      *dir_name;
     int         r;
 
-    dir_name = find_directory_in_path(new_dir, (int)STRLEN(new_dir),
-                                                FNAME_MESS, curbuf->b_ffname);
+    dir_name = find_directory_in_path(new_dir, (int)STRLEN(new_dir), FNAME_MESS, curbuf->b_ffname);
     if (dir_name == NULL)
         return -1;
     r = mch_chdir((char *)dir_name);
@@ -5387,7 +5263,8 @@ putenv(string)
 
     if (i < 0)
     {                           /* name must be added */
-        for (i = 0; environ[i]; i++);
+        for (i = 0; environ[i]; i++)
+            ;
         if (i >= (envsize - 1))
         {                       /* need new slot */
             if (moreenv() < 0)
@@ -5510,10 +5387,7 @@ filewritable(fname)
     int         perm = 0;
 
     perm = mch_getperm(fname);
-    if (
-            (perm & 0222) &&
-            mch_access((char *)fname, W_OK) == 0
-       )
+    if ((perm & 0222) && mch_access((char *)fname, W_OK) == 0)
     {
         ++retval;
         if (mch_isdir(fname))
@@ -5715,23 +5589,4 @@ time_to_bytes(the_time, buf)
     }
 }
 
-#endif
-
-#if defined(FEAT_QUICKFIX)
-/*
- * Return TRUE if string "s" contains a non-ASCII character (128 or higher).
- * When "s" is NULL FALSE is returned.
- */
-    int
-has_non_ascii(s)
-    char_u      *s;
-{
-    char_u      *p;
-
-    if (s != NULL)
-        for (p = s; *p != NUL; ++p)
-            if (*p >= 128)
-                return TRUE;
-    return FALSE;
-}
 #endif

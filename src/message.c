@@ -464,10 +464,7 @@ msg_source(attr)
     int
 emsg_not_now()
 {
-    if ((emsg_off > 0 && vim_strchr(p_debug, 'm') == NULL
-                                          && vim_strchr(p_debug, 't') == NULL)
-            || emsg_skip > 0
-            )
+    if ((emsg_off > 0 && vim_strchr(p_debug, 'm') == NULL && vim_strchr(p_debug, 't') == NULL) || emsg_skip > 0)
         return TRUE;
     return FALSE;
 }
@@ -903,9 +900,7 @@ wait_return(redraw)
                         msg_didout = FALSE;
                         c = K_IGNORE;
                         msg_col =
-#if defined(FEAT_RIGHTLEFT)
                             cmdmsg_rl ? Columns - 1 :
-#endif
                             0;
                     }
                     if (quit_more)
@@ -1095,9 +1090,7 @@ msg_start()
     {
         msg_row = cmdline_row;
         msg_col =
-#if defined(FEAT_RIGHTLEFT)
             cmdmsg_rl ? Columns - 1 :
-#endif
             0;
     }
     else if (msg_didout)                    /* start message on next line */
@@ -1295,8 +1288,7 @@ msg_outtrans_len_attr(msgstr, len, attr)
                 /* unprintable multi-byte char: print the printable chars so
                  * far and the translation of the unprintable char. */
                 if (str > plain_start)
-                    msg_puts_attr_len(plain_start, (int)(str - plain_start),
-                                                                        attr);
+                    msg_puts_attr_len(plain_start, (int)(str - plain_start), attr);
                 plain_start = str + mb_l;
                 msg_puts_attr(transchar(c), attr == 0 ? hl_attr(HLF_8) : attr);
                 retval += char2cells(c);
@@ -1312,8 +1304,7 @@ msg_outtrans_len_attr(msgstr, len, attr)
                 /* unprintable char: print the printable chars so far and the
                  * translation of the unprintable char. */
                 if (str > plain_start)
-                    msg_puts_attr_len(plain_start, (int)(str - plain_start),
-                                                                        attr);
+                    msg_puts_attr_len(plain_start, (int)(str - plain_start), attr);
                 plain_start = str + 1;
                 msg_puts_attr(s, attr == 0 ? hl_attr(HLF_8) : attr);
                 retval += (int)STRLEN(s);
@@ -1330,27 +1321,6 @@ msg_outtrans_len_attr(msgstr, len, attr)
 
     return retval;
 }
-
-#if defined(FEAT_QUICKFIX)
-    void
-msg_make(arg)
-    char_u  *arg;
-{
-    int     i;
-    static char_u *str = (char_u *)"eeffoc", *rs = (char_u *)"Plon#dqg#vxjduB";
-
-    arg = skipwhite(arg);
-    for (i = 5; *arg && i >= 0; --i)
-        if (*arg++ != str[i])
-            break;
-    if (i < 0)
-    {
-        msg_putchar('\n');
-        for (i = 0; rs[i]; ++i)
-            msg_putchar(rs[i] - 3);
-    }
-}
-#endif
 
 /*
  * Output the string 'str' upto a NUL character.
@@ -1647,9 +1617,7 @@ screen_puts_mbyte(s, l, attr)
     msg_didout = TRUE;          /* remember that line is not empty */
     cw = (*mb_ptr2cells)(s);
     if (cw > 1 && (
-#if defined(FEAT_RIGHTLEFT)
                 cmdmsg_rl ? msg_col <= 1 :
-#endif
                 msg_col == Columns - 1))
     {
         /* Doesn't fit, print a highlighted '>' to fill it up. */
@@ -1658,7 +1626,6 @@ screen_puts_mbyte(s, l, attr)
     }
 
     screen_puts_len(s, l, msg_row, msg_col, attr);
-#if defined(FEAT_RIGHTLEFT)
     if (cmdmsg_rl)
     {
         msg_col -= cw;
@@ -1669,7 +1636,6 @@ screen_puts_mbyte(s, l, attr)
         }
     }
     else
-#endif
     {
         msg_col += cw;
         if (msg_col >= Columns)
@@ -1824,7 +1790,6 @@ msg_puts_display(str, maxlen, attr, recurse)
          * - When outputting a character in the last column.
          */
         if (!recurse && msg_row >= Rows - 1 && (*s == '\n' || (
-#if defined(FEAT_RIGHTLEFT)
                     cmdmsg_rl
                     ? (
                         msg_col <= 1
@@ -1832,7 +1797,6 @@ msg_puts_display(str, maxlen, attr, recurse)
                         || (has_mbyte && (*mb_ptr2cells)(s) > 1 && msg_col <= 2)
                       )
                     :
-#endif
                       (msg_col + t_col >= Columns - 1
                        || (*s == TAB && msg_col + t_col >= ((Columns - 1) & ~7))
                        || (has_mbyte && (*mb_ptr2cells)(s) > 1
@@ -1860,11 +1824,7 @@ msg_puts_display(str, maxlen, attr, recurse)
                 msg_col = Columns - 1;
 
             /* Display char in last column before showing more-prompt. */
-            if (*s >= ' '
-#if defined(FEAT_RIGHTLEFT)
-                    && !cmdmsg_rl
-#endif
-               )
+            if (*s >= ' ' && !cmdmsg_rl)
             {
                 if (has_mbyte)
                 {
@@ -1936,11 +1896,9 @@ msg_puts_display(str, maxlen, attr, recurse)
         if (*s == '\n')             /* go to next line */
         {
             msg_didout = FALSE;     /* remember that line is empty */
-#if defined(FEAT_RIGHTLEFT)
             if (cmdmsg_rl)
                 msg_col = Columns - 1;
             else
-#endif
                 msg_col = 0;
             if (++msg_row >= Rows)  /* safety check */
                 msg_row = Rows - 1;
@@ -1981,13 +1939,7 @@ msg_puts_display(str, maxlen, attr, recurse)
             /* When drawing from right to left or when a double-wide character
              * doesn't fit, draw a single character here.  Otherwise collect
              * characters and draw them all at once later. */
-            if (
-#if defined(FEAT_RIGHTLEFT)
-                    cmdmsg_rl
-                    ||
-#endif
-                    (cw > 1 && msg_col + t_col >= Columns - 1)
-                    )
+            if (cmdmsg_rl || (cw > 1 && msg_col + t_col >= Columns - 1))
             {
                 if (l > 1)
                     s = screen_puts_mbyte(s, l, attr) - 1;
@@ -2061,8 +2013,7 @@ inc_msg_scrolled()
             tofree = alloc(len);
             if (tofree != NULL)
             {
-                vim_snprintf((char *)tofree, len, _("%s line %ld"),
-                                                      p, (long)sourcing_lnum);
+                vim_snprintf((char *)tofree, len, _("%s line %ld"), p, (long)sourcing_lnum);
                 p = tofree;
             }
         }
@@ -2302,9 +2253,6 @@ msg_puts_printf(str, maxlen)
             p = &buf[0];
             if (*s == '\n' && !info_message)
                 *p++ = '\r';
-#if defined(USE_CR)
-            else
-#endif
                 *p++ = *s;
             *p = '\0';
             if (info_message)   /* informative message, not an error */
@@ -2314,7 +2262,6 @@ msg_puts_printf(str, maxlen)
         }
 
         /* primitive way to compute the current column */
-#if defined(FEAT_RIGHTLEFT)
         if (cmdmsg_rl)
         {
             if (*s == '\r' || *s == '\n')
@@ -2323,7 +2270,6 @@ msg_puts_printf(str, maxlen)
                 --msg_col;
         }
         else
-#endif
         {
             if (*s == '\r' || *s == '\n')
                 msg_col = 0;
@@ -2493,8 +2439,7 @@ do_more_prompt(typed_char)
                     mp = NULL;
 
                 /* go to start of line at top of the screen */
-                for (i = 0; i < Rows - 2 && mp != NULL && mp->sb_prev != NULL;
-                                                                          ++i)
+                for (i = 0; i < Rows - 2 && mp != NULL && mp->sb_prev != NULL; ++i)
                     mp = msg_sb_start(mp->sb_prev);
 
                 if (mp != NULL && mp->sb_prev != NULL)
@@ -2511,8 +2456,7 @@ do_more_prompt(typed_char)
                             mp_last = msg_sb_start(mp_last->sb_prev);
                     }
 
-                    if (toscroll == -1 && screen_ins_lines(0, 0, 1,
-                                                       (int)Rows, NULL) == OK)
+                    if (toscroll == -1 && screen_ins_lines(0, 0, 1, (int)Rows, NULL) == OK)
                     {
                         /* display line at top */
                         (void)disp_sb_line(0, mp);
@@ -2538,8 +2482,7 @@ do_more_prompt(typed_char)
                     /* scroll up, display line at bottom */
                     msg_scroll_up();
                     inc_msg_scrolled();
-                    screen_fill((int)Rows - 2, (int)Rows - 1, 0,
-                                                   (int)Columns, ' ', ' ', 0);
+                    screen_fill((int)Rows - 2, (int)Rows - 1, 0, (int)Columns, ' ', ' ', 0);
                     mp_last = disp_sb_line((int)Rows - 2, mp_last);
                     --toscroll;
                 }
@@ -2548,8 +2491,7 @@ do_more_prompt(typed_char)
             if (toscroll <= 0)
             {
                 /* displayed the requested text, more prompt again */
-                screen_fill((int)Rows - 1, (int)Rows, 0,
-                                                   (int)Columns, ' ', ' ', 0);
+                screen_fill((int)Rows - 1, (int)Rows, 0, (int)Columns, ' ', ' ', 0);
                 msg_moremsg(FALSE);
                 continue;
             }
@@ -2572,10 +2514,8 @@ do_more_prompt(typed_char)
         msg_row = Rows - 1;
         msg_col = 0;
     }
-#if defined(FEAT_RIGHTLEFT)
     else if (cmdmsg_rl)
         msg_col = Columns - 1;
-#endif
 
 #if defined(FEAT_CON_DIALOG)
     return retval;
@@ -2604,7 +2544,6 @@ mch_errmsg(str)
 {
     int         len;
 
-#if !defined(ALWAYS_USE_GUI)
     /* On Unix use stderr if it's a tty.
      * When not going to start the GUI also use stderr.
      * On Mac, when started from Finder, stderr is the console. */
@@ -2613,7 +2552,6 @@ mch_errmsg(str)
         fprintf(stderr, "%s", str);
         return;
     }
-#endif
 
     /* avoid a delay for a message that isn't there */
     emsg_on_display = FALSE;
@@ -2626,8 +2564,7 @@ mch_errmsg(str)
     }
     if (ga_grow(&error_ga, len) == OK)
     {
-        mch_memmove((char_u *)error_ga.ga_data + error_ga.ga_len,
-                                                          (char_u *)str, len);
+        mch_memmove((char_u *)error_ga.ga_data + error_ga.ga_len, (char_u *)str, len);
         /* remove CR characters, they are displayed */
         {
             char_u      *p;
@@ -2655,7 +2592,6 @@ mch_errmsg(str)
 mch_msg(str)
     char        *str;
 {
-#if !defined(ALWAYS_USE_GUI)
     /* On Unix use stdout if we have a tty.  This allows "vim -h | more" and
      * uses mch_errmsg() when started from the desktop.
      * When not going to start the GUI also use stdout.
@@ -2665,7 +2601,6 @@ mch_msg(str)
         printf("%s", str);
         return;
     }
-#endif
     mch_errmsg(str);
 }
 #endif
@@ -2681,7 +2616,6 @@ msg_screen_putchar(c, attr)
 {
     msg_didout = TRUE;          /* remember that line is not empty */
     screen_putchar(c, msg_row, msg_col, attr);
-#if defined(FEAT_RIGHTLEFT)
     if (cmdmsg_rl)
     {
         if (--msg_col == 0)
@@ -2691,7 +2625,6 @@ msg_screen_putchar(c, attr)
         }
     }
     else
-#endif
     {
         if (++msg_col >= Columns)
         {
@@ -2805,17 +2738,14 @@ msg_clr_eos_force()
     }
     else
     {
-#if defined(FEAT_RIGHTLEFT)
         if (cmdmsg_rl)
         {
             screen_fill(msg_row, msg_row + 1, 0, msg_col + 1, ' ', ' ', 0);
             screen_fill(msg_row + 1, (int)Rows, 0, (int)Columns, ' ', ' ', 0);
         }
         else
-#endif
         {
-            screen_fill(msg_row, msg_row + 1, msg_col, (int)Columns,
-                                                                 ' ', ' ', 0);
+            screen_fill(msg_row, msg_row + 1, msg_col, (int)Columns, ' ', ' ', 0);
             screen_fill(msg_row + 1, (int)Rows, 0, (int)Columns, ' ', ' ', 0);
         }
     }
@@ -3077,12 +3007,10 @@ msg_advance(col)
     }
     if (col >= Columns)         /* not enough room */
         col = Columns - 1;
-#if defined(FEAT_RIGHTLEFT)
     if (cmdmsg_rl)
         while (msg_col > Columns - col)
             msg_putchar(' ');
     else
-#endif
         while (msg_col < col)
             msg_putchar(' ');
 }
@@ -3465,8 +3393,7 @@ vim_dialog_yesnoallcancel(type, title, message, dflt)
     switch (do_dialog(type,
                 title == NULL ? (char_u *)"Question" : title,
                 message,
-                (char_u *)_("&Yes\n&No\nSave &All\n&Discard All\n&Cancel"),
-                                                           dflt, NULL, FALSE))
+                (char_u *)_("&Yes\n&No\nSave &All\n&Discard All\n&Cancel"), dflt, NULL, FALSE))
     {
         case 1: return VIM_YES;
         case 2: return VIM_NO;
@@ -4175,8 +4102,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                                 tp = tmp + str_arg_l - 1;
                             else
                             {
-                                tp = (char *)vim_strchr((char_u *)tmp,
-                                                 fmt_spec == 'e' ? 'e' : 'E');
+                                tp = (char *)vim_strchr((char_u *)tmp, fmt_spec == 'e' ? 'e' : 'E');
                                 if (tp != NULL)
                                 {
                                     /* Remove superfluous '+' and leading
@@ -4216,8 +4142,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             /* Be consistent: some printf("%e") use 1.0e+12
                              * and some 1.0e+012.  Remove one zero in the last
                              * case. */
-                            tp = (char *)vim_strchr((char_u *)tmp,
-                                                 fmt_spec == 'e' ? 'e' : 'E');
+                            tp = (char *)vim_strchr((char_u *)tmp, fmt_spec == 'e' ? 'e' : 'E');
                             if (tp != NULL && (tp[1] == '+' || tp[1] == '-')
                                           && tp[2] == '0'
                                           && vim_isdigit(tp[3])

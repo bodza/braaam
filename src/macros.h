@@ -10,7 +10,6 @@
 /*
  * Position comparisons
  */
-#if defined(FEAT_VIRTUALEDIT)
 #define lt(a, b) (((a).lnum != (b).lnum) \
                    ? (a).lnum < (b).lnum \
                    : (a).col != (b).col \
@@ -23,14 +22,6 @@
                        : (a)->coladd < (b)->coladd)
 #define equalpos(a, b) (((a).lnum == (b).lnum) && ((a).col == (b).col) && ((a).coladd == (b).coladd))
 #define clearpos(a) {(a)->lnum = 0; (a)->col = 0; (a)->coladd = 0;}
-#else
-#define lt(a, b) (((a).lnum != (b).lnum) \
-                   ? ((a).lnum < (b).lnum) : ((a).col < (b).col))
-#define ltp(a, b) (((a)->lnum != (b)->lnum) \
-                   ? ((a)->lnum < (b)->lnum) : ((a)->col < (b)->col))
-#define equalpos(a, b) (((a).lnum == (b).lnum) && ((a).col == (b).col))
-#define clearpos(a) {(a)->lnum = 0; (a)->col = 0;}
-#endif
 
 #define ltoreq(a, b) (lt(a, b) || equalpos(a, b))
 
@@ -103,11 +94,7 @@
 #define mch_fstat(n, p)        fstat((n), (p))
 #define mch_stat(n, p)       stat((n), (p))
 
-#if defined(HAVE_LSTAT)
 #define mch_lstat(n, p)        lstat((n), (p))
-#else
-#define mch_lstat(n, p)        mch_stat((n), (p))
-#endif
 
 #define mch_open(n, m, p)    open((n), (m), (p))
 
@@ -116,18 +103,12 @@
 
 #define TIME_MSG(s)
 
-#if defined(FEAT_VREPLACE)
 #define REPLACE_NORMAL(s) (((s) & REPLACE_FLAG) && !((s) & VREPLACE_FLAG))
-#else
-#define REPLACE_NORMAL(s) ((s) & REPLACE_FLAG)
-#endif
 
 #define UTF_COMPOSINGLIKE(p1, p2)  utf_iscomposing(utf_ptr2char(p2))
 
-#if defined(FEAT_RIGHTLEFT)
-    /* Whether to draw the vertical bar on the right side of the cell. */
+/* Whether to draw the vertical bar on the right side of the cell. */
 #define CURSOR_BAR_RIGHT (curwin->w_p_rl && (!(State & CMDLINE) || cmdmsg_rl))
-#endif
 
 /*
  * mb_ptr_adv(): advance a pointer to the next character, taking care of
@@ -153,11 +134,7 @@
 #define MB_CHAR2LEN(c)     (has_mbyte ? mb_char2len(c) : 1)
 #define PTR2CHAR(p)        (has_mbyte ? mb_ptr2char(p) : (int)*(p))
 
-#if defined(FEAT_AUTOCHDIR)
-#define DO_AUTOCHDIR if (p_acd) do_autochdir();
-#else
 #define DO_AUTOCHDIR
-#endif
 
 #if defined(FEAT_SCROLLBIND) && defined(FEAT_CURSORBIND)
 #define RESET_BINDING(wp)  (wp)->w_p_scb = FALSE; (wp)->w_p_crb = FALSE

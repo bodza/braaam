@@ -26,9 +26,6 @@ typedef struct
 
     int         edit_type;              /* type of editing to do */
     char_u      *tagname;               /* tag from -t argument */
-#if defined(FEAT_QUICKFIX)
-    char_u      *use_ef;                /* 'errorfile' from -q argument */
-#endif
 
     int         want_full_screen;
     int         stdout_isatty;          /* is stdout a terminal? */
@@ -52,9 +49,6 @@ static void mainerr(int, char_u *);
 static void main_msg(char *s);
 static void usage(void);
 static int get_number_arg(char_u *p, int *idx, int def);
-#if defined(HAVE_LOCALE_H)
-static void init_locale(void);
-#endif
 static void parse_command_name(mparm_T *parmp);
 static void early_arg_scan(mparm_T *parmp);
 static void command_line_scan(mparm_T *parmp);
@@ -133,16 +127,6 @@ main
         mch_exit(0);
     TIME_MSG("Allocated generic buffers");
 
-#if defined(HAVE_LOCALE_H)
-    /*
-     * Setup to use the current locale (for ctype() and many other things).
-     * NOTE: Translated messages with encodings other than latin1 will not
-     * work until set_init_1() has been called!
-     */
-    init_locale();
-    TIME_MSG("locale set");
-#endif
-
     /*
      * Do a first scan of the arguments in "argv[]":
      *   -display or --display
@@ -209,9 +193,6 @@ main
      * there is no terminal version, and on Windows we can't fork one off with
      * :gui.
      */
-#if defined(ALWAYS_USE_GUI)
-    gui.starting = TRUE;
-#endif
 
     if (GARGCOUNT > 0)
     {
@@ -234,10 +215,6 @@ main
      * For GTK we can't be sure, but when started from the desktop it doesn't
      * make sense to try using a terminal.
      */
-#if defined(ALWAYS_USE_GUI)
-    if (gui.starting)
-        params.want_full_screen = FALSE;
-#endif
 
     /*
      * mch_init() sets up the terminal (window) for use.  This must be
@@ -334,25 +311,6 @@ main
     if (get_vim_var_list(VV_OLDFILES) == NULL)
         set_vim_var_list(VV_OLDFILES, list_alloc());
 
-#if defined(FEAT_QUICKFIX)
-    /*
-     * "-q errorfile": Load the error file now.
-     * If the error file can't be read, exit before doing anything else.
-     */
-    if (params.edit_type == EDIT_QF)
-    {
-        if (params.use_ef != NULL)
-            set_string_option_direct((char_u *)"ef", -1, params.use_ef, OPT_FREE, SID_CARG);
-        vim_snprintf((char *)IObuff, IOSIZE, "cfile %s", p_ef);
-        if (qf_init(NULL, p_ef, p_efm, TRUE, IObuff) < 0)
-        {
-            out_char('\n');
-            mch_exit(3);
-        }
-        TIME_MSG("reading errorfile");
-    }
-#endif
-
     /*
      * Start putting things on the screen.
      * Scroll screen down before drawing over it
@@ -435,22 +393,9 @@ main
     if (exmode_active)
         curwin->w_cursor.lnum = curbuf->b_ml.ml_line_count;
 
-#if defined(FEAT_AUTOCMD)
     apply_autocmds(EVENT_BUFENTER, NULL, NULL, FALSE, curbuf);
     TIME_MSG("BufEnter autocommands");
-#endif
     setpcmark();
-
-#if defined(FEAT_QUICKFIX)
-    /*
-     * When started with "-q errorfile" jump to first error now.
-     */
-    if (params.edit_type == EDIT_QF)
-    {
-        qf_jump(NULL, 0, 0, FALSE);
-        TIME_MSG("jump to first error");
-    }
-#endif
 
     /*
      * If opened more than one window, start editing files in the other
@@ -504,10 +449,8 @@ main
     if (p_im)
         need_start_insertmode = TRUE;
 
-#if defined(FEAT_AUTOCMD)
     apply_autocmds(EVENT_VIMENTER, NULL, NULL, FALSE, curbuf);
     TIME_MSG("VimEnter autocommands");
-#endif
 
 #if defined(FEAT_CLIPBOARD)
     /* Adjust default register name for "unnamed" in 'clipboard'. Can only be
@@ -550,11 +493,9 @@ main_loop(cmdwin, noexmode)
 {
     oparg_T     oa;                             /* operator arguments */
     volatile int previous_got_int = FALSE;      /* "got_int" was TRUE */
-#if defined(FEAT_CONCEAL)
     linenr_T    conceal_old_cursor_line = 0;
     linenr_T    conceal_new_cursor_line = 0;
     int         conceal_update_lines = FALSE;
-#endif
 
     clear_oparg(&oa);
     while (!cmdwin
@@ -618,39 +559,21 @@ main_loop(cmdwin, noexmode)
             skip_redraw = FALSE;
         else if (do_redraw || stuff_empty())
         {
-#if defined(FEAT_AUTOCMD) || defined(FEAT_CONCEAL)
             /* Trigger CursorMoved if the cursor moved. */
-            if (!finish_op && (
-#if defined(FEAT_AUTOCMD)
-                        has_cursormoved()
-#endif
-#if defined(FEAT_AUTOCMD) && defined(FEAT_CONCEAL)
-                        ||
-#endif
-#if defined(FEAT_CONCEAL)
-                        curwin->w_p_cole > 0
-#endif
-                        )
+            if (!finish_op && (has_cursormoved() || curwin->w_p_cole > 0)
                  && !equalpos(last_cursormoved, curwin->w_cursor))
             {
-#if defined(FEAT_AUTOCMD)
                 if (has_cursormoved())
-                    apply_autocmds(EVENT_CURSORMOVED, NULL, NULL,
-                                                               FALSE, curbuf);
-#endif
-#if defined(FEAT_CONCEAL)
+                    apply_autocmds(EVENT_CURSORMOVED, NULL, NULL, FALSE, curbuf);
                 if (curwin->w_p_cole > 0)
                 {
                     conceal_old_cursor_line = last_cursormoved.lnum;
                     conceal_new_cursor_line = curwin->w_cursor.lnum;
                     conceal_update_lines = TRUE;
                 }
-#endif
                 last_cursormoved = curwin->w_cursor;
             }
-#endif
 
-#if defined(FEAT_AUTOCMD)
             /* Trigger TextChanged if b_changedtick differs. */
             if (!finish_op && has_textchanged()
                     && last_changedtick != curbuf->b_changedtick)
@@ -661,7 +584,6 @@ main_loop(cmdwin, noexmode)
                 last_changedtick_buf = curbuf;
                 last_changedtick = curbuf->b_changedtick;
             }
-#endif
 
             /*
              * Before redrawing, make sure w_topline is correct, and w_leftcol
@@ -677,10 +599,8 @@ main_loop(cmdwin, noexmode)
             else if (redraw_cmdline || clear_cmdline)
                 showmode();
             redraw_statuslines();
-#if defined(FEAT_TITLE)
             if (need_maketitle)
                 maketitle();
-#endif
             /* display message after redraw */
             if (keep_msg != NULL)
             {
@@ -705,7 +625,6 @@ main_loop(cmdwin, noexmode)
             may_clear_sb_text();        /* clear scroll-back text on next msg */
             showruler(FALSE);
 
-#if defined(FEAT_CONCEAL)
             if (conceal_update_lines
                     && (conceal_old_cursor_line != conceal_new_cursor_line
                         || conceal_cursor_line(curwin)
@@ -718,7 +637,6 @@ main_loop(cmdwin, noexmode)
                 update_single_line(curwin, conceal_new_cursor_line);
                 curwin->w_valid &= ~VALID_CROW;
             }
-#endif
             setcursor();
             cursor_on();
 
@@ -759,11 +677,9 @@ main_loop(cmdwin, noexmode)
 getout(exitval)
     int         exitval;
 {
-#if defined(FEAT_AUTOCMD)
     buf_T       *buf;
     win_T       *wp;
     tabpage_T   *tp, *next_tp;
-#endif
 
     exiting = TRUE;
 
@@ -779,7 +695,6 @@ getout(exitval)
     /* Optionally print hashtable efficiency. */
     hash_debug_results();
 
-#if defined(FEAT_AUTOCMD)
     if (get_vim_var_nr(VV_DYING) <= 1)
     {
         /* Trigger BufWinLeave for all windows, but only once per buffer. */
@@ -794,8 +709,7 @@ getout(exitval)
                 buf = wp->w_buffer;
                 if (buf->b_changedtick != -1)
                 {
-                    apply_autocmds(EVENT_BUFWINLEAVE, buf->b_fname,
-                                                    buf->b_fname, FALSE, buf);
+                    apply_autocmds(EVENT_BUFWINLEAVE, buf->b_fname, buf->b_fname, FALSE, buf);
                     buf->b_changedtick = -1;  /* note that we did it already */
                     /* start all over, autocommands may mess up the lists */
                     next_tp = first_tabpage;
@@ -808,19 +722,15 @@ getout(exitval)
         for (buf = firstbuf; buf != NULL; buf = buf->b_next)
             if (buf->b_ml.ml_mfp != NULL)
             {
-                apply_autocmds(EVENT_BUFUNLOAD, buf->b_fname, buf->b_fname,
-                                                                  FALSE, buf);
+                apply_autocmds(EVENT_BUFUNLOAD, buf->b_fname, buf->b_fname, FALSE, buf);
                 if (!buf_valid(buf))    /* autocmd may delete the buffer */
                     break;
             }
         apply_autocmds(EVENT_VIMLEAVEPRE, NULL, NULL, FALSE, curbuf);
     }
-#endif
 
-#if defined(FEAT_AUTOCMD)
     if (get_vim_var_nr(VV_DYING) <= 1)
         apply_autocmds(EVENT_VIMLEAVE, NULL, NULL, FALSE, curbuf);
-#endif
 
     if (did_emsg)
     {
@@ -829,10 +739,8 @@ getout(exitval)
         wait_return(FALSE);
     }
 
-#if defined(FEAT_AUTOCMD)
     /* Position the cursor again, the autocommands may have moved it */
         windgoto((int)Rows - 1, 0);
-#endif
 
     if (garbage_collect_at_exit)
         garbage_collect();
@@ -857,23 +765,6 @@ get_number_arg(p, idx, def)
     }
     return def;
 }
-
-#if defined(HAVE_LOCALE_H)
-/*
- * Setup to use the current locale (for ctype() and many other things).
- */
-    static void
-init_locale()
-{
-    setlocale(LC_ALL, "");
-
-#if defined(LC_NUMERIC)
-    /* Make sure strtod() uses a decimal point, not a comma. */
-    setlocale(LC_NUMERIC, "C");
-#endif
-
-}
-#endif
 
 /*
  * Check for: [r][e][g][vi|vim|view][diff][ex[im]]
@@ -1119,20 +1010,13 @@ command_line_scan(parmp)
                 break;
 
             case 'H':           /* "-H" start in Hebrew mode: rl + hkmap set */
-#if defined(FEAT_RIGHTLEFT)
                 p_hkmap = TRUE;
                 set_option_value((char_u *)"rl", 1L, NULL, 0);
-#else
-                mch_errmsg(_(e_nohebrew));
-                mch_exit(2);
-#endif
                 break;
 
             case 'l':           /* "-l" lisp mode, 'lisp' and 'showmatch' on */
-#if defined(FEAT_LISP)
                 set_option_value((char_u *)"lisp", 1L, NULL, 0);
                 p_sm = TRUE;
-#endif
                 break;
 
             case 'M':           /* "-M"  no changes or writing of files */
@@ -1172,21 +1056,6 @@ command_line_scan(parmp)
                 parmp->window_count = get_number_arg((char_u *)argv[0], &argv_idx, 0);
                 parmp->window_layout = WIN_VER;
                 break;
-
-#if defined(FEAT_QUICKFIX)
-            case 'q':           /* "-q" QuickFix mode */
-                if (parmp->edit_type != EDIT_NONE)
-                    mainerr(ME_TOO_MANY_ARGS, (char_u *)argv[0]);
-                parmp->edit_type = EDIT_QF;
-                if (argv[0][argv_idx])          /* "-q{errorfile}" */
-                {
-                    parmp->use_ef = (char_u *)argv[0] + argv_idx;
-                    argv_idx = -1;
-                }
-                else if (argc > 1)              /* "-q {errorfile}" */
-                    want_argument = TRUE;
-                break;
-#endif
 
             case 'R':           /* "-R" readonly mode */
                 readonlymode = TRUE;
@@ -1345,12 +1214,6 @@ command_line_scan(parmp)
             /*  case 'd':   -d {device} is handled in mch_check_win() for the
              *              Amiga */
 
-#if defined(FEAT_QUICKFIX)
-                case 'q':       /* "-q {errorfile}" QuickFix mode */
-                    parmp->use_ef = (char_u *)argv[0];
-                    break;
-#endif
-
                 case 'i':       /* "-i {viminfo}" use for viminfo */
                     use_viminfo = (char_u *)argv[0];
                     break;
@@ -1411,8 +1274,7 @@ scripterror:
                 case 'W':       /* "-W {scriptout}" overwrite script file */
                     if (scriptout != NULL)
                         goto scripterror;
-                    if ((scriptout = mch_fopen(argv[0],
-                                    c == 'w' ? APPENDBIN : WRITEBIN)) == NULL)
+                    if ((scriptout = mch_fopen(argv[0], c == 'w' ? APPENDBIN : WRITEBIN)) == NULL)
                     {
                         mch_errmsg(_("Cannot open for script output: \""));
                         mch_errmsg(argv[0]);
@@ -1446,9 +1308,7 @@ scripterror:
             fname_case(p, 0);
 #endif
 
-            alist_add(&global_alist, p,
-                    2           /* add buffer number now and use curbuf */
-                    );
+            alist_add(&global_alist, p, 2);           /* add buffer number now and use curbuf */
         }
 
         /*
@@ -1569,8 +1429,7 @@ create_windows(parmp)
         }
         else if (firstwin->w_next == NULL)
         {
-            parmp->window_count = make_windows(parmp->window_count,
-                                             parmp->window_layout == WIN_VER);
+            parmp->window_count = make_windows(parmp->window_count, parmp->window_layout == WIN_VER);
             TIME_MSG("making windows");
         }
         else
@@ -1594,13 +1453,11 @@ create_windows(parmp)
          * Commands in the .vimrc might have loaded a file or split the window.
          * Watch out for autocommands that delete a window.
          */
-#if defined(FEAT_AUTOCMD)
         /*
          * Don't execute Win/Buf Enter/Leave autocommands here
          */
         ++autocmd_no_enter;
         ++autocmd_no_leave;
-#endif
         dorewind = TRUE;
         while (done++ < 1000)
         {
@@ -1655,9 +1512,7 @@ create_windows(parmp)
                 else
                     handle_swap_exists(NULL);
 #endif
-#if defined(FEAT_AUTOCMD)
                 dorewind = TRUE;                /* start again */
-#endif
             }
             ui_breakcheck();
             if (got_int)
@@ -1671,10 +1526,8 @@ create_windows(parmp)
         else
             curwin = firstwin;
         curbuf = curwin->w_buffer;
-#if defined(FEAT_AUTOCMD)
         --autocmd_no_enter;
         --autocmd_no_leave;
-#endif
     }
 }
 
@@ -1692,13 +1545,11 @@ edit_buffers(parmp, cwd)
     int         advance = TRUE;
     win_T       *win;
 
-#if defined(FEAT_AUTOCMD)
     /*
      * Don't execute Win/Buf Enter/Leave autocommands here
      */
     ++autocmd_no_enter;
     ++autocmd_no_leave;
-#endif
 
     /* When w_arg_idx is -1 remove the window (see create_windows()). */
     if (curwin->w_arg_idx == -1)
@@ -1779,29 +1630,13 @@ edit_buffers(parmp, cwd)
 
     if (parmp->window_layout == WIN_TABS)
         goto_tabpage(1);
-#if defined(FEAT_AUTOCMD)
     --autocmd_no_enter;
-#endif
 
     /* make the first window the current window */
     win = firstwin;
-#if defined(FEAT_QUICKFIX)
-    /* Avoid making a preview window the current window. */
-    while (win->w_p_pvw)
-    {
-        win = win->w_next;
-        if (win == NULL)
-        {
-            win = firstwin;
-            break;
-        }
-    }
-#endif
     win_enter(win, FALSE);
 
-#if defined(FEAT_AUTOCMD)
     --autocmd_no_leave;
-#endif
     TIME_MSG("editing files in windows");
     if (parmp->window_count > 1 && parmp->window_layout != WIN_TABS)
         win_equal(curwin, FALSE, 'b');  /* adjust heights */
@@ -1864,11 +1699,6 @@ exe_commands(parmp)
     if (!exmode_active)
         msg_scroll = FALSE;
 
-#if defined(FEAT_QUICKFIX)
-    /* When started with "-q errorfile" jump to first error again. */
-    if (parmp->edit_type == EDIT_QF)
-        qf_jump(NULL, 0, 0, FALSE);
-#endif
     TIME_MSG("executing command arguments");
 }
 
@@ -2062,9 +1892,7 @@ file_owned(fname)
     uid_t       uid = getuid();
 
     return !(mch_stat(fname, &s) != 0 || s.st_uid != uid
-#if defined(HAVE_LSTAT)
             || mch_lstat(fname, &s) != 0 || s.st_uid != uid
-#endif
             );
 }
 
@@ -2123,9 +1951,6 @@ usage()
         "[file ..]       edit specified file(s)",
         "-               read text from stdin",
         "-t tag          edit file where tag is defined",
-#if defined(FEAT_QUICKFIX)
-        "-q [errorfile]  edit file with first error"
-#endif
     };
 
     reset_signals();            /* kill us with CTRL-C here, if you like */
@@ -2153,9 +1978,7 @@ usage()
     main_msg(_("-m\t\t\tModifications (writing files) not allowed"));
     main_msg(_("-M\t\t\tModifications in text not allowed"));
     main_msg(_("-b\t\t\tBinary mode"));
-#if defined(FEAT_LISP)
     main_msg(_("-l\t\t\tLisp mode"));
-#endif
     main_msg(_("-C\t\t\tCompatible with Vi: 'compatible'"));
     main_msg(_("-N\t\t\tNot fully Vi compatible: 'nocompatible'"));
     main_msg(_("-V[N][fname]\t\tBe verbose [level N] [log messages to fname]"));
@@ -2164,9 +1987,7 @@ usage()
     main_msg(_("-r\t\t\tList swap files and exit"));
     main_msg(_("-r (with file name)\tRecover crashed session"));
     main_msg(_("-L\t\t\tSame as -r"));
-#if defined(FEAT_RIGHTLEFT)
     main_msg(_("-H\t\t\tStart in Hebrew mode"));
-#endif
     main_msg(_("-T <terminal>\tSet terminal type to <terminal>"));
     main_msg(_("-u <vimrc>\t\tUse <vimrc> instead of any .vimrc"));
     main_msg(_("--noplugin\t\tDon't load plugin scripts"));

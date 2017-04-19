@@ -42,9 +42,7 @@ do_debug(cmd)
     tasave_T    typeaheadbuf;
     int         typeahead_saved = FALSE;
     int         save_ignore_script = 0;
-#if defined(FEAT_EX_EXTRA)
     int         save_ex_normal_busy;
-#endif
     int         n;
     char_u      *cmdline = NULL;
     char_u      *p;
@@ -56,16 +54,6 @@ do_debug(cmd)
 #define CMD_FINISH      4
 #define CMD_QUIT        5
 #define CMD_INTERRUPT   6
-
-#if defined(ALWAYS_USE_GUI)
-    /* Can't do this when there is no terminal for input/output. */
-    if (!gui.in_use)
-    {
-        /* Break as soon as possible. */
-        debug_break_level = 9999;
-        return;
-    }
-#endif
 
     /* Make sure we are in raw mode and start termcap mode.  Might have side
      * effects... */
@@ -103,10 +91,8 @@ do_debug(cmd)
          * with the commands being executed.  Reset "ex_normal_busy" to avoid
          * the side effects of using ":normal". Save the stuff buffer and make
          * it empty. Set ignore_script to avoid reading from script input. */
-#if defined(FEAT_EX_EXTRA)
         save_ex_normal_busy = ex_normal_busy;
         ex_normal_busy = 0;
-#endif
         if (!debug_greedy)
         {
             save_typeahead(&typeaheadbuf);
@@ -122,9 +108,7 @@ do_debug(cmd)
             restore_typeahead(&typeaheadbuf);
             ignore_script = save_ignore_script;
         }
-#if defined(FEAT_EX_EXTRA)
         ex_normal_busy = save_ex_normal_busy;
-#endif
 
         cmdline_row = msg_row;
         if (cmdline != NULL)
@@ -206,8 +190,7 @@ do_debug(cmd)
             /* don't debug this command */
             n = debug_break_level;
             debug_break_level = -1;
-            (void)do_cmdline(cmdline, getexline, NULL,
-                                                DOCMD_VERBOSE|DOCMD_EXCRESET);
+            (void)do_cmdline(cmdline, getexline, NULL, DOCMD_VERBOSE|DOCMD_EXCRESET);
             debug_break_level = n;
 
             vim_free(cmdline);
@@ -712,7 +695,6 @@ dbg_breakpoint(name, lnum)
     debug_breakpoint_lnum = lnum;
 }
 
-#if defined(FEAT_RELTIME)
 /*
  * Store the current time in "tm".
  */
@@ -819,9 +801,6 @@ profile_zero(tm)
     tm->tv_sec = 0;
 }
 
-#endif
-
-#if defined(FEAT_SYN_HL) && defined(FEAT_RELTIME)
 #include <math.h>
 
 /*
@@ -843,7 +822,6 @@ profile_divide(tm, count, tm2)
         tm2->tv_usec = vim_round(usec - (tm2->tv_sec * 1000000.0));
     }
 }
-#endif
 
 /*
  * If 'autowrite' option set, try to write the file.
@@ -859,10 +837,6 @@ autowrite(buf, forceit)
     int         r;
 
     if (!(p_aw || p_awa) || !p_write
-#if defined(FEAT_QUICKFIX)
-            /* never autowrite a "nofile" or "nowrite" buffer */
-            || bt_dontwrite(buf)
-#endif
             || (!forceit && buf->b_p_ro) || buf->b_ffname == NULL)
         return FAIL;
     r = buf_write_all(buf, forceit);
@@ -888,11 +862,9 @@ autowrite_all()
         if (bufIsChanged(buf) && !buf->b_p_ro)
         {
             (void)buf_write_all(buf, FALSE);
-#if defined(FEAT_AUTOCMD)
             /* an autocommand may have deleted the buffer */
             if (!buf_valid(buf))
                 buf = firstbuf;
-#endif
         }
 }
 
@@ -920,21 +892,15 @@ check_changed(buf, flags)
 
             if (flags & CCGD_ALLBUF)
                 for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
-                    if (bufIsChanged(buf2)
-                                     && (buf2->b_ffname != NULL
-                                        ))
+                    if (bufIsChanged(buf2) && (buf2->b_ffname != NULL))
                         ++count;
-#if defined(FEAT_AUTOCMD)
             if (!buf_valid(buf))
                 /* Autocommand deleted buffer, oops!  It's not changed now. */
                 return FALSE;
-#endif
             dialog_changed(buf, count > 1);
-#if defined(FEAT_AUTOCMD)
             if (!buf_valid(buf))
                 /* Autocommand deleted buffer, oops!  It's not changed now. */
                 return FALSE;
-#endif
             return bufIsChanged(buf);
         }
 #endif
@@ -977,8 +943,7 @@ dialog_changed(buf, checkall)
 
     if (ret == VIM_YES)
     {
-        if (buf->b_fname != NULL && check_overwrite(&ea, buf,
-                                    buf->b_fname, buf->b_ffname, FALSE) == OK)
+        if (buf->b_fname != NULL && check_overwrite(&ea, buf, buf->b_fname, buf->b_ffname, FALSE) == OK)
             /* didn't hit Cancel */
             (void)buf_write_all(buf, FALSE);
     }
@@ -995,20 +960,15 @@ dialog_changed(buf, checkall)
          */
         for (buf2 = firstbuf; buf2 != NULL; buf2 = buf2->b_next)
         {
-            if (bufIsChanged(buf2)
-                    && (buf2->b_ffname != NULL
-                        )
-                    && !buf2->b_p_ro)
+            if (bufIsChanged(buf2) && (buf2->b_ffname != NULL) && !buf2->b_p_ro)
             {
                 if (buf2->b_fname != NULL && check_overwrite(&ea, buf2,
                                   buf2->b_fname, buf2->b_ffname, FALSE) == OK)
                     /* didn't hit Cancel */
                     (void)buf_write_all(buf2, FALSE);
-#if defined(FEAT_AUTOCMD)
                 /* an autocommand may have deleted the buffer */
                 if (!buf_valid(buf2))
                     buf2 = firstbuf;
-#endif
             }
         }
     }
@@ -1157,13 +1117,11 @@ check_changed_any(hidden)
             if (wp->w_buffer == buf)
             {
                 goto_tabpage_win(tp, wp);
-#if defined(FEAT_AUTOCMD)
                 /* Paranoia: did autocms wipe out the buffer with changes? */
                 if (!buf_valid(buf))
                 {
                     goto theend;
                 }
-#endif
                 goto buf_found;
             }
 buf_found:
@@ -1202,20 +1160,16 @@ buf_write_all(buf, forceit)
     int         forceit;
 {
     int     retval;
-#if defined(FEAT_AUTOCMD)
     buf_T       *old_curbuf = curbuf;
-#endif
 
     retval = (buf_write(buf, buf->b_ffname, buf->b_fname,
                                    (linenr_T)1, buf->b_ml.ml_line_count, NULL,
                                                   FALSE, forceit, TRUE, FALSE));
-#if defined(FEAT_AUTOCMD)
     if (curbuf != old_curbuf)
     {
         msg_source(hl_attr(HLF_W));
         MSG(_("Warning: Entered other buffer unexpectedly (check autocommands)"));
     }
-#endif
     return retval;
 }
 
@@ -1297,7 +1251,6 @@ get_arglist(gap, str)
     return OK;
 }
 
-#if defined(FEAT_QUICKFIX) || defined(FEAT_SYN_HL)
 /*
  * Parse a list of arguments (file names), expand them and return in
  * "fnames[fcountp]".  When "wig" is TRUE, removes files matching 'wildignore'.
@@ -1325,7 +1278,6 @@ get_arglist_exp(str, fcountp, fnamesp, wig)
     ga_clear(&ga);
     return i;
 }
-#endif
 
 /*
  * "what" == AL_SET: Redefine the argument list to 'str'.
@@ -1381,8 +1333,7 @@ do_arglist(str, what, after)
 
             didone = FALSE;
             for (match = 0; match < ARGCOUNT; ++match)
-                if (vim_regexec(&regmatch, alist_name(&ARGLIST[match]),
-                                                                  (colnr_T)0))
+                if (vim_regexec(&regmatch, alist_name(&ARGLIST[match]), (colnr_T)0))
                 {
                     didone = TRUE;
                     vim_free(ARGLIST[match].ae_fname);
@@ -1490,9 +1441,7 @@ check_arg_idx(win)
         /* We are editing the current entry in the argument list.
          * Set "arg_had_last" if it's also the last one */
         win->w_arg_idx_invalid = FALSE;
-        if (win->w_arg_idx == WARGCOUNT(win) - 1
-                && win->w_alist == &global_alist
-                )
+        if (win->w_arg_idx == WARGCOUNT(win) - 1 && win->w_alist == &global_alist)
             arg_had_last = TRUE;
     }
 }
@@ -1678,9 +1627,7 @@ do_argfile(eap, argn)
         }
 
         curwin->w_arg_idx = argn;
-        if (argn == ARGCOUNT - 1
-                && curwin->w_alist == &global_alist
-           )
+        if (argn == ARGCOUNT - 1 && curwin->w_alist == &global_alist)
             arg_had_last = TRUE;
 
         /* Edit the file; always use the last known line number.
@@ -1775,9 +1722,7 @@ ex_argadd(eap)
 {
     do_arglist(eap->arg, AL_ADD,
                eap->addr_count > 0 ? (int)eap->line2 : curwin->w_arg_idx + 1);
-#if defined(FEAT_TITLE)
     maketitle();
-#endif
 }
 
 /*
@@ -1815,9 +1760,7 @@ ex_argdelete(eap)
         EMSG(_(e_argreq));
     else
         do_arglist(eap->arg, AL_DEL, 0);
-#if defined(FEAT_TITLE)
     maketitle();
-#endif
 }
 
 /*
@@ -1832,17 +1775,13 @@ ex_listdo(eap)
     tabpage_T   *tp;
     buf_T       *buf = curbuf;
     int         next_fnum = 0;
-#if defined(FEAT_AUTOCMD) && defined(FEAT_SYN_HL)
     char_u      *save_ei = NULL;
-#endif
     char_u      *p_shm_save;
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_SYN_HL)
     if (eap->cmdidx != CMD_windo && eap->cmdidx != CMD_tabdo)
         /* Don't do syntax HL autocommands.  Skipping the syntax file is a
          * great speed improvement. */
         save_ei = au_event_disable(",Syntax");
-#endif
 #if defined(FEAT_CLIPBOARD)
     start_global_changes();
 #endif
@@ -1948,8 +1887,7 @@ ex_listdo(eap)
             ++i;
 
             /* execute the command */
-            do_cmdline(eap->arg, eap->getline, eap->cookie,
-                                                DOCMD_VERBOSE + DOCMD_NOWAIT);
+            do_cmdline(eap->arg, eap->getline, eap->cookie, DOCMD_VERBOSE + DOCMD_NOWAIT);
 
             if (eap->cmdidx == CMD_bufdo)
             {
@@ -1995,14 +1933,11 @@ ex_listdo(eap)
         listcmd_busy = FALSE;
     }
 
-#if defined(FEAT_AUTOCMD) && defined(FEAT_SYN_HL)
     if (save_ei != NULL)
     {
         au_event_restore(save_ei);
-        apply_autocmds(EVENT_SYNTAX, curbuf->b_p_syn,
-                                               curbuf->b_fname, TRUE, curbuf);
+        apply_autocmds(EVENT_SYNTAX, curbuf->b_p_syn, curbuf->b_fname, TRUE, curbuf);
     }
-#endif
 #if defined(FEAT_CLIPBOARD)
     end_global_changes();
 #endif
@@ -2111,8 +2046,7 @@ ex_compiler(eap)
             {
                 if (old_cur_comp != NULL)
                 {
-                    set_internal_string_var((char_u *)"g:current_compiler",
-                                                                old_cur_comp);
+                    set_internal_string_var((char_u *)"g:current_compiler", old_cur_comp);
                     vim_free(old_cur_comp);
                 }
                 else
@@ -2193,8 +2127,7 @@ do_in_runtimepath(name, all, callback, cookie)
         if (p_verbose > 1 && name != NULL)
         {
             verbose_enter();
-            smsg((char_u *)_("Searching for \"%s\" in \"%s\""),
-                                                 (char *)name, (char *)p_rtp);
+            smsg((char_u *)_("Searching for \"%s\" in \"%s\""), (char *)name, (char *)p_rtp);
             verbose_leave();
         }
 
@@ -2220,8 +2153,7 @@ do_in_runtimepath(name, all, callback, cookie)
                 while (*np != NUL && (all || !did_one))
                 {
                     /* Append the pattern from "name" to buf[]. */
-                    copy_option_part(&np, tail, (int)(MAXPATHL - (tail - buf)),
-                                                                       "\t ");
+                    copy_option_part(&np, tail, (int)(MAXPATHL - (tail - buf)), "\t ");
 
                     if (p_verbose > 2)
                     {
@@ -2231,8 +2163,7 @@ do_in_runtimepath(name, all, callback, cookie)
                     }
 
                     /* Expand wildcards, invoke the callback for each match. */
-                    if (gen_expand_wildcards(1, &buf, &num_files, &files,
-                                                               EW_FILE) == OK)
+                    if (gen_expand_wildcards(1, &buf, &num_files, &files, EW_FILE) == OK)
                     {
                         for (i = 0; i < num_files; ++i)
                         {
@@ -2259,7 +2190,6 @@ do_in_runtimepath(name, all, callback, cookie)
     return did_one ? OK : FAIL;
 }
 
-#if defined(FEAT_AUTOCMD)
 /*
  * ":options"
  */
@@ -2269,7 +2199,6 @@ ex_options(eap)
 {
     cmd_source((char_u *)SYS_OPTWIN_FILE, NULL);
 }
-#endif
 
 /*
  * ":source {fname}"
@@ -2298,9 +2227,7 @@ cmd_source(fname, eap)
          * - another command follows
          * - inside a loop
          */
-        openscript(fname, global_busy || listcmd_busy || eap->nextcmd != NULL
-                                                 || eap->cstack->cs_idx >= 0
-                                                 );
+        openscript(fname, global_busy || listcmd_busy || eap->nextcmd != NULL || eap->cstack->cs_idx >= 0);
 
     /* ":source" read ex commands */
     else if (do_source(fname, FALSE, DOSO_NONE) == FAIL)
@@ -2321,10 +2248,6 @@ struct source_cookie
     FILE        *fp;            /* opened file for sourcing */
     char_u      *nextline;      /* if not NULL: line that was read ahead */
     int         finished;       /* ":finish" used */
-#if defined(USE_CRNL) || defined(USE_CR)
-    int         fileformat;     /* EOL_UNKNOWN, EOL_UNIX or EOL_DOS */
-    int         error;          /* TRUE if LF found after CR-LF */
-#endif
     linenr_T    breakpoint;     /* next line with breakpoint or zero */
     char_u      *fname;         /* name of sourced file */
     int         dbg_tick;       /* debug_tick when breakpoint was set */
@@ -2364,7 +2287,6 @@ source_level(cookie)
 
 static char_u *get_one_sourceline(struct source_cookie *sp);
 
-#if defined(HAVE_FD_CLOEXEC)
 #define USE_FOPEN_NOINH
 static FILE *fopen_noinh_readbin(char *filename);
 
@@ -2381,17 +2303,14 @@ fopen_noinh_readbin(filename)
     if (fd_tmp == -1)
         return NULL;
 
-#if defined(HAVE_FD_CLOEXEC)
     {
         int fdflags = fcntl(fd_tmp, F_GETFD);
         if (fdflags >= 0 && (fdflags & FD_CLOEXEC) == 0)
             fcntl(fd_tmp, F_SETFD, fdflags | FD_CLOEXEC);
     }
-#endif
 
     return fdopen(fd_tmp, READBIN);
 }
-#endif
 
 /*
  * do_source: Read the file "fname" and execute its lines as EX commands.
@@ -2434,11 +2353,9 @@ do_source(fname, check_other, is_vimrc)
         goto theend;
     }
 
-#if defined(FEAT_AUTOCMD)
     /* Apply SourceCmd autocommands, they should get the file and source it. */
     if (has_autocmd(EVENT_SOURCECMD, fname_exp, NULL)
-            && apply_autocmds(EVENT_SOURCECMD, fname_exp, fname_exp,
-                                                               FALSE, curbuf))
+            && apply_autocmds(EVENT_SOURCECMD, fname_exp, fname_exp, FALSE, curbuf))
     {
         retval = aborting() ? FAIL : OK;
         goto theend;
@@ -2446,7 +2363,6 @@ do_source(fname, check_other, is_vimrc)
 
     /* Apply SourcePre autocommands, they may get the file. */
     apply_autocmds(EVENT_SOURCEPRE, fname_exp, fname_exp, FALSE, curbuf);
-#endif
 
 #if defined(USE_FOPEN_NOINH)
     cookie.fp = fopen_noinh_readbin((char *)fname_exp);
@@ -2485,8 +2401,7 @@ do_source(fname, check_other, is_vimrc)
             if (sourcing_name == NULL)
                 smsg((char_u *)_("could not source \"%s\""), fname);
             else
-                smsg((char_u *)_("line %ld: could not source \"%s\""),
-                                                        sourcing_lnum, fname);
+                smsg((char_u *)_("line %ld: could not source \"%s\""), sourcing_lnum, fname);
             verbose_leave();
         }
         goto theend;
@@ -2503,32 +2418,13 @@ do_source(fname, check_other, is_vimrc)
         if (sourcing_name == NULL)
             smsg((char_u *)_("sourcing \"%s\""), fname);
         else
-            smsg((char_u *)_("line %ld: sourcing \"%s\""),
-                                                        sourcing_lnum, fname);
+            smsg((char_u *)_("line %ld: sourcing \"%s\""), sourcing_lnum, fname);
         verbose_leave();
     }
     if (is_vimrc == DOSO_VIMRC)
         vimrc_found(fname_exp, (char_u *)"MYVIMRC");
     else if (is_vimrc == DOSO_GVIMRC)
         vimrc_found(fname_exp, (char_u *)"MYGVIMRC");
-
-#if defined(USE_CRNL)
-    /* If no automatic file format: Set default to CR-NL. */
-    if (*p_ffs == NUL)
-        cookie.fileformat = EOL_DOS;
-    else
-        cookie.fileformat = EOL_UNKNOWN;
-    cookie.error = FALSE;
-#endif
-
-#if defined(USE_CR)
-    /* If no automatic file format: Set default to CR. */
-    if (*p_ffs == NUL)
-        cookie.fileformat = EOL_MAC;
-    else
-        cookie.fileformat = EOL_UNKNOWN;
-    cookie.error = FALSE;
-#endif
 
     cookie.nextline = NULL;
     cookie.finished = FALSE;
@@ -2596,8 +2492,7 @@ do_source(fname, check_other, is_vimrc)
     if (current_SID == 0)
     {
         current_SID = ++last_current_SID;
-        if (ga_grow(&script_items, (int)(current_SID - script_items.ga_len))
-                                                                      == FAIL)
+        if (ga_grow(&script_items, (int)(current_SID - script_items.ga_len)) == FAIL)
             goto almosttheend;
         while (script_items.ga_len < current_SID)
         {
@@ -2623,8 +2518,7 @@ do_source(fname, check_other, is_vimrc)
     /*
      * Call do_cmdline, which will call getsourceline() to get the lines.
      */
-    do_cmdline(firstline, getsourceline, (void *)&cookie,
-                                     DOCMD_VERBOSE|DOCMD_NOWAIT|DOCMD_REPEAT);
+    do_cmdline(firstline, getsourceline, (void *)&cookie, DOCMD_VERBOSE|DOCMD_NOWAIT|DOCMD_REPEAT);
     retval = OK;
 
     if (got_int)
@@ -2673,8 +2567,7 @@ ex_scriptnames(eap)
     for (i = 1; i <= script_items.ga_len && !got_int; ++i)
         if (SCRIPT_ITEM(i).sn_name != NULL)
         {
-            home_replace(NULL, SCRIPT_ITEM(i).sn_name,
-                                                    NameBuff, MAXPATHL, TRUE);
+            home_replace(NULL, SCRIPT_ITEM(i).sn_name, NameBuff, MAXPATHL, TRUE);
             smsg((char_u *)"%3d: %s", i, NameBuff);
         }
 }
@@ -2708,48 +2601,6 @@ free_scriptnames()
     for (i = script_items.ga_len; i > 0; --i)
         vim_free(SCRIPT_ITEM(i).sn_name);
     ga_clear(&script_items);
-}
-#endif
-
-#if defined(USE_CR)
-
-/*
- * Version of fgets() which also works for lines ending in a <CR> only
- * (Macintosh format).
- * For older versions of the Metrowerks library.
- * At least CodeWarrior 9 needed this code.
- */
-    char *
-fgets_cr(s, n, stream)
-    char        *s;
-    int         n;
-    FILE        *stream;
-{
-    int c = 0;
-    int char_read = 0;
-
-    while (!feof(stream) && c != '\r' && c != '\n' && char_read < n - 1)
-    {
-        c = fgetc(stream);
-        s[char_read++] = c;
-        /* If the file is in DOS format, we need to skip a NL after a CR.  I
-         * thought it was the other way around, but this appears to work... */
-        if (c == '\n')
-        {
-            c = fgetc(stream);
-            if (c != '\r')
-                ungetc(c, stream);
-        }
-    }
-
-    s[char_read] = 0;
-    if (char_read == 0)
-        return NULL;
-
-    if (feof(stream) && char_read == 1)
-        return NULL;
-
-    return s;
 }
 #endif
 
@@ -2868,12 +2719,6 @@ get_one_sourceline(sp)
     int                 len;
     int                 c;
     char_u              *buf;
-#if defined(USE_CRNL)
-    int                 has_cr;         /* CR-LF found */
-#endif
-#if defined(USE_CR)
-    char_u              *scan;
-#endif
     int                 have_read = FALSE;
 
     /* use a growarray to store the sourced line */
@@ -2890,58 +2735,9 @@ get_one_sourceline(sp)
             break;
         buf = (char_u *)ga.ga_data;
 
-#if defined(USE_CR)
-        if (sp->fileformat == EOL_MAC)
-        {
-            if (fgets_cr((char *)buf + ga.ga_len, ga.ga_maxlen - ga.ga_len,
-                                                              sp->fp) == NULL)
-                break;
-        }
-        else
-#endif
-            if (fgets((char *)buf + ga.ga_len, ga.ga_maxlen - ga.ga_len,
-                                                              sp->fp) == NULL)
+            if (fgets((char *)buf + ga.ga_len, ga.ga_maxlen - ga.ga_len, sp->fp) == NULL)
                 break;
         len = ga.ga_len + (int)STRLEN(buf + ga.ga_len);
-#if defined(USE_CRNL)
-        /* Ignore a trailing CTRL-Z, when in Dos mode.  Only recognize the
-         * CTRL-Z by its own, or after a NL. */
-        if (       (len == 1 || (len >= 2 && buf[len - 2] == '\n'))
-                && sp->fileformat == EOL_DOS
-                && buf[len - 1] == Ctrl_Z)
-        {
-            buf[len - 1] = NUL;
-            break;
-        }
-#endif
-
-#if defined(USE_CR)
-        /* If the read doesn't stop on a new line, and there's
-         * some CR then we assume a Mac format */
-        if (sp->fileformat == EOL_UNKNOWN)
-        {
-            if (buf[len - 1] != '\n' && vim_strchr(buf, '\r') != NULL)
-                sp->fileformat = EOL_MAC;
-            else
-                sp->fileformat = EOL_UNIX;
-        }
-
-        if (sp->fileformat == EOL_MAC)
-        {
-            scan = vim_strchr(buf, '\r');
-
-            if (scan != NULL)
-            {
-                *scan = '\n';
-                if (*(scan + 1) != 0)
-                {
-                    *(scan + 1) = 0;
-                    fseek(sp->fp, (long)(scan - buf - len + 1), SEEK_CUR);
-                }
-            }
-            len = STRLEN(buf);
-        }
-#endif
 
         have_read = TRUE;
         ga.ga_len = len;
@@ -2952,36 +2748,6 @@ get_one_sourceline(sp)
 
         if (len >= 1 && buf[len - 1] == '\n')   /* remove trailing NL */
         {
-#if defined(USE_CRNL)
-            has_cr = (len >= 2 && buf[len - 2] == '\r');
-            if (sp->fileformat == EOL_UNKNOWN)
-            {
-                if (has_cr)
-                    sp->fileformat = EOL_DOS;
-                else
-                    sp->fileformat = EOL_UNIX;
-            }
-
-            if (sp->fileformat == EOL_DOS)
-            {
-                if (has_cr)         /* replace trailing CR */
-                {
-                    buf[len - 2] = '\n';
-                    --len;
-                    --ga.ga_len;
-                }
-                else        /* lines like ":map xx yy^M" will have failed */
-                {
-                    if (!sp->error)
-                    {
-                        msg_source(hl_attr(HLF_W));
-                        EMSG(_("W15: Warning: Wrong line separator, ^M may be missing"));
-                    }
-                    sp->error = TRUE;
-                    sp->fileformat = EOL_UNIX;
-                }
-            }
-#endif
             /* The '\n' is escaped if there is an odd number of ^V's just
              * before it, first set "c" just before the 'V's and then check
              * len&c parities (is faster than ((len-c)%2 == 0)) -- Acevedo */
@@ -3070,8 +2836,7 @@ do_finish(eap, reanimate)
     int         idx;
 
     if (reanimate)
-        ((struct source_cookie *)getline_cookie(eap->getline,
-                                              eap->cookie))->finished = FALSE;
+        ((struct source_cookie *)getline_cookie(eap->getline, eap->cookie))->finished = FALSE;
 
     /*
      * Cleanup (and inactivate) conditionals, but stop when a try conditional
@@ -3086,8 +2851,7 @@ do_finish(eap, reanimate)
         report_make_pending(CSTP_FINISH, NULL);
     }
     else
-        ((struct source_cookie *)getline_cookie(eap->getline,
-                                               eap->cookie))->finished = TRUE;
+        ((struct source_cookie *)getline_cookie(eap->getline, eap->cookie))->finished = TRUE;
 }
 
 /*
@@ -3129,26 +2893,7 @@ ex_checktime(eap)
 }
 #endif
 
-#if defined(HAVE_LOCALE_H)
-#define HAVE_GET_LOCALE_VAL
-static char *get_locale_val(int what);
-
-    static char *
-get_locale_val(what)
-    int         what;
-{
-    char        *loc;
-
-    /* Obtain the locale value from the libraries.
-     */
-    loc = setlocale(what, NULL);
-
-    return loc;
-}
-#endif
-
 /* Complicated #if; matches with where get_mess_env() is used below. */
-#if (!(defined(HAVE_LOCALE_H) && defined(LC_MESSAGES))) || (defined(HAVE_LOCALE_H) && !defined(LC_MESSAGES))
 static char_u *get_mess_env(void);
 
 /*
@@ -3176,7 +2921,6 @@ get_mess_env()
     }
     return p;
 }
-#endif
 
 /*
  * Set the "v:lang" variable according to the current locale setting.
@@ -3209,229 +2953,3 @@ set_lang_var()
 #endif
     set_vim_var_string(VV_LC_TIME, loc, -1);
 }
-
-#if defined(HAVE_LOCALE_H)
-/*
- * ":language":  Set the language (locale).
- */
-    void
-ex_language(eap)
-    exarg_T     *eap;
-{
-    char        *loc;
-    char_u      *p;
-    char_u      *name;
-    int         what = LC_ALL;
-    char        *whatstr = "";
-#if defined(LC_MESSAGES)
-#define VIM_LC_MESSAGES LC_MESSAGES
-#else
-#define VIM_LC_MESSAGES 6789
-#endif
-
-    name = eap->arg;
-
-    /* Check for "messages {name}", "ctype {name}" or "time {name}" argument.
-     * Allow abbreviation, but require at least 3 characters to avoid
-     * confusion with a two letter language name "me" or "ct". */
-    p = skiptowhite(eap->arg);
-    if ((*p == NUL || vim_iswhite(*p)) && p - eap->arg >= 3)
-    {
-        if (STRNICMP(eap->arg, "messages", p - eap->arg) == 0)
-        {
-            what = VIM_LC_MESSAGES;
-            name = skipwhite(p);
-            whatstr = "messages ";
-        }
-        else if (STRNICMP(eap->arg, "ctype", p - eap->arg) == 0)
-        {
-            what = LC_CTYPE;
-            name = skipwhite(p);
-            whatstr = "ctype ";
-        }
-        else if (STRNICMP(eap->arg, "time", p - eap->arg) == 0)
-        {
-            what = LC_TIME;
-            name = skipwhite(p);
-            whatstr = "time ";
-        }
-    }
-
-    if (*name == NUL)
-    {
-#if !defined(LC_MESSAGES)
-        if (what == VIM_LC_MESSAGES)
-            p = get_mess_env();
-        else
-#endif
-            p = (char_u *)setlocale(what, NULL);
-        if (p == NULL || *p == NUL)
-            p = (char_u *)"Unknown";
-        smsg((char_u *)_("Current %slanguage: \"%s\""), whatstr, p);
-    }
-    else
-    {
-#if !defined(LC_MESSAGES)
-        if (what == VIM_LC_MESSAGES)
-            loc = "";
-        else
-#endif
-        {
-            loc = setlocale(what, (char *)name);
-#if defined(LC_NUMERIC)
-            /* Make sure strtod() uses a decimal point, not a comma. */
-            setlocale(LC_NUMERIC, "C");
-#endif
-        }
-        if (loc == NULL)
-            EMSG2(_("E197: Cannot set language to \"%s\""), name);
-        else
-        {
-            /* Reset $LC_ALL, otherwise it would overrule everything. */
-            vim_setenv((char_u *)"LC_ALL", (char_u *)"");
-
-            if (what != LC_TIME)
-            {
-                /* Tell gettext() what to translate to.  It apparently doesn't
-                 * use the currently effective locale.  Also do this when
-                 * FEAT_GETTEXT isn't defined, so that shell commands use this
-                 * value. */
-                if (what == LC_ALL)
-                {
-                    vim_setenv((char_u *)"LANG", name);
-
-                    /* Clear $LANGUAGE because GNU gettext uses it. */
-                    vim_setenv((char_u *)"LANGUAGE", (char_u *)"");
-                }
-                if (what != LC_CTYPE)
-                {
-                    char_u      *mname;
-                    mname = name;
-                    vim_setenv((char_u *)"LC_MESSAGES", mname);
-                }
-            }
-
-            /* Set v:lang, v:lc_time and v:ctype to the final result. */
-            set_lang_var();
-#if defined(FEAT_TITLE)
-            maketitle();
-#endif
-        }
-    }
-}
-
-#if defined(FEAT_CMDL_COMPL)
-
-static char_u   **locales = NULL;       /* Array of all available locales */
-static int      did_init_locales = FALSE;
-
-static void init_locales(void);
-static char_u **find_locales(void);
-
-/*
- * Lazy initialization of all available locales.
- */
-    static void
-init_locales()
-{
-    if (!did_init_locales)
-    {
-        did_init_locales = TRUE;
-        locales = find_locales();
-    }
-}
-
-/* Return an array of strings for all available locales + NULL for the
- * last element.  Return NULL in case of error. */
-    static char_u **
-find_locales()
-{
-    garray_T    locales_ga;
-    char_u      *loc;
-
-    /* Find all available locales by running command "locale -a".  If this
-     * doesn't work we won't have completion. */
-    char_u *locale_a = get_cmd_output((char_u *)"locale -a",
-                                                    NULL, SHELL_SILENT, NULL);
-    if (locale_a == NULL)
-        return NULL;
-    ga_init2(&locales_ga, sizeof(char_u *), 20);
-
-    /* Transform locale_a string where each locale is separated by "\n"
-     * into an array of locale strings. */
-    loc = (char_u *)strtok((char *)locale_a, "\n");
-
-    while (loc != NULL)
-    {
-        if (ga_grow(&locales_ga, 1) == FAIL)
-            break;
-        loc = vim_strsave(loc);
-        if (loc == NULL)
-            break;
-
-        ((char_u **)locales_ga.ga_data)[locales_ga.ga_len++] = loc;
-        loc = (char_u *)strtok(NULL, "\n");
-    }
-    vim_free(locale_a);
-    if (ga_grow(&locales_ga, 1) == FAIL)
-    {
-        ga_clear(&locales_ga);
-        return NULL;
-    }
-    ((char_u **)locales_ga.ga_data)[locales_ga.ga_len] = NULL;
-    return (char_u **)locales_ga.ga_data;
-}
-
-#if defined(EXITFREE)
-    void
-free_locales()
-{
-    int                 i;
-    if (locales != NULL)
-    {
-        for (i = 0; locales[i] != NULL; i++)
-            vim_free(locales[i]);
-        vim_free(locales);
-        locales = NULL;
-    }
-}
-#endif
-
-/*
- * Function given to ExpandGeneric() to obtain the possible arguments of the
- * ":language" command.
- */
-    char_u *
-get_lang_arg(xp, idx)
-    expand_T    *xp UNUSED;
-    int         idx;
-{
-    if (idx == 0)
-        return (char_u *)"messages";
-    if (idx == 1)
-        return (char_u *)"ctype";
-    if (idx == 2)
-        return (char_u *)"time";
-
-    init_locales();
-    if (locales == NULL)
-        return NULL;
-    return locales[idx - 3];
-}
-
-/*
- * Function given to ExpandGeneric() to obtain the available locales.
- */
-    char_u *
-get_locales(xp, idx)
-    expand_T    *xp UNUSED;
-    int         idx;
-{
-    init_locales();
-    if (locales == NULL)
-        return NULL;
-    return locales[idx];
-}
-#endif
-
-#endif

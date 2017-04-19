@@ -143,9 +143,7 @@ static int seen_b_u_newhead;
 static int header_count;
 
     static void
-u_check_tree(u_header_T *uhp,
-        u_header_T *exp_uh_next,
-        u_header_T *exp_uh_alt_prev)
+u_check_tree(u_header_T *uhp, u_header_T *exp_uh_next, u_header_T *exp_uh_alt_prev)
 {
     u_entry_T *uep;
 
@@ -171,14 +169,12 @@ u_check_tree(u_header_T *uhp,
         if (uhp->uh_next.ptr != exp_uh_next)
         {
             EMSG("uh_next wrong");
-            smsg((char_u *)"expected: 0x%x, actual: 0x%x",
-                                               exp_uh_next, uhp->uh_next.ptr);
+            smsg((char_u *)"expected: 0x%x, actual: 0x%x", exp_uh_next, uhp->uh_next.ptr);
         }
         if (uhp->uh_alt_prev.ptr != exp_uh_alt_prev)
         {
             EMSG("uh_alt_prev wrong");
-            smsg((char_u *)"expected: 0x%x, actual: 0x%x",
-                                       exp_uh_alt_prev, uhp->uh_alt_prev.ptr);
+            smsg((char_u *)"expected: 0x%x, actual: 0x%x", exp_uh_alt_prev, uhp->uh_alt_prev.ptr);
         }
 
         /* Check the undo tree at this header. */
@@ -230,8 +226,7 @@ u_check(int newhead_may_be_NULL)
     int
 u_save_cursor()
 {
-    return (u_save((linenr_T)(curwin->w_cursor.lnum - 1),
-                                      (linenr_T)(curwin->w_cursor.lnum + 1)));
+    return (u_save((linenr_T)(curwin->w_cursor.lnum - 1), (linenr_T)(curwin->w_cursor.lnum + 1)));
 }
 
 /*
@@ -323,14 +318,12 @@ undo_allowed()
         return FALSE;
     }
 
-#if defined(HAVE_SANDBOX)
     /* In the sandbox it's not allowed to change the text. */
     if (sandbox != 0)
     {
         EMSG(_(e_sandbox));
         return FALSE;
     }
-#endif
 
     /* Don't allow changes in the buffer while editing the cmdline.  The
      * caller of getcmdline() may get confused. */
@@ -384,7 +377,6 @@ u_savecommon(top, bot, newbot, reload)
         if (!undo_allowed())
             return FAIL;
 
-#if defined(FEAT_AUTOCMD)
         /*
          * Saving text for undo means we are going to make a change.  Give a
          * warning for a read-only file before making the change, so that the
@@ -399,7 +391,6 @@ u_savecommon(top, bot, newbot, reload)
             EMSG(_("E881: Line count changed unexpectedly"));
             return FAIL;
         }
-#endif
     }
 
 #if defined(U_DEBUG)
@@ -413,10 +404,8 @@ u_savecommon(top, bot, newbot, reload)
      */
     if (curbuf->b_u_synced)
     {
-#if defined(FEAT_JUMPLIST)
         /* Need to create new entry in b_changelist. */
         curbuf->b_new_change = TRUE;
-#endif
 
         if (get_undolevel() >= 0)
         {
@@ -506,12 +495,10 @@ u_savecommon(top, bot, newbot, reload)
         uhp->uh_entry = NULL;
         uhp->uh_getbot_entry = NULL;
         uhp->uh_cursor = curwin->w_cursor;      /* save cursor pos. for undo */
-#if defined(FEAT_VIRTUALEDIT)
         if (virtual_active() && curwin->w_cursor.coladd > 0)
             uhp->uh_cursor_vcol = getviscol();
         else
             uhp->uh_cursor_vcol = -1;
-#endif
 
         /* save changed and buffer empty flag for undo */
         uhp->uh_flags = (curbuf->b_changed ? UH_CHANGED : 0) +
@@ -669,8 +656,7 @@ u_savecommon(top, bot, newbot, reload)
 
 nomem:
     msg_silent = 0;     /* must display the prompt */
-    if (ask_yesno((char_u *)_("No undo possible; continue anyway"), TRUE)
-                                                                       == 'y')
+    if (ask_yesno((char_u *)_("No undo possible; continue anyway"), TRUE) == 'y')
     {
         undo_off = TRUE;            /* will be reset when character typed */
         return OK;
@@ -738,19 +724,15 @@ u_get_undo_file_name(buf_ffname, reading)
     char_u      *p;
     struct stat st;
     char_u      *ffname = buf_ffname;
-#if defined(HAVE_READLINK)
     char_u      fname_buf[MAXPATHL];
-#endif
 
     if (ffname == NULL)
         return NULL;
 
-#if defined(HAVE_READLINK)
     /* Expand symlink in the file name, so that we put the undo file with the
      * actual file instead of with the symlink. */
     if (resolve_symlink(ffname, fname_buf) == OK)
         ffname = fname_buf;
-#endif
 
     /* Loop over 'undodir'.  When reading find the first file that exists.
      * When not reading use the first directory that exists or ".". */
@@ -1031,11 +1013,7 @@ serialize_uhp(bi, uhp)
     put_header_ptr(bi, uhp->uh_alt_prev.ptr);
     undo_write_bytes(bi, uhp->uh_seq, 4);
     serialize_pos(bi, uhp->uh_cursor);
-#if defined(FEAT_VIRTUALEDIT)
     undo_write_bytes(bi, (long_u)uhp->uh_cursor_vcol, 4);
-#else
-    undo_write_bytes(bi, (long_u)0, 4);
-#endif
     undo_write_bytes(bi, (long_u)uhp->uh_flags, 2);
     /* Assume NMARKS will stay the same. */
     for (i = 0; i < NMARKS; ++i)
@@ -1092,11 +1070,7 @@ unserialize_uhp(bi, file_name)
         return NULL;
     }
     unserialize_pos(bi, &uhp->uh_cursor);
-#if defined(FEAT_VIRTUALEDIT)
     uhp->uh_cursor_vcol = undo_read_4c(bi);
-#else
-    (void)undo_read_4c(bi);
-#endif
     uhp->uh_flags = undo_read_2c(bi);
     for (i = 0; i < NMARKS; ++i)
         unserialize_pos(bi, &uhp->uh_namedm[i]);
@@ -1244,11 +1218,7 @@ serialize_pos(bi, pos)
 {
     undo_write_bytes(bi, (long_u)pos.lnum, 4);
     undo_write_bytes(bi, (long_u)pos.col, 4);
-#if defined(FEAT_VIRTUALEDIT)
     undo_write_bytes(bi, (long_u)pos.coladd, 4);
-#else
-    undo_write_bytes(bi, (long_u)0, 4);
-#endif
 }
 
 /*
@@ -1265,13 +1235,9 @@ unserialize_pos(bi, pos)
     pos->col = undo_read_4c(bi);
     if (pos->col < 0)
         pos->col = 0;
-#if defined(FEAT_VIRTUALEDIT)
     pos->coladd = undo_read_4c(bi);
     if (pos->coladd < 0)
         pos->coladd = 0;
-#else
-    (void)undo_read_4c(bi);
-#endif
 }
 
 /*
@@ -1386,8 +1352,7 @@ u_write_undo(name, forceit, buf, hash)
                     if (name == NULL)
                         verbose_enter();
                     smsg((char_u *)
-                      _("Will not overwrite with undo file, cannot read: %s"),
-                                                                   file_name);
+                      _("Will not overwrite with undo file, cannot read: %s"), file_name);
                     if (name == NULL)
                         verbose_leave();
                 }
@@ -1408,8 +1373,7 @@ u_write_undo(name, forceit, buf, hash)
                         if (name == NULL)
                             verbose_enter();
                         smsg((char_u *)
-                        _("Will not overwrite, this is not an undo file: %s"),
-                                                                   file_name);
+                        _("Will not overwrite, this is not an undo file: %s"), file_name);
                         if (name == NULL)
                             verbose_leave();
                     }
@@ -1457,9 +1421,7 @@ u_write_undo(name, forceit, buf, hash)
     if (st_old_valid
             && mch_stat((char *)file_name, &st_new) >= 0
             && st_new.st_gid != st_old.st_gid
-#if defined(HAVE_FCHOWN) /* sequent-ptx lacks fchown() */
             && fchown(fd, (uid_t)-1, st_old.st_gid) != 0
-#endif
        )
         mch_setperm(file_name, (perm & 0707) | ((perm & 07) << 3));
 
@@ -1593,8 +1555,7 @@ u_read_undo(name, hash, orig_name)
             if (p_verbose > 0)
             {
                 verbose_enter();
-                smsg((char_u *)_("Not reading undo file, owner differs: %s"),
-                                                                   file_name);
+                smsg((char_u *)_("Not reading undo file, owner differs: %s"), file_name);
                 verbose_leave();
             }
             return;
@@ -2347,11 +2308,9 @@ u_undoredo(undo)
     int         empty_buffer;               /* buffer became empty */
     u_header_T  *curhead = curbuf->b_u_curhead;
 
-#if defined(FEAT_AUTOCMD)
     /* Don't want autocommands using the undo structures here, they are
      * invalid till the end. */
     block_autocmds();
-#endif
 
 #if defined(U_DEBUG)
     u_check(FALSE);
@@ -2380,9 +2339,7 @@ u_undoredo(undo)
         if (top > curbuf->b_ml.ml_line_count || top >= bot
                                       || bot > curbuf->b_ml.ml_line_count + 1)
         {
-#if defined(FEAT_AUTOCMD)
             unblock_autocmds();
-#endif
             EMSG(_("E438: u_undo: line numbers wrong"));
             changed();          /* don't want UNCHANGED now */
             return;
@@ -2481,8 +2438,7 @@ u_undoredo(undo)
         /* adjust marks */
         if (oldsize != newsize)
         {
-            mark_adjust(top + 1, top + oldsize, (long)MAXLNUM,
-                                               (long)newsize - (long)oldsize);
+            mark_adjust(top + 1, top + oldsize, (long)MAXLNUM, (long)newsize - (long)oldsize);
             if (curbuf->b_op_start.lnum > top + oldsize)
                 curbuf->b_op_start.lnum += newsize - oldsize;
             if (curbuf->b_op_end.lnum > top + oldsize)
@@ -2553,12 +2509,10 @@ u_undoredo(undo)
         if (curhead->uh_cursor.lnum == curwin->w_cursor.lnum)
         {
             curwin->w_cursor.col = curhead->uh_cursor.col;
-#if defined(FEAT_VIRTUALEDIT)
             if (virtual_active() && curhead->uh_cursor_vcol >= 0)
                 coladvance((colnr_T)curhead->uh_cursor_vcol);
             else
                 curwin->w_cursor.coladd = 0;
-#endif
         }
         else
             beginline(BL_SOL | BL_FIX);
@@ -2570,9 +2524,7 @@ u_undoredo(undo)
          * check_cursor() will move the cursor to the last line.  Move it to
          * the first column here. */
         curwin->w_cursor.col = 0;
-#if defined(FEAT_VIRTUALEDIT)
         curwin->w_cursor.coladd = 0;
-#endif
     }
 
     /* Make sure the cursor is on an existing line and column. */
@@ -2598,9 +2550,7 @@ u_undoredo(undo)
      * the undone/redone change. */
     curbuf->b_u_time_cur = curhead->uh_time;
 
-#if defined(FEAT_AUTOCMD)
     unblock_autocmds();
-#endif
 #if defined(U_DEBUG)
     u_check(FALSE);
 #endif
@@ -2666,7 +2616,6 @@ u_undo_end(did_undo, absolute)
     else
         u_add_time(msgbuf, sizeof(msgbuf), uhp->uh_time);
 
-#if defined(FEAT_CONCEAL)
     {
         win_T   *wp;
 
@@ -2676,7 +2625,6 @@ u_undo_end(did_undo, absolute)
                 redraw_win_later(wp, NOT_VALID);
         }
     }
-#endif
 
     smsg((char_u *)_("%ld %s; %s #%ld  %s"),
             u_oldcount < 0 ? -u_oldcount : u_oldcount,
@@ -2736,16 +2684,13 @@ ex_undolist(eap)
         {
             if (ga_grow(&ga, 1) == FAIL)
                 break;
-            vim_snprintf((char *)IObuff, IOSIZE, "%6ld %7ld  ",
-                                                        uhp->uh_seq, changes);
-            u_add_time(IObuff + STRLEN(IObuff), IOSIZE - STRLEN(IObuff),
-                                                                uhp->uh_time);
+            vim_snprintf((char *)IObuff, IOSIZE, "%6ld %7ld  ", uhp->uh_seq, changes);
+            u_add_time(IObuff + STRLEN(IObuff), IOSIZE - STRLEN(IObuff), uhp->uh_time);
             if (uhp->uh_save_nr > 0)
             {
                 while (STRLEN(IObuff) < 33)
                     STRCAT(IObuff, " ");
-                vim_snprintf_add((char *)IObuff, IOSIZE,
-                                                   "  %3ld", uhp->uh_save_nr);
+                vim_snprintf_add((char *)IObuff, IOSIZE, "  %3ld", uhp->uh_save_nr);
             }
             ((char_u **)(ga.ga_data))[ga.ga_len++] = vim_strsave(IObuff);
         }
@@ -2797,8 +2742,7 @@ ex_undolist(eap)
         sort_strings((char_u **)ga.ga_data, ga.ga_len);
 
         msg_start();
-        msg_puts_attr((char_u *)_("number changes  when               saved"),
-                                                              hl_attr(HLF_T));
+        msg_puts_attr((char_u *)_("number changes  when               saved"), hl_attr(HLF_T));
         for (i = 0; i < ga.ga_len && !got_int; ++i)
         {
             msg_putchar('\n');
@@ -2836,8 +2780,7 @@ u_add_time(buf, buflen, tt)
     }
     else
 #endif
-        vim_snprintf((char *)buf, buflen, _("%ld seconds ago"),
-                                                     (long)(time(NULL) - tt));
+        vim_snprintf((char *)buf, buflen, _("%ld seconds ago"), (long)(time(NULL) - tt));
 }
 
 /*
@@ -2897,10 +2840,8 @@ u_find_first_changed()
     if (uep->ue_top != 0 || uep->ue_bot != 0)
         return;
 
-    for (lnum = 1; lnum < curbuf->b_ml.ml_line_count
-                                              && lnum <= uep->ue_size; ++lnum)
-        if (STRCMP(ml_get_buf(curbuf, lnum, FALSE),
-                                                uep->ue_array[lnum - 1]) != 0)
+    for (lnum = 1; lnum < curbuf->b_ml.ml_line_count && lnum <= uep->ue_size; ++lnum)
+        if (STRCMP(ml_get_buf(curbuf, lnum, FALSE), uep->ue_array[lnum - 1]) != 0)
         {
             clearpos(&(uhp->uh_cursor));
             uhp->uh_cursor.lnum = lnum;
@@ -3031,8 +2972,7 @@ u_freeheader(buf, uhp, uhpp)
     if (uhp->uh_prev.ptr == NULL)
         buf->b_u_newhead = uhp->uh_next.ptr;
     else
-        for (uhap = uhp->uh_prev.ptr; uhap != NULL;
-                                                 uhap = uhap->uh_alt_next.ptr)
+        for (uhap = uhp->uh_prev.ptr; uhap != NULL; uhap = uhap->uh_alt_next.ptr)
             uhap->uh_next.ptr = uhp->uh_next.ptr;
 
     u_freeentries(buf, uhp, uhpp);
@@ -3250,9 +3190,6 @@ bufIsChanged(buf)
     buf_T       *buf;
 {
     return
-#if defined(FEAT_QUICKFIX)
-            !bt_dontwrite(buf) &&
-#endif
             (buf->b_changed || file_ff_differs(buf, TRUE));
 }
 
@@ -3260,9 +3197,6 @@ bufIsChanged(buf)
 curbufIsChanged()
 {
     return
-#if defined(FEAT_QUICKFIX)
-        !bt_dontwrite(curbuf) &&
-#endif
         (curbuf->b_changed || file_ff_differs(curbuf, TRUE));
 }
 

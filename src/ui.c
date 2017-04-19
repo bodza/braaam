@@ -720,8 +720,7 @@ clip_process_selection(button, col, row, repeated_click)
                 cb->word_end_col = clip_get_line_end(row);
 
             /* See if we are before or after the origin of the selection */
-            if (clip_compare_pos(row, col, cb->origin_row,
-                                                   cb->origin_start_col) >= 0)
+            if (clip_compare_pos(row, col, cb->origin_row, cb->origin_start_col) >= 0)
             {
                 if (col >= (int)cb->word_end_col)
                     clip_update_modeless_selection(cb, cb->origin_row,
@@ -758,8 +757,7 @@ clip_process_selection(button, col, row, repeated_click)
             clip_get_word_boundaries(cb, row, col);
 
             /* Handle being after the origin point of selection */
-            if (clip_compare_pos(row, col, cb->origin_row,
-                    cb->origin_start_col) >= 0)
+            if (clip_compare_pos(row, col, cb->origin_row, cb->origin_start_col) >= 0)
                 clip_update_modeless_selection(cb, cb->origin_row,
                         cb->origin_start_col, row, cb->word_end_col);
             else
@@ -771,13 +769,10 @@ clip_process_selection(button, col, row, repeated_click)
             if (row == cb->prev.lnum && !repeated_click)
                 return;
 
-            if (clip_compare_pos(row, col, cb->origin_row,
-                    cb->origin_start_col) >= 0)
-                clip_update_modeless_selection(cb, cb->origin_row, 0, row,
-                        (int)Columns);
+            if (clip_compare_pos(row, col, cb->origin_row, cb->origin_start_col) >= 0)
+                clip_update_modeless_selection(cb, cb->origin_row, 0, row, (int)Columns);
             else
-                clip_update_modeless_selection(cb, row, 0, cb->origin_row,
-                        (int)Columns);
+                clip_update_modeless_selection(cb, row, 0, cb->origin_row, (int)Columns);
             break;
     }
 
@@ -908,8 +903,7 @@ clip_invert_area(row1, col1, row2, col2, how)
 
         /* Handle the rectangle thats left */
         if (row2 >= row1)
-            clip_invert_rectangle(row1, 0, row2 - row1 + 1, (int)Columns,
-                                                                      invert);
+            clip_invert_rectangle(row1, 0, row2 - row1 + 1, (int)Columns, invert);
     }
 }
 
@@ -1058,8 +1052,7 @@ clip_copy_modeless_selection(both)
                             /* Add a composing character. */
                             if (ScreenLinesC[ci][off + i] == 0)
                                 break;
-                            bufp += utf_char2bytes(ScreenLinesC[ci][off + i],
-                                                                        bufp);
+                            bufp += utf_char2bytes(ScreenLinesC[ci][off + i], bufp);
                         }
                     }
                     /* Skip right halve of double-wide character. */
@@ -1069,8 +1062,7 @@ clip_copy_modeless_selection(both)
             }
             else
             {
-                STRNCPY(bufp, ScreenLines + LineOffset[row] + start_col,
-                                                         end_col - start_col);
+                STRNCPY(bufp, ScreenLines + LineOffset[row] + start_col, end_col - start_col);
                 bufp += end_col - start_col;
             }
         }
@@ -1136,9 +1128,7 @@ clip_get_word_boundaries(cb, row, col)
         if (enc_dbcs != 0 && dbcs_ptr2cells(p + temp_col) == 2)
             ++temp_col;
         else
-        if (CHAR_CLASS(p[temp_col]) != start_class
-                && !(enc_utf8 && p[temp_col] == 0)
-                )
+        if (CHAR_CLASS(p[temp_col]) != start_class && !(enc_utf8 && p[temp_col] == 0))
             break;
     cb->word_end_col = temp_col;
 }
@@ -1176,8 +1166,7 @@ clip_update_modeless_selection(cb, row1, col1, row2, col2)
     /* See if we changed at the beginning of the selection */
     if (row1 != cb->start.lnum || col1 != (int)cb->start.col)
     {
-        clip_invert_area(row1, col1, (int)cb->start.lnum, cb->start.col,
-                                                                 CLIP_TOGGLE);
+        clip_invert_area(row1, col1, (int)cb->start.lnum, cb->start.col, CLIP_TOGGLE);
         cb->start.lnum = row1;
         cb->start.col  = col1;
     }
@@ -1185,8 +1174,7 @@ clip_update_modeless_selection(cb, row1, col1, row2, col2)
     /* See if we changed at the end of the selection */
     if (row2 != cb->end.lnum || col2 != (int)cb->end.col)
     {
-        clip_invert_area((int)cb->end.lnum, cb->end.col, row2, col2,
-                                                                 CLIP_TOGGLE);
+        clip_invert_area((int)cb->end.lnum, cb->end.col, row2, col2, CLIP_TOGGLE);
         cb->end.lnum = row2;
         cb->end.col  = col2;
     }
@@ -1327,25 +1315,6 @@ set_input_buf(p)
     }
 }
 
-#if defined(FEAT_MOUSE_GPM) || defined(FEAT_SYSMOUSE)
-/*
- * Add the given bytes to the input buffer
- * Special keys start with CSI.  A real CSI must have been translated to
- * CSI KS_EXTRA KE_CSI.  K_SPECIAL doesn't require translation.
- */
-    void
-add_to_input_buf(s, len)
-    char_u  *s;
-    int     len;
-{
-    if (inbufcount + len > INBUFLEN + MAX_KEY_CODE_LEN)
-        return;     /* Shouldn't ever happen! */
-
-    while (len--)
-        inbuf[inbufcount++] = *s++;
-}
-#endif
-
 /* Remove everything from the input buffer.  Called when ^C is found */
     void
 trash_input_buf()
@@ -1421,9 +1390,7 @@ fill_input_buf(exit_on_error)
     len = 0;    /* to avoid gcc warning */
     for (try = 0; try < 100; ++try)
     {
-        len = read(read_cmd_fd, (char *)inbuf + inbufcount, (size_t)((INBUFLEN - inbufcount)
-                / input_conv.vc_factor
-                ));
+        len = read(read_cmd_fd, (char *)inbuf + inbufcount, (size_t)((INBUFLEN - inbufcount) / input_conv.vc_factor));
 
         if (len > 0 || got_int)
             break;
@@ -1521,9 +1488,7 @@ ui_cursor_shape()
     mch_update_cursor();
 #endif
 
-#if defined(FEAT_CONCEAL)
     conceal_check_cursur_line();
-#endif
 }
 #endif
 
@@ -1832,8 +1797,7 @@ retnomove:
              * far as it goes, moving the mouse in the top line should scroll
              * the text down (done later when recomputing w_topline). */
             if (mouse_dragging > 0
-                    && curwin->w_cursor.lnum
-                                       == curwin->w_buffer->b_ml.ml_line_count
+                    && curwin->w_cursor.lnum == curwin->w_buffer->b_ml.ml_line_count
                     && curwin->w_cursor.lnum == curwin->w_topline)
                 curwin->w_valid &= ~(VALID_TOPLINE);
         }
@@ -1895,10 +1859,8 @@ mouse_comp_pos(win, rowp, colp, lnump)
     int         off;
     int         count;
 
-#if defined(FEAT_RIGHTLEFT)
     if (win->w_p_rl)
         col = W_WIDTH(win) - 1 - col;
-#endif
 
     lnum = win->w_topline;
 
