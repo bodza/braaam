@@ -78,8 +78,7 @@ static void vim_settempdir(char_u *tempdir);
 static char *e_auchangedbuf = "E812: Autocommands changed buffer or buffer name";
 
     void
-filemess(buf, name, s, attr)
-    buf_T       *buf;
+filemess(name, s, attr)
     char_u      *name;
     char_u      *s;
     int         attr;
@@ -88,7 +87,7 @@ filemess(buf, name, s, attr)
 
     if (msg_silent != 0)
         return;
-    msg_add_fname(buf, name);       /* put file name in IObuff with quotes */
+    msg_add_fname(name);       /* put file name in IObuff with quotes */
     /* If it's extremely long, truncate it. */
     if (STRLEN(IObuff) > IOSIZE - 80)
         IObuff[IOSIZE - 80] = NUL;
@@ -291,7 +290,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
         curbuf->b_op_start = pos;
     }
 
-    if ((shortmess(SHM_OVER) || curbuf->b_help) && p_verbose == 0)
+    if (shortmess(SHM_OVER) && p_verbose == 0)
         msg_scroll = FALSE;     /* overwrite previous file message */
     else
         msg_scroll = TRUE;      /* don't overwrite previous file message */
@@ -307,7 +306,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
         p = fname + STRLEN(fname);
         if (after_pathsep(fname, p) || STRLEN(fname) >= MAXPATHL)
         {
-            filemess(curbuf, fname, (char_u *)"Illegal file name", 0);
+            filemess(fname, (char_u *)"Illegal file name", 0);
             msg_end();
             msg_scroll = msg_save;
             return FAIL;
@@ -335,9 +334,9 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
                                                 )
         {
             if (S_ISDIR(perm))
-                filemess(curbuf, fname, (char_u *)"is a directory", 0);
+                filemess(fname, (char_u *)"is a directory", 0);
             else
-                filemess(curbuf, fname, (char_u *)"is not a file", 0);
+                filemess(fname, (char_u *)"is not a file", 0);
             msg_end();
             msg_scroll = msg_save;
             return FAIL;
@@ -436,9 +435,9 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
                         }
                     }
                     if (dir_of_file_exists(fname))
-                        filemess(curbuf, sfname, (char_u *)"[New File]", 0);
+                        filemess(sfname, (char_u *)"[New File]", 0);
                     else
-                        filemess(curbuf, sfname, (char_u *)"[New DIRECTORY]", 0);
+                        filemess(sfname, (char_u *)"[New DIRECTORY]", 0);
                     /* Set forced 'fileencoding'. */
                     if (eap != NULL)
                         set_forced_fenc(eap);
@@ -452,7 +451,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
                 }
                 else
                 {
-                    filemess(curbuf, sfname, (char_u *)(
+                    filemess(sfname, (char_u *)(
 #if defined(EFBIG)
                             (errno == EFBIG) ? "[File too big]" :
 #endif
@@ -471,7 +470,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
      * Only set the 'ro' flag for readonly files the first time they are
      * loaded.  Help files always get readonly mode
      */
-    if ((check_readonly && file_readonly) || curbuf->b_help)
+    if (check_readonly && file_readonly)
         curbuf->b_p_ro = TRUE;
 
     if (set_options)
@@ -597,7 +596,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
             mch_msg("Vim: Reading from stdin...\n");
         }
         else if (!read_buffer)
-            filemess(curbuf, sfname, (char_u *)"", 0);
+            filemess(sfname, (char_u *)"", 0);
     }
 
     msg_scroll = FALSE;                 /* overwrite the file message */
@@ -630,50 +629,6 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
     else if (curbuf->b_p_bin)
     {
         fenc = (char_u *)"";            /* binary: don't convert */
-        fenc_alloced = FALSE;
-    }
-    else if (curbuf->b_help)
-    {
-        char_u      firstline[80];
-        int         fc;
-
-        /* Help files are either utf-8 or latin1.  Try utf-8 first, if this
-         * fails it must be latin1.
-         * Always do this when 'encoding' is "utf-8".  Otherwise only do
-         * this when needed to avoid [converted] remarks all the time.
-         * It is needed when the first line contains non-ASCII characters.
-         * That is only in *.??x files. */
-        fenc = (char_u *)"latin1";
-        c = enc_utf8;
-        if (!c && !read_stdin)
-        {
-            fc = fname[STRLEN(fname) - 1];
-            if (TOLOWER_ASC(fc) == 'x')
-            {
-                /* Read the first line (and a bit more).  Immediately rewind to
-                 * the start of the file.  If the read() fails "len" is -1. */
-                len = read_eintr(fd, firstline, 80);
-                lseek(fd, (off_t)0L, SEEK_SET);
-                for (p = firstline; p < firstline + len; ++p)
-                    if (*p >= 0x80)
-                    {
-                        c = TRUE;
-                        break;
-                    }
-            }
-        }
-
-        if (c)
-        {
-            fenc_next = fenc;
-            fenc = (char_u *)"utf-8";
-
-            /* When the file is utf-8 but a character doesn't fit in
-             * 'encoding' don't retry.  In help text editing utf-8 bytes
-             * doesn't make sense. */
-            if (!enc_utf8)
-                keep_dest_enc = TRUE;
-        }
         fenc_alloced = FALSE;
     }
     else if (*p_fencs == NUL)
@@ -1186,8 +1141,7 @@ retry:
 
                 /*
                  * If there is conversion error or not enough room try using
-                 * another conversion.  Except for when there is no
-                 * alternative (help files).
+                 * another conversion.  Except for when there is no alternative.
                  */
                 while ((iconv(iconv_fd, (void *)&fromp, &from_size, &top, &to_size) == (size_t)-1 && ICONV_ERRNO != ICONV_EINVAL) || from_size > CONV_RESTLEN)
                 {
@@ -1814,7 +1768,7 @@ failed:
         {
             if (!(flags & READ_DUMMY))
             {
-                filemess(curbuf, sfname, (char_u *)e_interr, 0);
+                filemess(sfname, (char_u *)e_interr, 0);
                 if (newfile)
                     curbuf->b_p_ro = TRUE;      /* must use "w!" now */
             }
@@ -1824,7 +1778,7 @@ failed:
 
         if (!filtering && !(flags & READ_DUMMY))
         {
-            msg_add_fname(curbuf, sfname);   /* fname in IObuff with quotes */
+            msg_add_fname(sfname);   /* fname in IObuff with quotes */
             c = FALSE;
 
 #if defined(S_ISFIFO)
@@ -2551,7 +2505,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
     else
         msg_scroll = TRUE;          /* don't overwrite previous file message */
     if (!filtering)
-        filemess(buf, fname, (char_u *)"", 0);   /* show that we are busy */
+        filemess(fname, (char_u *)"", 0);   /* show that we are busy */
     msg_scroll = FALSE;             /* always overwrite the file message now */
 
     buffer = alloc(BUFSIZE);
@@ -2796,9 +2750,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                     /*
                      * Make backup file name.
                      */
-                    backup = buf_modname(
-                            (buf->b_p_sn || buf->b_shortname),
-                                                 rootname, backup_ext, FALSE);
+                    backup = buf_modname((buf->b_p_sn || buf->b_shortname), rootname, backup_ext, FALSE);
                     if (backup == NULL)
                     {
                         vim_free(rootname);
@@ -2974,9 +2926,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
                     backup = NULL;
                 else
                 {
-                    backup = buf_modname(
-                            (buf->b_p_sn || buf->b_shortname),
-                                                 rootname, backup_ext, FALSE);
+                    backup = buf_modname((buf->b_p_sn || buf->b_shortname), rootname, backup_ext, FALSE);
                     vim_free(rootname);
                 }
 
@@ -3514,7 +3464,7 @@ restore_backup:
 
     if (!filtering)
     {
-        msg_add_fname(buf, fname);      /* put fname in IObuff with quotes */
+        msg_add_fname(fname);      /* put fname in IObuff with quotes */
         c = FALSE;
         if (write_info.bw_conv_error)
         {
@@ -3599,9 +3549,7 @@ restore_backup:
      */
     if (*p_pm && dobackup)
     {
-        char *org = (char *)buf_modname(
-                                        (buf->b_p_sn || buf->b_shortname),
-                                                          fname, p_pm, FALSE);
+        char *org = (char *)buf_modname((buf->b_p_sn || buf->b_shortname), fname, p_pm, FALSE);
 
         if (backup != NULL)
         {
@@ -3679,7 +3627,7 @@ nofail:
         int numlen = errnum != NULL ? (int)STRLEN(errnum) : 0;
 
         attr = hl_attr(HLF_E);  /* set highlight for error messages */
-        msg_add_fname(buf, fname);         /* put file name in IObuff with quotes */
+        msg_add_fname(fname);         /* put file name in IObuff with quotes */
         if (STRLEN(IObuff) + STRLEN(errmsg) + numlen >= IOSIZE)
             IObuff[IOSIZE - STRLEN(errmsg) - numlen - 1] = NUL;
         /* If the error message has the form "is ...", put the error number in
@@ -3806,13 +3754,12 @@ set_rw_fname(fname, sfname)
  * Put file name into IObuff with quotes.
  */
     void
-msg_add_fname(buf, fname)
-    buf_T       *buf;
+msg_add_fname(fname)
     char_u      *fname;
 {
     if (fname == NULL)
         fname = (char_u *)"-stdin-";
-    home_replace(buf, fname, IObuff + 1, IOSIZE - 4, TRUE);
+    home_replace(fname, IObuff + 1, IOSIZE - 4, TRUE);
     IObuff[0] = '"';
     STRCAT(IObuff, "\" ");
 }
@@ -4258,30 +4205,10 @@ get_fio_flags(ptr)
 
     prop = enc_canon_props(ptr);
     if (prop & ENC_UNICODE)
-    {
-        if (prop & ENC_2BYTE)
-        {
-            if (prop & ENC_ENDIAN_L)
-                return FIO_UCS2 | FIO_ENDIAN_L;
-            return FIO_UCS2;
-        }
-        if (prop & ENC_4BYTE)
-        {
-            if (prop & ENC_ENDIAN_L)
-                return FIO_UCS4 | FIO_ENDIAN_L;
-            return FIO_UCS4;
-        }
-        if (prop & ENC_2WORD)
-        {
-            if (prop & ENC_ENDIAN_L)
-                return FIO_UTF16 | FIO_ENDIAN_L;
-            return FIO_UTF16;
-        }
         return FIO_UTF8;
-    }
     if (prop & ENC_LATIN1)
         return FIO_LATIN1;
-    /* must be ENC_DBCS, requires iconv() */
+
     return 0;
 }
 
@@ -4486,9 +4413,7 @@ modname(fname, ext, prepend_dot)
     char_u *fname, *ext;
     int     prepend_dot;        /* may prepend a '.' to file name */
 {
-    return buf_modname(
-                        (curbuf->b_p_sn || curbuf->b_shortname),
-                                                     fname, ext, prepend_dot);
+    return buf_modname((curbuf->b_p_sn || curbuf->b_shortname), fname, ext, prepend_dot);
 }
 
     char_u *
@@ -5082,7 +5007,7 @@ buf_check_timestamp(buf, focus)
 
     if (mesg != NULL)
     {
-        path = home_replace_save(buf, buf->b_fname);
+        path = home_replace_save(buf->b_fname);
         if (path != NULL)
         {
             if (!helpmesg)

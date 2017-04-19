@@ -49,7 +49,7 @@ static char_u   *nofile_fname = NULL;   /* fname for NOTAGFILE error */
 
 static void taglen_advance(int l);
 
-static int jumpto_tag(char_u *lbuf, int forceit, int keep_help);
+static int jumpto_tag(char_u *lbuf, int forceit);
 static int parse_tag_line(char_u *lbuf, tagptrs_T *tagp);
 static int test_for_static(tagptrs_T *);
 static int parse_match(char_u *lbuf, tagptrs_T *tagp);
@@ -76,7 +76,6 @@ static char_u   *tagmatchname = NULL;   /* name of last used tag */
  * *tag != NUL: ":tag {tag}", jump to new tag, add to tag stack
  *
  * type == DT_TAG:      ":tag [tag]", jump to newer position or same tag again
- * type == DT_HELP:     like DT_TAG, but don't use regexp.
  * type == DT_POP:      ":pop" or CTRL-T, jump to old position
  * type == DT_NEXT:     jump to next match of same tag
  * type == DT_PREV:     jump to previous match of same tag
@@ -84,7 +83,6 @@ static char_u   *tagmatchname = NULL;   /* name of last used tag */
  * type == DT_LAST:     jump to last match of same tag
  * type == DT_SELECT:   ":tselect [tag]", select tag from a list of all matches
  * type == DT_JUMP:     ":tjump [tag]", jump to tag or select tag from a list
- * type == DT_CSCOPE:   use cscope to find the tag
  * type == DT_LTAG:     use location list for displaying tag matches
  * type == DT_FREE:     free cached matches
  *
@@ -143,12 +141,6 @@ do_tag(tag, type, count, forceit, verbose)
         return FALSE;
     }
 #endif
-
-    if (type == DT_HELP)
-    {
-        type = DT_TAG;
-        no_regexp = TRUE;
-    }
 
     prev_num_matches = num_matches;
     free_string_option(nofile_fname);
@@ -695,7 +687,7 @@ do_tag(tag, type, count, forceit, verbose)
             /*
              * Jump to the desired match.
              */
-            i = jumpto_tag(matches[cur_match], forceit, type != DT_CSCOPE);
+            i = jumpto_tag(matches[cur_match], forceit);
 
             set_vim_var_string(VV_SWAPCOMMAND, NULL, -1);
 
@@ -905,11 +897,9 @@ prepare_pats(pats, has_re)
  * Tags in an emacs-style tags file are always global.
  *
  * flags:
- * TAG_HELP       only search for help tags
  * TAG_NAMES      only return name of tag
  * TAG_REGEXP     use "pat" as a regexp
  * TAG_NOIC       don't always ignore case
- * TAG_KEEP_LANG  keep language
  */
     int
 find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
@@ -979,7 +969,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     int         match_count = 0;                /* number of matches found */
     char_u      **matches;
     int         mtt;
-    int         help_save;
 
     pat_T       orgpat;                 /* holds unconverted pattern info */
     vimconv_T   vimconv;
@@ -991,19 +980,17 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     int         sortic = FALSE;                 /* tag file sorted in nocase */
     int         line_error = FALSE;             /* syntax error */
     int         has_re = (flags & TAG_REGEXP);  /* regexp used */
-    int         help_only = (flags & TAG_HELP);
     int         name_only = (flags & TAG_NAMES);
     int         noic = (flags & TAG_NOIC);
     int         get_it_again = FALSE;
     int         verbose = (flags & TAG_VERBOSE);
 
-    help_save = curbuf->b_help;
     orgpat.pat = pat;
     vimconv.vc_type = CONV_NONE;
 
-/*
- * Allocate memory for the buffers that are used
- */
+    /*
+     * Allocate memory for the buffers that are used
+     */
     lbuf = alloc(lbuf_size);
     tag_fname = alloc(MAXPATHL + 1);
     for (mtt = 0; mtt < MT_COUNT; ++mtt)
@@ -1016,9 +1003,6 @@ find_tags(pat, num_matches, matchesp, flags, mincount, buf_ffname)
     /*
      * Initialize a few variables
      */
-    if (help_only)                              /* want tags from help file */
-        curbuf->b_help = TRUE;                  /* will be restored later */
-
     orgpat.len = (int)STRLEN(pat);
     if (p_tl != 0 && orgpat.len > p_tl)         /* adjust for 'taglength' */
         orgpat.len = p_tl;
@@ -1540,33 +1524,7 @@ parse_line:
                 {
                     int len;
 
-                    if (help_only)
-                    {
-#define ML_EXTRA 0
-                        /*
-                         * Append the help-heuristic number after the
-                         * tagname, for sorting it later.
-                         */
-                        *tagp.tagname_end = NUL;
-                        len = (int)(tagp.tagname_end - tagp.tagname);
-                        mfp = (struct match_found *)
-                                 alloc((int)sizeof(struct match_found) + len + 10 + ML_EXTRA);
-                        if (mfp != NULL)
-                        {
-                            /* "len" includes the language and the NUL, but
-                             * not the priority. */
-                            mfp->len = len + ML_EXTRA + 1;
-#define ML_HELP_LEN 6
-                            p = mfp->match;
-                            STRCPY(p, tagp.tagname);
-                            sprintf((char *)p + len + 1 + ML_EXTRA, "%06d",
-                                    help_heuristic(tagp.tagname,
-                                        match_re ? matchoff : 0, !match_no_ic)
-                                    );
-                        }
-                        *tagp.tagname_end = TAB;
-                    }
-                    else if (name_only)
+                    if (name_only)
                     {
                         if (get_it_again)
                         {
@@ -1745,8 +1703,7 @@ findtag_end:
                 /* To avoid allocating memory again we turn the struct
                  * match_found into a string.  For help the priority was not
                  * included in the length. */
-                mch_memmove(mfp, mfp->match,
-                         (size_t)(mfp->len + (help_only ? ML_HELP_LEN : 0)));
+                mch_memmove(mfp, mfp->match, (size_t)mfp->len);
                 matches[match_count++] = (char_u *)mfp;
             }
         }
@@ -1756,26 +1713,10 @@ findtag_end:
     *matchesp = matches;
     *num_matches = match_count;
 
-    curbuf->b_help = help_save;
-
     return retval;
 }
 
 static garray_T tag_fnames = GA_EMPTY;
-static void found_tagfile_cb(char_u *fname, void *cookie);
-
-/*
- * Callback function for finding all "tags" and "tags-??" files in
- * 'runtimepath' doc directories.
- */
-    static void
-found_tagfile_cb(fname, cookie)
-    char_u      *fname;
-    void        *cookie UNUSED;
-{
-    if (ga_grow(&tag_fnames, 1) == OK)
-        ((char_u **)(tag_fnames.ga_data))[tag_fnames.ga_len++] = vim_strsave(fname);
-}
 
 #if defined(EXITFREE)
     void
@@ -1804,35 +1745,6 @@ get_tagfname(tnp, first, buf)
 
     if (first)
         vim_memset(tnp, 0, sizeof(tagname_T));
-
-    if (curbuf->b_help)
-    {
-        /*
-         * For help files it's done in a completely different way:
-         * Find "doc/tags" and "doc/tags-??" in all directories in 'runtimepath'.
-         */
-        if (first)
-        {
-            ga_clear_strings(&tag_fnames);
-            ga_init2(&tag_fnames, (int)sizeof(char_u *), 10);
-            do_in_runtimepath((char_u *)"doc/tags", TRUE, found_tagfile_cb, NULL);
-        }
-
-        if (tnp->tn_hf_idx >= tag_fnames.ga_len)
-        {
-            /* Not found in 'runtimepath', use 'helpfile', if it exists and
-             * wasn't used yet, replacing "help.txt" with "tags". */
-            if (tnp->tn_hf_idx > tag_fnames.ga_len || *p_hf == NUL)
-                return FAIL;
-            ++tnp->tn_hf_idx;
-            STRCPY(buf, p_hf);
-            STRCPY(gettail(buf), "tags");
-        }
-        else
-            vim_strncpy(buf, ((char_u **)(tag_fnames.ga_data))[
-                                             tnp->tn_hf_idx++], MAXPATHL - 1);
-        return OK;
-    }
 
     if (first)
     {
@@ -2083,10 +1995,9 @@ tag_full_fname(tagp)
  * returns OK for success, NOTAGFILE when file not found, FAIL otherwise.
  */
     static int
-jumpto_tag(lbuf, forceit, keep_help)
+jumpto_tag(lbuf, forceit)
     char_u      *lbuf;          /* line from the tags file for this tag */
     int         forceit;        /* :ta with ! */
-    int         keep_help;      /* keep help flag (FALSE for cscope) */
 {
     int         save_secure;
     int         save_magic;
@@ -2165,14 +2076,7 @@ jumpto_tag(lbuf, forceit, keep_help)
 
     ++RedrawingDisabled;
 
-    if (keep_help)
-    {
-        /* A :ta from a help file will keep the b_help flag set.  For ":ptag"
-         * we need to use the flag from the window where we came from. */
-            keep_help_flag = curbuf->b_help;
-    }
     getfile_result = getfile(0, fname, NULL, TRUE, (linenr_T)0, forceit);
-    keep_help_flag = FALSE;
 
     if (getfile_result <= 0)            /* got to the right file */
     {
@@ -2308,16 +2212,6 @@ jumpto_tag(lbuf, forceit, keep_help)
         if (getfile_result == -1)
             retval = OK;
 
-        if (retval == OK)
-        {
-            /*
-             * For a help buffer: Put the cursor line at the top of the window,
-             * the help subject will be below it.
-             */
-            if (curbuf->b_help)
-                set_topline(curwin, curwin->w_cursor.lnum);
-        }
-
         --RedrawingDisabled;
     }
     else
@@ -2370,7 +2264,7 @@ expand_tag_fname(fname, tag_fname, expand)
             fname = expanded_fname;
     }
 
-    if ((p_tr || curbuf->b_help) && !vim_isAbsName(fname) && (p = gettail(tag_fname)) != tag_fname)
+    if (p_tr && !vim_isAbsName(fname) && (p = gettail(tag_fname)) != tag_fname)
     {
         retval = alloc(MAXPATHL);
         if (retval != NULL)

@@ -132,7 +132,6 @@
  */
 #define SYS_VIMRC_FILE "$VIM/vimrc"
 
-#define DFLT_HELPFILE  "$VIMRUNTIME/doc/help.txt"
 #define FILETYPE_FILE  "filetype.vim"
 #define FTPLUGIN_FILE  "ftplugin.vim"
 #define INDENT_FILE    "indent.vim"
@@ -1306,10 +1305,8 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define EXPAND_BOOL_SETTINGS    5
 #define EXPAND_TAGS             6
 #define EXPAND_OLD_SETTING      7
-#define EXPAND_HELP             8
 #define EXPAND_BUFFERS          9
 #define EXPAND_EVENTS           10
-#define EXPAND_MENUS            11
 #define EXPAND_SYNTAX           12
 #define EXPAND_HIGHLIGHT        13
 #define EXPAND_AUGROUP          14
@@ -1319,26 +1316,20 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define EXPAND_FUNCTIONS        18
 #define EXPAND_USER_FUNC        19
 #define EXPAND_EXPRESSION       20
-#define EXPAND_MENUNAMES        21
 #define EXPAND_USER_COMMANDS    22
 #define EXPAND_USER_CMD_FLAGS   23
 #define EXPAND_USER_NARGS       24
 #define EXPAND_USER_COMPLETE    25
 #define EXPAND_ENV_VARS         26
-#define EXPAND_LANGUAGE         27
 #define EXPAND_COLORS           28
 #define EXPAND_COMPILER         29
 #define EXPAND_USER_DEFINED     30
 #define EXPAND_USER_LIST        31
 #define EXPAND_SHELLCMD         32
-#define EXPAND_CSCOPE           33
-#define EXPAND_SIGN             34
-#define EXPAND_PROFILE          35
 #define EXPAND_BEHAVE           36
 #define EXPAND_FILETYPE         37
 #define EXPAND_FILES_IN_PATH    38
 #define EXPAND_OWNSYNTAX        39
-#define EXPAND_LOCALES          40
 #define EXPAND_HISTORY          41
 #define EXPAND_USER             42
 #define EXPAND_SYNTIME          43
@@ -1560,8 +1551,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 
 /* flags for do_ecmd() */
 #define ECMD_HIDE       0x01    /* don't free the current buffer */
-#define ECMD_SET_HELP   0x02    /* set b_help flag of (new) buffer before
-                                   opening file */
 #define ECMD_OLDBUF     0x04    /* use existing buffer if it exists */
 #define ECMD_FORCEIT    0x08    /* ! used in Ex command */
 #define ECMD_ADDBUF     0x10    /* don't edit, just add to buffer list */
@@ -1593,7 +1582,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 /* flags for buf_copy_options() */
 #define BCO_ENTER       1       /* going to enter the buffer */
 #define BCO_ALWAYS      2       /* always copy the options */
-#define BCO_NOHELP      4       /* don't touch the help related options */
 
 /* flags for do_put() */
 #define PUT_FIXINDENT   1       /* make indent look nice */
@@ -1650,22 +1638,17 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define DT_FIRST        5       /* jump to first match of same tag */
 #define DT_LAST         6       /* jump to first match of same tag */
 #define DT_SELECT       7       /* jump to selection from list */
-#define DT_HELP         8       /* like DT_TAG, but no wildcards */
 #define DT_JUMP         9       /* jump to new tag or selection from list */
-#define DT_CSCOPE       10      /* cscope find command (like tjump) */
 #define DT_LTAG         11      /* tag using location list */
 #define DT_FREE         99      /* free cached matches */
 
 /*
  * flags for find_tags().
  */
-#define TAG_HELP        1       /* only search for help tags */
 #define TAG_NAMES       2       /* only return name of tag */
 #define TAG_REGEXP      4       /* use tag pattern as regexp */
 #define TAG_NOIC        8       /* don't always ignore case */
 #define TAG_VERBOSE     32      /* message verbosity */
-#define TAG_INS_COMP    64      /* Currently doing insert completion */
-#define TAG_KEEP_LANG   128     /* keep current language */
 
 #define TAG_MANY        300     /* When finding many tags (for completion),
                                    find up to this many tags */
@@ -1696,7 +1679,6 @@ extern char_u *(term_strings[]);    /* current terminal strings */
 #define WSP_VERT        2       /* split vertically */
 #define WSP_TOP         4       /* window at top-left of shell */
 #define WSP_BOT         8       /* window at bottom-right of shell */
-#define WSP_HELP        16      /* creating the help window */
 #define WSP_BELOW       32      /* put new window below/right */
 #define WSP_ABOVE       64      /* put new window above/left */
 #define WSP_NEWLOC      128     /* don't copy location list */
@@ -2496,11 +2478,8 @@ EXTERN int      p_fs;           /* 'fsync' */
 EXTERN int      p_gd;           /* 'gdefault' */
 EXTERN int      p_prompt;       /* 'prompt' */
 EXTERN char_u   *p_guicursor;   /* 'guicursor' */
-EXTERN char_u   *p_hf;          /* 'helpfile' */
-EXTERN long     p_hh;           /* 'helpheight' */
 EXTERN int      p_hid;          /* 'hidden' */
-/* Use P_HID to check if a buffer is to be hidden when it is no longer
- * visible in a window. */
+/* Use P_HID to check if a buffer is to be hidden when it is no longer visible in a window. */
 #define P_HID(dummy) (p_hid || cmdmod.hide)
 EXTERN char_u   *p_hl;          /* 'highlight' */
 EXTERN int      p_hls;          /* 'hlsearch' */
@@ -3907,9 +3886,6 @@ typedef struct list_stack_S
 #define SYNSPL_TOP      1       /* spell check toplevel text */
 #define SYNSPL_NOTOP    2       /* don't spell check toplevel text */
 
-/* avoid #ifdefs for when b_spell is not available */
-#define B_SPELL(buf)  (0)
-
 /*
  * These are items normally related to a buffer.  But when using ":ownsyntax"
  * a window may have its own instance.
@@ -4223,14 +4199,6 @@ struct file_buffer
     int         b_did_warn;     /* Set to 1 if user has been warned on first
                                    change of a read-only file */
 
-    /* Two special kinds of buffers:
-     * help buffer  - used for help files, won't use a swap file.
-     * spell buffer - used for spell info, never displayed and doesn't have a
-     *                file name.
-     */
-    int         b_help;         /* TRUE for help file buffer (when set b_p_bt
-                                   is "help") */
-
     int         b_shortname;    /* this file has an 8.3 file name */
 
     synblock_T  b_s;            /* Info related to syntax highlighting.  w_s
@@ -4240,9 +4208,8 @@ struct file_buffer
     int         b_mapped_ctrl_c; /* modes where CTRL-C is mapped */
 };
 
-#define SNAP_HELP_IDX   0
-#define SNAP_AUCMD_IDX 1
-#define SNAP_COUNT     2
+#define SNAP_AUCMD_IDX 0
+#define SNAP_COUNT     1
 
 /*
  * Tab pages point to the top frame of each tab page.
@@ -4783,15 +4750,6 @@ typedef struct
     int         tn_hf_idx;
     void        *tn_search_ctx;
 } tagname_T;
-
-/*
- * Array indexes used for cptext argument of ins_compl_add().
- */
-#define CPT_ABBR    0   /* "abbr" */
-#define CPT_MENU    1   /* "menu" */
-#define CPT_KIND    2   /* "kind" */
-#define CPT_INFO    3   /* "info" */
-#define CPT_COUNT   4   /* Number of entries */
 
 typedef struct {
   UINT32_T total[2];
@@ -5694,10 +5652,7 @@ EXTERN int      postponed_split_flags INIT(= 0);  /* args for win_split() */
 EXTERN int      postponed_split_tab INIT(= 0);  /* cmdmod.tab */
 EXTERN int      replace_offset INIT(= 0);   /* offset for replace_push() */
 
-EXTERN char_u   *escape_chars INIT(= (char_u *)" \t\\\"|");
-                                            /* need backslash in cmd line */
-
-EXTERN int      keep_help_flag INIT(= FALSE); /* doing :ta from help file */
+EXTERN char_u   *escape_chars INIT(= (char_u *)" \t\\\"|"); /* need backslash in cmd line */
 
 /*
  * When a string option is NULL (which only happens in out-of-memory situations),
@@ -5784,14 +5739,6 @@ EXTERN disptick_T       display_tick INIT(= 0);
 
 /* Set when the cursor line needs to be redrawn. */
 EXTERN int              need_cursor_line_redraw INIT(= FALSE);
-
-#if defined(ALT_X_INPUT)
-/* we need to be able to go into the dispatch loop while processing a command
- * received via alternate input. However, we don't want to process another
- * command until the first is completed.
- */
-EXTERN int      suppress_alternate_input INIT(= FALSE);
-#endif
 
 /*
  * The error messages that can be shared are included here.
@@ -5906,14 +5853,6 @@ EXTERN char *ignoredp;
 #define vim_realloc(ptr, size)  realloc((ptr), (size))
 
 /*
- * The following macros stop display/event loop nesting at the wrong time.
- */
-#if defined(ALT_X_INPUT)
-#define ALT_INPUT_LOCK_OFF     suppress_alternate_input = FALSE
-#define ALT_INPUT_LOCK_ON      suppress_alternate_input = TRUE
-#endif
-
-/*
  * Return byte length of character that starts with byte "b".
  * Returns 1 for a single-byte character.
  * MB_BYTE2LEN_CHECK() can be used to count a special key as one byte.
@@ -5926,16 +5865,7 @@ EXTERN char *ignoredp;
 #define ENC_8BIT       0x01
 #define ENC_UNICODE    0x04
 
-#define ENC_ENDIAN_B   0x10        /* Unicode: Big endian */
-#define ENC_ENDIAN_L   0x20        /* Unicode: Little endian */
-
-#define ENC_2BYTE      0x40        /* Unicode: UCS-2 */
-#define ENC_4BYTE      0x80        /* Unicode: UCS-4 */
-#define ENC_2WORD      0x100       /* Unicode: UTF-16 */
-
 #define ENC_LATIN1     0x200       /* Latin1 */
-#define ENC_LATIN9     0x400       /* Latin9 */
-#define ENC_MACROMAN   0x800       /* Mac Roman (not Macro Man! :-) */
 
 #if defined(USE_ICONV)
 #if !defined(EILSEQ)
@@ -5957,16 +5887,9 @@ EXTERN char *ignoredp;
 #endif
 #endif
 
-#define SIGN_BYTE 1         /* byte value used where sign is displayed;
-                               attribute value is sign type */
-
 /* values for vim_handle_signal() that are not a signal */
 #define SIGNAL_BLOCK    -1
 #define SIGNAL_UNBLOCK  -2
-
-/* flags for skip_vimgrep_pat() */
-#define VGR_GLOBAL      1
-#define VGR_NOJUMP      2
 
 /* behavior for bad character, "++bad=" argument */
 #define BAD_REPLACE     '?'     /* replace it with '?' (default) */
@@ -5992,12 +5915,6 @@ EXTERN char *ignoredp;
 #define KEYLEN_PART_KEY -1      /* keylen value for incomplete key-code */
 #define KEYLEN_PART_MAP -2      /* keylen value for incomplete mapping */
 #define KEYLEN_REMOVED  9999    /* keylen value for removed sequence */
-
-/* Return values from win32_fileinfo(). */
-#define FILEINFO_OK          0
-#define FILEINFO_ENC_FAIL    1  /* enc_to_utf16() failed */
-#define FILEINFO_READ_FAIL   2  /* CreateFile() failed */
-#define FILEINFO_INFO_FAIL   3  /* GetFileInformationByHandle() failed */
 
 /* Return value from get_option_value_strict */
 #define SOPT_BOOL       0x01    /* Boolean option */

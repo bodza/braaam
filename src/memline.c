@@ -312,12 +312,11 @@ ml_open(buf)
 
     /*
      * Always sync block number 0 to disk, so we can check the file name in
-     * the swap file in findswapname(). Don't do this for a help files or a spell buffer though.
+     * the swap file in findswapname().
      * Only works when there's a swapfile, otherwise it's done when the file is created.
      */
     mf_put(mfp, hp, TRUE, FALSE);
-    if (!buf->b_help && !B_SPELL(buf))
-        (void)mf_sync(mfp, 0);
+    (void)mf_sync(mfp, 0);
 
     /*
      * Fill in root pointer block and write page 1.
@@ -688,7 +687,7 @@ set_b0_fname(b0p, buf)
          * First replace home dir path with "~/" with home_replace().
          * Then insert the user name to get "~user/".
          */
-        home_replace(NULL, buf->b_ffname, b0p->b0_fname, B0_FNAME_SIZE_CRYPT, TRUE);
+        home_replace(buf->b_ffname, b0p->b0_fname, B0_FNAME_SIZE_CRYPT, TRUE);
         if (b0p->b0_fname[0] == '~')
         {
             flen = STRLEN(b0p->b0_fname);
@@ -990,13 +989,13 @@ ml_recover()
             goto theend;
     }
 
-    home_replace(NULL, mfp->mf_fname, NameBuff, MAXPATHL, TRUE);
+    home_replace(mfp->mf_fname, NameBuff, MAXPATHL, TRUE);
     smsg((char_u *)"Using swap file \"%s\"", NameBuff);
 
     if (buf_spname(curbuf) != NULL)
         vim_strncpy(NameBuff, buf_spname(curbuf), MAXPATHL - 1);
     else
-        home_replace(NULL, curbuf->b_ffname, NameBuff, MAXPATHL, TRUE);
+        home_replace(curbuf->b_ffname, NameBuff, MAXPATHL, TRUE);
     smsg((char_u *)"Original file \"%s\"", NameBuff);
     msg_putchar('\n');
 
@@ -3484,8 +3483,7 @@ attention_message(buf, fname)
         if (sx != 0 && x > sx)
             MSG_PUTS("      NEWER than swap file!\n");
     }
-    /* Some of these messages are long to allow translation to
-     * other languages. */
+    /* Some of these messages are long to allow translation to other languages. */
     MSG_PUTS("\n(1) Another program may be editing the same file.  If this is the case,\n    be careful not to end up with two different instances of the same\n    file when making changes.");
     MSG_PUTS("  Quit, or continue with caution.\n");
     MSG_PUTS("(2) An edit session for this file crashed.\n");
@@ -3730,7 +3728,7 @@ findswapname(buf, dirp, old_fname)
              * viewing a help file or when the path of the file is different
              * (happens when all .swp files are in one directory).
              */
-            if (!recoverymode && buf_fname != NULL && !buf->b_help && !(buf->b_flags & BF_DUMMY))
+            if (!recoverymode && buf_fname != NULL && !(buf->b_flags & BF_DUMMY))
             {
                 int             fd;
                 struct block0   b0;
@@ -3821,7 +3819,7 @@ findswapname(buf, dirp, old_fname)
                         if (name != NULL)
                         {
                             STRCPY(name, "Swap file \"");
-                            home_replace(NULL, fname, name + STRLEN(name), 1000, TRUE);
+                            home_replace(fname, name + STRLEN(name), 1000, TRUE);
                             STRCAT(name, "\" already exists!");
                         }
                         choice = do_dialog(VIM_WARNING,

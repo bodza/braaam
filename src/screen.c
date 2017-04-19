@@ -3981,13 +3981,8 @@ win_redr_status(wp)
         p = NameBuff;
         len = (int)STRLEN(p);
 
-        if (wp->w_buffer->b_help || bufIsChanged(wp->w_buffer) || wp->w_buffer->b_p_ro)
+        if (bufIsChanged(wp->w_buffer) || wp->w_buffer->b_p_ro)
             *(p + len++) = ' ';
-        if (wp->w_buffer->b_help)
-        {
-            STRCPY(p + len, "[Help]");
-            len += (int)STRLEN(p + len);
-        }
         if (bufIsChanged(wp->w_buffer))
         {
             STRCPY(p + len, "[+]");
@@ -7019,7 +7014,7 @@ get_trans_bufname(buf)
     if (buf_spname(buf) != NULL)
         vim_strncpy(NameBuff, buf_spname(buf), MAXPATHL - 1);
     else
-        home_replace(buf, buf->b_fname, NameBuff, MAXPATHL, TRUE);
+        home_replace(buf->b_fname, NameBuff, MAXPATHL, TRUE);
     trans_characters(NameBuff, MAXPATHL);
 }
 

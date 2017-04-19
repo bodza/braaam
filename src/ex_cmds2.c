@@ -3,7 +3,6 @@
  */
 
 #include "vim.h"
-/* #include "version.h" */
 
 static void     cmd_source(char_u *fname, exarg_T *eap);
 
@@ -591,7 +590,7 @@ ex_breaklist(eap)
         {
             bp = &BREAKP(i);
             if (bp->dbg_type == DBG_FILE)
-                home_replace(NULL, bp->dbg_name, NameBuff, MAXPATHL, TRUE);
+                home_replace(bp->dbg_name, NameBuff, MAXPATHL, TRUE);
             smsg((char_u *)"%3d  %s %s  line %ld",
                     bp->dbg_nr,
                     bp->dbg_type == DBG_FUNC ? "func" : "file",
@@ -796,26 +795,6 @@ profile_zero(tm)
 }
 
 #include <math.h>
-
-/*
- * Divide the time "tm" by "count" and store in "tm2".
- */
-    void
-profile_divide(tm, count, tm2)
-    proftime_T  *tm;
-    proftime_T  *tm2;
-    int         count;
-{
-    if (count == 0)
-        profile_zero(tm2);
-    else
-    {
-        double usec = (tm->tv_sec * 1000000.0 + tm->tv_usec) / count;
-
-        tm2->tv_sec = floor(usec / 1000000.0);
-        tm2->tv_usec = vim_round(usec - (tm2->tv_sec * 1000000.0));
-    }
-}
 
 /*
  * If 'autowrite' option set, try to write the file.
@@ -1230,34 +1209,6 @@ get_arglist(gap, str)
         str = do_one_arg(str);
     }
     return OK;
-}
-
-/*
- * Parse a list of arguments (file names), expand them and return in
- * "fnames[fcountp]".  When "wig" is TRUE, removes files matching 'wildignore'.
- * Return FAIL or OK.
- */
-    int
-get_arglist_exp(str, fcountp, fnamesp, wig)
-    char_u      *str;
-    int         *fcountp;
-    char_u      ***fnamesp;
-    int         wig;
-{
-    garray_T    ga;
-    int         i;
-
-    if (get_arglist(&ga, str) == FAIL)
-        return FAIL;
-    if (wig == TRUE)
-        i = expand_wildcards(ga.ga_len, (char_u **)ga.ga_data,
-                                        fcountp, fnamesp, EW_FILE|EW_NOTFOUND);
-    else
-        i = gen_expand_wildcards(ga.ga_len, (char_u **)ga.ga_data,
-                                        fcountp, fnamesp, EW_FILE|EW_NOTFOUND);
-
-    ga_clear(&ga);
-    return i;
 }
 
 /*
@@ -2499,7 +2450,7 @@ ex_scriptnames(eap)
     for (i = 1; i <= script_items.ga_len && !got_int; ++i)
         if (SCRIPT_ITEM(i).sn_name != NULL)
         {
-            home_replace(NULL, SCRIPT_ITEM(i).sn_name, NameBuff, MAXPATHL, TRUE);
+            home_replace(SCRIPT_ITEM(i).sn_name, NameBuff, MAXPATHL, TRUE);
             smsg((char_u *)"%3d: %s", i, NameBuff);
         }
 }

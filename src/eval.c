@@ -439,7 +439,6 @@ static void f_copy(typval_T *argvars, typval_T *rettv);
 static void f_cos(typval_T *argvars, typval_T *rettv);
 static void f_cosh(typval_T *argvars, typval_T *rettv);
 static void f_count(typval_T *argvars, typval_T *rettv);
-static void f_cscope_connection(typval_T *argvars, typval_T *rettv);
 static void f_cursor(typval_T *argsvars, typval_T *rettv);
 static void f_deepcopy(typval_T *argvars, typval_T *rettv);
 static void f_delete(typval_T *argvars, typval_T *rettv);
@@ -7467,7 +7466,6 @@ static struct fst
     {"cos",             1, 1, f_cos},
     {"cosh",            1, 1, f_cosh},
     {"count",           2, 4, f_count},
-    {"cscope_connection",0,3, f_cscope_connection},
     {"cursor",          1, 3, f_cursor},
     {"deepcopy",        1, 2, f_deepcopy},
     {"delete",          1, 1, f_delete},
@@ -9106,18 +9104,6 @@ f_count(argvars, rettv)
     else
         EMSG2((char *)e_listdictarg, "count()");
     rettv->vval.v_number = n;
-}
-
-/*
- * "cscope_connection([{num} , {dbpath} [, {prepend}]])" function
- *
- * Checks the existence of a cscope connection.
- */
-    static void
-f_cscope_connection(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv UNUSED;
-{
 }
 
 /*
@@ -21248,7 +21234,7 @@ last_set_msg(scriptID)
 
     if (scriptID != 0)
     {
-        p = home_replace_save(NULL, get_scriptname(scriptID));
+        p = home_replace_save(get_scriptname(scriptID));
         if (p != NULL)
         {
             verbose_enter();
@@ -21410,7 +21396,7 @@ repeat:
             }
             else
             {
-                home_replace(NULL, p, dirname, MAXPATHL, TRUE);
+                home_replace(p, dirname, MAXPATHL, TRUE);
                 /* Only replace it when it starts with '~' */
                 if (*dirname == '~')
                 {

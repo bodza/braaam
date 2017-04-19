@@ -92,8 +92,6 @@ static void     ex_wrongmodifier(exarg_T *eap);
 static void     ex_find(exarg_T *eap);
 static void     ex_open(exarg_T *eap);
 static void     ex_edit(exarg_T *eap);
-#define ex_gui                 ex_nogui
-static void     ex_nogui(exarg_T *eap);
 static void     ex_swapname(exarg_T *eap);
 static void     ex_syncbind(exarg_T *eap);
 static void     ex_read(exarg_T *eap);
@@ -156,7 +154,7 @@ static cmdidx_T cmdidxs[27] =
         CMD_edit,
         CMD_file,
         CMD_global,
-        CMD_help,
+        CMD_highlight,
         CMD_insert,
         CMD_join,
         CMD_k,
@@ -2192,7 +2190,6 @@ do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
             case CMD_echomsg:
             case CMD_echon:
             case CMD_execute:
-            case CMD_help:
             case CMD_hide:
             case CMD_keepalt:
             case CMD_keepjumps:
@@ -3091,10 +3088,6 @@ set_one_cmd_context(xp, buff)
         case CMD_lchdir:
             if (xp->xp_context == EXPAND_FILES)
                 xp->xp_context = EXPAND_DIRECTORIES;
-            break;
-        case CMD_help:
-            xp->xp_context = EXPAND_HELP;
-            xp->xp_pattern = arg;
             break;
 
         /* Command modifiers: return the argument.
@@ -4788,11 +4781,9 @@ static struct
     {EXPAND_FILES_IN_PATH, "file_in_path"},
     {EXPAND_FILETYPE, "filetype"},
     {EXPAND_FUNCTIONS, "function"},
-    {EXPAND_HELP, "help"},
     {EXPAND_HIGHLIGHT, "highlight"},
     {EXPAND_HISTORY, "history"},
     {EXPAND_MAPPINGS, "mapping"},
-    {EXPAND_MENUS, "menu"},
     {EXPAND_OWNSYNTAX, "syntax"},
     {EXPAND_SETTINGS, "option"},
     {EXPAND_SHELLCMD, "shellcmd"},
@@ -6700,7 +6691,7 @@ ex_tabs(eap)
             if (buf_spname(wp->w_buffer) != NULL)
                 vim_strncpy(IObuff, buf_spname(wp->w_buffer), IOSIZE - 1);
             else
-                home_replace(wp->w_buffer, wp->w_buffer->b_fname, IObuff, IOSIZE, TRUE);
+                home_replace(wp->w_buffer->b_fname, IObuff, IOSIZE, TRUE);
             msg_outtrans(IObuff);
             out_flush();            /* output one line at a time */
             ui_breakcheck();
@@ -6958,16 +6949,6 @@ do_exedit(eap, old_curwin)
         old_curwin->w_alt_fnum = curbuf->b_fnum;
 
     ex_no_reprint = TRUE;
-}
-
-/*
- * ":gui" and ":gvim" when there is no GUI.
- */
-    static void
-ex_nogui(eap)
-    exarg_T     *eap;
-{
-    eap->errmsg = e_nogvim;
 }
 
     static void

@@ -504,7 +504,6 @@ cmd_with_count(cmd, bufp, bufsize, Prenum)
  * WSP_VERT: vertical split.
  * WSP_TOP:  open window at the top-left of the shell (help window).
  * WSP_BOT:  open window at the bottom-right of the shell (quickfix window).
- * WSP_HELP: creating the help window, keep layout snapshot
  *
  * return FAIL for failure, OK otherwise
  */
@@ -525,20 +524,12 @@ win_split(size, flags)
         return FAIL;
     }
 
-    /* When creating the help window make a snapshot of the window layout.
-     * Otherwise clear the snapshot, it's now invalid. */
-    if (flags & WSP_HELP)
-        make_snapshot(SNAP_HELP_IDX);
-    else
-        clear_snapshot(curtab, SNAP_HELP_IDX);
-
     return win_split_ins(size, flags, NULL, 0);
 }
 
 /*
  * When "new_wp" is NULL: split the current window in two.
- * When "new_wp" is not NULL: insert this window at the far
- * top/left/right/bottom.
+ * When "new_wp" is not NULL: insert this window at the far top/left/right/bottom.
  * return FAIL for failure, OK otherwise
  */
     int
@@ -1910,7 +1901,6 @@ win_close(win, free_buf)
     int         other_buffer = FALSE;
     int         close_curwin = FALSE;
     int         dir;
-    int         help_window = FALSE;
     tabpage_T   *prev_curtab = curtab;
 
     if (last_window())
@@ -1937,13 +1927,6 @@ win_close(win, free_buf)
      * curtab are invalid while we are freeing memory. */
     if (close_last_window_tabpage(win, free_buf, prev_curtab))
         return FAIL;
-
-    /* When closing the help window, try restoring a snapshot after closing
-     * the window.  Otherwise clear the snapshot, it's now invalid. */
-    if (win->w_buffer != NULL && win->w_buffer->b_help)
-        help_window = TRUE;
-    else
-        clear_snapshot(curtab, SNAP_HELP_IDX);
 
     if (win == curwin)
     {
@@ -2041,11 +2024,6 @@ win_close(win, free_buf)
      * remove the status line.
      */
     last_status(FALSE);
-
-    /* After closing the help window, try restoring the window layout from
-     * before it was opened. */
-    if (help_window)
-        restore_snapshot(SNAP_HELP_IDX, close_curwin);
 
     redraw_all_later(NOT_VALID);
     return OK;
@@ -3718,13 +3696,12 @@ win_enter_ext(wp, undo_sync, curwin_invalid, trigger_enter_autocmds, trigger_lea
     if (undo_sync && curbuf != wp->w_buffer)
         u_sync(FALSE);
 
-    /* Might need to scroll the old window before switching, e.g., when the
-     * cursor was moved. */
+    /* Might need to scroll the old window before switching, e.g., when the cursor was moved. */
     update_topline();
 
     /* may have to copy the buffer options when 'cpo' contains 'S' */
     if (wp->w_buffer != curbuf)
-        buf_copy_options(wp->w_buffer, BCO_ENTER | BCO_NOHELP);
+        buf_copy_options(wp->w_buffer, BCO_ENTER);
     if (!curwin_invalid)
     {
         prevwin = curwin;       /* remember for CTRL-W p */
@@ -5357,10 +5334,7 @@ only_one_window()
         return FALSE;
 
     for (wp = firstwin; wp != NULL; wp = wp->w_next)
-        if (wp->w_buffer != NULL
-                && (!((wp->w_buffer->b_help && !curbuf->b_help)) || wp == curwin)
-                && wp != aucmd_win
-           )
+        if (wp->w_buffer != NULL && wp != aucmd_win)
             ++count;
     return (count <= 1);
 }

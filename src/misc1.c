@@ -6,7 +6,6 @@
 #include "version.h"
 
 static char_u *vim_version_dir(char_u *vimdir);
-static char_u *remove_tail(char_u *p, char_u *pend, char_u *name);
 static void init_users(void);
 static int copy_indent(int size, char_u *src);
 
@@ -3530,7 +3529,6 @@ vim_getenv(name, mustfree)
     int         *mustfree;
 {
     char_u      *p;
-    char_u      *pend;
     int         vimruntime;
 
     p = mch_getenv(name);
@@ -3538,9 +3536,7 @@ vim_getenv(name, mustfree)
         p = NULL;
 
     if (p != NULL)
-    {
         return p;
-    }
 
     vimruntime = (STRCMP(name, "VIMRUNTIME") == 0);
     if (!vimruntime && STRCMP(name, "VIM") != 0)
@@ -3562,52 +3558,6 @@ vim_getenv(name, mustfree)
                 *mustfree = TRUE;
             else
                 p = mch_getenv((char_u *)"VIM");
-        }
-    }
-
-    /*
-     * When expanding $VIM or $VIMRUNTIME fails, try using:
-     * - the directory name from 'helpfile' (unless it contains '$')
-     * - the executable name from argv[0]
-     */
-    if (p == NULL)
-    {
-        if (p_hf != NULL && vim_strchr(p_hf, '$') == NULL)
-            p = p_hf;
-        if (p != NULL)
-        {
-            /* remove the file name */
-            pend = gettail(p);
-
-            /* remove "doc/" from 'helpfile', if present */
-            if (p == p_hf)
-                pend = remove_tail(p, pend, (char_u *)"doc");
-
-            /* for $VIM, remove "runtime/" or "vim54/", if present */
-            if (!vimruntime)
-            {
-                pend = remove_tail(p, pend, (char_u *)RUNTIME_DIRNAME);
-                pend = remove_tail(p, pend, (char_u *)VIM_VERSION_NODOT);
-            }
-
-            /* remove trailing path separator */
-            /* With MacOS path (with  colons) the final colon is required */
-            /* to avoid confusion between absolute and relative path */
-            if (pend > p && after_pathsep(p, pend))
-                --pend;
-
-                /* check that the result is a directory name */
-                p = vim_strnsave(p, (int)(pend - p));
-
-            if (p != NULL && !mch_isdir(p))
-            {
-                vim_free(p);
-                p = NULL;
-            }
-            else
-            {
-                *mustfree = TRUE;
-            }
         }
     }
 
@@ -3652,26 +3602,6 @@ vim_version_dir(vimdir)
         return p;
     vim_free(p);
     return NULL;
-}
-
-/*
- * If the string between "p" and "pend" ends in "name/", return "pend" minus
- * the length of "name/".  Otherwise return "pend".
- */
-    static char_u *
-remove_tail(p, pend, name)
-    char_u      *p;
-    char_u      *pend;
-    char_u      *name;
-{
-    int         len = (int)STRLEN(name) + 1;
-    char_u      *newend = pend - len;
-
-    if (newend >= p
-            && fnamencmp(newend, name, len - 1) == 0
-            && (newend == p || after_pathsep(p, newend)))
-        return newend;
-    return pend;
 }
 
 /*
@@ -3791,8 +3721,7 @@ int match_user(name)
  * If anything fails (except when out of space) dst equals src.
  */
     void
-home_replace(buf, src, dst, dstlen, one)
-    buf_T       *buf;   /* when not NULL, check for help files */
+home_replace(src, dst, dstlen, one)
     char_u      *src;   /* input file name */
     char_u      *dst;   /* where to put the result */
     int         dstlen; /* maximum length of the result */
@@ -3811,17 +3740,7 @@ home_replace(buf, src, dst, dstlen, one)
     }
 
     /*
-     * If the file is a help file, remove the path completely.
-     */
-    if (buf != NULL && buf->b_help)
-    {
-        STRCPY(dst, gettail(src));
-        return;
-    }
-
-    /*
-     * We check both the value of the $HOME environment variable and the
-     * "real" home directory.
+     * We check both the value of the $HOME environment variable and the "real" home directory.
      */
     if (homedir != NULL)
         dirlen = STRLEN(homedir);
@@ -3908,8 +3827,7 @@ home_replace(buf, src, dst, dstlen, one)
  * When something fails, NULL is returned.
  */
     char_u  *
-home_replace_save(buf, src)
-    buf_T       *buf;   /* when not NULL, check for help files */
+home_replace_save(src)
     char_u      *src;   /* input file name */
 {
     char_u      *dst;
@@ -3920,7 +3838,7 @@ home_replace_save(buf, src)
         len += (unsigned)STRLEN(src);
     dst = alloc(len);
     if (dst != NULL)
-        home_replace(buf, src, dst, len, TRUE);
+        home_replace(src, dst, len, TRUE);
     return dst;
 }
 

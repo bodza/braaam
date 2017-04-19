@@ -110,7 +110,7 @@ static char utf8len_tab_zero[256] =
  * "iso-8859-n" is handled by enc_canonize() directly.
  */
 static struct
-{   char *name;         int prop;               int codepage;}
+{   char *name;         int prop;               int ___codepage;}
 enc_canon_table[] =
 {
 #define IDX_LATIN_1     0
@@ -212,12 +212,7 @@ mb_init()
         {
             /* Unicode */
             enc_utf8 = TRUE;
-            if (i & (ENC_2BYTE | ENC_2WORD))
-                enc_unicode = 2;
-            else if (i & ENC_4BYTE)
-                enc_unicode = 4;
-            else
-                enc_unicode = 0;
+            enc_unicode = 0;
         }
         else
         {
@@ -3265,21 +3260,10 @@ convert_setup_ext(vcp, from, from_unicode_is_utf8, to, to_unicode_is_utf8)
         vcp->vc_type = CONV_TO_UTF8;
         vcp->vc_factor = 2;     /* up to twice as long */
     }
-    else if ((from_prop & ENC_LATIN9) && to_is_utf8)
-    {
-        /* Internal latin9 -> utf-8 conversion. */
-        vcp->vc_type = CONV_9_TO_UTF8;
-        vcp->vc_factor = 3;     /* up to three as long (euro sign) */
-    }
     else if (from_is_utf8 && (to_prop & ENC_LATIN1))
     {
         /* Internal utf-8 -> latin1 conversion. */
         vcp->vc_type = CONV_TO_LATIN1;
-    }
-    else if (from_is_utf8 && (to_prop & ENC_LATIN9))
-    {
-        /* Internal utf-8 -> latin9 conversion. */
-        vcp->vc_type = CONV_TO_LATIN9;
     }
 #if defined(USE_ICONV)
     else

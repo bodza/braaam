@@ -593,7 +593,7 @@ main_loop(cmdwin, noexmode)
             }
             if (need_fileinfo)          /* show file info after redraw */
             {
-                fileinfo(FALSE, TRUE, FALSE);
+                fileinfo(FALSE, FALSE);
                 need_fileinfo = FALSE;
             }
 

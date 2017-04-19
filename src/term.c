@@ -1936,8 +1936,6 @@ setmouse()
  * Return TRUE if
  * - "c" is in 'mouse', or
  * - 'a' is in 'mouse' and "c" is in MOUSE_A, or
- * - the current buffer is a help file and 'h' is in 'mouse' and we are in a
- *   normal editing mode (not at hit-return message).
  */
     int
 mouse_has(c)
@@ -1951,10 +1949,10 @@ mouse_has(c)
             case 'a': if (vim_strchr((char_u *)MOUSE_A, c) != NULL)
                           return TRUE;
                       break;
-            case MOUSE_HELP: if (c != MOUSE_RETURN && curbuf->b_help)
-                                 return TRUE;
-                             break;
-            default: if (c == *p) return TRUE; break;
+            case MOUSE_HELP: break;
+            default: if (c == *p)
+                         return TRUE;
+                     break;
         }
     return FALSE;
 }

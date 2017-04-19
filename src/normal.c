@@ -42,7 +42,6 @@ static void     del_from_showcmd(int);
 static void     nv_ignore(cmdarg_T *cap);
 static void     nv_nop(cmdarg_T *cap);
 static void     nv_error(cmdarg_T *cap);
-static void     nv_help(cmdarg_T *cap);
 static void     nv_addsub(cmdarg_T *cap);
 static void     nv_page(cmdarg_T *cap);
 static void     nv_gd(oparg_T *oap, int nchar, int thisblock);
@@ -354,9 +353,6 @@ static const struct nv_cmd
     {K_DEL,     nv_abbrev,      0,                      0},
     {K_KDEL,    nv_abbrev,      0,                      0},
     {K_UNDO,    nv_kundo,       0,                      0},
-    {K_HELP,    nv_help,        NV_NCW,                 0},
-    {K_F1,      nv_help,        NV_NCW,                 0},
-    {K_XF1,     nv_help,        NV_NCW,                 0},
     {K_SELECT,  nv_select,      0,                      0},
     {K_DROP,    nv_drop,        NV_STS,                 0},
     {K_CURSORHOLD, nv_cursorhold, NV_KEEPREG,           0},
@@ -2479,11 +2475,9 @@ do_mouse(oap, c, dir, count, fixindent)
     }
 
     /*
-     * Ctrl-Mouse click (or double click in a help window) jumps to the tag
-     * under the mouse pointer.
+     * Ctrl-Mouse click jumps to the tag under the mouse pointer.
      */
-    else if ((mod_mask & MOD_MASK_CTRL) || (curbuf->b_help
-                     && (mod_mask & MOD_MASK_MULTI_CLICK) == MOD_MASK_2CLICK))
+    else if ((mod_mask & MOD_MASK_CTRL))
     {
         if (State & INSERT)
             stuffcharReadbuff(Ctrl_O);
@@ -3455,17 +3449,6 @@ nv_error(cap)
 }
 
 /*
- * <Help> and <F1> commands.
- */
-    static void
-nv_help(cap)
-    cmdarg_T    *cap;
-{
-    if (!checkclearopq(cap->oap))
-        ex_help(NULL);
-}
-
-/*
  * CTRL-A and CTRL-X: Add or subtract from letter or number under cursor.
  */
     static void
@@ -4196,7 +4179,7 @@ nv_ctrlg(cap)
     }
     else if (!checkclearop(cap->oap))
         /* print full name if count given or :cd used */
-        fileinfo((int)cap->count0, FALSE, TRUE);
+        fileinfo((int)cap->count0, TRUE);
 }
 
 /*
@@ -4431,20 +4414,15 @@ nv_ident(cap)
 
         case ']':
             tag_cmd = TRUE;
-                STRCPY(buf, "ts ");
+            STRCPY(buf, "ts ");
             break;
 
         default:
             tag_cmd = TRUE;
-            if (curbuf->b_help)
-                STRCPY(buf, "he! ");
+            if (g_cmd)
+                STRCPY(buf, "tj ");
             else
-            {
-                if (g_cmd)
-                    STRCPY(buf, "tj ");
-                else
-                    sprintf((char *)buf, "%ldta ", cap->count0);
-            }
+                sprintf((char *)buf, "%ldta ", cap->count0);
     }
 
     /*
@@ -4479,13 +4457,7 @@ nv_ident(cap)
         else if (cmdchar == '#')
             aux_ptr = (char_u *)(p_magic ? "/?.*~[^$\\" : "/?^$\\");
         else if (tag_cmd)
-        {
-            if (curbuf->b_help)
-                /* ":help" handles unescaped argument */
-                aux_ptr = (char_u *)"";
-            else
-                aux_ptr = (char_u *)"\\|\"\n[";
-        }
+            aux_ptr = (char_u *)"\\|\"\n[";
         else
             aux_ptr = (char_u *)"\\|\"\n*?[";
 
@@ -4495,8 +4467,7 @@ nv_ident(cap)
             /* put a backslash before \ and some others */
             if (vim_strchr(aux_ptr, *ptr) != NULL)
                 *p++ = '\\';
-            /* When current byte is a part of multibyte character, copy all
-             * bytes of that character. */
+            /* When current byte is a part of multibyte character, copy all bytes of that character. */
             if (has_mbyte)
             {
                 int i;

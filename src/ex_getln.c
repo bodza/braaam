@@ -2485,8 +2485,7 @@ nextwild(xp, type, options, escape)
             p2 = NULL;
         else
         {
-            int use_options = options |
-                    WILD_HOME_REPLACE|WILD_ADD_SLASH|WILD_SILENT;
+            int use_options = options | WILD_HOME_REPLACE|WILD_ADD_SLASH|WILD_SILENT;
             if (escape)
                 use_options |= WILD_ESCAPE;
 
@@ -2960,7 +2959,7 @@ tilde_replace(orig_pat, num_files, files)
     {
         for (i = 0; i < num_files; ++i)
         {
-            p = home_replace_save(NULL, files[i]);
+            p = home_replace_save(files[i]);
             if (p != NULL)
             {
                 vim_free(files[i]);
@@ -3027,7 +3026,7 @@ showmatches(xp, wildmenu)
                           || xp->xp_context == EXPAND_SHELLCMD
                           || xp->xp_context == EXPAND_BUFFERS))
             {
-                home_replace(NULL, files_found[i], NameBuff, MAXPATHL, TRUE);
+                home_replace(files_found[i], NameBuff, MAXPATHL, TRUE);
                 j = vim_strsize(NameBuff);
             }
             else
@@ -3104,7 +3103,7 @@ showmatches(xp, wildmenu)
                         p = L_SHOWFILE(k);
                     else
                     {
-                        home_replace(NULL, files_found[k], NameBuff, MAXPATHL, TRUE);
+                        home_replace(files_found[k], NameBuff, MAXPATHL, TRUE);
                         p = NameBuff;
                     }
                 }
@@ -3230,10 +3229,8 @@ addstar(fname, len, context)
          * use with vim_regcomp().  First work out how long it will be:
          */
 
-        /* For help tags the translation is done in find_help_tags().
-         * For a tag pattern starting with "/" no translation is needed. */
-        if (context == EXPAND_HELP
-                || context == EXPAND_COLORS
+        /* For a tag pattern starting with "/" no translation is needed. */
+        if (context == EXPAND_COLORS
                 || context == EXPAND_COMPILER
                 || context == EXPAND_OWNSYNTAX
                 || context == EXPAND_FILETYPE
@@ -3355,7 +3352,6 @@ addstar(fname, len, context)
  *  EXPAND_BOOL_SETTINGS    Complete boolean variables only,  eg :set no^I
  *  EXPAND_TAGS             Complete tags from the files in p_tags.  eg :ta a^I
  *  EXPAND_TAGS_LISTFILES   As above, but list filenames on ^D, after :tselect
- *  EXPAND_HELP             Complete tags from the file 'helpfile'/tags
  *  EXPAND_EVENTS           Complete event names
  *  EXPAND_SYNTAX           Complete :syntax command arguments
  *  EXPAND_HIGHLIGHT        Complete highlight (syntax) group names
@@ -3552,16 +3548,6 @@ ExpandFromContext(xp, pat, num_file, file, options)
 
     *file = (char_u **)"";
     *num_file = 0;
-    if (xp->xp_context == EXPAND_HELP)
-    {
-        /* With an empty argument we would get all the help tags, which is
-         * very slow.  Get matches for "help" instead. */
-        if (find_help_tags(*pat == NUL ? (char_u *)"help" : pat, num_file, file, FALSE) == OK)
-        {
-            return OK;
-        }
-        return FAIL;
-    }
 
     if (xp->xp_context == EXPAND_SHELLCMD)
         return expand_shellcmd(pat, num_file, file, flags);
@@ -3724,17 +3710,14 @@ ExpandGeneric(xp, regmatch, num_file, file, func, escaped)
         }
     }
 
-    /* Sort the results.  Keep menu's in the specified order. */
-    if (xp->xp_context != EXPAND_MENUNAMES && xp->xp_context != EXPAND_MENUS)
-    {
-        if (xp->xp_context == EXPAND_EXPRESSION
-                || xp->xp_context == EXPAND_FUNCTIONS
-                || xp->xp_context == EXPAND_USER_FUNC)
-            /* <SNR> functions should be sorted to the end. */
-            qsort((void *)*file, (size_t)*num_file, sizeof(char_u *), sort_func_compare);
-        else
-            sort_strings(*file, *num_file);
-    }
+    /* Sort the results. */
+    if (xp->xp_context == EXPAND_EXPRESSION
+            || xp->xp_context == EXPAND_FUNCTIONS
+            || xp->xp_context == EXPAND_USER_FUNC)
+        /* <SNR> functions should be sorted to the end. */
+        qsort((void *)*file, (size_t)*num_file, sizeof(char_u *), sort_func_compare);
+    else
+        sort_strings(*file, *num_file);
 
     /* Reset the variables used for special highlight names expansion, so that
      * they don't show up when getting normal highlight names by ID. */

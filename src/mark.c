@@ -506,7 +506,7 @@ fmarks_check_names(buf)
     if (buf->b_ffname == NULL)
         return;
 
-    name = home_replace_save(buf, buf->b_ffname);
+    name = home_replace_save(buf->b_ffname);
     if (name == NULL)
         return;
 
@@ -607,7 +607,7 @@ fm_getname(fmark, lead_len)
 {
     if (fmark->fnum == curbuf->b_fnum)              /* current buffer */
         return mark_line(&(fmark->mark), lead_len);
-    return buflist_nr2name(fmark->fnum, FALSE, TRUE);
+    return buflist_nr2name(fmark->fnum, FALSE);
 }
 
 /*

@@ -83,8 +83,7 @@ open_buffer(read_stdin, eap, flags)
         return FAIL;
     }
 
-    /* The autocommands in readfile() may change the buffer, but only AFTER
-     * reading the file. */
+    /* The autocommands in readfile() may change the buffer, but only AFTER reading the file. */
     old_curbuf = curbuf;
     modified_was_set = FALSE;
 
@@ -96,9 +95,6 @@ open_buffer(read_stdin, eap, flags)
         retval = readfile(curbuf->b_ffname, curbuf->b_fname,
                   (linenr_T)0, (linenr_T)0, (linenr_T)MAXLNUM, eap,
                   flags | READ_NEW);
-        /* Help buffer is filtered. */
-        if (curbuf->b_help)
-            fix_help_buffer();
     }
     else if (read_stdin)
     {
@@ -1018,7 +1014,7 @@ do_buffer(action, start, dir, count, forceit)
                     continue;
                 }
                 /* in non-help buffer, try to skip help buffers, and vv */
-                if (buf->b_help == curbuf->b_help && buf->b_p_bl)
+                if (buf->b_p_bl)
                 {
                     if (buf->b_ml.ml_mfp != NULL)   /* found loaded buffer */
                         break;
@@ -1179,10 +1175,9 @@ set_curbuf(buf, action)
 enter_buffer(buf)
     buf_T       *buf;
 {
-    /* Copy buffer and window local option values.  Not for a help buffer. */
-    buf_copy_options(buf, BCO_ENTER | BCO_NOHELP);
-    if (!buf->b_help)
-        get_winopts(buf);
+    /* Copy buffer and window local option values. */
+    buf_copy_options(buf, BCO_ENTER);
+    get_winopts(buf);
 
     /* Get the buffer in the current window. */
     curwin->w_buffer = buf;
@@ -1844,7 +1839,7 @@ ExpandBufnames(pat, num_file, file, options)
                     else
                     {
                         if (options & WILD_HOME_REPLACE)
-                            p = home_replace_save(buf, p);
+                            p = home_replace_save(p);
                         else
                             p = vim_strsave(p);
                         (*file)[count++] = p;
@@ -1918,7 +1913,7 @@ fname_match(rmp, name, ignore_case)
         else
         {
             /* Replace $(HOME) with '~' and try matching again. */
-            p = home_replace_save(NULL, name);
+            p = home_replace_save(name);
             if (p != NULL && vim_regexec(rmp, p, (colnr_T)0))
                 match = name;
             vim_free(p);
@@ -1952,17 +1947,16 @@ buflist_findnr(nr)
  * Returns a pointer to allocated memory, of NULL when failed.
  */
     char_u *
-buflist_nr2name(n, fullname, helptail)
+buflist_nr2name(n, fullname)
     int         n;
     int         fullname;
-    int         helptail;       /* for help buffers return tail only */
 {
     buf_T       *buf;
 
     buf = buflist_findnr(n);
     if (buf == NULL)
         return NULL;
-    return home_replace_save(helptail ? buf : NULL, fullname ? buf->b_ffname : buf->b_fname);
+    return home_replace_save(fullname ? buf->b_ffname : buf->b_fname);
 }
 
 /*
@@ -2128,15 +2122,13 @@ buflist_list(eap)
         if (buf_spname(buf) != NULL)
             vim_strncpy(NameBuff, buf_spname(buf), MAXPATHL - 1);
         else
-            home_replace(buf, buf->b_fname, NameBuff, MAXPATHL, TRUE);
+            home_replace(buf->b_fname, NameBuff, MAXPATHL, TRUE);
 
         len = vim_snprintf((char *)IObuff, IOSIZE - 20, "%3d%c%c%c%c%c \"%s\"",
                 buf->b_fnum,
                 buf->b_p_bl ? ' ' : 'u',
-                buf == curbuf ? '%' :
-                        (curwin->w_alt_fnum == buf->b_fnum ? '#' : ' '),
-                buf->b_ml.ml_mfp == NULL ? ' ' :
-                        (buf->b_nwindows == 0 ? 'h' : 'a'),
+                buf == curbuf ? '%' : (curwin->w_alt_fnum == buf->b_fnum ? '#' : ' '),
+                buf->b_ml.ml_mfp == NULL ? ' ' : (buf->b_nwindows == 0 ? 'h' : 'a'),
                 !buf->b_p_ma ? '-' : (buf->b_p_ro ? '=' : ' '),
                 (buf->b_flags & BF_READERR) ? 'x' : (bufIsChanged(buf) ? '+' : ' '),
                 NameBuff);
@@ -2459,9 +2451,8 @@ buf_same_ino(buf, stp)
  * Print info about the current buffer.
  */
     void
-fileinfo(fullname, shorthelp, dont_truncate)
+fileinfo(fullname, dont_truncate)
     int fullname;           /* when non-zero print full path */
-    int shorthelp;
     int dont_truncate;
 {
     char_u      *name;
@@ -2491,7 +2482,7 @@ fileinfo(fullname, shorthelp, dont_truncate)
             name = curbuf->b_fname;
         else
             name = curbuf->b_ffname;
-        home_replace(shorthelp ? curbuf : NULL, name, p, (int)(IOSIZE - (p - buffer)), TRUE);
+        home_replace(name, p, (int)(IOSIZE - (p - buffer)), TRUE);
     }
 
     vim_snprintf_add((char *)buffer, IOSIZE, "\"%s%s%s%s%s%s",
@@ -2666,7 +2657,7 @@ maketitle()
                 off = (int)STRLEN(buf);
                 buf[off++] = ' ';
                 buf[off++] = '(';
-                home_replace(curbuf, curbuf->b_ffname, buf + off, SPACE_FOR_DIR - off, TRUE);
+                home_replace(curbuf->b_ffname, buf + off, SPACE_FOR_DIR - off, TRUE);
                 /* remove the file name */
                 p = gettail_sep(buf + off);
                 if (p == buf + off)
@@ -3136,9 +3127,8 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
                 vim_strncpy(NameBuff, buf_spname(wp->w_buffer), MAXPATHL - 1);
             else
             {
-                t = (opt == STL_FULLPATH) ? wp->w_buffer->b_ffname
-                                          : wp->w_buffer->b_fname;
-                home_replace(wp->w_buffer, t, NameBuff, MAXPATHL, TRUE);
+                t = (opt == STL_FULLPATH) ? wp->w_buffer->b_ffname : wp->w_buffer->b_fname;
+                home_replace(t, NameBuff, MAXPATHL, TRUE);
             }
             trans_characters(NameBuff, MAXPATHL);
             if (opt != STL_FILENAME)
@@ -3276,8 +3266,6 @@ build_stl_str_hl(wp, out, outlen, fmt, use_sandbox, fillchar, maxwidth, hltab, t
         case STL_HELPFLAG:
         case STL_HELPFLAG_ALT:
             itemisflag = TRUE;
-            if (wp->w_buffer->b_help)
-                str = (char_u *)((opt == STL_HELPFLAG_ALT) ? ",HLP" : "[Help]");
             break;
 
         case STL_FILETYPE:
