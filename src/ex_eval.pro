@@ -1,4 +1,3 @@
-/* ex_eval.c */
 int aborting __ARGS((void));
 void update_force_abort __ARGS((void));
 int should_abort __ARGS((int retcode));
@@ -31,4 +30,3 @@ int cleanup_conditionals __ARGS((struct condstack *cstack, int searched_cond, in
 void rewind_conditionals __ARGS((struct condstack *cstack, int idx, int cond_type, int *cond_level));
 void ex_endfunction __ARGS((exarg_T *eap));
 int has_loop_cmd __ARGS((char_u *p));
-/* vim: set ft=c : */

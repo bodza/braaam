@@ -1,4 +1,3 @@
-/* diff.c */
 void diff_buf_delete __ARGS((buf_T *buf));
 void diff_buf_adjust __ARGS((win_T *win));
 void diff_buf_add __ARGS((buf_T *buf));
@@ -24,4 +23,3 @@ int diff_mode_buf __ARGS((buf_T *buf));
 int diff_move_to __ARGS((int dir, long count));
 linenr_T diff_get_corresponding_line __ARGS((buf_T *buf1, linenr_T lnum1, buf_T *buf2, linenr_T lnum3));
 linenr_T diff_lnum_win __ARGS((linenr_T lnum, win_T *wp));
-/* vim: set ft=c : */

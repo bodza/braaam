@@ -1,4 +1,3 @@
-/* ex_cmds.c */
 void do_ascii __ARGS((exarg_T *eap));
 void ex_align __ARGS((exarg_T *eap));
 void ex_sort __ARGS((exarg_T *eap));
@@ -62,4 +61,3 @@ void free_signs __ARGS((void));
 char_u *get_sign_name __ARGS((expand_T *xp, int idx));
 void set_context_in_sign_cmd __ARGS((expand_T *xp, char_u *arg));
 void ex_drop __ARGS((exarg_T *eap));
-/* vim: set ft=c : */

@@ -1,4 +1,3 @@
-/* misc2.c */
 int virtual_active __ARGS((void));
 int getviscol __ARGS((void));
 int getviscol2 __ARGS((colnr_T col, colnr_T coladd));
@@ -108,4 +107,3 @@ int put_bytes __ARGS((FILE *fd, long_u nr, int len));
 void put_time __ARGS((FILE *fd, time_t the_time));
 void time_to_bytes __ARGS((time_t the_time, char_u *buf));
 int has_non_ascii __ARGS((char_u *s));
-/* vim: set ft=c : */

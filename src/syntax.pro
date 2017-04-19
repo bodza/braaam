@@ -1,4 +1,3 @@
-/* syntax.c */
 void syntax_start __ARGS((win_T *wp, linenr_T lnum));
 void syn_stack_free_all __ARGS((synblock_T *block));
 void syn_stack_apply_changes __ARGS((buf_T *buf));
@@ -53,4 +52,3 @@ int highlight_changed __ARGS((void));
 void set_context_in_highlight_cmd __ARGS((expand_T *xp, char_u *arg));
 char_u *get_highlight_name __ARGS((expand_T *xp, int idx));
 void free_highlight_fonts __ARGS((void));
-/* vim: set ft=c : */

@@ -1,4 +1,3 @@
-/* term.c */
 int set_termname __ARGS((char_u *term));
 void set_mouse_termcode __ARGS((int n, char_u *s));
 void del_mouse_termcode __ARGS((int n));
@@ -59,4 +58,3 @@ void show_termcodes __ARGS((void));
 int show_one_termcode __ARGS((char_u *name, char_u *code, int printit));
 char_u *translate_mapping __ARGS((char_u *str, int expmap));
 void update_tcap __ARGS((int attr));
-/* vim: set ft=c : */

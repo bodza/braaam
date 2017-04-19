@@ -1,4 +1,3 @@
-/* search.c */
 int search_regcomp __ARGS((char_u *pat, int pat_save, int pat_use, int options, regmmatch_T *regmatch));
 char_u *get_search_pat __ARGS((void));
 char_u *reverse_text __ARGS((char_u *s));
@@ -38,4 +37,3 @@ int linewhite __ARGS((linenr_T lnum));
 void find_pattern_in_path __ARGS((char_u *ptr, int dir, int len, int whole, int skip_comments, int type, long count, int action, linenr_T start_lnum, linenr_T end_lnum));
 int read_viminfo_search_pattern __ARGS((vir_T *virp, int force));
 void write_viminfo_search_pattern __ARGS((FILE *fp));
-/* vim: set ft=c : */

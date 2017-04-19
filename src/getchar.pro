@@ -1,4 +1,3 @@
-/* getchar.c */
 void free_buff __ARGS((buffheader_T *buf));
 char_u *get_recorded __ARGS((void));
 char_u *get_inserted __ARGS((void));
@@ -68,4 +67,3 @@ void check_map_keycodes __ARGS((void));
 char_u *check_map __ARGS((char_u *keys, int mode, int exact, int ign_mod, int abbr, mapblock_T **mp_ptr, int *local_ptr));
 void init_mappings __ARGS((void));
 void add_map __ARGS((char_u *map, int mode));
-/* vim: set ft=c : */

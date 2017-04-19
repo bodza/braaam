@@ -1,4 +1,3 @@
-/* ex_getln.c */
 char_u *getcmdline __ARGS((int firstc, long count, int indent));
 char_u *getcmdline_prompt __ARGS((int firstc, char_u *prompt, int attr, int xp_context, char_u *xp_arg));
 int text_locked __ARGS((void));
@@ -55,4 +54,3 @@ void write_viminfo_history __ARGS((FILE *fp, int merge));
 void cmd_pchar __ARGS((int c, int offset));
 int cmd_gchar __ARGS((int offset));
 char_u *script_get __ARGS((exarg_T *eap, char_u *cmd));
-/* vim: set ft=c : */

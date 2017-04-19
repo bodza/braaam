@@ -1,11 +1,4 @@
-/* vi:set ts=8 sts=4 sw=4:
- *
- * VIM - Vi IMproved	by Bram Moolenaar
- *
- * Do ":help uganda"  in Vim to read copying and usage conditions.
- * Do ":help credits" in Vim to see a list of people who contributed.
- * See README.txt for an overview of the Vim source code.
- *
+/*
  * FIPS-180-2 compliant SHA-256 implementation
  * GPL by Christophe Devine, applies to older version.
  * Modified for md5deep, in public domain.
@@ -26,16 +19,16 @@
 
 static void sha256_process __ARGS((context_sha256_T *ctx, char_u data[64]));
 
-#define GET_UINT32(n, b, i)		    \
-{					    \
-    (n) = ( (UINT32_T)(b)[(i)	 ] << 24)   \
-	| ( (UINT32_T)(b)[(i) + 1] << 16)   \
-	| ( (UINT32_T)(b)[(i) + 2] <<  8)   \
-	| ( (UINT32_T)(b)[(i) + 3]	);  \
+#define GET_UINT32(n, b, i)                 \
+{                                           \
+    (n) = ( (UINT32_T)(b)[(i)    ] << 24)   \
+        | ( (UINT32_T)(b)[(i) + 1] << 16)   \
+        | ( (UINT32_T)(b)[(i) + 2] <<  8)   \
+        | ( (UINT32_T)(b)[(i) + 3]      );  \
 }
 
-#define PUT_UINT32(n,b,i)		  \
-{					  \
+#define PUT_UINT32(n,b,i)                 \
+{                                         \
     (b)[(i)    ] = (char_u)((n) >> 24);   \
     (b)[(i) + 1] = (char_u)((n) >> 16);   \
     (b)[(i) + 2] = (char_u)((n) >>  8);   \
@@ -62,7 +55,7 @@ sha256_start(ctx)
     static void
 sha256_process(ctx, data)
     context_sha256_T *ctx;
-    char_u	     data[64];
+    char_u           data[64];
 {
     UINT32_T temp1, temp2, W[64];
     UINT32_T A, B, C, D, E, F, G, H;
@@ -84,7 +77,7 @@ sha256_process(ctx, data)
     GET_UINT32(W[14], data, 56);
     GET_UINT32(W[15], data, 60);
 
-#define  SHR(x, n) ((x & 0xFFFFFFFF) >> n)
+#define SHR(x, n) ((x & 0xFFFFFFFF) >> n)
 #define ROTR(x, n) (SHR(x, n) | (x << (32 - n)))
 
 #define S0(x) (ROTR(x, 7) ^ ROTR(x, 18) ^  SHR(x, 3))
@@ -96,17 +89,17 @@ sha256_process(ctx, data)
 #define F0(x, y, z) ((x & y) | (z & (x | y)))
 #define F1(x, y, z) (z ^ (x & (y ^ z)))
 
-#define R(t)				\
-(					\
-    W[t] = S1(W[t -  2]) + W[t -  7] +	\
-	   S0(W[t - 15]) + W[t - 16]	\
+#define R(t)                            \
+(                                       \
+    W[t] = S1(W[t -  2]) + W[t -  7] +  \
+           S0(W[t - 15]) + W[t - 16]    \
 )
 
-#define P(a,b,c,d,e,f,g,h,x,K)		     \
-{					     \
+#define P(a,b,c,d,e,f,g,h,x,K)               \
+{                                            \
     temp1 = h + S3(e) + F1(e, f, g) + K + x; \
-    temp2 = S2(a) + F0(a, b, c);	     \
-    d += temp1; h = temp1 + temp2;	     \
+    temp2 = S2(a) + F0(a, b, c);             \
+    d += temp1; h = temp1 + temp2;           \
 }
 
     A = ctx->state[0];
@@ -196,13 +189,13 @@ sha256_process(ctx, data)
     void
 sha256_update(ctx, input, length)
     context_sha256_T *ctx;
-    char_u	     *input;
-    UINT32_T	     length;
+    char_u           *input;
+    UINT32_T         length;
 {
     UINT32_T left, fill;
 
     if (length == 0)
-	return;
+        return;
 
     left = ctx->total[0] & 0x3F;
     fill = 64 - left;
@@ -211,26 +204,26 @@ sha256_update(ctx, input, length)
     ctx->total[0] &= 0xFFFFFFFF;
 
     if (ctx->total[0] < length)
-	ctx->total[1]++;
+        ctx->total[1]++;
 
     if (left && length >= fill)
     {
-	memcpy((void *)(ctx->buffer + left), (void *)input, fill);
-	sha256_process(ctx, ctx->buffer);
-	length -= fill;
-	input  += fill;
-	left = 0;
+        memcpy((void *)(ctx->buffer + left), (void *)input, fill);
+        sha256_process(ctx, ctx->buffer);
+        length -= fill;
+        input  += fill;
+        left = 0;
     }
 
     while (length >= 64)
     {
-	sha256_process(ctx, input);
-	length -= 64;
-	input  += 64;
+        sha256_process(ctx, input);
+        length -= 64;
+        input  += 64;
     }
 
     if (length)
-	memcpy((void *)(ctx->buffer + left), (void *)input, length);
+        memcpy((void *)(ctx->buffer + left), (void *)input, length);
 }
 
 static char_u sha256_padding[64] = {
@@ -243,7 +236,7 @@ static char_u sha256_padding[64] = {
     void
 sha256_finish(ctx, digest)
     context_sha256_T *ctx;
-    char_u	     digest[32];
+    char_u           digest[32];
 {
     UINT32_T last, padn;
     UINT32_T high, low;
@@ -270,9 +263,9 @@ sha256_finish(ctx, digest)
     PUT_UINT32(ctx->state[6], digest, 24);
     PUT_UINT32(ctx->state[7], digest, 28);
 }
-#endif /* FEAT_CRYPT || FEAT_PERSISTENT_UNDO */
+#endif
 
-#if defined(FEAT_CRYPT) || defined(PROTO)
+#if defined(FEAT_CRYPT)
 static unsigned int get_some_time __ARGS((void));
 
 /*
@@ -286,9 +279,9 @@ sha256_bytes(buf, buf_len, salt, salt_len)
     char_u *salt;
     int    salt_len;
 {
-    char_u	     sha256sum[32];
+    char_u           sha256sum[32];
     static char_u    hexit[65];
-    int		     j;
+    int              j;
     context_sha256_T ctx;
 
     sha256_self_test();
@@ -296,10 +289,10 @@ sha256_bytes(buf, buf_len, salt, salt_len)
     sha256_start(&ctx);
     sha256_update(&ctx, buf, buf_len);
     if (salt != NULL)
-	sha256_update(&ctx, salt, salt_len);
+        sha256_update(&ctx, salt, salt_len);
     sha256_finish(&ctx, sha256sum);
     for (j = 0; j < 32; j++)
-	sprintf((char *)hexit + j * 2, "%02x", sha256sum[j]);
+        sprintf((char *)hexit + j * 2, "%02x", sha256sum[j]);
     hexit[sizeof(hexit) - 1] = '\0';
     return hexit;
 }
@@ -315,7 +308,7 @@ sha256_key(buf, salt, salt_len)
 {
     /* No passwd means don't encrypt */
     if (buf == NULL || *buf == NUL)
-	return (char_u *)"";
+        return (char_u *)"";
 
     return sha256_bytes(buf, (int)STRLEN(buf), salt, salt_len);
 }
@@ -346,44 +339,44 @@ static char *sha_self_test_vector[] = {
     int
 sha256_self_test()
 {
-    int		     i, j;
-    char	     output[65];
+    int              i, j;
+    char             output[65];
     context_sha256_T ctx;
-    char_u	     buf[1000];
-    char_u	     sha256sum[32];
-    static int	     failures = 0;
-    char_u	     *hexit;
-    static int	     sha256_self_tested = 0;
+    char_u           buf[1000];
+    char_u           sha256sum[32];
+    static int       failures = 0;
+    char_u           *hexit;
+    static int       sha256_self_tested = 0;
 
     if (sha256_self_tested > 0)
-	return failures > 0 ? FAIL : OK;
+        return failures > 0 ? FAIL : OK;
     sha256_self_tested = 1;
 
     for (i = 0; i < 3; i++)
     {
-	if (i < 2)
-	{
-	    hexit = sha256_bytes((char_u *)sha_self_test_msg[i],
-		    (int)STRLEN(sha_self_test_msg[i]),
-		    NULL, 0);
-	    STRCPY(output, hexit);
-	}
-	else
-	{
-	    sha256_start(&ctx);
-	    vim_memset(buf, 'a', 1000);
-	    for (j = 0; j < 1000; j++)
-		sha256_update(&ctx, (char_u *)buf, 1000);
-	    sha256_finish(&ctx, sha256sum);
-	    for (j = 0; j < 32; j++)
-		sprintf(output + j * 2, "%02x", sha256sum[j]);
-	}
-	if (memcmp(output, sha_self_test_vector[i], 64))
-	{
-	    failures++;
-	    output[sizeof(output) - 1] = '\0';
-	    /* printf("sha256_self_test %d failed %s\n", i, output); */
-	}
+        if (i < 2)
+        {
+            hexit = sha256_bytes((char_u *)sha_self_test_msg[i],
+                    (int)STRLEN(sha_self_test_msg[i]),
+                    NULL, 0);
+            STRCPY(output, hexit);
+        }
+        else
+        {
+            sha256_start(&ctx);
+            vim_memset(buf, 'a', 1000);
+            for (j = 0; j < 1000; j++)
+                sha256_update(&ctx, (char_u *)buf, 1000);
+            sha256_finish(&ctx, sha256sum);
+            for (j = 0; j < 32; j++)
+                sprintf(output + j * 2, "%02x", sha256sum[j]);
+        }
+        if (memcmp(output, sha_self_test_vector[i], 64))
+        {
+            failures++;
+            output[sizeof(output) - 1] = '\0';
+            /* printf("sha256_self_test %d failed %s\n", i, output); */
+        }
     }
     return failures > 0 ? FAIL : OK;
 }
@@ -391,15 +384,15 @@ sha256_self_test()
     static unsigned int
 get_some_time()
 {
-# ifdef HAVE_GETTIMEOFDAY
+#if defined(HAVE_GETTIMEOFDAY)
     struct timeval tv;
 
     /* Using usec makes it less predictable. */
     gettimeofday(&tv, NULL);
     return (unsigned int)(tv.tv_sec + tv.tv_usec);
-# else
+#else
     return (unsigned int)time(NULL);
-# endif
+#endif
 }
 
 /*
@@ -413,27 +406,27 @@ sha2_seed(header, header_len, salt, salt_len)
     char_u *salt;
     int    salt_len;
 {
-    int		     i;
+    int              i;
     static char_u    random_data[1000];
-    char_u	     sha256sum[32];
+    char_u           sha256sum[32];
     context_sha256_T ctx;
 
     srand(get_some_time());
 
     for (i = 0; i < (int)sizeof(random_data) - 1; i++)
-	random_data[i] = (char_u)((get_some_time() ^ rand()) & 0xff);
+        random_data[i] = (char_u)((get_some_time() ^ rand()) & 0xff);
     sha256_start(&ctx);
     sha256_update(&ctx, (char_u *)random_data, sizeof(random_data));
     sha256_finish(&ctx, sha256sum);
 
     /* put first block into header. */
     for (i = 0; i < header_len; i++)
-	header[i] = sha256sum[i % sizeof(sha256sum)];
+        header[i] = sha256sum[i % sizeof(sha256sum)];
 
     /* put remaining block into salt. */
     if (salt != NULL)
-	for (i = 0; i < salt_len; i++)
-	    salt[i] = sha256sum[(i + header_len) % sizeof(sha256sum)];
+        for (i = 0; i < salt_len; i++)
+            salt[i] = sha256sum[(i + header_len) % sizeof(sha256sum)];
 }
 
-#endif /* FEAT_CRYPT */
+#endif

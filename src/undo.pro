@@ -1,4 +1,3 @@
-/* undo.c */
 int u_save_cursor __ARGS((void));
 int u_save __ARGS((linenr_T top, linenr_T bot));
 int u_savesub __ARGS((linenr_T lnum));
@@ -27,4 +26,3 @@ void u_blockfree __ARGS((buf_T *buf));
 int bufIsChanged __ARGS((buf_T *buf));
 int curbufIsChanged __ARGS((void));
 void u_eval_tree __ARGS((u_header_T *first_uhp, list_T *list));
-/* vim: set ft=c : */

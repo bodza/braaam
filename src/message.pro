@@ -1,4 +1,3 @@
-/* message.c */
 int msg __ARGS((char_u *s));
 int verb_msg __ARGS((char_u *s));
 int msg_attr __ARGS((char_u *s, int attr));
@@ -71,4 +70,3 @@ int vim_dialog_yesno __ARGS((int type, char_u *title, char_u *message, int dflt)
 int vim_dialog_yesnocancel __ARGS((int type, char_u *title, char_u *message, int dflt));
 int vim_dialog_yesnoallcancel __ARGS((int type, char_u *title, char_u *message, int dflt));
 char_u *do_browse __ARGS((int flags, char_u *title, char_u *dflt, char_u *ext, char_u *initdir, char_u *filter, buf_T *buf));
-/* vim: set ft=c : */

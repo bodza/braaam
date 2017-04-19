@@ -1,4 +1,3 @@
-/* buffer.c */
 int open_buffer __ARGS((int read_stdin, exarg_T *eap, int flags));
 int buf_valid __ARGS((buf_T *buf));
 void close_buffer __ARGS((win_T *win, buf_T *buf, int action, int abort_if_last));
@@ -68,4 +67,3 @@ void sign_mark_adjust __ARGS((linenr_T line1, linenr_T line2, long amount, long 
 void set_buflisted __ARGS((int on));
 int buf_contents_changed __ARGS((buf_T *buf));
 void wipe_buffer __ARGS((buf_T *buf, int aucmd));
-/* vim: set ft=c : */

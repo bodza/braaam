@@ -1,4 +1,3 @@
-/* fileio.c */
 void filemess __ARGS((buf_T *buf, char_u *name, char_u *s, int attr));
 int readfile __ARGS((char_u *fname, char_u *sfname, linenr_T from, linenr_T lines_to_skip, linenr_T lines_to_read, exarg_T *eap, int flags));
 int prep_exarg __ARGS((exarg_T *eap, buf_T *buf));
@@ -63,4 +62,3 @@ int match_file_list __ARGS((char_u *list, char_u *sfname, char_u *ffname));
 char_u *file_pat_to_reg_pat __ARGS((char_u *pat, char_u *pat_end, char *allow_dirs, int no_bslash));
 long read_eintr __ARGS((int fd, void *buf, size_t bufsize));
 long write_eintr __ARGS((int fd, void *buf, size_t bufsize));
-/* vim: set ft=c : */

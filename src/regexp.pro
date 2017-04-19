@@ -1,4 +1,3 @@
-/* regexp.c */
 int re_multiline __ARGS((regprog_T *prog));
 int re_lookbehind __ARGS((regprog_T *prog));
 char_u *skip_regexp __ARGS((char_u *startp, int dirc, int magic, char_u **newp));
@@ -17,4 +16,3 @@ int vim_regexec_prog __ARGS((regprog_T **prog, int ignore_case, char_u *line, co
 int vim_regexec __ARGS((regmatch_T *rmp, char_u *line, colnr_T col));
 int vim_regexec_nl __ARGS((regmatch_T *rmp, char_u *line, colnr_T col));
 long vim_regexec_multi __ARGS((regmmatch_T *rmp, win_T *win, buf_T *buf, linenr_T lnum, colnr_T col, proftime_T *tm));
-/* vim: set ft=c : */

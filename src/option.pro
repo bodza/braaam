@@ -1,4 +1,3 @@
-/* option.c */
 void set_init_1 __ARGS((void));
 void set_string_default __ARGS((char *name, char_u *val));
 void set_number_default __ARGS((char *name, long val));
@@ -63,4 +62,3 @@ long get_sw_value __ARGS((buf_T *buf));
 long get_sts_value __ARGS((void));
 void find_mps_values __ARGS((int *initc, int *findc, int *backwards, int switchit));
 unsigned int get_bkc_value __ARGS((buf_T *buf));
-/* vim: set ft=c : */

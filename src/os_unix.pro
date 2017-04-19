@@ -1,4 +1,3 @@
-/* os_unix.c */
 int mch_chdir __ARGS((char *path));
 void mch_write __ARGS((char_u *s, int len));
 int mch_inchar __ARGS((char_u *buf, int maxlen, long wtime, int tb_change_cnt));
@@ -73,4 +72,3 @@ void clip_xterm_set_selection __ARGS((VimClipboard *cbd));
 int xsmp_handle_requests __ARGS((void));
 void xsmp_init __ARGS((void));
 void xsmp_close __ARGS((void));
-/* vim: set ft=c : */

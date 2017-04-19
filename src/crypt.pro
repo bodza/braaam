@@ -1,4 +1,3 @@
-/* crypt.c */
 int crypt_method_nr_from_name __ARGS((char_u *name));
 int crypt_method_nr_from_magic __ARGS((char *ptr, int len));
 int crypt_works_inplace __ARGS((cryptstate_T *state));
@@ -23,4 +22,3 @@ void crypt_check_method __ARGS((int method));
 void crypt_check_current_method __ARGS((void));
 char_u *crypt_get_key __ARGS((int store, int twice));
 void crypt_append_msg __ARGS((buf_T *buf));
-/* vim: set ft=c : */

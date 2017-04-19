@@ -1,4 +1,3 @@
-/* ops.c */
 int get_op_type __ARGS((int char1, int char2));
 int op_on_lines __ARGS((int op));
 int get_op_char __ARGS((int optype));
@@ -59,4 +58,3 @@ void write_reg_contents_lst __ARGS((int name, char_u **strings, int maxlen, int 
 void write_reg_contents_ex __ARGS((int name, char_u *str, int maxlen, int must_append, int yank_type, long block_len));
 void clear_oparg __ARGS((oparg_T *oap));
 void cursor_pos_info __ARGS((void));
-/* vim: set ft=c : */

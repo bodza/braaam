@@ -1,4 +1,3 @@
-/* misc1.c */
 int get_indent __ARGS((void));
 int get_indent_lnum __ARGS((linenr_T lnum));
 int get_indent_buf __ARGS((buf_T *buf, linenr_T lnum));
@@ -105,4 +104,3 @@ char_u *get_cmd_output __ARGS((char_u *cmd, char_u *infile, int flags, int *ret_
 void FreeWild __ARGS((int count, char_u **files));
 int goto_im __ARGS((void));
 char_u *get_isolated_shell_name __ARGS((void));
-/* vim: set ft=c : */

@@ -1,4 +1,3 @@
-/* charset.c */
 int init_chartab __ARGS((void));
 int buf_init_chartab __ARGS((buf_T *buf, int global));
 void trans_characters __ARGS((char_u *buf, int bufsize));
@@ -55,5 +54,3 @@ int hexhex2nr __ARGS((char_u *p));
 int rem_backslash __ARGS((char_u *str));
 void backslash_halve __ARGS((char_u *p));
 char_u *backslash_halve_save __ARGS((char_u *p));
-void ebcdic2ascii __ARGS((char_u *buffer, int len));
-/* vim: set ft=c : */

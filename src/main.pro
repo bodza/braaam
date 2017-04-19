@@ -1,4 +1,3 @@
-/* main.c */
 void main_loop __ARGS((int cmdwin, int noexmode));
 void getout_preserve_modified __ARGS((int exitval));
 void getout __ARGS((int exitval));
@@ -23,4 +22,3 @@ int F_isdigit __ARGS((int c));
 int F_ischar __ARGS((int c));
 void farsi_fkey __ARGS((cmdarg_T *cap));
 int arabic_shape __ARGS((int c, int *ccp, int *c1p, int prev_c, int prev_c1, int next_c));
-/* vim: set ft=c : */

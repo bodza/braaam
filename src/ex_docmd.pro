@@ -1,4 +1,3 @@
-/* ex_docmd.c */
 void do_exmode __ARGS((int improved));
 int do_cmdline_cmd __ARGS((char_u *cmd));
 int do_cmdline __ARGS((char_u *cmdline, char_u *(*fgetline)(int, void *, int), void *cookie, int flags));
@@ -57,4 +56,3 @@ int put_eol __ARGS((FILE *fd));
 int put_line __ARGS((FILE *fd, char *s));
 void dialog_msg __ARGS((char_u *buff, char *format, char_u *fname));
 char_u *get_behave_arg __ARGS((expand_T *xp, int idx));
-/* vim: set ft=c : */

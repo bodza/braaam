@@ -1,4 +1,3 @@
-/* move.c */
 void update_topline_redraw __ARGS((void));
 void update_topline __ARGS((void));
 void update_curswant __ARGS((void));
@@ -38,4 +37,3 @@ void cursor_correct __ARGS((void));
 int onepage __ARGS((int dir, long count));
 void halfpage __ARGS((int flag, linenr_T Prenum));
 void do_check_cursorbind __ARGS((void));
-/* vim: set ft=c : */

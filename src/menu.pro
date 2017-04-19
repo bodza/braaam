@@ -1,4 +1,3 @@
-/* menu.c */
 void ex_menu __ARGS((exarg_T *eap));
 char_u *set_context_in_menu_cmd __ARGS((expand_T *xp, char_u *cmd, char_u *arg, int forceit));
 char_u *get_menu_name __ARGS((expand_T *xp, int idx));
@@ -19,4 +18,3 @@ void gui_mch_toggle_tearoffs __ARGS((int enable));
 void ex_emenu __ARGS((exarg_T *eap));
 vimmenu_T *gui_find_menu __ARGS((char_u *path_name));
 void ex_menutranslate __ARGS((exarg_T *eap));
-/* vim: set ft=c : */

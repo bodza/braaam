@@ -1,18 +1,9 @@
-/* vi:set ts=8 sts=4 sw=4:
- *
- * VIM - Vi IMproved	by Bram Moolenaar
- *
- * Do ":help uganda"  in Vim to read copying and usage conditions.
- * Do ":help credits" in Vim to see a list of people who contributed.
- * See README.txt for an overview of the Vim source code.
- */
-
 /*
  * crypt_zip.c: Zip encryption support.
  */
 #include "vim.h"
 
-#if defined(FEAT_CRYPT) || defined(PROTO)
+#if defined(FEAT_CRYPT)
 /*
  * Optional encryption support.
  * Mohsin Ahmed, mosh@sasi.com, 98-09-24
@@ -24,17 +15,16 @@
  */
 
 /* Need a type that should be 32 bits. 64 also works but wastes space. */
-# if VIM_SIZEOF_INT >= 4
-typedef unsigned int u32_T;	/* int is at least 32 bits */
-# else
-typedef unsigned long u32_T;	/* long should be 32 bits or more */
-# endif
+#if VIM_SIZEOF_INT >= 4
+typedef unsigned int u32_T;     /* int is at least 32 bits */
+#else
+typedef unsigned long u32_T;    /* long should be 32 bits or more */
+#endif
 
 /* The state of encryption, referenced by cryptstate_T. */
 typedef struct {
     u32_T keys[3];
 } zip_state_T;
-
 
 static void make_crc_tab __ARGS((void));
 
@@ -46,17 +36,17 @@ static u32_T crc_32_table[256];
     static void
 make_crc_tab()
 {
-    u32_T	s, t, v;
-    static int	done = FALSE;
+    u32_T       s, t, v;
+    static int  done = FALSE;
 
     if (done)
-	return;
+        return;
     for (t = 0; t < 256; t++)
     {
-	v = t;
-	for (s = 0; s < 8; s++)
-	    v = (v >> 1) ^ ((v & 1) * (u32_T)0xedb88320L);
-	crc_32_table[t] = v;
+        v = t;
+        for (s = 0; s < 8; s++)
+            v = (v >> 1) ^ ((v & 1) * (u32_T)0xedb88320L);
+        crc_32_table[t] = v;
     }
     done = TRUE;
 }
@@ -87,14 +77,14 @@ make_crc_tab()
     void
 crypt_zip_init(state, key, salt, salt_len, seed, seed_len)
     cryptstate_T    *state;
-    char_u	    *key;
-    char_u	    *salt UNUSED;
-    int		    salt_len UNUSED;
-    char_u	    *seed UNUSED;
-    int		    seed_len UNUSED;
+    char_u          *key;
+    char_u          *salt UNUSED;
+    int             salt_len UNUSED;
+    char_u          *seed UNUSED;
+    int             seed_len UNUSED;
 {
-    char_u	*p;
-    zip_state_T	*zs;
+    char_u      *p;
+    zip_state_T *zs;
 
     zs = (zip_state_T *)alloc(sizeof(zip_state_T));
     state->method_state = zs;
@@ -105,7 +95,7 @@ crypt_zip_init(state, key, salt, salt_len, seed, seed_len)
     zs->keys[2] = 878082192L;
     for (p = key; *p != NUL; ++p)
     {
-	UPDATE_KEYS_ZIP(zs->keys, (int)*p);
+        UPDATE_KEYS_ZIP(zs->keys, (int)*p);
     }
 }
 
@@ -116,20 +106,20 @@ crypt_zip_init(state, key, salt, salt_len, seed, seed_len)
     void
 crypt_zip_encode(state, from, len, to)
     cryptstate_T *state;
-    char_u	*from;
-    size_t	len;
-    char_u	*to;
+    char_u      *from;
+    size_t      len;
+    char_u      *to;
 {
     zip_state_T *zs = state->method_state;
-    size_t	i;
-    int		ztemp, t;
+    size_t      i;
+    int         ztemp, t;
 
     for (i = 0; i < len; ++i)
     {
-	ztemp = from[i];
-	DECRYPT_BYTE_ZIP(zs->keys, t);
-	UPDATE_KEYS_ZIP(zs->keys, ztemp);
-	to[i] = t ^ ztemp;
+        ztemp = from[i];
+        DECRYPT_BYTE_ZIP(zs->keys, t);
+        UPDATE_KEYS_ZIP(zs->keys, ztemp);
+        to[i] = t ^ ztemp;
     }
 }
 
@@ -139,20 +129,20 @@ crypt_zip_encode(state, from, len, to)
     void
 crypt_zip_decode(state, from, len, to)
     cryptstate_T *state;
-    char_u	*from;
-    size_t	len;
-    char_u	*to;
+    char_u      *from;
+    size_t      len;
+    char_u      *to;
 {
     zip_state_T *zs = state->method_state;
-    size_t	i;
-    short_u	temp;
+    size_t      i;
+    short_u     temp;
 
     for (i = 0; i < len; ++i)
     {
-	temp = (short_u)zs->keys[2] | 2;
-	temp = (int)(((unsigned)(temp * (temp ^ 1U)) >> 8) & 0xff);
-	UPDATE_KEYS_ZIP(zs->keys, to[i] = from[i] ^ temp);
+        temp = (short_u)zs->keys[2] | 2;
+        temp = (int)(((unsigned)(temp * (temp ^ 1U)) >> 8) & 0xff);
+        UPDATE_KEYS_ZIP(zs->keys, to[i] = from[i] ^ temp);
     }
 }
 
-#endif /* FEAT_CRYPT */
+#endif

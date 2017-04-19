@@ -1,4 +1,3 @@
-/* tag.c */
 int do_tag __ARGS((char_u *tag, int type, int count, int forceit, int verbose));
 void tag_freematch __ARGS((void));
 void do_tags __ARGS((exarg_T *eap));
@@ -9,4 +8,3 @@ void tagname_free __ARGS((tagname_T *tnp));
 void simplify_filename __ARGS((char_u *filename));
 int expand_tags __ARGS((int tagnames, char_u *pat, int *num_file, char_u ***file));
 int get_tags __ARGS((list_T *list, char_u *pat));
-/* vim: set ft=c : */

@@ -1,4 +1,3 @@
-/* quickfix.c */
 int qf_init __ARGS((win_T *wp, char_u *efile, char_u *errorformat, int newlist, char_u *qf_title));
 void qf_free_all __ARGS((win_T *wp));
 void copy_loclist __ARGS((win_T *from, win_T *to));
@@ -27,4 +26,3 @@ int set_errorlist __ARGS((win_T *wp, list_T *list, int action, char_u *title));
 void ex_cbuffer __ARGS((exarg_T *eap));
 void ex_cexpr __ARGS((exarg_T *eap));
 void ex_helpgrep __ARGS((exarg_T *eap));
-/* vim: set ft=c : */

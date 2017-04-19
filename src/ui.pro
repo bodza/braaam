@@ -1,4 +1,3 @@
-/* ui.c */
 void ui_write __ARGS((char_u *s, int len));
 void ui_inchar_undo __ARGS((char_u *s, int len));
 int ui_inchar __ARGS((char_u *buf, int maxlen, long wtime, int tb_change_cnt));
@@ -64,4 +63,3 @@ int get_fpos_of_mouse __ARGS((pos_T *mpos));
 int vcol2col __ARGS((win_T *wp, linenr_T lnum, int vcol));
 void ui_focus_change __ARGS((int in_focus));
 void im_save_status __ARGS((long *psave));
-/* vim: set ft=c : */

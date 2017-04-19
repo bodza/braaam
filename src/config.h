@@ -4,9 +4,6 @@
  * manually changed after that.
  */
 
-/* Define if we have EBCDIC code */
-/* #undef EBCDIC */
-
 /* Define unless no X support found */
 /* #undef HAVE_X11 */
 
@@ -303,21 +300,6 @@
 
 /* Define if strings.h cannot be included when strings.h already is */
 /* #undef NO_STRINGS_WITH_STRING_H */
-
-/* Define if you want tiny features. */
-/* #undef FEAT_TINY */
-
-/* Define if you want small features. */
-/* #undef FEAT_SMALL */
-
-/* Define if you want normal features. */
-#define FEAT_NORMAL 1
-
-/* Define if you want big features. */
-/* #undef FEAT_BIG */
-
-/* Define if you want huge features. */
-/* #undef FEAT_HUGE */
 
 /* Define if you want to include the Lua interpreter. */
 /* #undef FEAT_LUA */

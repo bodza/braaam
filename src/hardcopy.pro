@@ -1,4 +1,3 @@
-/* hardcopy.c */
 char_u *parse_printoptions __ARGS((void));
 char_u *parse_printmbfont __ARGS((void));
 int prt_header_height __ARGS((void));
@@ -17,4 +16,3 @@ int mch_print_text_out __ARGS((char_u *p, int len));
 void mch_print_set_font __ARGS((int iBold, int iItalic, int iUnderline));
 void mch_print_set_bg __ARGS((long_u bgcol));
 void mch_print_set_fg __ARGS((long_u fgcol));
-/* vim: set ft=c : */

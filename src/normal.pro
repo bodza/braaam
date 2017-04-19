@@ -1,4 +1,3 @@
-/* normal.c */
 void init_normal_cmds __ARGS((void));
 void normal_cmd __ARGS((oparg_T *oap, int toplevel));
 void do_pending_operator __ARGS((cmdarg_T *cap, int old_col, int gui_yank));
@@ -23,4 +22,3 @@ void do_nv_ident __ARGS((int c1, int c2));
 int get_visual_text __ARGS((cmdarg_T *cap, char_u **pp, int *lenp));
 void start_selection __ARGS((void));
 void may_start_select __ARGS((int c));
-/* vim: set ft=c : */

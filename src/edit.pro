@@ -1,4 +1,3 @@
-/* edit.c */
 int edit __ARGS((int cmdchar, int startln, long count));
 void edit_putchar __ARGS((int c, int highlight));
 void edit_unputchar __ARGS((void));
@@ -40,4 +39,3 @@ int hkmap __ARGS((int c));
 void ins_scroll __ARGS((void));
 void ins_horscroll __ARGS((void));
 int ins_copychar __ARGS((linenr_T lnum));
-/* vim: set ft=c : */

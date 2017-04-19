@@ -1,4 +1,3 @@
-/* fold.c */
 void copyFoldingState __ARGS((win_T *wp_from, win_T *wp_to));
 int hasAnyFolding __ARGS((win_T *win));
 int hasFolding __ARGS((linenr_T lnum, linenr_T *firstp, linenr_T *lastp));
@@ -38,4 +37,3 @@ int getDeepestNesting __ARGS((void));
 char_u *get_foldtext __ARGS((win_T *wp, linenr_T lnum, linenr_T lnume, foldinfo_T *foldinfo, char_u *buf));
 void foldtext_cleanup __ARGS((char_u *str));
 int put_folds __ARGS((FILE *fd, win_T *wp));
-/* vim: set ft=c : */

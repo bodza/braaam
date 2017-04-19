@@ -1,4 +1,3 @@
-/* mark.c */
 int setmark __ARGS((int c));
 int setmark_pos __ARGS((int c, pos_T *pos, int fnum));
 void setpcmark __ARGS((void));
@@ -28,4 +27,3 @@ void write_viminfo_filemarks __ARGS((FILE *fp));
 int removable __ARGS((char_u *name));
 int write_viminfo_marks __ARGS((FILE *fp_out));
 void copy_viminfo_marks __ARGS((vir_T *virp, FILE *fp_out, int count, int eof, int flags));
-/* vim: set ft=c : */

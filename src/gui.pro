@@ -1,4 +1,3 @@
-/* gui.c */
 void gui_start __ARGS((void));
 void gui_prepare __ARGS((int *argc, char **argv));
 int gui_init_check __ARGS((void));
@@ -63,4 +62,3 @@ void gui_update_screen __ARGS((void));
 char_u *get_find_dialog_text __ARGS((char_u *arg, int *wwordp, int *mcasep));
 int gui_do_findrepl __ARGS((int flags, char_u *find_text, char_u *repl_text, int down));
 void gui_handle_drop __ARGS((int x, int y, int_u modifiers, char_u **fnames, int count));
-/* vim: set ft=c : */

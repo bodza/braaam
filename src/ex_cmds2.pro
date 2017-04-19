@@ -1,4 +1,3 @@
-/* ex_cmds2.c */
 void do_debug __ARGS((char_u *cmd));
 void ex_debug __ARGS((exarg_T *eap));
 void dbg_check_breakpoint __ARGS((exarg_T *eap));
@@ -87,4 +86,3 @@ void ex_language __ARGS((exarg_T *eap));
 void free_locales __ARGS((void));
 char_u *get_lang_arg __ARGS((expand_T *xp, int idx));
 char_u *get_locales __ARGS((expand_T *xp, int idx));
-/* vim: set ft=c : */

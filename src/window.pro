@@ -1,4 +1,3 @@
-/* window.c */
 void do_window __ARGS((int nchar, long Prenum, int xchar));
 void get_wincmd_addr_type __ARGS((char_u *arg, exarg_T *eap));
 int win_split __ARGS((int size, int flags));
@@ -82,4 +81,3 @@ void clear_matches __ARGS((win_T *wp));
 matchitem_T *get_match __ARGS((win_T *wp, int id));
 int get_win_number __ARGS((win_T *wp, win_T *first_win));
 int get_tab_number __ARGS((tabpage_T *tp));
-/* vim: set ft=c : */
