@@ -186,36 +186,36 @@ objects/window.o: window.c
 
 ###############################################################################
 
-objects/buffer.o: buffer.c vim.h ex_cmds.h proto.h
-objects/charset.o: charset.c vim.h ex_cmds.h proto.h
-objects/digraph.o: digraph.c vim.h ex_cmds.h proto.h
-objects/edit.o: edit.c vim.h ex_cmds.h proto.h
-objects/eval.o: eval.c vim.h ex_cmds.h proto.h
-objects/ex_cmds.o: ex_cmds.c vim.h ex_cmds.h proto.h
-objects/ex_docmd.o: ex_docmd.c vim.h ex_cmds.h proto.h
-objects/ex_eval.o: ex_eval.c vim.h ex_cmds.h proto.h
-objects/ex_getln.o: ex_getln.c vim.h ex_cmds.h proto.h
-objects/fileio.o: fileio.c vim.h ex_cmds.h proto.h
-objects/getchar.o: getchar.c vim.h ex_cmds.h proto.h
-objects/hashtab.o: hashtab.c vim.h ex_cmds.h proto.h
-objects/main.o: main.c vim.h ex_cmds.h proto.h
-objects/mark.o: mark.c vim.h ex_cmds.h proto.h
-objects/memfile.o: memfile.c vim.h ex_cmds.h proto.h
-objects/memline.o: memline.c vim.h ex_cmds.h proto.h
-objects/message.o: message.c vim.h ex_cmds.h proto.h
-objects/misc.o: misc.c vim.h ex_cmds.h proto.h
-objects/move.o: move.c vim.h ex_cmds.h proto.h
-objects/mbyte.o: mbyte.c vim.h ex_cmds.h proto.h
-objects/normal.o: normal.c vim.h ex_cmds.h proto.h
-objects/ops.o: ops.c vim.h ex_cmds.h proto.h
-objects/option.o: option.c vim.h ex_cmds.h proto.h
-objects/os_unix.o: os_unix.c vim.h ex_cmds.h proto.h
-objects/regexp.o: regexp.c vim.h ex_cmds.h proto.h
-objects/screen.o: screen.c vim.h ex_cmds.h proto.h
-objects/search.o: search.c vim.h ex_cmds.h proto.h
-objects/sha256.o: sha256.c vim.h ex_cmds.h proto.h
-objects/syntax.o: syntax.c vim.h ex_cmds.h proto.h
-objects/term.o: term.c vim.h ex_cmds.h proto.h
-objects/ui.o: ui.c vim.h ex_cmds.h proto.h
-objects/undo.o: undo.c vim.h ex_cmds.h proto.h
-objects/window.o: window.c vim.h ex_cmds.h proto.h
+objects/buffer.o: buffer.c vim.h ex_cmds.h
+objects/charset.o: charset.c vim.h ex_cmds.h
+objects/digraph.o: digraph.c vim.h ex_cmds.h
+objects/edit.o: edit.c vim.h ex_cmds.h
+objects/eval.o: eval.c vim.h ex_cmds.h
+objects/ex_cmds.o: ex_cmds.c vim.h ex_cmds.h
+objects/ex_docmd.o: ex_docmd.c vim.h ex_cmds.h
+objects/ex_eval.o: ex_eval.c vim.h ex_cmds.h
+objects/ex_getln.o: ex_getln.c vim.h ex_cmds.h
+objects/fileio.o: fileio.c vim.h ex_cmds.h
+objects/getchar.o: getchar.c vim.h ex_cmds.h
+objects/hashtab.o: hashtab.c vim.h ex_cmds.h
+objects/main.o: main.c vim.h ex_cmds.h
+objects/mark.o: mark.c vim.h ex_cmds.h
+objects/memfile.o: memfile.c vim.h ex_cmds.h
+objects/memline.o: memline.c vim.h ex_cmds.h
+objects/message.o: message.c vim.h ex_cmds.h
+objects/misc.o: misc.c vim.h ex_cmds.h
+objects/move.o: move.c vim.h ex_cmds.h
+objects/mbyte.o: mbyte.c vim.h ex_cmds.h
+objects/normal.o: normal.c vim.h ex_cmds.h
+objects/ops.o: ops.c vim.h ex_cmds.h
+objects/option.o: option.c vim.h ex_cmds.h
+objects/os_unix.o: os_unix.c vim.h ex_cmds.h
+objects/regexp.o: regexp.c vim.h ex_cmds.h
+objects/screen.o: screen.c vim.h ex_cmds.h
+objects/search.o: search.c vim.h ex_cmds.h
+objects/sha256.o: sha256.c vim.h ex_cmds.h
+objects/syntax.o: syntax.c vim.h ex_cmds.h
+objects/term.o: term.c vim.h ex_cmds.h
+objects/ui.o: ui.c vim.h ex_cmds.h
+objects/undo.o: undo.c vim.h ex_cmds.h
+objects/window.o: window.c vim.h ex_cmds.h

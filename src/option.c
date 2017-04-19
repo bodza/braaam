@@ -471,9 +471,6 @@ static struct vimoption
     {"gdefault",    "gd",   P_BOOL,
                             (char_u *)&p_gd, PV_NONE,
                             (char_u *)FALSE, 0},
-    {"guicursor",   "gcr",  P_STRING|P_COMMA|P_NODUP,
-                            (char_u *)&p_guicursor, PV_NONE,
-                            (char_u *)"n-v-c:block,o:hor50,i-ci:hor15,r-cr:hor30,sm:block", 0},
     {"hidden",      "hid",  P_BOOL,
                             (char_u *)&p_hid, PV_NONE,
                             (char_u *)FALSE, 0},
@@ -1256,7 +1253,7 @@ set_option_default(opt_idx, opt_flags)
                 win_comp_scroll(curwin);
             else
             {
-                *(long *)varp = (long)(long_i)options[opt_idx].def_val;
+                *(long *)varp = (long)options[opt_idx].def_val;
                 /* May also set global value for local option. */
                 if (both)
                     *(long *)get_varp_scope(&(options[opt_idx]), OPT_GLOBAL) = *(long *)varp;
@@ -1264,8 +1261,8 @@ set_option_default(opt_idx, opt_flags)
         }
         else    /* P_BOOL */
         {
-            /* the cast to long is required for Manx C, long_i is needed for MSVC */
-            *(int *)varp = (int)(long)(long_i)options[opt_idx].def_val;
+            /* the cast to long is required for Manx C */
+            *(int *)varp = (int)(long)options[opt_idx].def_val;
             /* 'modeline' defaults to off for root */
             if (options[opt_idx].indir == PV_ML && getuid() == ROOT_UID)
                 *(int *)varp = FALSE;
@@ -1341,7 +1338,7 @@ set_number_default(name, val)
 
     opt_idx = findoption((char_u *)name);
     if (opt_idx >= 0)
-        options[opt_idx].def_val = (char_u *)(long_i)val;
+        options[opt_idx].def_val = (char_u *)val;
 }
 
 /*
@@ -1370,7 +1367,6 @@ set_init_2()
         p_window = Rows - 1;
     set_number_default("window", Rows - 1);
 
-    /* For DOS console the default is always black. */
     /*
      * If 'background' wasn't set by the user, try guessing the value,
      * depending on the terminal name.  Only need to check for terminals
@@ -1383,8 +1379,6 @@ set_init_2()
         /* don't mark it as set, when starting the GUI it may be changed again */
         options[idx].flags &= ~P_WAS_SET;
     }
-
-    parse_shape_opt(SHAPE_CURSOR); /* set cursor shapes from 'guicursor' */
 }
 
 /*
@@ -1484,14 +1478,14 @@ set_title_defaults()
     if (idx1 >= 0 && !(options[idx1].flags & P_WAS_SET))
     {
         val = mch_can_restore_title();
-        options[idx1].def_val = (char_u *)(long_i)val;
+        options[idx1].def_val = (char_u *)val;
         p_title = val;
     }
     idx1 = findoption((char_u *)"icon");
     if (idx1 >= 0 && !(options[idx1].flags & P_WAS_SET))
     {
         val = mch_can_restore_icon();
-        options[idx1].def_val = (char_u *)(long_i)val;
+        options[idx1].def_val = (char_u *)val;
         p_icon = val;
     }
 }
@@ -1812,7 +1806,7 @@ do_set(arg, opt_flags)
                     if (nextchar == '!')
                         value = *(int *)(varp) ^ 1;
                     else if (nextchar == '&')
-                        value = (int)(long)(long_i)options[opt_idx].def_val;
+                        value = (int)(long)options[opt_idx].def_val;
                     else if (nextchar == '<')
                     {
                         /* For 'autoread' -1 means to use global value. */
@@ -1861,7 +1855,7 @@ do_set(arg, opt_flags)
                          */
                         ++arg;
                         if (nextchar == '&')
-                            value = (long)(long_i)options[opt_idx].def_val;
+                            value = (long)options[opt_idx].def_val;
                         else if (nextchar == '<')
                         {
                             /* For 'undolevels' NO_LOCAL_UNDOLEVEL means to
@@ -2280,12 +2274,12 @@ theend:
     {
         /* After displaying option values in silent mode. */
         silent_mode = FALSE;
-        info_message = TRUE;    /* use mch_msg(), not mch_errmsg() */
+        info_message = TRUE;
         msg_putchar('\n');
         cursor_on();            /* msg_start() switches it off */
         out_flush();
         silent_mode = TRUE;
-        info_message = FALSE;   /* use mch_msg(), not mch_errmsg() */
+        info_message = FALSE;
     }
 
     return OK;
@@ -2826,7 +2820,7 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
     else if (gvarp == &p_bkc)
     {
         char_u          *bkc = p_bkc;
-        unsigned int    *flags = &bkc_flags;
+        int_u           *flags = &bkc_flags;
 
         if (opt_flags & OPT_LOCAL)
         {
@@ -3149,10 +3143,6 @@ did_set_string_option(opt_idx, varp, new_value_alloced, oldval, errbuf, opt_flag
             s += utfc_ptr2len(s);
         }
     }
-
-    /* 'guicursor' */
-    else if (varp == &p_guicursor)
-        errmsg = parse_shape_opt(SHAPE_CURSOR);
 
     /* 'breakat' */
     else if (varp == &p_breakat)
@@ -4860,9 +4850,9 @@ optval_default(p, varp)
     if (varp == NULL)
         return TRUE;        /* hidden option is always at default */
     if (p->flags & P_NUM)
-        return (*(long *)varp == (long)(long_i)p->def_val);
+        return (*(long *)varp == (long)p->def_val);
     if (p->flags & P_BOOL)
-        return (*(int *)varp == (int)(long)(long_i)p->def_val);
+        return (*(int *)varp == (int)(long)p->def_val);
     /* P_STRING */
     return (STRCMP(*(char_u **)varp, p->def_val) == 0);
 }
@@ -4880,7 +4870,7 @@ showoneopt(p, opt_flags)
     int         save_silent = silent_mode;
 
     silent_mode = FALSE;
-    info_message = TRUE;        /* use mch_msg(), not mch_errmsg() */
+    info_message = TRUE;
 
     varp = get_varp_scope(p, opt_flags);
 
@@ -6450,7 +6440,7 @@ briopt_check(wp)
 /*
  * Get the local or global value of 'backupcopy'.
  */
-    unsigned int
+    int_u
 get_bkc_value(buf)
     buf_T *buf;
 {

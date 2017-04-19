@@ -6,9 +6,6 @@
 
 #include "vim.h"
 
-#include <termios.h>      /* seems to be required for some Linux */
-#include <termcap.h>
-
 /*
  * Here are the builtin termcap entries.  They are not stored as complete
  * structures with all entries, as such a structure is too big.
@@ -396,31 +393,32 @@ set_termname(term)
             int             i;
             char_u          tbuf[TBUFSZ];
             char_u          *tp;
-            static struct {
-                            enum SpecialKey dest; /* index in term_strings[] */
-                            char *name;           /* termcap name for string */
-                          } string_names[] =
-                            {   {KS_CE, "ce"}, {KS_AL, "al"}, {KS_CAL,"AL"},
-                                {KS_DL, "dl"}, {KS_CDL,"DL"}, {KS_CS, "cs"},
-                                {KS_CL, "cl"}, {KS_CD, "cd"},
-                                {KS_VI, "vi"}, {KS_VE, "ve"}, {KS_MB, "mb"},
-                                {KS_VS, "vs"}, {KS_ME, "me"}, {KS_MR, "mr"},
-                                {KS_MD, "md"}, {KS_SE, "se"}, {KS_SO, "so"},
-                                {KS_CZH,"ZH"}, {KS_CZR,"ZR"}, {KS_UE, "ue"},
-                                {KS_US, "us"}, {KS_UCE, "Ce"}, {KS_UCS, "Cs"},
-                                {KS_CM, "cm"}, {KS_SR, "sr"},
-                                {KS_CRI,"RI"}, {KS_VB, "vb"}, {KS_KS, "ks"},
-                                {KS_KE, "ke"}, {KS_TI, "ti"}, {KS_TE, "te"},
-                                {KS_BC, "bc"}, {KS_CSB,"Sb"}, {KS_CSF,"Sf"},
-                                {KS_CAB,"AB"}, {KS_CAF,"AF"}, {KS_LE, "le"},
-                                {KS_ND, "nd"}, {KS_OP, "op"}, {KS_CRV, "RV"},
-                                {KS_CIS, "IS"}, {KS_CIE, "IE"},
-                                {KS_TS, "ts"}, {KS_FS, "fs"},
-                                {KS_CWP, "WP"}, {KS_CWS, "WS"},
-                                {KS_CSI, "SI"}, {KS_CEI, "EI"},
-                                {KS_U7, "u7"},
-                                {(enum SpecialKey)0, NULL}
-                            };
+            static struct
+            {
+                enum SpecialKey dest; /* index in term_strings[] */
+                char *name;           /* termcap name for string */
+            } string_names[] =
+            {   {KS_CE, "ce"}, {KS_AL, "al"}, {KS_CAL,"AL"},
+                {KS_DL, "dl"}, {KS_CDL,"DL"}, {KS_CS, "cs"},
+                {KS_CL, "cl"}, {KS_CD, "cd"},
+                {KS_VI, "vi"}, {KS_VE, "ve"}, {KS_MB, "mb"},
+                {KS_VS, "vs"}, {KS_ME, "me"}, {KS_MR, "mr"},
+                {KS_MD, "md"}, {KS_SE, "se"}, {KS_SO, "so"},
+                {KS_CZH,"ZH"}, {KS_CZR,"ZR"}, {KS_UE, "ue"},
+                {KS_US, "us"}, {KS_UCE, "Ce"}, {KS_UCS, "Cs"},
+                {KS_CM, "cm"}, {KS_SR, "sr"},
+                {KS_CRI,"RI"}, {KS_VB, "vb"}, {KS_KS, "ks"},
+                {KS_KE, "ke"}, {KS_TI, "ti"}, {KS_TE, "te"},
+                {KS_BC, "bc"}, {KS_CSB,"Sb"}, {KS_CSF,"Sf"},
+                {KS_CAB,"AB"}, {KS_CAF,"AF"}, {KS_LE, "le"},
+                {KS_ND, "nd"}, {KS_OP, "op"}, {KS_CRV, "RV"},
+                {KS_CIS, "IS"}, {KS_CIE, "IE"},
+                {KS_TS, "ts"}, {KS_FS, "fs"},
+                {KS_CWP, "WP"}, {KS_CWS, "WS"},
+                {KS_CSI, "SI"}, {KS_CEI, "EI"},
+                {KS_U7, "u7"},
+                {(enum SpecialKey)0, NULL}
+            };
 
             /*
              * If the external termcap does not have a matching entry, try the builtin ones.
@@ -520,24 +518,14 @@ set_termname(term)
                 if (termcap_cleared)            /* found in external termcap */
                     break;
 
-                mch_errmsg("\r\n");
+                fprintf(stderr, "\r\n");
                 if (error_msg != NULL)
-                {
-                    mch_errmsg((char *)error_msg);
-                    mch_errmsg("\r\n");
-                }
-                mch_errmsg("'");
-                mch_errmsg((char *)term);
-                mch_errmsg("' not known. Available builtin terminals are:");
-                mch_errmsg("\r\n");
+                    fprintf(stderr, "%s\r\n", (char *)error_msg);
+                fprintf(stderr, "'%s' not known. Available builtin terminals are:\r\n", (char *)term);
                 for (termp = &(builtin_termcaps[0]); termp->bt_string != NULL; ++termp)
                 {
                     if (termp->bt_entry == (int)KS_NAME)
-                    {
-                        mch_errmsg("    builtin_");
-                        mch_errmsg(termp->bt_string);
-                        mch_errmsg("\r\n");
-                    }
+                        fprintf(stderr, "    builtin_%s\r\n", termp->bt_string);
                 }
                 /* when user typed :set term=xxx, quit here */
                 if (starting != NO_SCREEN)
@@ -547,9 +535,7 @@ set_termname(term)
                     return FAIL;
                 }
                 term = DEFAULT_TERM;
-                mch_errmsg("defaulting to '");
-                mch_errmsg((char *)term);
-                mch_errmsg("'\r\n");
+                fprintf(stderr, "defaulting to '%s'\r\n", (char *)term);
                 if (emsg_silent == 0)
                 {
                     screen_start();     /* don't know where cursor is now */
@@ -557,7 +543,7 @@ set_termname(term)
                     ui_delay(2000L, TRUE);
                 }
                 set_string_option_direct((char_u *)"term", -1, term, OPT_FREE, 0);
-                display_errors();
+                fflush(stderr);
             }
             out_flush();
             if (!termcap_cleared)

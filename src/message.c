@@ -2,11 +2,7 @@
  * message.c: functions for displaying messages on the command line
  */
 
-#define MESSAGE_FILE            /* don't include prototype for smsg() */
-
 #include "vim.h"
-
-#include <math.h>
 
 static int other_sourcing_name(void);
 static char_u *get_emsg_source(void);
@@ -82,9 +78,8 @@ static int  verbose_did_open = FALSE;
  */
 
 /*
- * msg(s) - displays the string 's' on the status line
- * When terminal not initialized (yet) mch_errmsg(..) is used.
- * return TRUE if wait_return not called
+ * msg(s) - displays the string 's' on the status line.
+ * Return TRUE if wait_return not called.
  */
     int
 msg(s)
@@ -443,12 +438,11 @@ emsg_not_now()
 }
 
 /*
- * emsg() - display an error message
+ * emsg() - display an error message.
  *
- * Rings the bell, if appropriate, and calls message() to do the real work
- * When terminal not initialized (yet) mch_errmsg(..) is used.
+ * Rings the bell, if appropriate, and calls message() to do the real work.
  *
- * return TRUE if wait_return not called
+ * Return TRUE if wait_return not called.
  */
     int
 emsg(s)
@@ -2114,10 +2108,9 @@ t_puts(t_col, t_s, s, attr)
 /*
  * Returns TRUE when messages should be printed with mch_errmsg().
  * This is used when there is no valid screen, so we can see error messages.
- * If termcap is not active, we may be writing in an alternate console
- * window, cursor positioning may not work correctly (window size may be
- * different, e.g. for Win32 console) or we just don't know where the
- * cursor is.
+ * If termcap is not active, we may be writing in an alternate console window,
+ * cursor positioning may not work correctly (window size may be different)
+ * or we just don't know where the cursor is.
  */
     int
 msg_use_printf()
@@ -2149,9 +2142,9 @@ msg_puts_printf(str, maxlen)
                 *p++ = *s;
             *p = '\0';
             if (info_message)   /* informative message, not an error */
-                mch_msg((char *)buf);
+                printf("%s", (char *)buf);
             else
-                mch_errmsg((char *)buf);
+                fprintf(stderr, "%s", (char *)buf);
         }
 
         /* primitive way to compute the current column */
@@ -3178,7 +3171,7 @@ tv_nr(tvs, idxp)
     int         err = FALSE;
 
     if (tvs[idx].v_type == VAR_UNKNOWN)
-        EMSG((char *)e_printf);
+        EMSG(e_printf);
     else
     {
         ++*idxp;
@@ -3202,7 +3195,7 @@ tv_str(tvs, idxp)
     char        *s = NULL;
 
     if (tvs[idx].v_type == VAR_UNKNOWN)
-        EMSG((char *)e_printf);
+        EMSG(e_printf);
     else
     {
         ++*idxp;
@@ -3223,7 +3216,7 @@ tv_float(tvs, idxp)
     double      f = 0;
 
     if (tvs[idx].v_type == VAR_UNKNOWN)
-        EMSG((char *)e_printf);
+        EMSG(e_printf);
     else
     {
         ++*idxp;
@@ -3366,7 +3359,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
             /* unsigned char argument value - only defined for c conversion.
              * N.B. standard explicitly states the char argument for the c
              * conversion is unsigned */
-            unsigned char uchar_arg;
+            char_u  uchar_arg;
 
             /* number of zeros to be inserted for numeric conversions as
              * required by the precision or minimal field width */
@@ -3419,10 +3412,10 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
             {
                 /* size_t could be wider than unsigned int; make sure we treat
                  * argument like common implementations do */
-                unsigned int uj = *p++ - '0';
+                int_u uj = *p++ - '0';
 
                 while (VIM_ISDIGIT((int)(*p)))
-                    uj = 10 * uj + (unsigned int)(*p++ - '0');
+                    uj = 10 * uj + (int_u)(*p++ - '0');
                 min_field_width = uj;
             }
 
@@ -3449,10 +3442,10 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                 {
                     /* size_t could be wider than unsigned int; make sure we
                      * treat argument like common implementations do */
-                    unsigned int uj = *p++ - '0';
+                    int_u uj = *p++ - '0';
 
                     while (VIM_ISDIGIT((int)(*p)))
-                        uj = 10 * uj + (unsigned int)(*p++ - '0');
+                        uj = 10 * uj + (int_u)(*p++ - '0');
                     precision = uj;
                 }
             }
@@ -3504,7 +3497,7 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
 
                         j = (tvs != NULL) ? tv_nr(tvs, &arg_idx) : va_arg(ap, int);
                         /* standard demands unsigned char */
-                        uchar_arg = (unsigned char)j;
+                        uchar_arg = (char_u)j;
                         str_arg = (char *)&uchar_arg;
                         break;
                     }
@@ -3566,11 +3559,11 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                     /* only defined for length modifier h, or for no
                      * length modifiers */
                     int int_arg = 0;
-                    unsigned int uint_arg = 0;
+                    int_u uint_arg = 0;
 
                     /* only defined for length modifier l */
-                    long int long_arg = 0;
-                    unsigned long int ulong_arg = 0;
+                    long long_arg = 0;
+                    long_u ulong_arg = 0;
 
                     /* pointer argument value -only defined for p conversion */
                     void *ptr_arg = NULL;
@@ -3613,13 +3606,13 @@ vim_vsnprintf(str, str_m, fmt, ap, tvs)
                             case '\0':
                             case 'h':
                                 uint_arg = (tvs != NULL) ? (unsigned)tv_nr(tvs, &arg_idx) :
-                                                va_arg(ap, unsigned int);
+                                                va_arg(ap, int_u);
                                 if (uint_arg != 0)
                                     arg_sign = 1;
                                 break;
                             case 'l':
-                                ulong_arg = (tvs != NULL) ? (unsigned long)tv_nr(tvs, &arg_idx) :
-                                                va_arg(ap, unsigned long int);
+                                ulong_arg = (tvs != NULL) ? (long_u)tv_nr(tvs, &arg_idx) :
+                                                va_arg(ap, long_u);
                                 if (ulong_arg != 0)
                                     arg_sign = 1;
                                 break;

@@ -77,8 +77,7 @@
 
 #include "vim.h"
 
-#define MB_FILLER_CHAR '<'  /* character used when a double-width character
-                             * doesn't fit. */
+#define MB_FILLER_CHAR '<'  /* character used when a double-width character doesn't fit. */
 
 /*
  * The attributes that are actually active for writing to the screen.
@@ -1008,8 +1007,8 @@ win_update(wp)
             if (VIsual_active && (VIsual_mode != wp->w_old_visual_mode || type == INVERTED_ALL))
             {
                 /*
-                 * If the type of Visual selection changed, redraw the whole
-                 * selection.  Also when the ownership of the X selection is gained or lost.
+                 * If the type of Visual selection changed, redraw the whole selection.
+                 * Also when the ownership of the X selection is gained or lost.
                  */
                 if (curwin->w_cursor.lnum < VIsual.lnum)
                 {

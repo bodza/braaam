@@ -228,8 +228,7 @@ typedef struct
     long        end_col_nr;             /* ending column number */
 } sorti_T;
 
-static int
-sort_compare(const void *s1, const void *s2);
+static int sort_compare(const void *s1, const void *s2);
 
     static int
 sort_compare(s1, s2)
@@ -250,17 +249,14 @@ sort_compare(s1, s2)
 
     /* When sorting numbers "start_col_nr" is the number, not the column number. */
     if (sort_nr)
-        result = l1.start_col_nr == l2.start_col_nr ? 0
-                                 : l1.start_col_nr > l2.start_col_nr ? 1 : -1;
+        result = (l1.start_col_nr == l2.start_col_nr) ? 0 : (l1.start_col_nr > l2.start_col_nr) ? 1 : -1;
     else
     {
         /* We need to copy one line into "sortbuf1", because there is no
          * guarantee that the first pointer becomes invalid when obtaining the second one. */
-        STRNCPY(sortbuf1, ml_get(l1.lnum) + l1.start_col_nr,
-                                         l1.end_col_nr - l1.start_col_nr + 1);
+        STRNCPY(sortbuf1, ml_get(l1.lnum) + l1.start_col_nr, l1.end_col_nr - l1.start_col_nr + 1);
         sortbuf1[l1.end_col_nr - l1.start_col_nr] = 0;
-        STRNCPY(sortbuf2, ml_get(l2.lnum) + l2.start_col_nr,
-                                         l2.end_col_nr - l2.start_col_nr + 1);
+        STRNCPY(sortbuf2, ml_get(l2.lnum) + l2.start_col_nr, l2.end_col_nr - l2.start_col_nr + 1);
         sortbuf2[l2.end_col_nr - l2.start_col_nr] = 0;
 
         result = sort_ic ? STRICMP(sortbuf1, sortbuf2) : STRCMP(sortbuf1, sortbuf2);
@@ -1324,7 +1320,7 @@ do_shell(cmd, flags)
     }
 
     /* display any error messages now */
-    display_errors();
+    fflush(stderr);
 
     apply_autocmds(EVENT_SHELLCMDPOST, NULL, NULL, FALSE, curbuf);
 }
@@ -1465,7 +1461,7 @@ print_line(lnum, use_number, list)
 
     msg_start();
     silent_mode = FALSE;
-    info_message = TRUE;        /* use mch_msg(), not mch_errmsg() */
+    info_message = TRUE;
     print_line_no_prefix(lnum, use_number, list);
     if (save_silent)
     {

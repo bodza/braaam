@@ -35,7 +35,7 @@ static char_u *get_user_command_name(int idx);
 #define IS_USER_CMDIDX(idx) ((int)(idx) < 0)
 
 static int compute_buffer_local_count(int addr_type, int lnum, int local);
-static char_u   *do_one_cmd(char_u **, int, struct condstack *, char_u *(*fgetline)(int, void *, int), void *cookie);
+static char_u   *do_one_cmd(char_u **, int, condstack_T *, char_u *(*fgetline)(int, void *, int), void *cookie);
 static void     append_command(char_u *cmd);
 static char_u   *find_command(exarg_T *eap, int *full);
 
@@ -386,7 +386,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
     int         count = 0;              /* line number count */
     int         did_inc = FALSE;        /* incremented RedrawingDisabled */
     int         retval = OK;
-    struct condstack cstack;            /* conditional stack */
+    condstack_T cstack;                 /* conditional stack */
     garray_T    lines_ga;               /* keep lines for ":while"/":for" */
     int         current_line = 0;       /* active line in lines_ga */
     char_u      *fname = NULL;          /* function or script name */
@@ -422,7 +422,7 @@ do_cmdline(cmdline, fgetline, cookie, flags)
         EMSG("E169: Command too recursive");
         /* When converting to an exception, we do not include the command name
          * since this is not an error of the specific command. */
-        do_errthrow((struct condstack *)NULL, (char_u *)NULL);
+        do_errthrow((condstack_T *)NULL, (char_u *)NULL);
         msg_list = saved_msg_list;
         return FAIL;
     }
@@ -1296,7 +1296,7 @@ current_tab_nr(tab)
 do_one_cmd(cmdlinep, sourcing, cstack, fgetline, cookie)
     char_u              **cmdlinep;
     int                 sourcing;
-    struct condstack    *cstack;
+    condstack_T         *cstack;
     char_u              *(*fgetline)(int, void *, int);
     void                *cookie;                /* argument for fgetline() */
 {
@@ -2626,7 +2626,8 @@ static struct cmdmod
     char        *name;
     int         minlen;
     int         has_count;  /* :123verbose  :3tab */
-} cmdmods[] = {
+} cmdmods[] =
+{
     {"aboveleft", 3, FALSE},
     {"belowright", 3, FALSE},
     {"botright", 2, FALSE},
@@ -2925,7 +2926,7 @@ set_one_cmd_context(xp, buff)
                 if (p[1] != NUL)
                     ++p;
             }
-            else if ( (*p == '"' && !(ea.argt & NOTRLCOM)) || *p == '|' || *p == '\n')
+            else if ((*p == '"' && !(ea.argt & NOTRLCOM)) || *p == '|' || *p == '\n')
             {
                 if (*(p - 1) != '\\')
                 {
@@ -4804,7 +4805,8 @@ uc_list(name, name_len)
             msg_outtrans_attr(cmd->uc_name, hl_attr(HLF_D));
             len = (int)STRLEN(cmd->uc_name) + 4;
 
-            do {
+            do
+            {
                 msg_putchar(' ');
                 ++len;
             } while (len < 16);
@@ -4821,7 +4823,8 @@ uc_list(name, name_len)
             case (EXTRA|NOSPC|NEEDARG): IObuff[len++] = '1'; break;
             }
 
-            do {
+            do
+            {
                 IObuff[len++] = ' ';
             } while (len < 5);
 
@@ -4846,7 +4849,8 @@ uc_list(name, name_len)
                     IObuff[len++] = '.';
             }
 
-            do {
+            do
+            {
                 IObuff[len++] = ' ';
             } while (len < 11);
 
@@ -4860,7 +4864,8 @@ uc_list(name, name_len)
                     break;
                 }
 
-            do {
+            do
+            {
                 IObuff[len++] = ' ';
             } while (len < 21);
 
@@ -4873,7 +4878,8 @@ uc_list(name, name_len)
                     break;
                 }
 
-            do {
+            do
+            {
                 IObuff[len++] = ' ';
             } while (len < 35);
 
@@ -7946,7 +7952,8 @@ find_cmdline_var(src, usedlen)
 {
     int         len;
     int         i;
-    static char *(spec_str[]) = {
+    static char *(spec_str[]) =
+    {
                     "%",
 #define SPEC_PERC   0
                     "#",

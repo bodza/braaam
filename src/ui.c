@@ -214,7 +214,7 @@ ui_breakcheck()
  * versions of these for the 'clipboard' selection, as Visual mode has no use for them.
  */
 
-static void clip_copy_selection(VimClipboard *clip);
+static void clip_copy_selection(clipboard_T *clip);
 
 /*
  * Selection stuff using Visual mode, for cutting and pasting text to other windows.
@@ -229,7 +229,7 @@ static void clip_copy_selection(VimClipboard *clip);
 clip_init(can_use)
     int     can_use;
 {
-    VimClipboard *cb;
+    clipboard_T *cb;
 
     cb = &clip_star;
     for (;;)
@@ -257,7 +257,7 @@ clip_init(can_use)
  */
     void
 clip_update_selection(clip)
-    VimClipboard    *clip;
+    clipboard_T     *clip;
 {
     pos_T           start, end;
 
@@ -289,8 +289,7 @@ clip_update_selection(clip)
 }
 
     void
-clip_own_selection(cbd)
-    VimClipboard        *cbd;
+clip_own_selection(clipboard_T *cbd)
 {
     /*
      * Also want to check somehow that we are reading from the keyboard rather than a mapping etc.
@@ -301,8 +300,7 @@ clip_own_selection(cbd)
 }
 
     void
-clip_lose_selection(cbd)
-    VimClipboard        *cbd;
+clip_lose_selection(clipboard_T *cbd)
 {
     int     visual_selection = FALSE;
 
@@ -318,7 +316,7 @@ clip_lose_selection(cbd)
 
     static void
 clip_copy_selection(clip)
-    VimClipboard        *clip;
+    clipboard_T         *clip;
 {
     if (VIsual_active && (State & NORMAL) && clip->available)
     {
@@ -425,9 +423,9 @@ clip_isautosel_plus()
 static int clip_compare_pos(int row1, int col1, int row2, int col2);
 static void clip_invert_area(int, int, int, int, int how);
 static void clip_invert_rectangle(int row, int col, int height, int width, int invert);
-static void clip_get_word_boundaries(VimClipboard *, int, int);
+static void clip_get_word_boundaries(clipboard_T *, int, int);
 static int  clip_get_line_end(int);
-static void clip_update_modeless_selection(VimClipboard *, int, int, int, int);
+static void clip_update_modeless_selection(clipboard_T *, int, int, int, int);
 
 /* flags for clip_invert_area() */
 #define CLIP_CLEAR      1
@@ -497,7 +495,7 @@ clip_start_selection(col, row, repeated_click)
     int         row;
     int         repeated_click;
 {
-    VimClipboard        *cb = &clip_star;
+    clipboard_T         *cb = &clip_star;
 
     if (cb->state == SELECT_DONE)
         clip_clear_selection(cb);
@@ -559,7 +557,7 @@ clip_process_selection(button, col, row, repeated_click)
     int         row;
     int_u       repeated_click;
 {
-    VimClipboard        *cb = &clip_star;
+    clipboard_T         *cb = &clip_star;
     int                 diff;
     int                 slen = 1;       /* cursor shape width */
 
@@ -695,8 +693,7 @@ clip_process_selection(button, col, row, repeated_click)
  * Called from outside to clear selected region from the display
  */
     void
-clip_clear_selection(cbd)
-    VimClipboard    *cbd;
+clip_clear_selection(clipboard_T *cbd)
 {
     if (cbd->state == SELECT_CLEARED)
         return;
@@ -963,9 +960,9 @@ clip_copy_modeless_selection(both)
 
     static void
 clip_get_word_boundaries(cb, row, col)
-    VimClipboard        *cb;
-    int                 row;
-    int                 col;
+    clipboard_T *cb;
+    int         row;
+    int         col;
 {
     int         start_class;
     int         temp_col;
@@ -1016,7 +1013,7 @@ clip_get_line_end(row)
  */
     static void
 clip_update_modeless_selection(cb, row1, col1, row2, col2)
-    VimClipboard    *cb;
+    clipboard_T     *cb;
     int             row1;
     int             col1;
     int             row2;
@@ -1040,45 +1037,42 @@ clip_update_modeless_selection(cb, row1, col1, row2, col2)
 }
 
     static int
-clip_mch_own_selection(VimClipboard *cbd)
+clip_mch_own_selection(clipboard_T *cbd)
 {
     return TRUE;
 }
 
     int
-clip_gen_own_selection(cbd)
-    VimClipboard        *cbd;
+clip_gen_own_selection(clipboard_T *cbd)
 {
     return clip_mch_own_selection(cbd);
 }
 
     static void
-clip_mch_lose_selection(VimClipboard *cbd)
+clip_mch_lose_selection(clipboard_T *cbd)
 {
 }
 
     void
-clip_gen_lose_selection(cbd)
-    VimClipboard        *cbd;
+clip_gen_lose_selection(clipboard_T *cbd)
 {
     clip_mch_lose_selection(cbd);
 }
 
     static void
-clip_mch_set_selection(VimClipboard *cbd)
+clip_mch_set_selection(clipboard_T *cbd)
 {
 }
 
     void
-clip_gen_set_selection(cbd)
-    VimClipboard        *cbd;
+clip_gen_set_selection(clipboard_T *cbd)
 {
     if (!clip_did_set_selection)
     {
         /* Updating postponed, so that accessing the system clipboard won't
          * hang Vim when accessing it many times (e.g. on a :g comand). */
         if ((cbd == &clip_plus && (clip_unnamed_saved & CLIP_UNNAMED_PLUS))
-                || (cbd == &clip_star && (clip_unnamed_saved & CLIP_UNNAMED)))
+         || (cbd == &clip_star && (clip_unnamed_saved & CLIP_UNNAMED)))
         {
             clipboard_needs_update = TRUE;
             return;
@@ -1088,20 +1082,18 @@ clip_gen_set_selection(cbd)
 }
 
     static void
-clip_mch_request_selection(VimClipboard *cbd)
+clip_mch_request_selection(clipboard_T *cbd)
 {
 }
 
     void
-clip_gen_request_selection(cbd)
-    VimClipboard        *cbd;
+clip_gen_request_selection(clipboard_T *cbd)
 {
     clip_mch_request_selection(cbd);
 }
 
     int
-clip_gen_owner_exists(cbd)
-    VimClipboard        *cbd UNUSED;
+clip_gen_owner_exists(clipboard_T *cbd)
 {
     return TRUE;
 }

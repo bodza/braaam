@@ -12,27 +12,27 @@
 /* Struct for various parameters passed between main() and other functions. */
 typedef struct
 {
-    int         argc;
-    char        **argv;
+    int     argc;
+    char    **argv;
 
-    int         evim_mode;              /* started as "evim" */
-    char_u      *use_vimrc;             /* vimrc from -u argument */
+    int     evim_mode;                      /* started as "evim" */
+    char_u  *use_vimrc;                     /* vimrc from -u argument */
 
-    int         n_commands;                  /* no. of commands from + or -c */
-    char_u      *commands[MAX_ARG_CMDS];     /* commands from + or -c arg. */
-    char_u      cmds_tofree[MAX_ARG_CMDS];   /* commands that need free() */
-    int         n_pre_commands;              /* no. of commands from --cmd */
-    char_u      *pre_commands[MAX_ARG_CMDS]; /* commands from --cmd argument */
+    int     n_commands;                     /* no. of commands from + or -c */
+    char_u  *commands[MAX_ARG_CMDS];        /* commands from + or -c arg. */
+    char_u  cmds_tofree[MAX_ARG_CMDS];      /* commands that need free() */
+    int     n_pre_commands;                 /* no. of commands from --cmd */
+    char_u  *pre_commands[MAX_ARG_CMDS];    /* commands from --cmd argument */
 
-    int         edit_type;              /* type of editing to do */
+    int     edit_type;                      /* type of editing to do */
 
-    int         want_full_screen;
-    int         stdout_isatty;          /* is stdout a terminal? */
-    char_u      *term;                  /* specified terminal name */
-    int         no_swap_file;           /* "-n" argument used */
-    int         use_debug_break_level;
-    int         window_count;           /* number of windows to use */
-    int         window_layout;          /* 0, WIN_HOR, WIN_VER or WIN_TABS */
+    int     want_full_screen;
+    int     stdout_isatty;                  /* is stdout a terminal? */
+    char_u  *term;                          /* specified terminal name */
+    int     no_swap_file;                   /* "-n" argument used */
+    int     use_debug_break_level;
+    int     window_count;                   /* number of windows to use */
+    int     window_layout;                  /* 0, WIN_HOR, WIN_VER or WIN_TABS */
 } mparm_T;
 
 /* Values for edit_type. */
@@ -202,8 +202,8 @@ main(argc, argv)
     if (params.want_full_screen && !silent_mode)
     {
         termcapinit(params.term);       /* set terminal name and get terminal
-                                   capabilities (will set full_screen) */
-        screen_start();         /* don't know where cursor is now */
+                                           capabilities (will set full_screen) */
+        screen_start();                 /* don't know where cursor is now */
     }
 
     /*
@@ -992,18 +992,12 @@ command_line_scan(parmp)
                     if (scriptin[0] != NULL)
                     {
 scripterror:
-                        mch_errmsg("Attempt to open script file again: \"");
-                        mch_errmsg(argv[-1]);
-                        mch_errmsg(" ");
-                        mch_errmsg(argv[0]);
-                        mch_errmsg("\"\n");
+                        fprintf(stderr, "Attempt to open script file again: \"%s %s\"\n", argv[-1], argv[0]);
                         mch_exit(2);
                     }
                     if ((scriptin[0] = mch_fopen(argv[0], READBIN)) == NULL)
                     {
-                        mch_errmsg("Cannot open for reading: \"");
-                        mch_errmsg(argv[0]);
-                        mch_errmsg("\"\n");
+                        fprintf(stderr, "Cannot open for reading: \"%s\"\n", argv[0]);
                         mch_exit(2);
                     }
                     if (save_typebuf() == FAIL)
@@ -1036,11 +1030,9 @@ scripterror:
                 case 'W':       /* "-W {scriptout}" overwrite script file */
                     if (scriptout != NULL)
                         goto scripterror;
-                    if ((scriptout = mch_fopen(argv[0], c == 'w' ? APPENDBIN : WRITEBIN)) == NULL)
+                    if ((scriptout = mch_fopen(argv[0], (c == 'w') ? APPENDBIN : WRITEBIN)) == NULL)
                     {
-                        mch_errmsg("Cannot open for script output: \"");
-                        mch_errmsg(argv[0]);
-                        mch_errmsg("\"\n");
+                        fprintf(stderr, "Cannot open for script output: \"%s\"\n", argv[0]);
                         mch_exit(2);
                     }
                     break;
@@ -1112,9 +1104,9 @@ check_tty(parmp)
     else if (parmp->want_full_screen && (!parmp->stdout_isatty || !input_isatty))
     {
         if (!parmp->stdout_isatty)
-            mch_errmsg("Vim: Warning: Output is not to a terminal\n");
+            fprintf(stderr, "Vim: Warning: Output is not to a terminal\n");
         if (!input_isatty)
-            mch_errmsg("Vim: Warning: Input is not from a terminal\n");
+            fprintf(stderr, "Vim: Warning: Input is not from a terminal\n");
         out_flush();
         if (scriptin[0] == NULL)
             ui_delay(2000L, TRUE);
@@ -1587,16 +1579,11 @@ mainerr(n, str)
 {
     reset_signals();            /* kill us with CTRL-C here, if you like */
 
-    mch_errmsg(longVersion);
-    mch_errmsg("\n");
-    mch_errmsg((char *)main_errors[n]);
+    fprintf(stderr, "%s\n", longVersion);
+    fprintf(stderr, "%s", (char *)main_errors[n]);
     if (str != NULL)
-    {
-        mch_errmsg(": \"");
-        mch_errmsg((char *)str);
-        mch_errmsg("\"");
-    }
-    mch_errmsg("\nMore info with: \"vim -h\"\n");
+        fprintf(stderr, ": \"%s\"", (char *)str);
+    fprintf(stderr, "\nMore info with: \"vim -h\"\n");
 
     mch_exit(1);
 }
@@ -1615,9 +1602,7 @@ mainerr_arg_missing(str)
 main_msg(s)
     char *s;
 {
-    mch_msg("   ");
-    mch_msg(s);
-    mch_msg("\n");
+    printf("   %s\n", s);
 }
 
 /*
@@ -1626,7 +1611,6 @@ main_msg(s)
     static void
 usage()
 {
-    int         i;
     static char *(use[]) =
     {
         "[file ..]       edit specified file(s)",
@@ -1635,18 +1619,16 @@ usage()
 
     reset_signals();            /* kill us with CTRL-C here, if you like */
 
-    mch_msg(longVersion);
-    mch_msg("\n\nusage:");
-    for (i = 0; ; ++i)
+    printf("%s\n\nusage:", longVersion);
+    for (int i = 0; ; ++i)
     {
-        mch_msg(" vim [arguments] ");
-        mch_msg((char *)use[i]);
-        if (i == (sizeof(use) / sizeof(char_u *)) - 1)
+        printf(" vim [arguments] %s", use[i]);
+        if (i == (sizeof(use) / sizeof(char *)) - 1)
             break;
-        mch_msg("\n   or:");
+        printf("\n   or:");
     }
 
-    mch_msg("\n\nArguments:\n");
+    printf("\n\nArguments:\n");
     main_msg("--\t\t\tOnly file names after this");
     main_msg("-v\t\t\tVi mode (like \"vi\")");
     main_msg("-e\t\t\tEx mode (like \"ex\")");
@@ -1680,7 +1662,7 @@ usage()
     main_msg("-W <scriptout>\tWrite all typed commands to file <scriptout>");
     main_msg("-h  or  --help\tPrint Help (this message) and exit");
 
-        mch_exit(0);
+    mch_exit(0);
 }
 
 /*

@@ -3485,18 +3485,19 @@ hkmap(c)
             case 'q':   return '/';
             case 'w':   return '\'';
 
-                        /* Hebrew letters - set offset from 'a' */
+            /* Hebrew letters - set offset from 'a' */
             case ',':   c = '{'; break;
             case '.':   c = 'v'; break;
             case ';':   c = 't'; break;
-            default: {
-                         static char str[] = "zqbcxlsjphmkwonu ydafe rig";
+            default:
+            {
+                static char str[] = "zqbcxlsjphmkwonu ydafe rig";
 
-                         if (c < 'a' || c > 'z')
-                             return c;
-                         c = str[CharOrdLow(c)];
-                         break;
-                     }
+                if (c < 'a' || c > 'z')
+                    return c;
+                c = str[CharOrdLow(c)];
+                break;
+            }
         }
 
         return (int)(CharOrdLow(c) + p_aleph);

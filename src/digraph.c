@@ -4,13 +4,11 @@
 
 #include "vim.h"
 
-typedef int result_T;
-
 typedef struct digraph
 {
     char_u      char1;
     char_u      char2;
-    result_T    result;
+    int         result;
 } digr_T;
 
 static int getexactdigraph(int, int, int);

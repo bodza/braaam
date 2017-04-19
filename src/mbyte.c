@@ -44,10 +44,6 @@
 
 #include "vim.h"
 
-#define WINBYTE BYTE
-
-#include <wchar.h>
-
 static int enc_canon_search(char_u *name);
 static int utf_ptr2cells_len(char_u *p, int size);
 static int utf_safe_read_char_adv(char_u **s, size_t *n);
@@ -592,11 +588,11 @@ mb_string2cells(p, len)
     char_u  *p;
     int     len;
 {
-    int i;
     int clen = 0;
 
-    for (i = 0; (len < 0 || i < len) && p[i] != NUL; i += utfc_ptr2len(p + i))
+    for (int i = 0; (len < 0 || i < len) && p[i] != NUL; i += utfc_ptr2len(p + i))
         clen += utf_ptr2cells(p + i);
+
     return clen;
 }
 
@@ -1361,9 +1357,9 @@ utf_class(c)
     /* sorted list of non-overlapping intervals */
     static struct clinterval
     {
-        unsigned int first;
-        unsigned int last;
-        unsigned int class;
+        int_u first;
+        int_u last;
+        int_u class;
     } classes[] =
     {
         {0x037e, 0x037e, 1},            /* Greek question mark */
@@ -1453,9 +1449,9 @@ utf_class(c)
     while (top >= bot)
     {
         mid = (bot + top) / 2;
-        if (classes[mid].last < (unsigned int)c)
+        if (classes[mid].last < (int_u)c)
             bot = mid + 1;
-        else if (classes[mid].first > (unsigned int)c)
+        else if (classes[mid].first > (int_u)c)
             top = mid - 1;
         else
             return (int)classes[mid].class;
@@ -1485,9 +1481,9 @@ typedef struct
     int rangeEnd;
     int step;
     int offset;
-} convertStruct;
+} convert_T;
 
-static convertStruct foldCase[] =
+static convert_T foldCase[] =
 {
         {0x41,0x5a,1,32},
         {0xb5,0xb5,-1,775},
@@ -1659,7 +1655,7 @@ static convertStruct foldCase[] =
         {0x118a0,0x118bf,1,32}
 };
 
-static int utf_convert(int a, convertStruct table[], int tableSize);
+static int utf_convert(int a, convert_T table[], int tableSize);
 static int utf_strnicmp(char_u *s1, char_u *s2, size_t n1, size_t n2);
 
 /*
@@ -1669,12 +1665,12 @@ static int utf_strnicmp(char_u *s1, char_u *s2, size_t n1, size_t n2);
  */
     static int
 utf_convert(a, table, tableSize)
-    int                 a;
-    convertStruct       table[];
-    int                 tableSize;
+    int             a;
+    convert_T       table[];
+    int             tableSize;
 {
     int start, mid, end; /* indices into table */
-    int entries = tableSize / sizeof(convertStruct);
+    int entries = tableSize / sizeof(convert_T);
 
     start = 0;
     end = entries;
@@ -1697,8 +1693,7 @@ utf_convert(a, table, tableSize)
 }
 
 /*
- * Return the folded-case equivalent of "a", which is a UCS-4 character.  Uses
- * simple case folding.
+ * Return the folded-case equivalent of "a", which is a UCS-4 character.  Uses simple case folding.
  */
     int
 utf_fold(a)
@@ -1707,7 +1702,7 @@ utf_fold(a)
     return utf_convert(a, foldCase, (int)sizeof(foldCase));
 }
 
-static convertStruct toLower[] =
+static convert_T toLower[] =
 {
         {0x41,0x5a,1,32},
         {0xc0,0xd6,1,32},
@@ -1867,7 +1862,7 @@ static convertStruct toLower[] =
         {0x118a0,0x118bf,1,32}
 };
 
-static convertStruct toUpper[] =
+static convert_T toUpper[] =
 {
         {0x61,0x7a,1,-32},
         {0xb5,0xb5,-1,743},

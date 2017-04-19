@@ -1,13 +1,4 @@
-/*
- * Some systems have a prototype for select() that has (int *) instead of
- * (fd_set *), which is wrong. This define removes that prototype. We define
- * our own prototype below.
- */
-#define select select_declared_wrong
-
 #include "vim.h"
-
-#include <setjmp.h>
 
 /*
  * Stuff for signals
@@ -16,9 +7,6 @@
 #define signal sigset
 #endif
 
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-
 #if !defined(WEXITSTATUS)
 #define WEXITSTATUS(stat_val) (((stat_val) >> 8) & 0377)
 #endif
@@ -26,28 +14,6 @@
 #if !defined(WIFEXITED)
 #define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
-
-#include <string.h>
-
-#include <sys/utsname.h>
-
-/*
- * We use termios.h if both termios.h and termio.h are available.
- * Termios is supposed to be a superset of termio.h.  Don't include them both,
- * it may give problems on some systems.
- */
-#include <termios.h>
-
-/*
- * Use this prototype for select, some include files have a wrong prototype
- */
-#undef select
-
-extern int   select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-
-/*
- * end of autoconf section. To be extended...
- */
 
 #if defined(SIGWINDOW) && !defined(SIGWINCH) /* hpux 9.01 has it */
 #define SIGWINCH SIGWINDOW
@@ -317,9 +283,6 @@ mch_char_avail()
 {
     return WaitForChar(0L);
 }
-
-#include <sys/resource.h>
-#include <sys/sysinfo.h>
 
 /*
  * Return total amount of memory available in Kbyte.
@@ -1477,9 +1440,9 @@ exit_scroll()
         if (msg_use_printf())
         {
             if (info_message)
-                mch_msg("\n");
+                printf("\n");
             else
-                mch_errmsg("\r\n");
+                fprintf(stderr, "\r\n");
         }
         else
             out_char('\n');

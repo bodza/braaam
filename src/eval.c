@@ -4,8 +4,6 @@
 
 #include "vim.h"
 
-#include <math.h>
-
 #define DICT_MAXNEST 100        /* maximum nesting of lists and dicts */
 
 #define DO_NOT_FREE_CNT 99999   /* refcount for dict or list that should not be freed. */
@@ -54,8 +52,7 @@ typedef struct lval_S
     char_u      *ll_name;       /* start of variable name (can be NULL) */
     char_u      *ll_exp_name;   /* NULL or expanded name in allocated memory. */
     typval_T    *ll_tv;         /* Typeval of item being used.  If "newkey"
-                                   isn't NULL it's the Dict to which to add
-                                   the item. */
+                                   isn't NULL it's the Dict to which to add the item. */
     listitem_T  *ll_li;         /* The list item or NULL. */
     list_T      *ll_list;       /* The list or NULL. */
     int         ll_range;       /* TRUE when a [i:j] range was used */
@@ -136,9 +133,7 @@ static int echo_attr = 0;   /* attributes used for ":echo" */
 /*
  * Structure to hold info for a user function.
  */
-typedef struct ufunc ufunc_T;
-
-struct ufunc
+typedef struct ufunc
 {
     int         uf_varargs;     /* variable nr of arguments */
     int         uf_flags;
@@ -149,9 +144,8 @@ struct ufunc
                                    used for s: variables */
     int         uf_refcount;    /* for numbered function: reference count */
     char_u      uf_name[1];     /* name of function (actually longer); can
-                                   start with <SNR>123_ (<SNR> is K_SPECIAL
-                                   KS_EXTRA KE_SNR) */
-};
+                                   start with <SNR>123_ (<SNR> is K_SPECIAL KS_EXTRA KE_SNR) */
+} ufunc_T;
 
 /* function flags */
 #define FC_ABORT    1           /* abort function on error */
@@ -354,7 +348,7 @@ static int dict_equal(dict_T *d1, dict_T *d2, int ic, int recursive);
 static int tv_equal(typval_T *tv1, typval_T *tv2, int ic, int recursive);
 static long list_find_nr(list_T *l, long idx, int *errorp);
 static long list_idx_of_item(list_T *l, listitem_T *item);
-static int list_append_number(list_T *l, varnumber_T n);
+static int list_append_number(list_T *l, number_T n);
 static int list_extend(list_T   *l1, list_T *l2, listitem_T *bef);
 static int list_concat(list_T *l1, list_T *l2, typval_T *tv);
 static list_T *list_copy(list_T *orig, int deep, int copyID);
@@ -484,7 +478,6 @@ static void f_histget(typval_T *argvars, typval_T *rettv);
 static void f_histnr(typval_T *argvars, typval_T *rettv);
 static void f_hlID(typval_T *argvars, typval_T *rettv);
 static void f_hlexists(typval_T *argvars, typval_T *rettv);
-static void f_hostname(typval_T *argvars, typval_T *rettv);
 static void f_indent(typval_T *argvars, typval_T *rettv);
 static void f_index(typval_T *argvars, typval_T *rettv);
 static void f_input(typval_T *argvars, typval_T *rettv);
@@ -678,7 +671,7 @@ static void func_free(ufunc_T *fp);
 static void call_user_func(ufunc_T *fp, int argcount, typval_T *argvars, typval_T *rettv, linenr_T firstline, linenr_T lastline, dict_T *selfdict);
 static int can_free_funccal(funccall_T *fc, int copyID) ;
 static void free_funccal(funccall_T *fc, int free_val);
-static void add_nr_var(dict_T *dp, dictitem_T *v, char *name, varnumber_T nr);
+static void add_nr_var(dict_T *dp, dictitem_T *v, char *name, number_T nr);
 static win_T *find_win_by_nr(typval_T *vp, tabpage_T *tp);
 static void getwinvar(typval_T *argvars, typval_T *rettv, int off);
 static int searchpair_cmn(typval_T *argvars, pos_T *match_pos);
@@ -5811,7 +5804,7 @@ list_append_string(l, str, len)
     static int
 list_append_number(l, n)
     list_T      *l;
-    varnumber_T n;
+    number_T    n;
 {
     listitem_T  *li;
 
@@ -6038,7 +6031,8 @@ list2string(tv, copyID)
     return (char_u *)ga.ga_data;
 }
 
-typedef struct join_S {
+typedef struct join_S
+{
     char_u      *s;
     char_u      *tofree;
 } join_T;
@@ -7449,7 +7443,6 @@ static struct fst
     {"histnr",          1, 1, f_histnr},
     {"hlID",            1, 1, f_hlID},
     {"hlexists",        1, 1, f_hlexists},
-    {"hostname",        0, 0, f_hostname},
     {"indent",          1, 1, f_indent},
     {"index",           2, 4, f_index},
     {"input",           1, 3, f_input},
@@ -8074,7 +8067,7 @@ f_abs(argvars, rettv)
     }
     else
     {
-        varnumber_T     n;
+        number_T        n;
         int             error = FALSE;
 
         n = get_tv_number_chk(&argvars[0], &error);
@@ -8564,7 +8557,7 @@ byteidx(argvars, rettv, comp)
         else
             t += utfc_ptr2len(t);
     }
-    rettv->vval.v_number = (varnumber_T)(t - str);
+    rettv->vval.v_number = (number_T)(t - str);
 }
 
 /*
@@ -9794,7 +9787,7 @@ f_float2nr(argvars, rettv)
         else if (f > 0x7fffffff)
             rettv->vval.v_number = 0x7fffffff;
         else
-            rettv->vval.v_number = (varnumber_T)f;
+            rettv->vval.v_number = (number_T)f;
     }
 }
 
@@ -10133,7 +10126,7 @@ f_getchar(argvars, rettv)
     typval_T    *argvars;
     typval_T    *rettv;
 {
-    varnumber_T         n;
+    number_T            n;
     int                 error = FALSE;
 
     /* Position the cursor.  Needed after a message that ends in a space. */
@@ -10373,7 +10366,7 @@ f_getfsize(argvars, rettv)
             rettv->vval.v_number = 0;
         else
         {
-            rettv->vval.v_number = (varnumber_T)st.st_size;
+            rettv->vval.v_number = (number_T)st.st_size;
 
             /* non-perfect check for overflow */
             if ((off_t)rettv->vval.v_number != (off_t)st.st_size)
@@ -10398,7 +10391,7 @@ f_getftime(argvars, rettv)
     fname = get_tv_string(&argvars[0]);
 
     if (mch_stat((char *)fname, &st) >= 0)
-        rettv->vval.v_number = (varnumber_T)st.st_mtime;
+        rettv->vval.v_number = (number_T)st.st_mtime;
     else
         rettv->vval.v_number = -1;
 }
@@ -10544,11 +10537,11 @@ f_getmatches(argvars, rettv)
                     l = list_alloc();
                     if (l == NULL)
                         break;
-                    list_append_number(l, (varnumber_T)llpos->lnum);
+                    list_append_number(l, (number_T)llpos->lnum);
                     if (llpos->col > 0)
                     {
-                        list_append_number(l, (varnumber_T)llpos->col);
-                        list_append_number(l, (varnumber_T)llpos->len);
+                        list_append_number(l, (number_T)llpos->col);
+                        list_append_number(l, (number_T)llpos->len);
                     }
                     sprintf(buf, "pos%d", i + 1);
                     dict_add_list(dict, buf, l);
@@ -10620,16 +10613,16 @@ getpos_both(argvars, rettv, getcurpos)
         else
             fp = var2fpos(&argvars[0], TRUE, &fnum);
         if (fnum != -1)
-            list_append_number(l, (varnumber_T)fnum);
+            list_append_number(l, (number_T)fnum);
         else
-            list_append_number(l, (varnumber_T)0);
-        list_append_number(l, (fp != NULL) ? (varnumber_T)fp->lnum : (varnumber_T)0);
+            list_append_number(l, (number_T)0);
+        list_append_number(l, (fp != NULL) ? (number_T)fp->lnum : (number_T)0);
         list_append_number(l, (fp != NULL)
-                     ? (varnumber_T)(fp->col == MAXCOL ? MAXCOL : fp->col + 1) : (varnumber_T)0);
-        list_append_number(l, (fp != NULL) ? (varnumber_T)fp->coladd : (varnumber_T)0);
+                     ? (number_T)(fp->col == MAXCOL ? MAXCOL : fp->col + 1) : (number_T)0);
+        list_append_number(l, (fp != NULL) ? (number_T)fp->coladd : (number_T)0);
         if (getcurpos)
             list_append_number(l, curwin->w_curswant == MAXCOL ?
-                    (varnumber_T)MAXCOL : (varnumber_T)curwin->w_curswant + 1);
+                    (number_T)MAXCOL : (number_T)curwin->w_curswant + 1);
     }
     else
         rettv->vval.v_number = FALSE;
@@ -11327,21 +11320,6 @@ f_hlexists(argvars, rettv)
 }
 
 /*
- * "hostname()" function
- */
-    static void
-f_hostname(argvars, rettv)
-    typval_T    *argvars UNUSED;
-    typval_T    *rettv;
-{
-    char_u hostname[256];
-
-    mch_get_host_name(hostname, 256);
-    rettv->v_type = VAR_STRING;
-    rettv->vval.v_string = vim_strsave(hostname);
-}
-
-/*
  * "indent()" function
  */
     static void
@@ -11896,7 +11874,7 @@ f_len(argvars, rettv)
     {
         case VAR_STRING:
         case VAR_NUMBER:
-            rettv->vval.v_number = (varnumber_T)STRLEN(get_tv_string(&argvars[0]));
+            rettv->vval.v_number = (number_T)STRLEN(get_tv_string(&argvars[0]));
             break;
         case VAR_LIST:
             rettv->vval.v_number = list_len(argvars[0].vval.v_list);
@@ -11978,7 +11956,7 @@ f_localtime(argvars, rettv)
     typval_T    *argvars UNUSED;
     typval_T    *rettv;
 {
-    rettv->vval.v_number = (varnumber_T)time(NULL);
+    rettv->vval.v_number = (number_T)time(NULL);
 }
 
 static void get_maparg(typval_T *argvars, typval_T *rettv, int exact);
@@ -12296,10 +12274,10 @@ find_some_match(argvars, rettv, type)
             else
             {
                 if (type != 0)
-                    rettv->vval.v_number = (varnumber_T)(regmatch.startp[0] - str);
+                    rettv->vval.v_number = (number_T)(regmatch.startp[0] - str);
                 else
-                    rettv->vval.v_number = (varnumber_T)(regmatch.endp[0] - str);
-                rettv->vval.v_number += (varnumber_T)(str - expr);
+                    rettv->vval.v_number = (number_T)(regmatch.endp[0] - str);
+                rettv->vval.v_number += (number_T)(str - expr);
             }
         }
         vim_regfree(regmatch.regprog);
@@ -12841,7 +12819,7 @@ f_range(argvars, rettv)
     {
         if (rettv_list_alloc(rettv) == OK)
             for (i = start; stride > 0 ? i <= end : i >= end; i += stride)
-                if (list_append_number(rettv->vval.v_list, (varnumber_T)i) == FAIL)
+                if (list_append_number(rettv->vval.v_list, (number_T)i) == FAIL)
                     break;
     }
 }
@@ -13112,8 +13090,8 @@ f_reltime(argvars, rettv)
 
         n1 = res.tv_sec;
         n2 = res.tv_usec;
-        list_append_number(rettv->vval.v_list, (varnumber_T)n1);
-        list_append_number(rettv->vval.v_list, (varnumber_T)n2);
+        list_append_number(rettv->vval.v_list, (number_T)n1);
+        list_append_number(rettv->vval.v_list, (number_T)n2);
     }
 }
 
@@ -13975,8 +13953,8 @@ f_searchpairpos(argvars, rettv)
         col = match_pos.col;
     }
 
-    list_append_number(rettv->vval.v_list, (varnumber_T)lnum);
-    list_append_number(rettv->vval.v_list, (varnumber_T)col);
+    list_append_number(rettv->vval.v_list, (number_T)lnum);
+    list_append_number(rettv->vval.v_list, (number_T)col);
 }
 
 /*
@@ -14157,10 +14135,10 @@ f_searchpos(argvars, rettv)
         col = match_pos.col;
     }
 
-    list_append_number(rettv->vval.v_list, (varnumber_T)lnum);
-    list_append_number(rettv->vval.v_list, (varnumber_T)col);
+    list_append_number(rettv->vval.v_list, (number_T)lnum);
+    list_append_number(rettv->vval.v_list, (number_T)col);
     if (flags & SP_SUBPAT)
-        list_append_number(rettv->vval.v_list, (varnumber_T)n);
+        list_append_number(rettv->vval.v_list, (number_T)n);
 }
 
     static void
@@ -14782,10 +14760,8 @@ f_sinh(argvars, rettv)
         rettv->vval.v_float = 0.0;
 }
 
-static int
-        item_compare(const void *s1, const void *s2);
-static int
-        item_compare2(const void *s1, const void *s2);
+static int item_compare(const void *s1, const void *s2);
+static int item_compare2(const void *s1, const void *s2);
 
 /* struct used in the array that's given to qsort() */
 typedef struct
@@ -15318,7 +15294,7 @@ f_stridx(argvars, rettv)
 
     pos = (char_u *)strstr((char *)haystack, (char *)needle);
     if (pos != NULL)
-        rettv->vval.v_number = (varnumber_T)(pos - save_haystack);
+        rettv->vval.v_number = (number_T)(pos - save_haystack);
 }
 
 /*
@@ -15347,7 +15323,7 @@ f_strlen(argvars, rettv)
     typval_T    *argvars;
     typval_T    *rettv;
 {
-    rettv->vval.v_number = (varnumber_T)(STRLEN(get_tv_string(&argvars[0])));
+    rettv->vval.v_number = (number_T)(STRLEN(get_tv_string(&argvars[0])));
 }
 
 /*
@@ -15359,7 +15335,7 @@ f_strchars(argvars, rettv)
     typval_T    *rettv;
 {
     char_u              *s = get_tv_string(&argvars[0]);
-    varnumber_T         len = 0;
+    number_T            len = 0;
 
     while (*s != NUL)
     {
@@ -15383,7 +15359,7 @@ f_strdisplaywidth(argvars, rettv)
     if (argvars[1].v_type != VAR_UNKNOWN)
         col = get_tv_number(&argvars[1]);
 
-    rettv->vval.v_number = (varnumber_T)(linetabsize_col(col, s) - col);
+    rettv->vval.v_number = (number_T)(linetabsize_col(col, s) - col);
 }
 
 /*
@@ -15396,7 +15372,7 @@ f_strwidth(argvars, rettv)
 {
     char_u      *s = get_tv_string(&argvars[0]);
 
-    rettv->vval.v_number = (varnumber_T)(mb_string2cells(s, -1));
+    rettv->vval.v_number = (number_T)(mb_string2cells(s, -1));
 }
 
 /*
@@ -15495,7 +15471,7 @@ f_strridx(argvars, rettv)
     if (lastmatch == NULL)
         rettv->vval.v_number = -1;
     else
-        rettv->vval.v_number = (varnumber_T)(lastmatch - haystack);
+        rettv->vval.v_number = (number_T)(lastmatch - haystack);
 }
 
 /*
@@ -20106,7 +20082,7 @@ call_user_func(fp, argcount, argvars, rettv, firstline, lastline, selfdict)
      */
     init_var_dict(&fc->l_avars, &fc->l_avars_var, VAR_SCOPE);
     add_nr_var(&fc->l_avars, &fc->fixvar[fixvar_idx++].var, "0",
-                                (varnumber_T)(argcount - fp->uf_args.ga_len));
+                                (number_T)(argcount - fp->uf_args.ga_len));
     /* Use "name" to avoid a warning from some compiler that checks the
      * destination size. */
     v = &fc->fixvar[fixvar_idx++].var;
@@ -20126,8 +20102,8 @@ call_user_func(fp, argcount, argvars, rettv, firstline, lastline, selfdict)
      * Set a:name to named arguments.
      * Set a:N to the "..." arguments.
      */
-    add_nr_var(&fc->l_avars, &fc->fixvar[fixvar_idx++].var, "firstline", (varnumber_T)firstline);
-    add_nr_var(&fc->l_avars, &fc->fixvar[fixvar_idx++].var, "lastline", (varnumber_T)lastline);
+    add_nr_var(&fc->l_avars, &fc->fixvar[fixvar_idx++].var, "firstline", (number_T)firstline);
+    add_nr_var(&fc->l_avars, &fc->fixvar[fixvar_idx++].var, "lastline", (number_T)lastline);
     for (i = 0; i < argcount; ++i)
     {
         ai = i - fp->uf_args.ga_len;
@@ -20394,7 +20370,7 @@ add_nr_var(dp, v, name, nr)
     dict_T      *dp;
     dictitem_T  *v;
     char        *name;
-    varnumber_T nr;
+    number_T    nr;
 {
     STRCPY(v->di_key, name);
     v->di_flags = DI_FLAGS_RO | DI_FLAGS_FIX;
@@ -20472,7 +20448,7 @@ do_return(eap, reanimate, is_cmd, rettv)
     void        *rettv;
 {
     int         idx;
-    struct condstack *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (reanimate)
         /* Undo the return. */
@@ -22031,8 +22007,6 @@ profile_zero(tm)
     tm->tv_usec = 0;
     tm->tv_sec = 0;
 }
-
-#include <math.h>
 
 /*
  * If 'autowrite' option set, try to write the file.

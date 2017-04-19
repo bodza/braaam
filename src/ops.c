@@ -3333,7 +3333,8 @@ do_put(regname, dir, count, flags)
          */
         if (y_type == MCHAR && y_size == 1)
         {
-            do {
+            do
+            {
                 totlen = count * yanklen;
                 if (totlen > 0)
                 {
@@ -4735,7 +4736,7 @@ do_addsub(command, Prenum1)
     char_u      buf2[NUMBUFLEN];
     int         hex;            /* 'X' or 'x': hex; '0': octal */
     static int  hexupper = FALSE;       /* 0xABC */
-    unsigned long n;
+    long_u      n;
     long_u      oldn;
     char_u      *ptr;
     int         c;
@@ -4867,9 +4868,9 @@ do_addsub(command, Prenum1)
 
         oldn = n;
         if (subtract)
-            n -= (unsigned long)Prenum1;
+            n -= (long_u)Prenum1;
         else
-            n += (unsigned long)Prenum1;
+            n += (long_u)Prenum1;
 
         /* handle wraparound for decimal numbers */
         if (!hex)
@@ -4878,7 +4879,7 @@ do_addsub(command, Prenum1)
             {
                 if (n > oldn)
                 {
-                    n = 1 + (n ^ (unsigned long)-1);
+                    n = 1 + (n ^ (long_u)-1);
                     negative ^= TRUE;
                 }
             }
@@ -4886,7 +4887,7 @@ do_addsub(command, Prenum1)
             {
                 if (n < oldn)
                 {
-                    n = (n ^ (unsigned long)-1);
+                    n = (n ^ (long_u)-1);
                     negative ^= TRUE;
                 }
             }
@@ -5006,8 +5007,7 @@ do_addsub(command, Prenum1)
  */
 
     void
-clip_free_selection(cbd)
-    VimClipboard        *cbd;
+clip_free_selection(clipboard_T *cbd)
 {
     struct yankreg *y_ptr = y_current;
 
@@ -5024,8 +5024,7 @@ clip_free_selection(cbd)
  * Get the selected text and put it in the gui selection register '*' or '+'.
  */
     void
-clip_get_selection(cbd)
-    VimClipboard        *cbd;
+clip_get_selection(clipboard_T *cbd)
 {
     struct yankreg *old_y_previous, *old_y_current;
     pos_T       old_cursor;
@@ -5090,7 +5089,7 @@ clip_yank_selection(type, str, len, cbd)
     int         type;
     char_u      *str;
     long        len;
-    VimClipboard *cbd;
+    clipboard_T *cbd;
 {
     struct yankreg *y_ptr;
 
@@ -5112,7 +5111,7 @@ clip_yank_selection(type, str, len, cbd)
 clip_convert_selection(str, len, cbd)
     char_u      **str;
     long_u      *len;
-    VimClipboard *cbd;
+    clipboard_T *cbd;
 {
     char_u      *p;
     int         lnum;

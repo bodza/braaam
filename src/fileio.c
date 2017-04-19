@@ -4,8 +4,6 @@
 
 #include "vim.h"
 
-#include <utime.h>             /* for struct utimbuf */
-
 #define BUFSIZE         8192    /* size of normal write buffer */
 #define SMBUFSIZE       256     /* size of emergency write buffer */
 
@@ -584,9 +582,7 @@ readfile(fname, sfname, from, lines_to_skip, lines_to_read, eap, flags)
          * always using the GUI.
          */
         if (read_stdin)
-        {
-            mch_msg("Vim: Reading from stdin...\n");
-        }
+            printf("Vim: Reading from stdin...\n");
         else if (!read_buffer)
             filemess(sfname, (char_u *)"", 0);
     }
@@ -2095,7 +2091,7 @@ buf_write(buf, fname, sfname, start, end, eap, append, forceit, reset_changed, f
     int             wb_flags = 0;
     int             write_undo_file = FALSE;
     context_sha256_T sha_ctx;
-    unsigned int    bkc = get_bkc_value(buf);
+    int_u           bkc = get_bkc_value(buf);
 
     if (fname == NULL || *fname == NUL) /* safety check */
         return FAIL;
@@ -3057,7 +3053,7 @@ restore_backup:
          */
         ptr = ml_get_buf(buf, lnum, FALSE) - 1;
         if (write_undo_file)
-            sha256_update(&sha_ctx, ptr + 1, (UINT32_T)(STRLEN(ptr + 1) + 1));
+            sha256_update(&sha_ctx, ptr + 1, (uint32_t)(STRLEN(ptr + 1) + 1));
         while ((c = *++ptr) != NUL)
         {
             if (c == NL)

@@ -1014,13 +1014,13 @@ mf_trans_add(mfp, hp)
 {
     bhdr_T      *freep;
     blocknr_T   new_bnum;
-    NR_TRANS    *np;
+    nr_trans_T  *np;
     int         page_count;
 
     if (hp->bh_bnum >= 0)                   /* it's already positive */
         return OK;
 
-    if ((np = (NR_TRANS *)alloc((unsigned)sizeof(NR_TRANS))) == NULL)
+    if ((np = (nr_trans_T *)alloc((unsigned)sizeof(nr_trans_T))) == NULL)
         return FAIL;
 
 /*
@@ -1077,10 +1077,10 @@ mf_trans_del(mfp, old_nr)
     memfile_T   *mfp;
     blocknr_T   old_nr;
 {
-    NR_TRANS    *np;
+    nr_trans_T  *np;
     blocknr_T   new_bnum;
 
-    np = (NR_TRANS *)mf_hash_find(&mfp->mf_trans, old_nr);
+    np = (nr_trans_T *)mf_hash_find(&mfp->mf_trans, old_nr);
 
     if (np == NULL)             /* not found */
         return old_nr;

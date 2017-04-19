@@ -15,12 +15,12 @@
 
 static void sha256_process(context_sha256_T *ctx, char_u data[64]);
 
-#define GET_UINT32(n, b, i)                 \
-{                                           \
-    (n) = ( (UINT32_T)(b)[(i)    ] << 24)   \
-        | ( (UINT32_T)(b)[(i) + 1] << 16)   \
-        | ( (UINT32_T)(b)[(i) + 2] <<  8)   \
-        | ( (UINT32_T)(b)[(i) + 3]      );  \
+#define GET_UINT32(n, b, i)               \
+{                                         \
+    (n) = ((uint32_t)(b)[(i)    ] << 24)  \
+        | ((uint32_t)(b)[(i) + 1] << 16)  \
+        | ((uint32_t)(b)[(i) + 2] <<  8)  \
+        | ((uint32_t)(b)[(i) + 3]      ); \
 }
 
 #define PUT_UINT32(n,b,i)                 \
@@ -53,8 +53,8 @@ sha256_process(ctx, data)
     context_sha256_T *ctx;
     char_u           data[64];
 {
-    UINT32_T temp1, temp2, W[64];
-    UINT32_T A, B, C, D, E, F, G, H;
+    uint32_t temp1, temp2, W[64];
+    uint32_t A, B, C, D, E, F, G, H;
 
     GET_UINT32(W[0],  data,  0);
     GET_UINT32(W[1],  data,  4);
@@ -186,9 +186,9 @@ sha256_process(ctx, data)
 sha256_update(ctx, input, length)
     context_sha256_T *ctx;
     char_u           *input;
-    UINT32_T         length;
+    uint32_t         length;
 {
-    UINT32_T left, fill;
+    uint32_t left, fill;
 
     if (length == 0)
         return;
@@ -222,7 +222,8 @@ sha256_update(ctx, input, length)
         memcpy((void *)(ctx->buffer + left), (void *)input, length);
 }
 
-static char_u sha256_padding[64] = {
+static char_u sha256_padding[64] =
+{
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -234,8 +235,8 @@ sha256_finish(ctx, digest)
     context_sha256_T *ctx;
     char_u           digest[32];
 {
-    UINT32_T last, padn;
-    UINT32_T high, low;
+    uint32_t last, padn;
+    uint32_t high, low;
     char_u   msglen[8];
 
     high = (ctx->total[0] >> 29) | (ctx->total[1] <<  3);

@@ -2085,7 +2085,7 @@ buflist_findfpos(buf)
     buf_T       *buf;
 {
     wininfo_T   *wip;
-    static pos_T no_position = INIT_POS_T(1, 0, 0);
+    static pos_T no_position = {1, 0, 0};
 
     wip = find_wininfo(buf, FALSE);
     if (wip != NULL)
@@ -2129,8 +2129,8 @@ buflist_list(eap)
         len = vim_snprintf((char *)IObuff, IOSIZE - 20, "%3d%c%c%c%c%c \"%s\"",
                 buf->b_fnum,
                 buf->b_p_bl ? ' ' : 'u',
-                buf == curbuf ? '%' : (curwin->w_alt_fnum == buf->b_fnum ? '#' : ' '),
-                buf->b_ml.ml_mfp == NULL ? ' ' : (buf->b_nwindows == 0 ? 'h' : 'a'),
+                (buf == curbuf) ? '%' : (curwin->w_alt_fnum == buf->b_fnum ? '#' : ' '),
+                (buf->b_ml.ml_mfp == NULL) ? ' ' : (buf->b_nwindows == 0 ? 'h' : 'a'),
                 !buf->b_p_ma ? '-' : (buf->b_p_ro ? '=' : ' '),
                 (buf->b_flags & BF_READERR) ? 'x' : (bufIsChanged(buf) ? '+' : ' '),
                 NameBuff);
@@ -2142,7 +2142,7 @@ buflist_list(eap)
             IObuff[len++] = ' ';
         } while (--i > 0 && len < IOSIZE - 18);
         vim_snprintf((char *)IObuff + len, (size_t)(IOSIZE - len), "line %ld",
-            buf == curbuf ? curwin->w_cursor.lnum : (long)buflist_findlnum(buf));
+            (buf == curbuf) ? curwin->w_cursor.lnum : (long)buflist_findlnum(buf));
         msg_outtrans(IObuff);
         out_flush();        /* output one line at a time */
         ui_breakcheck();
@@ -3569,7 +3569,7 @@ get_rel_pos(wp, buf, buflen)
     else if (above <= 0)
         vim_strncpy(buf, (char_u *)"Top", (size_t)(buflen - 1));
     else
-        vim_snprintf((char *)buf, (size_t)buflen, "%2d%%", above > 1000000L
+        vim_snprintf((char *)buf, (size_t)buflen, "%2d%%", (above > 1000000L)
                                     ? (int)(above / ((above + below) / 100L))
                                     : (int)(above * 100L / (above + below)));
 }
@@ -3601,8 +3601,7 @@ append_arg_number(wp, buf, buflen, add_file)
         p += 5;
     }
     vim_snprintf((char *)p, (size_t)(buflen - (p - buf)),
-                wp->w_arg_idx_invalid ? "(%d) of %d)"
-                                  : "%d of %d)", wp->w_arg_idx + 1, ARGCOUNT);
+                wp->w_arg_idx_invalid ? "(%d) of %d)" : "%d of %d)", wp->w_arg_idx + 1, ARGCOUNT);
     return TRUE;
 }
 

@@ -198,7 +198,8 @@ static linenr_T lowest_marked = 0;
 #define ML_SIMPLE(x)    (x & 0x10)  /* DEL, INS or FIND */
 
 /* argument for ml_upd_block0() */
-typedef enum {
+typedef enum
+{
       UB_FNAME = 0      /* update timestamp and filename */
     , UB_SAME_DIR       /* update the B0_SAME_DIR flag */
     , UB_CRYPT          /* update crypt key */
@@ -275,9 +276,9 @@ ml_open(buf)
     buf->b_ml.ml_line_count = 1;
     curwin->w_nrwidth_line_count = 0;
 
-/*
- * fill block0 struct and write page 0
- */
+    /*
+     * fill block0 struct and write page 0
+     */
     if ((hp = mf_new(mfp, FALSE, 1)) == NULL)
         goto error;
     if (hp->bh_bnum != 0)

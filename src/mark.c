@@ -957,7 +957,7 @@ mark_adjust(line1, line2, amount, amount_after)
     linenr_T    *lp;
     win_T       *win;
     tabpage_T   *tab;
-    static pos_T initpos = INIT_POS_T(1, 0, 0);
+    static pos_T initpos = {1, 0, 0};
 
     if (line2 < line1 && amount_after == 0L)        /* nothing to do */
         return;

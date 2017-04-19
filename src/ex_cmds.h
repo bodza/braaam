@@ -1051,7 +1051,7 @@ struct exarg
     char_u      *errmsg;        /* returned error message */
     char_u      *(*getline)(int, void *, int);
     void        *cookie;        /* argument for getline() */
-    struct condstack *cstack;   /* condition stack for ":if" etc. */
+    condstack_T *cstack;        /* condition stack for ":if" etc. */
 };
 
 #define FORCE_BIN 1             /* ":edit ++bin file" */

@@ -1,16 +1,13 @@
 #include "vim.h"
 
 static int win_chartabsize(win_T *wp, char_u *p, colnr_T col);
-
-#include <wchar.h>        /* for towupper() and towlower() */
 static int win_nolbr_chartabsize(win_T *wp, char_u *s, colnr_T col, int *headp);
 
 static unsigned nr2hex(unsigned c);
 
 static int    chartab_initialized = FALSE;
 
-/* b_chartab[] is an array of 32 bytes, each bit representing one of the
- * characters 0-255. */
+/* b_chartab[] is an array of 32 bytes, each bit representing one of the characters 0-255. */
 #define SET_CHARTAB(buf, c) (buf)->b_chartab[(unsigned)(c) >> 3] |= (1 << ((c) & 0x7))
 #define RESET_CHARTAB(buf, c) (buf)->b_chartab[(unsigned)(c) >> 3] &= ~(1 << ((c) & 0x7))
 #define GET_CHARTAB(buf, c) ((buf)->b_chartab[(unsigned)(c) >> 3] & (1 << ((c) & 0x7)))
@@ -821,7 +818,7 @@ vim_isprintc_strict(c)
     int
 lbr_chartabsize(line, s, col)
     char_u              *line UNUSED; /* start of the line */
-    unsigned char       *s;
+    char_u              *s;
     colnr_T             col;
 {
     if (!curwin->w_p_lbr && *p_sbr == NUL && !curwin->w_p_bri)
@@ -1516,12 +1513,12 @@ vim_str2nr(start, hexp, len, dooct, dohex, nptr, unptr)
     int                 dooct;      /* recognize octal number */
     int                 dohex;      /* recognize hex number */
     long                *nptr;      /* return: signed result */
-    unsigned long       *unptr;     /* return: unsigned result */
+    long_u              *unptr;     /* return: unsigned result */
 {
     char_u          *ptr = start;
     int             hex = 0;            /* default is decimal */
     int             negative = FALSE;
-    unsigned long   un = 0;
+    long_u          un = 0;
     int             n;
 
     if (ptr[0] == '-')
@@ -1564,7 +1561,7 @@ vim_str2nr(start, hexp, len, dooct, dohex, nptr, unptr)
         /* octal */
         while ('0' <= *ptr && *ptr <= '7')
         {
-            un = 8 * un + (unsigned long)(*ptr - '0');
+            un = 8 * un + (long_u)(*ptr - '0');
             ++ptr;
         }
     }
@@ -1573,7 +1570,7 @@ vim_str2nr(start, hexp, len, dooct, dohex, nptr, unptr)
         /* hex */
         while (vim_isxdigit(*ptr))
         {
-            un = 16 * un + (unsigned long)hex2nr(*ptr);
+            un = 16 * un + (long_u)hex2nr(*ptr);
             ++ptr;
         }
     }
@@ -1582,7 +1579,7 @@ vim_str2nr(start, hexp, len, dooct, dohex, nptr, unptr)
         /* decimal */
         while (VIM_ISDIGIT(*ptr))
         {
-            un = 10 * un + (unsigned long)(*ptr - '0');
+            un = 10 * un + (long_u)(*ptr - '0');
             ++ptr;
         }
     }

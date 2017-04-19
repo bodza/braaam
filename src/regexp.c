@@ -544,7 +544,8 @@ static int      reg_strict;     /* "[abc" is illegal */
  */
 
 /* META[] is used often enough to justify turning it into a table. */
-static char_u META_flags[] = {
+static char_u META_flags[] =
+{
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 /*                 %  &     (  )  *  +        .    */
@@ -1698,7 +1699,8 @@ regpiece(flagp)
 
 /* When making changes to classchars also change nfa_classcodes. */
 static char_u   *classchars = (char_u *)".iIkKfFpPsSdDxXoOwWhHaAlLuU";
-static int      classcodes[] = {
+static int      classcodes[] =
+{
     ANY, IDENT, SIDENT, KWORD, SKWORD,
     FNAME, SFNAME, PRINT, SPRINT,
     WHITE, NWHITE, DIGIT, NDIGIT,
@@ -6898,7 +6900,6 @@ static regengine_T bt_regengine =
 
 /* ----------------------------------------------------------------------- */
 
-/* #include "regexp_nfa.c" */
 /*
  * NFA regular expression implementation.
  *
@@ -7102,7 +7103,8 @@ enum
 };
 
 /* Keep in sync with classchars. */
-static int nfa_classcodes[] = {
+static int nfa_classcodes[] =
+{
     NFA_ANY, NFA_IDENT, NFA_SIDENT, NFA_KWORD,NFA_SKWORD,
     NFA_FNAME, NFA_SFNAME, NFA_PRINT, NFA_SPRINT,
     NFA_WHITE, NFA_NWHITE, NFA_DIGIT, NFA_NDIGIT,
@@ -9132,9 +9134,8 @@ alloc_state(c, out, out1)
  * next state for this fragment.
  */
 
-/* Since the out pointers in the list are always
- * uninitialized, we use the pointers themselves
- * as storage for the Ptrlists. */
+/* Since the out pointers in the list are always uninitialized,
+ * we use the pointers themselves as storage for the Ptrlists. */
 typedef union Ptrlist Ptrlist;
 union Ptrlist
 {
@@ -9142,12 +9143,11 @@ union Ptrlist
     nfa_state_T *s;
 };
 
-struct Frag
+typedef struct Frag
 {
     nfa_state_T *start;
     Ptrlist     *out;
-};
-typedef struct Frag Frag_T;
+} Frag_T;
 
 static Frag_T frag(nfa_state_T *start, Ptrlist *out);
 static Ptrlist *list1(nfa_state_T **outp);
@@ -9230,28 +9230,6 @@ st_error(postfix, end, p)
     int *end UNUSED;
     int *p UNUSED;
 {
-#if defined(NFA_REGEXP_ERROR_LOG)
-    FILE *df;
-    int *p2;
-
-    df = fopen(NFA_REGEXP_ERROR_LOG, "a");
-    if (df)
-    {
-        fprintf(df, "Error popping the stack!\n");
-        fprintf(df, "Postfix form is: ");
-        for (p2 = postfix; p2 < end; p2++)
-        {
-            fprintf(df, "%d, ", *p2);
-        }
-        fprintf(df, "\nCurrent position is: ");
-        for (p2 = postfix; p2 <= p; p2 ++)
-        {
-            fprintf(df, "%d, ", *p2);
-        }
-        fprintf(df, "\n--------------------------\n");
-        fclose(df);
-    }
-#endif
     EMSG("E874: (NFA) Could not pop the stack !");
 }
 
@@ -10103,8 +10081,7 @@ typedef struct
 } regsubs_T;
 
 /* nfa_pim_T stores a Postponed Invisible Match. */
-typedef struct nfa_pim_S nfa_pim_T;
-struct nfa_pim_S
+typedef struct
 {
     int         result;         /* NFA_PIM_*, see below */
     nfa_state_T *state;         /* the invisible match start state */
@@ -10114,7 +10091,7 @@ struct nfa_pim_S
         lpos_T  pos;
         char_u  *ptr;
     } end;                      /* where the match must end */
-};
+} nfa_pim_T;
 
 /* Values for done in nfa_pim_T. */
 #define NFA_PIM_UNUSED   0      /* pim not used */
@@ -10127,8 +10104,7 @@ typedef struct
 {
     nfa_state_T *state;
     int         count;
-    nfa_pim_T   pim;            /* if pim.result != NFA_PIM_UNUSED: postponed
-                                 * invisible match */
+    nfa_pim_T   pim;            /* if pim.result != NFA_PIM_UNUSED: postponed invisible match */
     regsubs_T   subs;           /* submatch info, only party used */
 } nfa_thread_T;
 
@@ -13365,5 +13341,5 @@ vim_regexec_multi(rmp, win, buf, lnum, col, tm)
         p_re = save_p_re;
     }
 
-    return result <= 0 ? 0 : result;
+    return (result <= 0) ? 0 : result;
 }

@@ -67,9 +67,9 @@
 
 #include "vim.h"
 
-/* Structure passed around between functions.
- * Avoids passing cryptstate_T when encryption not available. */
-typedef struct {
+/* Structure passed around between functions. */
+typedef struct
+{
     buf_T       *bi_buf;
     FILE        *bi_fp;
 } bufinfo_T;
@@ -130,7 +130,7 @@ static int      lastmark = 0;
     int
 u_save_cursor()
 {
-    return (u_save((linenr_T)(curwin->w_cursor.lnum - 1), (linenr_T)(curwin->w_cursor.lnum + 1)));
+    return u_save((linenr_T)(curwin->w_cursor.lnum - 1), (linenr_T)(curwin->w_cursor.lnum + 1));
 }
 
 /*
@@ -154,7 +154,7 @@ u_save(top, bot)
     if (top + 2 == bot)
         u_saveline((linenr_T)(top + 1));
 
-    return (u_savecommon(top, bot, (linenr_T)0, FALSE));
+    return u_savecommon(top, bot, (linenr_T)0, FALSE);
 }
 
 /*
@@ -170,7 +170,7 @@ u_savesub(lnum)
     if (undo_off)
         return OK;
 
-    return (u_savecommon(lnum - 1, lnum + 1, lnum + 1, FALSE));
+    return u_savecommon(lnum - 1, lnum + 1, lnum + 1, FALSE);
 }
 
 /*
@@ -186,7 +186,7 @@ u_inssub(lnum)
     if (undo_off)
         return OK;
 
-    return (u_savecommon(lnum - 1, lnum, lnum + 1, FALSE));
+    return u_savecommon(lnum - 1, lnum, lnum + 1, FALSE);
 }
 
 /*
@@ -203,7 +203,7 @@ u_savedel(lnum, nlines)
     if (undo_off)
         return OK;
 
-    return (u_savecommon(lnum - 1, lnum + nlines, nlines == curbuf->b_ml.ml_line_count ? 2 : lnum, FALSE));
+    return u_savecommon(lnum - 1, lnum + nlines, (nlines == curbuf->b_ml.ml_line_count) ? 2 : lnum, FALSE);
 }
 
 /*
@@ -580,7 +580,7 @@ u_compute_hash(hash)
     for (lnum = 1; lnum <= curbuf->b_ml.ml_line_count; ++lnum)
     {
         p = ml_get(lnum);
-        sha256_update(&ctx, p, (UINT32_T)(STRLEN(p) + 1));
+        sha256_update(&ctx, p, (uint32_t)(STRLEN(p) + 1));
     }
     sha256_finish(&ctx, hash);
 }

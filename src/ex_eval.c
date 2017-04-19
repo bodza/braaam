@@ -6,7 +6,7 @@
 
 static void     free_msglist(struct msglist *l);
 static int      throw_exception(void *, int, char_u *);
-static char_u   *get_end_emsg(struct condstack *cstack);
+static char_u   *get_end_emsg(condstack_T *cstack);
 
 /*
  * Exception handling terms:
@@ -301,7 +301,7 @@ free_global_msglist()
  */
     void
 do_errthrow(cstack, cmdname)
-    struct condstack    *cstack;
+    condstack_T         *cstack;
     char_u              *cmdname;
 {
     /*
@@ -338,7 +338,7 @@ do_errthrow(cstack, cmdname)
  */
     int
 do_intthrow(cstack)
-    struct condstack    *cstack;
+    condstack_T    *cstack;
 {
     /*
      * If no interrupt occurred or no try conditional is active and no exception
@@ -843,7 +843,7 @@ ex_if(eap)
     int         error;
     int         skip;
     int         result;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_idx == CSTACK_LEN - 1)
         eap->errmsg = (char_u *)"E579: :if nesting too deep";
@@ -911,7 +911,7 @@ ex_else(eap)
     int         error;
     int         skip;
     int         result;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     /*
      * Don't do something after an error, interrupt, or throw, or when there is
@@ -1000,7 +1000,7 @@ ex_while(eap)
     int         error;
     int         skip;
     int         result;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_idx == CSTACK_LEN - 1)
         eap->errmsg = (char_u *)"E585: :while/:for nesting too deep";
@@ -1096,7 +1096,7 @@ ex_continue(eap)
     exarg_T     *eap;
 {
     int         idx;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_looplevel <= 0 || cstack->cs_idx < 0)
         eap->errmsg = (char_u *)"E586: :continue without :while or :for";
@@ -1134,7 +1134,7 @@ ex_break(eap)
     exarg_T     *eap;
 {
     int         idx;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_looplevel <= 0 || cstack->cs_idx < 0)
         eap->errmsg = (char_u *)"E587: :break without :while or :for";
@@ -1160,11 +1160,11 @@ ex_break(eap)
 ex_endwhile(eap)
     exarg_T     *eap;
 {
-    struct condstack    *cstack = eap->cstack;
-    int                 idx;
-    char_u              *err;
-    int                 csf;
-    int                 fl;
+    condstack_T *cstack = eap->cstack;
+    int         idx;
+    char_u      *err;
+    int         csf;
+    int         fl;
 
     if (eap->cmdidx == CMD_endwhile)
     {
@@ -1274,7 +1274,7 @@ ex_throw(eap)
  */
     void
 do_throw(cstack)
-    struct condstack    *cstack;
+    condstack_T *cstack;
 {
     int         idx;
     int         inactivate_try = FALSE;
@@ -1328,7 +1328,7 @@ ex_try(eap)
     exarg_T     *eap;
 {
     int         skip;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_idx == CSTACK_LEN - 1)
         eap->errmsg = (char_u *)"E601: :try nesting too deep";
@@ -1405,7 +1405,7 @@ ex_catch(eap)
     char_u      *save_cpo;
     regmatch_T  regmatch;
     int         prev_got_int;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
     char_u      *pat;
 
     if (cstack->cs_trylevel <= 0 || cstack->cs_idx < 0)
@@ -1557,7 +1557,7 @@ ex_finally(eap)
     int         idx;
     int         skip = FALSE;
     int         pending = CSTP_NONE;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_trylevel <= 0 || cstack->cs_idx < 0)
         eap->errmsg = (char_u *)"E606: :finally without :try";
@@ -1684,7 +1684,7 @@ ex_endtry(eap)
     int         rethrow = FALSE;
     int         pending = CSTP_NONE;
     void        *rettv = NULL;
-    struct condstack    *cstack = eap->cstack;
+    condstack_T *cstack = eap->cstack;
 
     if (cstack->cs_trylevel <= 0 || cstack->cs_idx < 0)
         eap->errmsg = (char_u *)"E602: :endtry without :try";
@@ -2018,7 +2018,7 @@ leave_cleanup(csp)
  */
     int
 cleanup_conditionals(cstack, searched_cond, inclusive)
-    struct condstack   *cstack;
+    condstack_T *cstack;
     int         searched_cond;
     int         inclusive;
 {
@@ -2135,7 +2135,7 @@ cleanup_conditionals(cstack, searched_cond, inclusive)
  */
    static char_u *
 get_end_emsg(cstack)
-    struct condstack    *cstack;
+    condstack_T *cstack;
 {
     if (cstack->cs_flags[cstack->cs_idx] & CSF_WHILE)
         return e_endwhile;
@@ -2153,7 +2153,7 @@ get_end_emsg(cstack)
  */
     void
 rewind_conditionals(cstack, idx, cond_type, cond_level)
-    struct condstack   *cstack;
+    condstack_T *cstack;
     int         idx;
     int         cond_type;
     int         *cond_level;
