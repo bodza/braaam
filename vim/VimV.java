@@ -1746,7 +1746,7 @@ public class VimV
 
     /*private*/ static void COPY_termcode(termcode_C tc1, termcode_C tc0)
     {
-        tc1.name = tc0.name;
+        BCOPY(tc1.name, tc0.name, 2);
         tc1.code = tc0.code;
         tc1.len = tc0.len;
         tc1.modlen = tc0.modlen;
@@ -2685,20 +2685,20 @@ public class VimV
             }
 
             /* skip multibyte char correctly */
-            for (int i = 0, n = us_ptr2len_cc(src[0]); i < n; i++)
+            for (int n = us_ptr2len_cc(src[0]); 0 < n--; src[0] = src[0].plus(1))
             {
                 /*
                  * If the character is KB_SPECIAL, replace it with KB_SPECIAL KS_SPECIAL KE_FILLER.
                  * If compiled with the GUI replace CSI with K_CSI.
                  */
-                if (src[0].at(i) == KB_SPECIAL)
+                if (src[0].at(0) == KB_SPECIAL)
                 {
                     dest.be(dlen++, KB_SPECIAL);
                     dest.be(dlen++, KS_SPECIAL);
                     dest.be(dlen++, KE_FILLER);
                 }
                 else
-                    dest.be(dlen++, src[0].at(i));
+                    dest.be(dlen++, src[0].at(0));
             }
         }
         dest.be(dlen, NUL);

@@ -344,19 +344,15 @@ public class VimA
         return b1 - b2;
     }
 
-    /*private*/ static Bytes STRCPY(Bytes d, Bytes s)
+    /*private*/ static void STRCPY(Bytes d, Bytes s)
     {
-        int i = BDIFF(d, s) - 1;
-
         byte b;
         do
         {
             b = (s = s.plus(1)).at(-1);
-            s.be(i, b);
+            (d = d.plus(1)).be(-1, b);
         }
         while (b != NUL);
-
-        return d;
     }
 
     /*private*/ static final int strlen(Bytes s, int i)

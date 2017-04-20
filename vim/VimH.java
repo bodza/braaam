@@ -833,7 +833,8 @@ public class VimH
         ml_close_all();
         may_core_dump();
 
-        libc.exit(r);
+        throw new Error("exit! " + r);
+     // libc.exit(r);
     }
 
     /*

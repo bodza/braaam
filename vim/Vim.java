@@ -76,6 +76,8 @@ public class Vim
 {
     public static void main(String[] args)
     {
+        Throwable oops = null;
+
         try
         {
             Bytes[] argv = new Bytes[1 + args.length];
@@ -87,9 +89,26 @@ public class Vim
 
             _main(argv.length, argv);
         }
+        catch (Throwable th)
+        {
+            oops = th;
+        }
         finally
         {
-            getout(3);
+            try
+            {
+                getout(3);
+            }
+            catch (Throwable th)
+            {
+                if (oops == null)
+                    oops = th;
+            }
+        }
+
+        if (oops != null)
+        {
+            oops.printStackTrace();
         }
     }
 }

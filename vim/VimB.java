@@ -221,6 +221,16 @@ public class VimB
 
     /*private*/ static final class stat_C extends struct_C
     {
+        /*private*/ static final int VERSION = 1;
+
+        /*private*/ static final Bridge<stat_C> BRIDGE = new Bridge<stat_C>()
+        {
+            protected stat_C wrap(Pointer pointer)
+            {
+                return new stat_C(pointer);
+            }
+        };
+
         /*private*/ static final class Layout extends StructLayout
         {
             /*private*/ Layout(jnr.ffi.Runtime runtime)
@@ -255,6 +265,11 @@ public class VimB
         /*private*/ stat_C()
         {
             super(layout);
+        }
+
+        /*private*/ stat_C(Pointer pointer)
+        {
+            super(pointer);
         }
 
         long st_dev()   { return layout.st_dev.get(memory); }
@@ -621,7 +636,8 @@ public class VimB
         int kill(@pid_t int pid, int sig);
         tm_C localtime(@time_ptr_t long[] timer);
         @off_t long lseek(int fd, @off_t long offset, int whence);
-        int lstat(ByteBuffer file, stat_C buf);
+     // int lstat(ByteBuffer file, stat_C buf);
+        int __lxstat64(int version, ByteBuffer file, stat_C buf);
         int nanosleep(timespec_C requested_time, timespec_C remaining);
      // int open(ByteBuffer file, int oflag, ...);
         int open(ByteBuffer file, int oflag, int perm);
@@ -656,7 +672,8 @@ public class VimB
         int sprintf(ByteBuffer s, ByteBuffer format, long arg1, ByteBuffer arg2, int arg3);
         int sprintf(ByteBuffer s, ByteBuffer format, long arg1, long arg2);
 
-        int stat(ByteBuffer file, stat_C buf);
+     // int stat(ByteBuffer file, stat_C buf);
+        int __xstat64(int version, ByteBuffer file, stat_C buf);
         /*Pointer*/String /*byte **/strerror(int errnum);
         @size_t long strftime(ByteBuffer s, @size_t long maxsize, ByteBuffer format, tm_C tp);
         int tcflush(int fd, int queue_selector);
@@ -676,12 +693,13 @@ public class VimB
     {
         LibraryLoader<Libc> loader = LibraryLoader.create(Libc.class);
 
-        loader.map(file_C.class, file_C.BRIDGE);
+        loader.map(stat_C.class, stat_C.BRIDGE);
         loader.map(timeval_C.class, timeval_C.BRIDGE);
-        loader.map(winsize_C.class, winsize_C.BRIDGE);
-        loader.map(tm_C.class, tm_C.BRIDGE);
         loader.map(timespec_C.class, timespec_C.BRIDGE);
+        loader.map(tm_C.class, tm_C.BRIDGE);
+        loader.map(winsize_C.class, winsize_C.BRIDGE);
         loader.map(termios_C.class, termios_C.BRIDGE);
+        loader.map(file_C.class, file_C.BRIDGE);
 
         libc = loader.load("c");
     }
@@ -801,7 +819,7 @@ public class VimB
 
         int lstat(Bytes file, stat_C buf)
         {
-            return libc.lstat(file.buf(), buf);
+            return libc.__lxstat64(stat_C.VERSION, file.buf(), buf);
         }
 
         int open(Bytes file, int oflag, int perm)
@@ -936,7 +954,7 @@ public class VimB
 
         int stat(Bytes file, stat_C buf)
         {
-            return libc.stat(file.buf(), buf);
+            return libc.__xstat64(stat_C.VERSION, file.buf(), buf);
         }
 
         Bytes strerror(int errnum)
