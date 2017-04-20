@@ -1,0 +1,4 @@
+CLASSPATH=.:jffi-x86_64-Linux.jar:asm-5.0.4.jar
+    /usr/java/server/jdk1.7/bin/javac -g HelloWorld.java `find com jnr -name '*.java'`
+    /usr/java/server/jdk1.7/bin/java HelloWorld
+rm -fv `find -name '*.class'`
