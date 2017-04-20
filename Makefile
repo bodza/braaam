@@ -1,9 +1,8 @@
 VIM = vim
 
 CC = gcc
-CFLAGS = -g -O0 -fno-strength-reduce -Wall -Wextra -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1 -std=gnu99
-LDFLAGS = -Wl,--as-needed
-LIBS = -lm -ltinfo
+CFLAGS = -std=gnu99 -Wall -Wextra -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1 -g
+RM = rm
 
 SRC = vim.c
 OBJ = vim.o
@@ -11,10 +10,13 @@ OBJ = vim.o
 all: $(VIM)
 
 $(VIM): $(OBJ)
-	$(CC) $(LDFLAGS) -o $(VIM) $(OBJ) $(LIBS)
+	$(CC) -o $(VIM) $(OBJ)
+
+check: vim.c
+	$(CC) -fsyntax-only $(CFLAGS) vim.c
 
 vim.o: vim.c
-	$(CC) -c -I. $(CFLAGS) -o $@ vim.c
+	$(CC) -c $(CFLAGS) -o $@ vim.c
 
 clean:
-	-rm -fv $(OBJ) $(VIM)
+	$(RM) -fv $(OBJ) $(VIM)
