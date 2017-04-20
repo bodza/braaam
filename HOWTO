@@ -1,1 +1,1 @@
-CLASSPATH=.:native:native/jffi-x86_64-Linux.jar:native/asm-5.0.4.jar /usr/java/server/jdk1.7/bin/javac -g -Xlint -s tmp -d tmp -Xmaxerrs 0 -Xmaxwarns 0 Vim.java
+CLASSPATH=.:native:native/jffi-x86_64-Linux.jar:native/asm-5.0.4.jar /usr/java/server/jdk1.7/bin/javac -g -Xlint:-fallthrough -s tmp -d tmp -Xmaxerrs 0 -Xmaxwarns 0 vim/Vim.java
