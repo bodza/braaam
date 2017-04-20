@@ -10,7 +10,7 @@
  * and http://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm
  */
 
-PRIVATE size_t critical_factorization(unsigned byte *needle, size_t needle_len, size_t *period)
+PRIVATE size_t critical_factorization(byte *needle, size_t needle_len, size_t *period)
 {
     size_t max_suffix = SIZE_MAX;
     size_t j = 0;
@@ -18,8 +18,8 @@ PRIVATE size_t critical_factorization(unsigned byte *needle, size_t needle_len, 
     size_t k = p;
     while (j + k < needle_len)
     {
-        unsigned byte a = needle[j + k];
-        unsigned byte b = needle[max_suffix + k];
+        byte a = needle[j + k];
+        byte b = needle[max_suffix + k];
         if (a < b)
         {
             j += k;
@@ -49,8 +49,8 @@ PRIVATE size_t critical_factorization(unsigned byte *needle, size_t needle_len, 
     k = p = 1;
     while (j + k < needle_len)
     {
-        unsigned byte a = needle[j + k];
-        unsigned byte b = needle[max_suffix_rev + k];
+        byte a = needle[j + k];
+        byte b = needle[max_suffix_rev + k];
         if (b < a)
         {
             j += k;
@@ -81,7 +81,7 @@ PRIVATE size_t critical_factorization(unsigned byte *needle, size_t needle_len, 
     return max_suffix_rev + 1;
 }
 
-PRIVATE byte *two_way_short_needle(unsigned byte *haystack, size_t haystack_len, unsigned byte *needle, size_t needle_len)
+PRIVATE byte *two_way_short_needle(byte *haystack, size_t haystack_len, byte *needle, size_t needle_len)
 {
     size_t period;
     size_t suffix = critical_factorization(needle, needle_len, &period);
@@ -101,7 +101,7 @@ PRIVATE byte *two_way_short_needle(unsigned byte *haystack, size_t haystack_len,
                 while (memory < i + 1 && needle[i] == haystack[i + j])
                     --i;
                 if (i + 1 < memory + 1)
-                    return (byte *)(haystack + j);
+                    return haystack + j;
 
                 j += period;
                 memory = needle_len - period;
@@ -128,7 +128,7 @@ PRIVATE byte *two_way_short_needle(unsigned byte *haystack, size_t haystack_len,
                 while (i != SIZE_MAX && needle[i] == haystack[i + j])
                     --i;
                 if (i == SIZE_MAX)
-                    return (byte *)(haystack + j);
+                    return haystack + j;
                 j += period;
             }
             else
@@ -139,7 +139,7 @@ PRIVATE byte *two_way_short_needle(unsigned byte *haystack, size_t haystack_len,
     return null;
 }
 
-PRIVATE byte *two_way_long_needle(unsigned byte *haystack, size_t haystack_len, unsigned byte *needle, size_t needle_len)
+PRIVATE byte *two_way_long_needle(byte *haystack, size_t haystack_len, byte *needle, size_t needle_len)
 {
     size_t shift_table[1 << 8];
 
@@ -177,7 +177,7 @@ PRIVATE byte *two_way_long_needle(unsigned byte *haystack, size_t haystack_len, 
                 while (memory < i + 1 && needle[i] == haystack[i + j])
                     --i;
                 if (i + 1 < memory + 1)
-                    return (byte *)(haystack + j);
+                    return haystack + j;
 
                 j += period;
                 memory = needle_len - period;
@@ -210,7 +210,7 @@ PRIVATE byte *two_way_long_needle(unsigned byte *haystack, size_t haystack_len, 
                 while (i != SIZE_MAX && needle[i] == haystack[i + j])
                     --i;
                 if (i == SIZE_MAX)
-                    return (byte *)(haystack + j);
+                    return haystack + j;
                 j += period;
             }
             else
@@ -243,7 +243,7 @@ PUBLIC byte *STRSTR(byte *haystack_start, byte *needle_start)
     size_t haystack_len = (haystack_start + needle_len < haystack ? 1 : haystack_start + needle_len - haystack);
 
     if (needle_len < 32)
-        return two_way_short_needle((unsigned byte *)haystack, haystack_len, (unsigned byte *)needle, needle_len);
+        return two_way_short_needle(haystack, haystack_len, needle, needle_len);
 
-    return two_way_long_needle((unsigned byte *)haystack, haystack_len, (unsigned byte *)needle, needle_len);
+    return two_way_long_needle(haystack, haystack_len, needle, needle_len);
 }
