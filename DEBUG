@@ -1,0 +1,1 @@
+CLASSPATH=tmp:native:native/jffi-x86_64-Linux.jar:native/asm-5.0.4.jar java -agentlib:jdwp=transport=dt_socket,address=9999,server=y,suspend=y vim.Vim

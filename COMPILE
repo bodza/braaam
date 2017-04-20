@@ -1,0 +1,1 @@
+CLASSPATH=.:native:native/jffi-x86_64-Linux.jar:native/asm-5.0.4.jar javac -g -Xlint:all,-fallthrough -s tmp -d tmp -Xmaxerrs 0 -Xmaxwarns 0 vim/Vim*.java
